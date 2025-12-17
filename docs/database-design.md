@@ -12,13 +12,21 @@
 
 ## الوحدات الأساسية والجداول المقترحة
 ### 1) المستخدمون والصلاحيات (Access Control)
+#### أ) توافق Spatie Laravel Permission
+- يمكن استخدام حزمة **Spatie Laravel Permission** دون تعارض، شريطة اعتماد جداولها القياسية وإزالة الجداول المكررة المقترحة سابقًا.
+- جداول Spatie الافتراضية: `roles (id, name, guard_name)`, `permissions (id, name, guard_name)`, `role_has_permissions`, `model_has_roles`, `model_has_permissions`.
+- بالتالي يتم **الاستغناء عن** `user_roles` و`role_permissions` المخصصة، والاكتفاء بربط المستخدمين عبر `model_has_roles` و`model_has_permissions` مع `guard_name = web`.
+- يمكن الاحتفاظ بحقول تسمية عربية/إنجليزية للأدوار عبر جدول توصيف إضافي أو أعمدة اختيارية (name_ar, name_en) في جدول `roles` مع فهرس فريد على `name`/`guard_name`.
+
+#### ب) الجداول والحقول بعد المواءمة
 | الجدول | الهدف | الحقول البارزة |
 | --- | --- | --- |
 | `users` | تعريف المستخدمين وربطهم بالفرع/المركز | name, email (unique), phone, branch_id, center_id, status, created_at, updated_at, deleted_at |
-| `roles` | الأدوار (Relations Manager، Finance Officer...) | key, name_ar, name_en |
-| `permissions` | صلاحيات مفصلة حسب الوحدات | key (مثال: agenda.publish), module, action |
-| `role_permissions` | ربط الأدوار بالصلاحيات | role_id, permission_id |
-| `user_roles` | ربط المستخدم بالأدوار | user_id, role_id |
+| `roles` (Spatie) | الأدوار | name (unique per guard), guard_name, name_ar (optional), name_en (optional) |
+| `permissions` (Spatie) | صلاحيات مفصلة | name (مثال: agenda.publish), guard_name, module (optional), action (optional) |
+| `role_has_permissions` (Spatie) | ربط الأدوار بالصلاحيات | role_id, permission_id |
+| `model_has_roles` (Spatie) | ربط المستخدم بالأدوار | role_id, model_type, model_id |
+| `model_has_permissions` (Spatie) | ربط المستخدم/النموذج بالصلاحيات المباشرة | permission_id, model_type, model_id |
 
 ### 2) الهيكل التنظيمي
 | الجدول | الهدف | الحقول |
@@ -74,6 +82,17 @@
 | --- | --- | --- |
 | `attachments` | مرفقات متعددة الأشكال موحدة | attachable_type, attachable_id, file_path, file_type, uploaded_by |
 | `audit_logs` | سجل تدقيق عام | user_id, action (create/update/approve/reject), module, entity_type, entity_id, old_values (JSON), new_values (JSON), created_at |
+
+## مراجعة وتحسين الجداول (إضافة/حذف/تعديل)
+- **توحيد الصلاحيات**: اعتماد جداول Spatie الافتراضية وإزالة `user_roles` و`role_permissions` لتجنب الازدواجية وتحقيق توافق مباشر مع الحزمة.
+- **اللغات في الأدوار/الصلاحيات**: إضافة أعمدة اختيارية `name_ar`, `name_en` في `roles` وجدول توصيف بسيط للصلاحيات إذا احتاجت واجهة عربية، مع الإبقاء على `name` (مع guard) كمفتاح عمل.
+- **حالة السجلات**: إضافة حقل `status` متمايز في جداول تحتاج دورة حياة واضحة (مثل `bookings`, `zaha_time_bookings`, `maintenance_requests`, `vehicles`, `drivers`) لضبط التدفق حسب SRS.
+- **قيود التاريخ والزمن**: التأكد من وجود فهارس على الحقول الزمنية (`booking_date`, `trip_date`, `logged_at`, `approved_at`) مع NOT NULL حيث يلزم التقارير الشهرية.
+- **المرفقات**: في حال تفعيل جدول `attachments` المتعدد الأشكال، يمكن إزالة الجداول الفرعية للمرفقات (`monthly_activity_attachments`, `maintenance_attachments`) أو الاحتفاظ بها لبيانات إضافية؛ يفضل استخدام جدول موحد مع حقل `context` عند الحاجة.
+- **الاعتمادات**: الإبقاء على جداول الاعتماد المنفصلة (`agenda_approvals`, `monthly_activity_approvals`, `maintenance_approvals`) لأنها تلبي متطلبات التتبع الزمني، مع فهرسة `step, decision, approved_by`.
+- **الحذف المنطقي**: تطبيق `deleted_at` على الكيانات القابلة للأرشفة (activities, donations, bookings, zaha_time_bookings, maintenance_requests, trips) لتوافق خطوط التدقيق.
+- **الربط بالهيكل التنظيمي**: التأكد من إلزامية `branch_id` أو `center_id` بحسب نطاق الجدول؛ يمكن جعل أحدهما Nullable مع تحقق (CHECK) يفرض وجود أحدهما على الأقل في الجداول التشغيلية.
+- **تعريف الأقسام**: إن لم يكن هناك حاجة لأدوار مرتبطة بـ `departments`, يمكن دمجها مع قائمة ثابتة؛ وإلا فالإبقاء على جدول `departments` لتوسعة مستقبلية.
 
 ## العلاقات الرئيسية (ER Outline)
 - الفرع `branch` يملك عدة مراكز `centers`، والمستخدم ينتمي إلى فرع/مركز اختياريًا.
