@@ -21,6 +21,10 @@ class CreatePermissionTables extends Migration
         Schema::create($tableNames['permissions'], function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name');
+            $table->string('name_ar')->nullable();
+            $table->string('name_en')->nullable();
+            $table->string('module')->nullable();
+            $table->string('action')->nullable();
             $table->string('guard_name');
             $table->timestamps();
             $table->unique(['name', 'guard_name']);
@@ -33,6 +37,8 @@ class CreatePermissionTables extends Migration
                 $table->index($teamForeignKey, 'roles_team_foreign_key_index');
             }
             $table->string('name');
+            $table->string('name_ar')->nullable();
+            $table->string('name_en')->nullable();
             $table->string('guard_name');
             $table->timestamps();
             $table->unique($teams ? [$teamForeignKey, 'name', 'guard_name'] : ['name', 'guard_name']);
