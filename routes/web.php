@@ -4,6 +4,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Roles\FinanceOfficer\DashboardController as FinanceOfficerDashboardController;
+use App\Http\Controllers\Roles\MaintenanceOfficer\DashboardController as MaintenanceOfficerDashboardController;
+use App\Http\Controllers\Roles\ProgramsManager\DashboardController as ProgramsManagerDashboardController;
+use App\Http\Controllers\Roles\ProgramsOfficer\DashboardController as ProgramsOfficerDashboardController;
+use App\Http\Controllers\Roles\RelationsManager\DashboardController as RelationsManagerDashboardController;
+use App\Http\Controllers\Roles\RelationsOfficer\DashboardController as RelationsOfficerDashboardController;
+use App\Http\Controllers\Roles\ReportsViewer\DashboardController as ReportsViewerDashboardController;
+use App\Http\Controllers\Roles\Staff\DashboardController as StaffDashboardController;
+use App\Http\Controllers\Roles\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,12 +41,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::view('/dashboard/admin', 'dashboards.admin')->middleware('role:super_admin')->name('dashboard.admin');
-    Route::view('/dashboard/relations', 'dashboards.relations')->middleware('role:relations_manager|relations_officer')->name('dashboard.relations');
-    Route::view('/dashboard/programs', 'dashboards.programs')->middleware('role:programs_manager|programs_officer')->name('dashboard.programs');
-    Route::view('/dashboard/finance', 'dashboards.finance')->middleware('role:finance_officer')->name('dashboard.finance');
-    Route::view('/dashboard/maintenance', 'dashboards.maintenance')->middleware('role:maintenance_officer')->name('dashboard.maintenance');
-    Route::view('/dashboard/transport', 'dashboards.transport')->middleware('role:transport_officer')->name('dashboard.transport');
-    Route::view('/dashboard/reports', 'dashboards.reports')->middleware('role:reports_viewer')->name('dashboard.reports');
-    Route::view('/dashboard/staff', 'dashboards.staff')->middleware('role:staff')->name('dashboard.staff');
+    Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');
+    Route::get('/dashboard/relations/manager', [RelationsManagerDashboardController::class, 'index'])->middleware('role:relations_manager')->name('role.relations_manager.dashboard');
+    Route::get('/dashboard/relations/officer', [RelationsOfficerDashboardController::class, 'index'])->middleware('role:relations_officer')->name('role.relations_officer.dashboard');
+    Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
+    Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
+    Route::get('/dashboard/finance', [FinanceOfficerDashboardController::class, 'index'])->middleware('role:finance_officer')->name('role.finance_officer.dashboard');
+    Route::get('/dashboard/maintenance', [MaintenanceOfficerDashboardController::class, 'index'])->middleware('role:maintenance_officer')->name('role.maintenance_officer.dashboard');
+    Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
+    Route::get('/dashboard/reports', [ReportsViewerDashboardController::class, 'index'])->middleware('role:reports_viewer')->name('role.reports_viewer.dashboard');
+    Route::get('/dashboard/staff', [StaffDashboardController::class, 'index'])->middleware('role:staff')->name('role.staff.dashboard');
 });

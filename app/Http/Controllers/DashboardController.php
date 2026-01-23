@@ -11,16 +11,16 @@ class DashboardController extends Controller
         $user = $request->user();
 
         $roleRoutes = [
-            'super_admin' => 'dashboard.admin',
-            'relations_manager' => 'dashboard.relations',
-            'relations_officer' => 'dashboard.relations',
-            'programs_manager' => 'dashboard.programs',
-            'programs_officer' => 'dashboard.programs',
-            'finance_officer' => 'dashboard.finance',
-            'maintenance_officer' => 'dashboard.maintenance',
-            'transport_officer' => 'dashboard.transport',
-            'reports_viewer' => 'dashboard.reports',
-            'staff' => 'dashboard.staff',
+            'super_admin' => 'role.super_admin.dashboard',
+            'relations_manager' => 'role.relations_manager.dashboard',
+            'relations_officer' => 'role.relations_officer.dashboard',
+            'programs_manager' => 'role.programs_manager.dashboard',
+            'programs_officer' => 'role.programs_officer.dashboard',
+            'finance_officer' => 'role.finance_officer.dashboard',
+            'maintenance_officer' => 'role.maintenance_officer.dashboard',
+            'transport_officer' => 'role.transport_officer.dashboard',
+            'reports_viewer' => 'role.reports_viewer.dashboard',
+            'staff' => 'role.staff.dashboard',
         ];
 
         foreach ($roleRoutes as $role => $route) {
