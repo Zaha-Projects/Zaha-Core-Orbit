@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        if (Schema::hasTable('monthly_activity_approvals')) {
-            return;
-        }
 
         Schema::create('monthly_activity_approvals', function (Blueprint $table) {
             $table->id();

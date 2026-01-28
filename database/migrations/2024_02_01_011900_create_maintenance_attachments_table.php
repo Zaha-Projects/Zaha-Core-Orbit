@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        if (Schema::hasTable('maintenance_attachments')) {
-            return;
-        }
 
         Schema::create('maintenance_attachments', function (Blueprint $table) {
             $table->id();

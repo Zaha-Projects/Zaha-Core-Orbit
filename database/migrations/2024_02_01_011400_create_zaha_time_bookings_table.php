@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        if (Schema::hasTable('zaha_time_bookings')) {
-            return;
-        }
 
         Schema::create('zaha_time_bookings', function (Blueprint $table) {
             $table->id();
