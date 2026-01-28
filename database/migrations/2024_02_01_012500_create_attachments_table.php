@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('attachments')) {
+            return;
+        }
+
         Schema::create('attachments', function (Blueprint $table) {
             $table->id();
             $table->string('attachable_type');

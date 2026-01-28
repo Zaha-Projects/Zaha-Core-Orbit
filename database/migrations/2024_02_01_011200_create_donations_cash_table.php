@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('donations_cash')) {
+            return;
+        }
+
         Schema::create('donations_cash', function (Blueprint $table) {
             $table->id();
             $table->string('donor_type');

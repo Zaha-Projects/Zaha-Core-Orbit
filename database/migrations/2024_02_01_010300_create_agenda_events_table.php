@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('agenda_events')) {
+            return;
+        }
+
         Schema::create('agenda_events', function (Blueprint $table) {
             $table->id();
             $table->unsignedTinyInteger('month');

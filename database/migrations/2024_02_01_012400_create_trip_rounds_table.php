@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('trip_rounds')) {
+            return;
+        }
+
         Schema::create('trip_rounds', function (Blueprint $table) {
             $table->id();
             $table->foreignId('trip_id')->constrained()->cascadeOnDelete();
