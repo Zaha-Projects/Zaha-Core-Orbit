@@ -6,78 +6,83 @@
 @endphp
 
 @section('content')
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h1 class="h4 mb-2">{{ $title }}</h1>
-            <p class="text-muted mb-0">{{ $subtitle }}</p>
+    <div class="row g-4">
+        <div class="col-12 col-lg-3">
+            @include('roles.super_admin.partials.sidebar')
         </div>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-            <div class="card h-100 shadow-sm">
+        <div class="col-12 col-lg-9">
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h2 class="h6">{{ __('app.reports.structure.title') }}</h2>
-                    <p class="text-muted small">{{ __('app.reports.structure.subtitle') }}</p>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.structure.branches') }}</span>
-                            <strong>{{ $overview['branches'] }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.structure.centers') }}</span>
-                            <strong>{{ $overview['centers'] }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.structure.users') }}</span>
-                            <strong>{{ $overview['users'] }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.structure.vehicles') }}</span>
-                            <strong>{{ $overview['vehicles'] }}</strong>
-                        </li>
-                    </ul>
+                    <h1 class="h4 mb-2">{{ $title }}</h1>
+                    <p class="text-muted mb-0">{{ $subtitle }}</p>
                 </div>
             </div>
-        </div>
-        <div class="col-12 col-lg-6">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h2 class="h6">{{ __('app.reports.operations.title') }}</h2>
-                    <p class="text-muted small">{{ __('app.reports.operations.subtitle') }}</p>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.operations.agenda') }}</span>
-                            <strong>{{ $operations['agenda_events'] }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.operations.monthly_activities') }}</span>
-                            <strong>{{ $operations['monthly_activities'] }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.operations.bookings') }}</span>
-                            <strong>{{ $operations['bookings'] }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.operations.maintenance_requests') }}</span>
-                            <strong>{{ $operations['maintenance_requests'] }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>{{ __('app.reports.operations.trips') }}</span>
-                            <strong>{{ $operations['trips'] }}</strong>
-                        </li>
-                    </ul>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-lg-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="h6">{{ __('app.reports.structure.title') }}</h2>
+                            <p class="text-muted small">{{ __('app.reports.structure.subtitle') }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.structure.branches') }}</span>
+                                    <strong>{{ $overview['branches'] }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.structure.centers') }}</span>
+                                    <strong>{{ $overview['centers'] }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.structure.users') }}</span>
+                                    <strong>{{ $overview['users'] }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.structure.vehicles') }}</span>
+                                    <strong>{{ $overview['vehicles'] }}</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="h6">{{ __('app.reports.operations.title') }}</h2>
+                            <p class="text-muted small">{{ __('app.reports.operations.subtitle') }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.operations.agenda') }}</span>
+                                    <strong>{{ $operations['agenda_events'] }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.operations.monthly_activities') }}</span>
+                                    <strong>{{ $operations['monthly_activities'] }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.operations.bookings') }}</span>
+                                    <strong>{{ $operations['bookings'] }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.operations.maintenance_requests') }}</span>
+                                    <strong>{{ $operations['maintenance_requests'] }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>{{ __('app.reports.operations.trips') }}</span>
+                                    <strong>{{ $operations['trips'] }}</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h2 class="h6">{{ __('app.reports.financials.title') }}</h2>
-                    <p class="text-muted small">{{ __('app.reports.financials.subtitle') }}</p>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-lg-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="h6">{{ __('app.reports.financials.title') }}</h2>
+                            <p class="text-muted small">{{ __('app.reports.financials.subtitle') }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between">
                             <span>{{ __('app.reports.financials.payments') }}</span>
