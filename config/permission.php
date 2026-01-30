@@ -39,6 +39,6 @@ return [
 
         'key' => 'spatie.permission.cache',
 
-        'store' => 'default',
+        'store' => env('CACHE_DRIVER', 'file'),
     ],
 ];
