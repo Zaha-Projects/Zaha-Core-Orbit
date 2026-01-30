@@ -6,7 +6,7 @@
     $actions = [
         ['title' => 'إدارة المستخدمين', 'description' => 'إضافة المستخدمين وربطهم بالأدوار والفروع والمراكز.'],
         ['title' => 'متابعة الاعتمادات', 'description' => 'مراجعة حالة الأجندة والخطة الشهرية والاعتمادات.'],
-        ['title' => 'التقارير', 'description' => 'تصدير التقارير الشهرية وتتبّع الأداء.'],
+        ['title' => 'التقارير', 'description' => 'عرض التقارير التشغيلية والمالية والتفصيلية.', 'link' => route('role.super_admin.reports')],
     ];
 @endphp
 
@@ -21,6 +21,11 @@
                         <div class="border rounded p-3 h-100">
                             <h2 class="h6 mb-2">{{ $action['title'] }}</h2>
                             <p class="text-muted mb-0">{{ $action['description'] }}</p>
+                            @if (!empty($action['link']))
+                                <a class="btn btn-sm btn-outline-primary mt-3" href="{{ $action['link'] }}">
+                                    فتح التقارير
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach
