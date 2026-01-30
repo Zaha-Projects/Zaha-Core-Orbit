@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @php
-    $title = 'التقارير التفصيلية للإدارة العامة';
-    $subtitle = 'تقارير تشغيلية ومالية شاملة مع مؤشرات رقمية وملخصات كتابية وفلوشارتس لمسارات العمل.';
+    $title = __('app.reports.title');
+    $subtitle = __('app.reports.subtitle');
 @endphp
 
 @section('content')
@@ -17,23 +17,23 @@
         <div class="col-12 col-lg-6">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h2 class="h6">ملخص البنية</h2>
-                    <p class="text-muted small">توزيع الموارد التنظيمية والوحدات الأساسية.</p>
+                    <h2 class="h6">{{ __('app.reports.structure.title') }}</h2>
+                    <p class="text-muted small">{{ __('app.reports.structure.subtitle') }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>الفروع</span>
+                            <span>{{ __('app.reports.structure.branches') }}</span>
                             <strong>{{ $overview['branches'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>المراكز</span>
+                            <span>{{ __('app.reports.structure.centers') }}</span>
                             <strong>{{ $overview['centers'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>المستخدمون</span>
+                            <span>{{ __('app.reports.structure.users') }}</span>
                             <strong>{{ $overview['users'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>المركبات</span>
+                            <span>{{ __('app.reports.structure.vehicles') }}</span>
                             <strong>{{ $overview['vehicles'] }}</strong>
                         </li>
                     </ul>
@@ -43,27 +43,27 @@
         <div class="col-12 col-lg-6">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h2 class="h6">ملخص العمليات</h2>
-                    <p class="text-muted small">حجم العمليات المسجلة حسب الوحدات.</p>
+                    <h2 class="h6">{{ __('app.reports.operations.title') }}</h2>
+                    <p class="text-muted small">{{ __('app.reports.operations.subtitle') }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>الأجندة</span>
+                            <span>{{ __('app.reports.operations.agenda') }}</span>
                             <strong>{{ $operations['agenda_events'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>الأنشطة الشهرية</span>
+                            <span>{{ __('app.reports.operations.monthly_activities') }}</span>
                             <strong>{{ $operations['monthly_activities'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>الحجوزات</span>
+                            <span>{{ __('app.reports.operations.bookings') }}</span>
                             <strong>{{ $operations['bookings'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>طلبات الصيانة</span>
+                            <span>{{ __('app.reports.operations.maintenance_requests') }}</span>
                             <strong>{{ $operations['maintenance_requests'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>الرحلات</span>
+                            <span>{{ __('app.reports.operations.trips') }}</span>
                             <strong>{{ $operations['trips'] }}</strong>
                         </li>
                     </ul>
@@ -76,23 +76,23 @@
         <div class="col-12 col-lg-6">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h2 class="h6">المؤشرات المالية</h2>
-                    <p class="text-muted small">إجمالي العمليات المالية وتحصيل التبرعات.</p>
+                    <h2 class="h6">{{ __('app.reports.financials.title') }}</h2>
+                    <p class="text-muted small">{{ __('app.reports.financials.subtitle') }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>عمليات الدفع</span>
+                            <span>{{ __('app.reports.financials.payments') }}</span>
                             <strong>{{ $financials['payments'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>إجمالي المدفوعات</span>
+                            <span>{{ __('app.reports.financials.payments_total') }}</span>
                             <strong>{{ number_format($financials['payments_total'], 2) }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>التبرعات النقدية</span>
+                            <span>{{ __('app.reports.financials.donations') }}</span>
                             <strong>{{ $financials['donations'] }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>إجمالي التبرعات</span>
+                            <span>{{ __('app.reports.financials.donations_total') }}</span>
                             <strong>{{ number_format($financials['donations_total'], 2) }}</strong>
                         </li>
                     </ul>
@@ -102,16 +102,12 @@
         <div class="col-12 col-lg-6">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h2 class="h6">ملخص كتابي</h2>
-                    <p class="text-muted small">
-                        يقدم هذا التقرير ملخصاً كتابياً حول الأداء التشغيلي والمالي. تم استخراج المؤشرات
-                        من بيانات النظام للتأكد من سلامة تدفق العمل بين الوحدات، مع التركيز على سرعة
-                        الاستجابة، كثافة العمليات، واستقرار التمويل.
-                    </p>
+                    <h2 class="h6">{{ __('app.reports.narrative.title') }}</h2>
+                    <p class="text-muted small">{{ __('app.reports.narrative.body') }}</p>
                     <ul class="mb-0">
-                        <li>تحسن في توازن الموارد بين الفروع والمراكز عند مقارنة كثافة الأنشطة.</li>
-                        <li>تتبع واضح لعمليات الصيانة والاعتمادات لضمان الحوكمة.</li>
-                        <li>مراقبة مالية مستمرة لحجم المدفوعات والتبرعات.</li>
+                        <li>{{ __('app.reports.narrative.points.0') }}</li>
+                        <li>{{ __('app.reports.narrative.points.1') }}</li>
+                        <li>{{ __('app.reports.narrative.points.2') }}</li>
                     </ul>
                 </div>
             </div>
@@ -122,8 +118,8 @@
         <div class="col-12 col-lg-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h2 class="h6">حالات الصيانة</h2>
-                    <p class="text-muted small">توزيع طلبات الصيانة حسب الحالة.</p>
+                    <h2 class="h6">{{ __('app.reports.status.maintenance') }}</h2>
+                    <p class="text-muted small">{{ __('app.reports.status.maintenance_subtitle') }}</p>
                     <ul class="list-group list-group-flush">
                         @forelse ($maintenanceStatus as $item)
                             <li class="list-group-item d-flex justify-content-between">
@@ -131,7 +127,7 @@
                                 <strong>{{ $item->total }}</strong>
                             </li>
                         @empty
-                            <li class="list-group-item text-muted">لا توجد بيانات.</li>
+                            <li class="list-group-item text-muted">{{ __('app.reports.status.no_data') }}</li>
                         @endforelse
                     </ul>
                 </div>
@@ -140,8 +136,8 @@
         <div class="col-12 col-lg-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h2 class="h6">اعتمادات الأجندة</h2>
-                    <p class="text-muted small">نتائج قرارات الاعتمادات.</p>
+                    <h2 class="h6">{{ __('app.reports.status.agenda_approvals') }}</h2>
+                    <p class="text-muted small">{{ __('app.reports.status.agenda_approvals_subtitle') }}</p>
                     <ul class="list-group list-group-flush">
                         @forelse ($agendaApprovals as $item)
                             <li class="list-group-item d-flex justify-content-between">
@@ -149,7 +145,7 @@
                                 <strong>{{ $item->total }}</strong>
                             </li>
                         @empty
-                            <li class="list-group-item text-muted">لا توجد بيانات.</li>
+                            <li class="list-group-item text-muted">{{ __('app.reports.status.no_data') }}</li>
                         @endforelse
                     </ul>
                 </div>
@@ -158,8 +154,8 @@
         <div class="col-12 col-lg-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h2 class="h6">حالات الحجوزات</h2>
-                    <p class="text-muted small">توزيع الحجوزات حسب الحالة.</p>
+                    <h2 class="h6">{{ __('app.reports.status.bookings') }}</h2>
+                    <p class="text-muted small">{{ __('app.reports.status.bookings_subtitle') }}</p>
                     <ul class="list-group list-group-flush">
                         @forelse ($bookingStatus as $item)
                             <li class="list-group-item d-flex justify-content-between">
@@ -167,7 +163,7 @@
                                 <strong>{{ $item->total }}</strong>
                             </li>
                         @empty
-                            <li class="list-group-item text-muted">لا توجد بيانات.</li>
+                            <li class="list-group-item text-muted">{{ __('app.reports.status.no_data') }}</li>
                         @endforelse
                     </ul>
                 </div>
@@ -177,59 +173,38 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <h2 class="h5 mb-3">فلوشارتس لمسارات العمل</h2>
-            <p class="text-muted">مخططات تدفق توضح مسار المعاملات الرئيسية داخل التطبيق.</p>
+            <h2 class="h5 mb-3">{{ __('app.reports.flowcharts.title') }}</h2>
+            <p class="text-muted">{{ __('app.reports.flowcharts.subtitle') }}</p>
             <div class="row g-4">
                 <div class="col-12 col-lg-6">
                     <div class="border rounded p-3 h-100">
-                        <h3 class="h6 mb-3">مسار الصيانة</h3>
+                        <h3 class="h6 mb-3">{{ __('app.reports.flowcharts.maintenance') }}</h3>
                         <pre class="mermaid">
-flowchart TD
-    A[تسجيل الطلب] --> B{تقييم الأولوية}
-    B -->|عادي| C[جدولة الصيانة]
-    B -->|عاجل| D[تحويل فوري للفريق]
-    C --> E[تنفيذ العمل]
-    D --> E
-    E --> F[توثيق النتائج]
-    F --> G[إغلاق الطلب]
+{!! __('app.reports.flowchart_texts.maintenance') !!}
                         </pre>
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="border rounded p-3 h-100">
-                        <h3 class="h6 mb-3">مسار الأجندة والاعتماد</h3>
+                        <h3 class="h6 mb-3">{{ __('app.reports.flowcharts.agenda') }}</h3>
                         <pre class="mermaid">
-flowchart TD
-    A[اقتراح فعالية] --> B[مراجعة مدير البرامج]
-    B --> C{قرار الاعتماد}
-    C -->|موافقة| D[تضمين في الأجندة]
-    C -->|رفض| E[إرجاع للمراجعة]
-    D --> F[متابعة التنفيذ]
+{!! __('app.reports.flowchart_texts.agenda') !!}
                         </pre>
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="border rounded p-3 h-100">
-                        <h3 class="h6 mb-3">مسار النقل</h3>
+                        <h3 class="h6 mb-3">{{ __('app.reports.flowcharts.transport') }}</h3>
                         <pre class="mermaid">
-flowchart TD
-    A[طلب رحلة] --> B[تحديد السائق والمركبة]
-    B --> C[تأكيد جدول الرحلة]
-    C --> D[تنفيذ الرحلة]
-    D --> E[تسجيل الملاحظات]
+{!! __('app.reports.flowchart_texts.transport') !!}
                         </pre>
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="border rounded p-3 h-100">
-                        <h3 class="h6 mb-3">مسار الحجوزات والمدفوعات</h3>
+                        <h3 class="h6 mb-3">{{ __('app.reports.flowcharts.bookings') }}</h3>
                         <pre class="mermaid">
-flowchart TD
-    A[استلام الحجز] --> B[تأكيد البيانات]
-    B --> C[تحصيل الدفعة]
-    C --> D{نجاح الدفع؟}
-    D -->|نعم| E[تأكيد الحجز]
-    D -->|لا| F[إعادة المحاولة]
+{!! __('app.reports.flowchart_texts.bookings') !!}
                         </pre>
                     </div>
                 </div>

@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة موظف البرامج';
-    $subtitle = 'إعداد الخطة الشهرية وتجهيز مستندات التنفيذ.';
+    $title = __('app.roles.programs_officer.title');
+    $subtitle = __('app.roles.programs_officer.subtitle');
     $actions = [
-        ['title' => 'إضافة نشاط', 'description' => 'إنشاء الأنشطة وربطها بالأجندة السنوية.'],
-        ['title' => 'مرفقات الأنشطة', 'description' => 'رفع المستندات والصور المطلوبة.'],
-        ['title' => 'متابعة الاعتماد', 'description' => 'تحديث البيانات حسب ملاحظات الاعتماد.'],
+        [
+            'title' => __('app.roles.programs_officer.actions.add_activity.title'),
+            'description' => __('app.roles.programs_officer.actions.add_activity.description'),
+        ],
+        [
+            'title' => __('app.roles.programs_officer.actions.attachments.title'),
+            'description' => __('app.roles.programs_officer.actions.attachments.description'),
+        ],
+        [
+            'title' => __('app.roles.programs_officer.actions.approval_followup.title'),
+            'description' => __('app.roles.programs_officer.actions.approval_followup.description'),
+        ],
     ];
 @endphp
 

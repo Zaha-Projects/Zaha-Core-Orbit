@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة النقل والحركة';
-    $subtitle = 'إدارة المركبات والسائقين وجدولة الرحلات.';
+    $title = __('app.roles.transport_officer.title');
+    $subtitle = __('app.roles.transport_officer.subtitle');
     $actions = [
-        ['title' => 'جدولة الرحلات', 'description' => 'إنشاء الرحلات اليومية وتحديث الحالة.'],
-        ['title' => 'مركبات وسائقون', 'description' => 'متابعة جاهزية الأسطول وحالة السائقين.'],
-        ['title' => 'تقارير النقل', 'description' => 'عرض ملخص الرحلات حسب التاريخ والفرع.'],
+        [
+            'title' => __('app.roles.transport_officer.actions.scheduling.title'),
+            'description' => __('app.roles.transport_officer.actions.scheduling.description'),
+        ],
+        [
+            'title' => __('app.roles.transport_officer.actions.fleet.title'),
+            'description' => __('app.roles.transport_officer.actions.fleet.description'),
+        ],
+        [
+            'title' => __('app.roles.transport_officer.actions.reports.title'),
+            'description' => __('app.roles.transport_officer.actions.reports.description'),
+        ],
     ];
 @endphp
 

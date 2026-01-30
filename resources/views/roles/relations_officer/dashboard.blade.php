@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة موظف العلاقات العامة';
-    $subtitle = 'إعداد الأجندة السنوية وإدارة المتطلبات الأولية.';
+    $title = __('app.roles.relations_officer.title');
+    $subtitle = __('app.roles.relations_officer.subtitle');
     $actions = [
-        ['title' => 'إنشاء فعالية', 'description' => 'إضافة فعاليات جديدة وربطها بالجهات المستهدفة.'],
-        ['title' => 'متابعة الملاحظات', 'description' => 'استقبال الملاحظات وتحديث البيانات المطلوبة.'],
-        ['title' => 'جاهزية الاعتماد', 'description' => 'التحقق من استكمال البيانات قبل الإرسال.'],
+        [
+            'title' => __('app.roles.relations_officer.actions.create_event.title'),
+            'description' => __('app.roles.relations_officer.actions.create_event.description'),
+        ],
+        [
+            'title' => __('app.roles.relations_officer.actions.notes.title'),
+            'description' => __('app.roles.relations_officer.actions.notes.description'),
+        ],
+        [
+            'title' => __('app.roles.relations_officer.actions.readiness.title'),
+            'description' => __('app.roles.relations_officer.actions.readiness.description'),
+        ],
     ];
 @endphp
 
