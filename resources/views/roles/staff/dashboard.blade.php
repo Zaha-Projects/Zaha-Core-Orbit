@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة الموظف';
-    $subtitle = 'الوصول السريع للمهام المسموح بها.';
+    $title = __('app.roles.staff.title');
+    $subtitle = __('app.roles.staff.subtitle');
     $actions = [
-        ['title' => 'عرض الأجندة', 'description' => 'استعراض الفعاليات المعتمدة.'],
-        ['title' => 'عرض الأنشطة', 'description' => 'متابعة الأنشطة الشهرية المرتبطة.'],
-        ['title' => 'ملخص المهام', 'description' => 'عرض المهام المطلوبة حسب الدور الحالي.'],
+        [
+            'title' => __('app.roles.staff.actions.agenda.title'),
+            'description' => __('app.roles.staff.actions.agenda.description'),
+        ],
+        [
+            'title' => __('app.roles.staff.actions.activities.title'),
+            'description' => __('app.roles.staff.actions.activities.description'),
+        ],
+        [
+            'title' => __('app.roles.staff.actions.summary.title'),
+            'description' => __('app.roles.staff.actions.summary.description'),
+        ],
     ];
 @endphp
 

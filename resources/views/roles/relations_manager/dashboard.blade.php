@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة مدير العلاقات العامة';
-    $subtitle = 'إدارة الأجندة السنوية واعتمادات العلاقات.';
+    $title = __('app.roles.relations_manager.title');
+    $subtitle = __('app.roles.relations_manager.subtitle');
     $actions = [
-        ['title' => 'إعداد الأجندة', 'description' => 'إضافة الفعاليات السنوية ومراجعتها قبل الاعتماد.'],
-        ['title' => 'اعتماد العلاقات', 'description' => 'متابعة الموافقات وإرسالها للخطوة التالية.'],
-        ['title' => 'تقارير الأجندة', 'description' => 'عرض ملخص الفعاليات حسب الفروع والمراكز.'],
+        [
+            'title' => __('app.roles.relations_manager.actions.agenda.title'),
+            'description' => __('app.roles.relations_manager.actions.agenda.description'),
+        ],
+        [
+            'title' => __('app.roles.relations_manager.actions.approvals.title'),
+            'description' => __('app.roles.relations_manager.actions.approvals.description'),
+        ],
+        [
+            'title' => __('app.roles.relations_manager.actions.reports.title'),
+            'description' => __('app.roles.relations_manager.actions.reports.description'),
+        ],
     ];
 @endphp
 

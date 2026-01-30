@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة مدير البرامج';
-    $subtitle = 'الإشراف على الخطة الشهرية ومسارات الاعتماد.';
+    $title = __('app.roles.programs_manager.title');
+    $subtitle = __('app.roles.programs_manager.subtitle');
     $actions = [
-        ['title' => 'اعتماد الأنشطة', 'description' => 'مراجعة الطلبات وإرسالها للتنفيذ.'],
-        ['title' => 'متابعة التنفيذ', 'description' => 'تتبّع الأنشطة المغلقة والمرفقات النهائية.'],
-        ['title' => 'تقارير البرامج', 'description' => 'عرض أداء الأنشطة حسب الفروع والمراكز.'],
+        [
+            'title' => __('app.roles.programs_manager.actions.approvals.title'),
+            'description' => __('app.roles.programs_manager.actions.approvals.description'),
+        ],
+        [
+            'title' => __('app.roles.programs_manager.actions.tracking.title'),
+            'description' => __('app.roles.programs_manager.actions.tracking.description'),
+        ],
+        [
+            'title' => __('app.roles.programs_manager.actions.reports.title'),
+            'description' => __('app.roles.programs_manager.actions.reports.description'),
+        ],
     ];
 @endphp
 

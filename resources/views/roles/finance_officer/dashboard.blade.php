@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة الشؤون المالية';
-    $subtitle = 'متابعة الإيرادات والتحصيل والحجوزات.';
+    $title = __('app.roles.finance_officer.title');
+    $subtitle = __('app.roles.finance_officer.subtitle');
     $actions = [
-        ['title' => 'الدعم النقدي', 'description' => 'تسجيل الدعم وربطه بالأنشطة.'],
-        ['title' => 'الحجوزات', 'description' => 'إدارة الحجوزات والتحصيل والخصومات.'],
-        ['title' => 'تقارير مالية', 'description' => 'إعداد تقارير شهرية حسب الفروع.'],
+        [
+            'title' => __('app.roles.finance_officer.actions.donations.title'),
+            'description' => __('app.roles.finance_officer.actions.donations.description'),
+        ],
+        [
+            'title' => __('app.roles.finance_officer.actions.bookings.title'),
+            'description' => __('app.roles.finance_officer.actions.bookings.description'),
+        ],
+        [
+            'title' => __('app.roles.finance_officer.actions.reports.title'),
+            'description' => __('app.roles.finance_officer.actions.reports.description'),
+        ],
     ];
 @endphp
 

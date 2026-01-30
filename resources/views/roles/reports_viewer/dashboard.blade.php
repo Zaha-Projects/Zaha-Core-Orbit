@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة التقارير';
-    $subtitle = 'متابعة التقارير التشغيلية والتصدير.';
+    $title = __('app.roles.reports_viewer.title');
+    $subtitle = __('app.roles.reports_viewer.subtitle');
     $actions = [
-        ['title' => 'تقارير الأجندة', 'description' => 'عرض حالة الفعاليات السنوية ونتائج الاعتماد.'],
-        ['title' => 'تقارير الإيرادات', 'description' => 'متابعة التحصيل والحجوزات حسب الفترة.'],
-        ['title' => 'تقارير الصيانة والنقل', 'description' => 'تحليل الأداء الشهري والتشغيلي.'],
+        [
+            'title' => __('app.roles.reports_viewer.actions.agenda.title'),
+            'description' => __('app.roles.reports_viewer.actions.agenda.description'),
+        ],
+        [
+            'title' => __('app.roles.reports_viewer.actions.revenue.title'),
+            'description' => __('app.roles.reports_viewer.actions.revenue.description'),
+        ],
+        [
+            'title' => __('app.roles.reports_viewer.actions.ops.title'),
+            'description' => __('app.roles.reports_viewer.actions.ops.description'),
+        ],
     ];
 @endphp
 

@@ -1,12 +1,22 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة الإدارة العامة';
-    $subtitle = 'ملخص شامل للوحدات وإدارة المستخدمين والصلاحيات.';
+    $title = __('app.roles.super_admin.title');
+    $subtitle = __('app.roles.super_admin.subtitle');
     $actions = [
-        ['title' => 'إدارة المستخدمين', 'description' => 'إضافة المستخدمين وربطهم بالأدوار والفروع والمراكز.'],
-        ['title' => 'متابعة الاعتمادات', 'description' => 'مراجعة حالة الأجندة والخطة الشهرية والاعتمادات.'],
-        ['title' => 'التقارير', 'description' => 'تصدير التقارير الشهرية وتتبّع الأداء.'],
+        [
+            'title' => __('app.roles.super_admin.actions.users.title'),
+            'description' => __('app.roles.super_admin.actions.users.description'),
+        ],
+        [
+            'title' => __('app.roles.super_admin.actions.approvals.title'),
+            'description' => __('app.roles.super_admin.actions.approvals.description'),
+        ],
+        [
+            'title' => __('app.roles.super_admin.actions.reports.title'),
+            'description' => __('app.roles.super_admin.actions.reports.description'),
+            'link' => route('role.super_admin.reports'),
+        ],
     ];
 @endphp
 
@@ -21,6 +31,11 @@
                         <div class="border rounded p-3 h-100">
                             <h2 class="h6 mb-2">{{ $action['title'] }}</h2>
                             <p class="text-muted mb-0">{{ $action['description'] }}</p>
+                            @if (!empty($action['link']))
+                                <a class="btn btn-sm btn-outline-primary mt-3" href="{{ $action['link'] }}">
+                                    {{ __('app.common.open_reports') }}
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach

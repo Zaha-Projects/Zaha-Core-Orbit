@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @php
-    $title = 'لوحة الصيانة';
-    $subtitle = 'إدارة بلاغات الصيانة ومسارات الاعتماد.';
+    $title = __('app.roles.maintenance_officer.title');
+    $subtitle = __('app.roles.maintenance_officer.subtitle');
     $actions = [
-        ['title' => 'بلاغات الصيانة', 'description' => 'تسجيل البلاغات وتحديد الأولويات.'],
-        ['title' => 'تفاصيل التنفيذ', 'description' => 'تحديث خطط المعالجة وتوثيق الأسباب الجذرية.'],
-        ['title' => 'اعتمادات الإغلاق', 'description' => 'متابعة مسار الموافقات حتى الإغلاق.'],
+        [
+            'title' => __('app.roles.maintenance_officer.actions.requests.title'),
+            'description' => __('app.roles.maintenance_officer.actions.requests.description'),
+        ],
+        [
+            'title' => __('app.roles.maintenance_officer.actions.work_details.title'),
+            'description' => __('app.roles.maintenance_officer.actions.work_details.description'),
+        ],
+        [
+            'title' => __('app.roles.maintenance_officer.actions.closures.title'),
+            'description' => __('app.roles.maintenance_officer.actions.closures.description'),
+        ],
     ];
 @endphp
 
