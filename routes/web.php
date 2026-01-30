@@ -22,6 +22,11 @@ use App\Http\Controllers\Roles\SuperAdmin\CentersManagementController as SuperAd
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 use App\Http\Controllers\Roles\Relations\AgendaEventsController as RelationsAgendaEventsController;
 use App\Http\Controllers\Roles\Relations\AgendaApprovalsController as RelationsAgendaApprovalsController;
+use App\Http\Controllers\Roles\Programs\MonthlyActivitiesController as ProgramsMonthlyActivitiesController;
+use App\Http\Controllers\Roles\Programs\MonthlyActivitySuppliesController as ProgramsMonthlyActivitySuppliesController;
+use App\Http\Controllers\Roles\Programs\MonthlyActivityTeamController as ProgramsMonthlyActivityTeamController;
+use App\Http\Controllers\Roles\Programs\MonthlyActivityAttachmentsController as ProgramsMonthlyActivityAttachmentsController;
+use App\Http\Controllers\Roles\Programs\MonthlyActivityApprovalsController as ProgramsMonthlyActivityApprovalsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,6 +84,23 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/relations/agenda/approvals/{agendaEvent}', [RelationsAgendaApprovalsController::class, 'update'])->middleware('role:relations_manager|relations_officer')->name('role.relations.approvals.update');
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
+    Route::get('/dashboard/programs/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'index'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.index');
+    Route::get('/dashboard/programs/monthly-activities/create', [ProgramsMonthlyActivitiesController::class, 'create'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.create');
+    Route::post('/dashboard/programs/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'store'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.store');
+    Route::get('/dashboard/programs/monthly-activities/{monthlyActivity}/edit', [ProgramsMonthlyActivitiesController::class, 'edit'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.edit');
+    Route::put('/dashboard/programs/monthly-activities/{monthlyActivity}', [ProgramsMonthlyActivitiesController::class, 'update'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.update');
+    Route::patch('/dashboard/programs/monthly-activities/{monthlyActivity}/submit', [ProgramsMonthlyActivitiesController::class, 'submit'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.submit');
+    Route::patch('/dashboard/programs/monthly-activities/{monthlyActivity}/close', [ProgramsMonthlyActivitiesController::class, 'close'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.close');
+    Route::post('/dashboard/programs/monthly-activities/{monthlyActivity}/supplies', [ProgramsMonthlyActivitySuppliesController::class, 'store'])->middleware('role:programs_manager|programs_officer')->name('role.programs.supplies.store');
+    Route::put('/dashboard/programs/supplies/{monthlyActivitySupply}', [ProgramsMonthlyActivitySuppliesController::class, 'update'])->middleware('role:programs_manager|programs_officer')->name('role.programs.supplies.update');
+    Route::delete('/dashboard/programs/supplies/{monthlyActivitySupply}', [ProgramsMonthlyActivitySuppliesController::class, 'destroy'])->middleware('role:programs_manager|programs_officer')->name('role.programs.supplies.destroy');
+    Route::post('/dashboard/programs/monthly-activities/{monthlyActivity}/team', [ProgramsMonthlyActivityTeamController::class, 'store'])->middleware('role:programs_manager|programs_officer')->name('role.programs.team.store');
+    Route::put('/dashboard/programs/team/{monthlyActivityTeam}', [ProgramsMonthlyActivityTeamController::class, 'update'])->middleware('role:programs_manager|programs_officer')->name('role.programs.team.update');
+    Route::delete('/dashboard/programs/team/{monthlyActivityTeam}', [ProgramsMonthlyActivityTeamController::class, 'destroy'])->middleware('role:programs_manager|programs_officer')->name('role.programs.team.destroy');
+    Route::post('/dashboard/programs/monthly-activities/{monthlyActivity}/attachments', [ProgramsMonthlyActivityAttachmentsController::class, 'store'])->middleware('role:programs_manager|programs_officer')->name('role.programs.attachments.store');
+    Route::delete('/dashboard/programs/attachments/{monthlyActivityAttachment}', [ProgramsMonthlyActivityAttachmentsController::class, 'destroy'])->middleware('role:programs_manager|programs_officer')->name('role.programs.attachments.destroy');
+    Route::get('/dashboard/programs/monthly-activities/approvals', [ProgramsMonthlyActivityApprovalsController::class, 'index'])->middleware('role:programs_manager|programs_officer')->name('role.programs.approvals.index');
+    Route::put('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}', [ProgramsMonthlyActivityApprovalsController::class, 'update'])->middleware('role:programs_manager|programs_officer')->name('role.programs.approvals.update');
     Route::get('/dashboard/finance', [FinanceOfficerDashboardController::class, 'index'])->middleware('role:finance_officer')->name('role.finance_officer.dashboard');
     Route::get('/dashboard/maintenance', [MaintenanceOfficerDashboardController::class, 'index'])->middleware('role:maintenance_officer')->name('role.maintenance_officer.dashboard');
     Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
