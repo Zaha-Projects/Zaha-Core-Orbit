@@ -27,10 +27,6 @@ class User extends Authenticatable
         'center_id',
         'status',
         'password',
-        'phone',
-        'branch_id',
-        'center_id',
-        'status',
     ];
 
     /**
