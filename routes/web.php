@@ -17,6 +17,8 @@ use App\Http\Controllers\Roles\SuperAdmin\RolesManagementController as SuperAdmi
 use App\Http\Controllers\Roles\SuperAdmin\UsersManagementController as SuperAdminUsersManagementController;
 use App\Http\Controllers\Roles\SuperAdmin\ApprovalsController as SuperAdminApprovalsController;
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
+use App\Http\Controllers\Roles\SuperAdmin\BranchesManagementController as SuperAdminBranchesManagementController;
+use App\Http\Controllers\Roles\SuperAdmin\CentersManagementController as SuperAdminCentersManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 
 /*
@@ -54,6 +56,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/admin/users', [SuperAdminUsersManagementController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.users.store');
     Route::put('/dashboard/admin/users/{user}', [SuperAdminUsersManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.users.update');
     Route::delete('/dashboard/admin/users/{user}', [SuperAdminUsersManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.users.destroy');
+    Route::get('/dashboard/admin/branches', [SuperAdminBranchesManagementController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.branches');
+    Route::post('/dashboard/admin/branches', [SuperAdminBranchesManagementController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.branches.store');
+    Route::put('/dashboard/admin/branches/{branch}', [SuperAdminBranchesManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.branches.update');
+    Route::delete('/dashboard/admin/branches/{branch}', [SuperAdminBranchesManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.branches.destroy');
+    Route::get('/dashboard/admin/centers', [SuperAdminCentersManagementController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.centers');
+    Route::post('/dashboard/admin/centers', [SuperAdminCentersManagementController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.centers.store');
+    Route::put('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.centers.update');
+    Route::delete('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.centers.destroy');
     Route::get('/dashboard/admin/approvals', [SuperAdminApprovalsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.approvals');
     Route::get('/dashboard/relations/manager', [RelationsManagerDashboardController::class, 'index'])->middleware('role:relations_manager')->name('role.relations_manager.dashboard');
     Route::get('/dashboard/relations/officer', [RelationsOfficerDashboardController::class, 'index'])->middleware('role:relations_officer')->name('role.relations_officer.dashboard');

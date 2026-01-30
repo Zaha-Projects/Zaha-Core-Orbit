@@ -7,6 +7,12 @@
         <a class="btn btn-sm btn-outline-primary text-start" href="{{ route('role.super_admin.users') }}">
             {{ __('app.roles.super_admin.sidebar.users') }}
         </a>
+        <a class="btn btn-sm btn-outline-primary text-start" href="{{ route('role.super_admin.branches') }}">
+            {{ __('app.roles.super_admin.sidebar.branches') }}
+        </a>
+        <a class="btn btn-sm btn-outline-primary text-start" href="{{ route('role.super_admin.centers') }}">
+            {{ __('app.roles.super_admin.sidebar.centers') }}
+        </a>
         <a class="btn btn-sm btn-outline-primary text-start" href="{{ route('role.super_admin.roles') }}">
             {{ __('app.roles.super_admin.sidebar.roles') }}
         </a>
