@@ -20,6 +20,8 @@ use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReports
 use App\Http\Controllers\Roles\SuperAdmin\BranchesManagementController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\SuperAdmin\CentersManagementController as SuperAdminCentersManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
+use App\Http\Controllers\Roles\Relations\AgendaEventsController as RelationsAgendaEventsController;
+use App\Http\Controllers\Roles\Relations\AgendaApprovalsController as RelationsAgendaApprovalsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,6 +69,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/admin/approvals', [SuperAdminApprovalsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.approvals');
     Route::get('/dashboard/relations/manager', [RelationsManagerDashboardController::class, 'index'])->middleware('role:relations_manager')->name('role.relations_manager.dashboard');
     Route::get('/dashboard/relations/officer', [RelationsOfficerDashboardController::class, 'index'])->middleware('role:relations_officer')->name('role.relations_officer.dashboard');
+    Route::get('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'index'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.index');
+    Route::get('/dashboard/relations/agenda/create', [RelationsAgendaEventsController::class, 'create'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.create');
+    Route::post('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'store'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.store');
+    Route::get('/dashboard/relations/agenda/{agendaEvent}/edit', [RelationsAgendaEventsController::class, 'edit'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.edit');
+    Route::put('/dashboard/relations/agenda/{agendaEvent}', [RelationsAgendaEventsController::class, 'update'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.update');
+    Route::patch('/dashboard/relations/agenda/{agendaEvent}/submit', [RelationsAgendaEventsController::class, 'submit'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.submit');
+    Route::get('/dashboard/relations/agenda/approvals', [RelationsAgendaApprovalsController::class, 'index'])->middleware('role:relations_manager|relations_officer')->name('role.relations.approvals.index');
+    Route::put('/dashboard/relations/agenda/approvals/{agendaEvent}', [RelationsAgendaApprovalsController::class, 'update'])->middleware('role:relations_manager|relations_officer')->name('role.relations.approvals.update');
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
     Route::get('/dashboard/finance', [FinanceOfficerDashboardController::class, 'index'])->middleware('role:finance_officer')->name('role.finance_officer.dashboard');

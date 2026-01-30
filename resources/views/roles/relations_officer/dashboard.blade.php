@@ -7,10 +7,12 @@
         [
             'title' => __('app.roles.relations_officer.actions.create_event.title'),
             'description' => __('app.roles.relations_officer.actions.create_event.description'),
+            'link' => route('role.relations.agenda.index'),
         ],
         [
             'title' => __('app.roles.relations_officer.actions.notes.title'),
             'description' => __('app.roles.relations_officer.actions.notes.description'),
+            'link' => route('role.relations.approvals.index'),
         ],
         [
             'title' => __('app.roles.relations_officer.actions.readiness.title'),
@@ -30,6 +32,11 @@
                         <div class="border rounded p-3 h-100">
                             <h2 class="h6 mb-2">{{ $action['title'] }}</h2>
                             <p class="text-muted mb-0">{{ $action['description'] }}</p>
+                            @if (!empty($action['link']))
+                                <a class="btn btn-sm btn-outline-primary mt-3" href="{{ $action['link'] }}">
+                                    {{ __('app.common.open_section') }}
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach
