@@ -27,6 +27,10 @@ use App\Http\Controllers\Roles\Programs\MonthlyActivitySuppliesController as Pro
 use App\Http\Controllers\Roles\Programs\MonthlyActivityTeamController as ProgramsMonthlyActivityTeamController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityAttachmentsController as ProgramsMonthlyActivityAttachmentsController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityApprovalsController as ProgramsMonthlyActivityApprovalsController;
+use App\Http\Controllers\Roles\Finance\DonationsCashController as FinanceDonationsCashController;
+use App\Http\Controllers\Roles\Finance\BookingsController as FinanceBookingsController;
+use App\Http\Controllers\Roles\Finance\ZahaTimeBookingsController as FinanceZahaTimeBookingsController;
+use App\Http\Controllers\Roles\Finance\PaymentsController as FinancePaymentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -102,6 +106,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/programs/monthly-activities/approvals', [ProgramsMonthlyActivityApprovalsController::class, 'index'])->middleware('role:programs_manager|programs_officer')->name('role.programs.approvals.index');
     Route::put('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}', [ProgramsMonthlyActivityApprovalsController::class, 'update'])->middleware('role:programs_manager|programs_officer')->name('role.programs.approvals.update');
     Route::get('/dashboard/finance', [FinanceOfficerDashboardController::class, 'index'])->middleware('role:finance_officer')->name('role.finance_officer.dashboard');
+    Route::get('/dashboard/finance/donations', [FinanceDonationsCashController::class, 'index'])->middleware('role:finance_officer')->name('role.finance.donations.index');
+    Route::get('/dashboard/finance/donations/create', [FinanceDonationsCashController::class, 'create'])->middleware('role:finance_officer')->name('role.finance.donations.create');
+    Route::post('/dashboard/finance/donations', [FinanceDonationsCashController::class, 'store'])->middleware('role:finance_officer')->name('role.finance.donations.store');
+    Route::get('/dashboard/finance/donations/{donationCash}/edit', [FinanceDonationsCashController::class, 'edit'])->middleware('role:finance_officer')->name('role.finance.donations.edit');
+    Route::put('/dashboard/finance/donations/{donationCash}', [FinanceDonationsCashController::class, 'update'])->middleware('role:finance_officer')->name('role.finance.donations.update');
+    Route::get('/dashboard/finance/bookings', [FinanceBookingsController::class, 'index'])->middleware('role:finance_officer')->name('role.finance.bookings.index');
+    Route::get('/dashboard/finance/bookings/create', [FinanceBookingsController::class, 'create'])->middleware('role:finance_officer')->name('role.finance.bookings.create');
+    Route::post('/dashboard/finance/bookings', [FinanceBookingsController::class, 'store'])->middleware('role:finance_officer')->name('role.finance.bookings.store');
+    Route::get('/dashboard/finance/bookings/{booking}/edit', [FinanceBookingsController::class, 'edit'])->middleware('role:finance_officer')->name('role.finance.bookings.edit');
+    Route::put('/dashboard/finance/bookings/{booking}', [FinanceBookingsController::class, 'update'])->middleware('role:finance_officer')->name('role.finance.bookings.update');
+    Route::get('/dashboard/finance/zaha-time', [FinanceZahaTimeBookingsController::class, 'index'])->middleware('role:finance_officer')->name('role.finance.zaha_time.index');
+    Route::get('/dashboard/finance/zaha-time/create', [FinanceZahaTimeBookingsController::class, 'create'])->middleware('role:finance_officer')->name('role.finance.zaha_time.create');
+    Route::post('/dashboard/finance/zaha-time', [FinanceZahaTimeBookingsController::class, 'store'])->middleware('role:finance_officer')->name('role.finance.zaha_time.store');
+    Route::get('/dashboard/finance/zaha-time/{zahaTimeBooking}/edit', [FinanceZahaTimeBookingsController::class, 'edit'])->middleware('role:finance_officer')->name('role.finance.zaha_time.edit');
+    Route::put('/dashboard/finance/zaha-time/{zahaTimeBooking}', [FinanceZahaTimeBookingsController::class, 'update'])->middleware('role:finance_officer')->name('role.finance.zaha_time.update');
+    Route::get('/dashboard/finance/payments', [FinancePaymentsController::class, 'index'])->middleware('role:finance_officer')->name('role.finance.payments.index');
+    Route::post('/dashboard/finance/payments', [FinancePaymentsController::class, 'store'])->middleware('role:finance_officer')->name('role.finance.payments.store');
+    Route::put('/dashboard/finance/payments/{payment}', [FinancePaymentsController::class, 'update'])->middleware('role:finance_officer')->name('role.finance.payments.update');
     Route::get('/dashboard/maintenance', [MaintenanceOfficerDashboardController::class, 'index'])->middleware('role:maintenance_officer')->name('role.maintenance_officer.dashboard');
     Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
     Route::get('/dashboard/reports', [ReportsViewerDashboardController::class, 'index'])->middleware('role:reports_viewer')->name('role.reports_viewer.dashboard');
