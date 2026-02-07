@@ -7,14 +7,17 @@
         [
             'title' => __('app.roles.maintenance_officer.actions.requests.title'),
             'description' => __('app.roles.maintenance_officer.actions.requests.description'),
+            'link' => route('role.maintenance.requests.index'),
         ],
         [
             'title' => __('app.roles.maintenance_officer.actions.work_details.title'),
             'description' => __('app.roles.maintenance_officer.actions.work_details.description'),
+            'link' => route('role.maintenance.requests.index'),
         ],
         [
             'title' => __('app.roles.maintenance_officer.actions.closures.title'),
             'description' => __('app.roles.maintenance_officer.actions.closures.description'),
+            'link' => route('role.maintenance.approvals.index'),
         ],
     ];
 @endphp
@@ -30,6 +33,11 @@
                         <div class="border rounded p-3 h-100">
                             <h2 class="h6 mb-2">{{ $action['title'] }}</h2>
                             <p class="text-muted mb-0">{{ $action['description'] }}</p>
+                            @if (!empty($action['link']))
+                                <a class="btn btn-sm btn-outline-primary mt-3" href="{{ $action['link'] }}">
+                                    {{ __('app.common.open_section') }}
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach

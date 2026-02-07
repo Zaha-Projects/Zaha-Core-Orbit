@@ -7,10 +7,22 @@
         [
             'title' => __('app.roles.finance_officer.actions.donations.title'),
             'description' => __('app.roles.finance_officer.actions.donations.description'),
+            'link' => route('role.finance.donations.index'),
         ],
         [
             'title' => __('app.roles.finance_officer.actions.bookings.title'),
             'description' => __('app.roles.finance_officer.actions.bookings.description'),
+            'link' => route('role.finance.bookings.index'),
+        ],
+        [
+            'title' => __('app.roles.finance_officer.actions.zaha_time.title'),
+            'description' => __('app.roles.finance_officer.actions.zaha_time.description'),
+            'link' => route('role.finance.zaha_time.index'),
+        ],
+        [
+            'title' => __('app.roles.finance_officer.actions.payments.title'),
+            'description' => __('app.roles.finance_officer.actions.payments.description'),
+            'link' => route('role.finance.payments.index'),
         ],
         [
             'title' => __('app.roles.finance_officer.actions.reports.title'),
@@ -30,6 +42,11 @@
                         <div class="border rounded p-3 h-100">
                             <h2 class="h6 mb-2">{{ $action['title'] }}</h2>
                             <p class="text-muted mb-0">{{ $action['description'] }}</p>
+                            @if (!empty($action['link']))
+                                <a class="btn btn-sm btn-outline-primary mt-3" href="{{ $action['link'] }}">
+                                    {{ __('app.common.open_section') }}
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach

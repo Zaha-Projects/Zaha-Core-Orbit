@@ -7,10 +7,12 @@
         [
             'title' => __('app.roles.staff.actions.agenda.title'),
             'description' => __('app.roles.staff.actions.agenda.description'),
+            'link' => route('role.staff.agenda.index'),
         ],
         [
             'title' => __('app.roles.staff.actions.activities.title'),
             'description' => __('app.roles.staff.actions.activities.description'),
+            'link' => route('role.staff.activities.index'),
         ],
         [
             'title' => __('app.roles.staff.actions.summary.title'),
@@ -30,6 +32,11 @@
                         <div class="border rounded p-3 h-100">
                             <h2 class="h6 mb-2">{{ $action['title'] }}</h2>
                             <p class="text-muted mb-0">{{ $action['description'] }}</p>
+                            @if (!empty($action['link']))
+                                <a class="btn btn-sm btn-outline-primary mt-3" href="{{ $action['link'] }}">
+                                    {{ __('app.common.open_section') }}
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach

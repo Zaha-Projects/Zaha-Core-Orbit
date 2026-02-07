@@ -7,14 +7,17 @@
         [
             'title' => __('app.roles.programs_officer.actions.add_activity.title'),
             'description' => __('app.roles.programs_officer.actions.add_activity.description'),
+            'link' => route('role.programs.activities.index'),
         ],
         [
             'title' => __('app.roles.programs_officer.actions.attachments.title'),
             'description' => __('app.roles.programs_officer.actions.attachments.description'),
+            'link' => route('role.programs.activities.index'),
         ],
         [
             'title' => __('app.roles.programs_officer.actions.approval_followup.title'),
             'description' => __('app.roles.programs_officer.actions.approval_followup.description'),
+            'link' => route('role.programs.approvals.index'),
         ],
     ];
 @endphp
@@ -30,6 +33,11 @@
                         <div class="border rounded p-3 h-100">
                             <h2 class="h6 mb-2">{{ $action['title'] }}</h2>
                             <p class="text-muted mb-0">{{ $action['description'] }}</p>
+                            @if (!empty($action['link']))
+                                <a class="btn btn-sm btn-outline-primary mt-3" href="{{ $action['link'] }}">
+                                    {{ __('app.common.open_section') }}
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach
