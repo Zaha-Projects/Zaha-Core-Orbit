@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Roles\Relations;
 use App\Http\Controllers\Controller;
 use App\Models\AgendaApproval;
 use App\Models\AgendaEvent;
+use App\Models\WorkflowActionLog;
 use Illuminate\Http\Request;
 
 class AgendaApprovalsController extends Controller
@@ -26,18 +27,69 @@ class AgendaApprovalsController extends Controller
             'comment' => ['nullable', 'string'],
         ]);
 
+        $user = $request->user();
+        $step = $user->hasRole('executive_manager') ? 'executive_review' : 'relations_review';
+
+        if ($step === 'relations_review' && ! $user->hasRole('relations_manager')) {
+            abort(403);
+        }
+
+        if ($step === 'executive_review' && ! $user->hasRole('executive_manager')) {
+            abort(403);
+        }
+
+        if ((int) $agendaEvent->created_by === (int) $user->id) {
+            return back()->withErrors(['decision' => 'لا يمكن لمنشئ الفعالية اعتمادها بنفسه.']);
+        }
+
+        if ($step === 'executive_review' && $agendaEvent->relations_approval_status !== 'approved') {
+            return back()->withErrors(['decision' => 'لا يمكن اعتماد المدير التنفيذي قبل اعتماد العلاقات.']);
+        }
+
+        if ($step === 'relations_review' && ! in_array($agendaEvent->status, ['submitted', 'changes_requested'], true)) {
+            return back()->withErrors(['decision' => 'لا يمكن اعتماد هذه الفعالية في حالتها الحالية.']);
+        }
+
+        if ($step === 'executive_review' && $agendaEvent->status !== 'relations_approved') {
+            return back()->withErrors(['decision' => 'لا يمكن اعتماد التنفيذي إلا بعد اكتمال اعتماد العلاقات.']);
+        }
+
         AgendaApproval::create([
             'agenda_event_id' => $agendaEvent->id,
-            'step' => 'relations_review',
+            'step' => $step,
             'decision' => $data['decision'],
             'comment' => $data['comment'] ?? null,
-            'approved_by' => $request->user()->id,
+            'approved_by' => $user->id,
             'approved_at' => now(),
         ]);
 
-        $agendaEvent->update([
-            'status' => $data['decision'] === 'approved' ? 'relations_approved' : 'changes_requested',
-            'approved_by_relations_at' => $data['decision'] === 'approved' ? now() : null,
+        if ($step === 'relations_review') {
+            $agendaEvent->update([
+                'status' => $data['decision'] === 'approved' ? 'relations_approved' : 'changes_requested',
+                'relations_approval_status' => $data['decision'],
+                'executive_approval_status' => 'pending',
+                'approved_by_relations_at' => $data['decision'] === 'approved' ? now() : null,
+                'approved_by_executive_at' => null,
+            ]);
+        }
+
+        if ($step === 'executive_review') {
+            $agendaEvent->update([
+                'status' => $data['decision'] === 'approved' ? 'published' : 'changes_requested',
+                'executive_approval_status' => $data['decision'],
+                'approved_by_executive_at' => $data['decision'] === 'approved' ? now() : null,
+            ]);
+        }
+
+        WorkflowActionLog::create([
+            'module' => 'agenda',
+            'entity_type' => AgendaEvent::class,
+            'entity_id' => $agendaEvent->id,
+            'action_type' => 'approval_decision',
+            'status' => $data['decision'],
+            'performed_by' => $user->id,
+            'meta' => ['step' => $step],
+            'performed_at' => now(),
         ]);
 
         return redirect()
