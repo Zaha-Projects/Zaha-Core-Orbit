@@ -26,10 +26,17 @@ class RolePermissionSeeder extends Seeder
             'transport.view',
             'transport.manage',
             'reports.view',
+            'departments.view',
+            'departments.manage',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            [$module, $action] = explode('.', $permission) + [null, null];
+
+            Permission::firstOrCreate(
+                ['name' => $permission, 'guard_name' => 'web'],
+                ['module' => $module, 'action' => $action]
+            );
         }
 
         $roles = [
@@ -46,7 +53,7 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($roles as $roleName => $rolePermissions) {
-            $role = Role::firstOrCreate(['name' => $roleName]);
+            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
             $role->syncPermissions($rolePermissions);
         }
     }

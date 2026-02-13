@@ -5,6 +5,7 @@ namespace Tests\Feature\SuperAdmin;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -79,6 +80,22 @@ class DepartmentsManagementTest extends TestCase
 
         $response->assertRedirect(route('role.super_admin.departments', ['search' => 'Tem', 'sort' => 'name_desc']));
         $this->assertSoftDeleted('departments', ['id' => $department->id]);
+    }
+
+
+    public function test_user_with_departments_view_permission_can_access_page(): void
+    {
+        $permission = Permission::firstOrCreate([
+            'name' => 'departments.view',
+            'guard_name' => 'web',
+        ]);
+
+        $user = User::factory()->create();
+        $user->givePermissionTo($permission);
+
+        $response = $this->actingAs($user)->get(route('role.super_admin.departments'));
+
+        $response->assertOk();
     }
 
     public function test_non_super_admin_cannot_access_departments_page(): void
