@@ -43,6 +43,15 @@ class MonthlyActivitiesController extends Controller
             'year' => ['required', 'integer', 'min:2020', 'max:2100'],
         ]);
 
+        $centerBelongsToBranch = Center::query()
+            ->where('id', $data['center_id'])
+            ->where('branch_id', $data['branch_id'])
+            ->exists();
+
+        if (! $centerBelongsToBranch) {
+            return back()->withErrors(['center_id' => 'المركز المختار لا يتبع الفرع المحدد.']);
+        }
+
         $events = AgendaEvent::query()
             ->where(function ($query) use ($data) {
                 $query->where(function ($q) use ($data) {

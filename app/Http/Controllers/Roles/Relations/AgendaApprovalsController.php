@@ -29,12 +29,28 @@ class AgendaApprovalsController extends Controller
         $user = $request->user();
         $step = $user->hasRole('executive_manager') ? 'executive_review' : 'relations_review';
 
+        if ($step === 'relations_review' && ! $user->hasRole('relations_manager')) {
+            abort(403);
+        }
+
+        if ($step === 'executive_review' && ! $user->hasRole('executive_manager')) {
+            abort(403);
+        }
+
         if ((int) $agendaEvent->created_by === (int) $user->id) {
             return back()->withErrors(['decision' => 'لا يمكن لمنشئ الفعالية اعتمادها بنفسه.']);
         }
 
         if ($step === 'executive_review' && $agendaEvent->relations_approval_status !== 'approved') {
             return back()->withErrors(['decision' => 'لا يمكن اعتماد المدير التنفيذي قبل اعتماد العلاقات.']);
+        }
+
+        if ($step === 'relations_review' && ! in_array($agendaEvent->status, ['submitted', 'changes_requested'], true)) {
+            return back()->withErrors(['decision' => 'لا يمكن اعتماد هذه الفعالية في حالتها الحالية.']);
+        }
+
+        if ($step === 'executive_review' && $agendaEvent->status !== 'relations_approved') {
+            return back()->withErrors(['decision' => 'لا يمكن اعتماد التنفيذي إلا بعد اكتمال اعتماد العلاقات.']);
         }
 
         AgendaApproval::create([

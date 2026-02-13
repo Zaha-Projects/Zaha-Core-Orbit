@@ -31,10 +31,10 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">صنف الفعالية</label>
-                    <select class="form-select" name="event_category_id">
+                    <select class="form-select" name="event_category_id" id="event_category_id">
                         <option value="">--</option>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" @selected(old('event_category_id') == $category->id)>{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" @selected(old('event_category_id') == $category->id)>{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -79,4 +79,31 @@
             </form>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const departmentEl = document.querySelector('select[name="department_id"]');
+            const categoryEl = document.getElementById('event_category_id');
+
+            function filterCategories() {
+                const departmentId = departmentEl.value;
+
+                Array.from(categoryEl.options).forEach((option) => {
+                    const categoryDepartmentId = option.dataset.departmentId;
+                    if (!categoryDepartmentId) {
+                        option.hidden = false;
+                        return;
+                    }
+                    option.hidden = departmentId !== '' && categoryDepartmentId !== departmentId;
+                });
+
+                if (categoryEl.selectedOptions[0]?.hidden) {
+                    categoryEl.value = '';
+                }
+            }
+
+            departmentEl.addEventListener('change', filterCategories);
+            filterCategories();
+        })();
+    </script>
 @endsection

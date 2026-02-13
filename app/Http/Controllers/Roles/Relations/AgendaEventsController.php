@@ -10,9 +10,26 @@ use App\Models\Department;
 use App\Models\EventCategory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AgendaEventsController extends Controller
 {
+    protected function assertEventManageAccess(Request $request, AgendaEvent $agendaEvent): void
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('relations_manager')) {
+            return;
+        }
+
+        abort_unless(
+            $user->hasRole('relations_officer')
+            && (int) $agendaEvent->created_by === (int) $user->id
+            && in_array($agendaEvent->status, ['draft', 'changes_requested'], true),
+            403
+        );
+    }
+
     public function index()
     {
         $events = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
@@ -37,7 +54,16 @@ class AgendaEventsController extends Controller
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
             'department_id' => ['nullable', 'exists:departments,id'],
-            'event_category_id' => ['nullable', 'exists:event_categories,id'],
+            'event_category_id' => [
+                'nullable',
+                Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
+                    $departmentId = (int) $request->input('department_id');
+
+                    if ($departmentId > 0) {
+                        $query->where('department_id', $departmentId);
+                    }
+                }),
+            ],
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
@@ -82,6 +108,8 @@ class AgendaEventsController extends Controller
 
     public function edit(AgendaEvent $agendaEvent)
     {
+        $this->assertEventManageAccess(request(), $agendaEvent);
+
         $agendaEvent->load('participations');
         $departments = Department::orderBy('name')->get();
         $categories = EventCategory::where('active', true)->orderBy('name')->get();
@@ -96,11 +124,22 @@ class AgendaEventsController extends Controller
 
     public function update(Request $request, AgendaEvent $agendaEvent)
     {
+        $this->assertEventManageAccess($request, $agendaEvent);
+
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
             'department_id' => ['nullable', 'exists:departments,id'],
-            'event_category_id' => ['nullable', 'exists:event_categories,id'],
+            'event_category_id' => [
+                'nullable',
+                Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
+                    $departmentId = (int) $request->input('department_id');
+
+                    if ($departmentId > 0) {
+                        $query->where('department_id', $departmentId);
+                    }
+                }),
+            ],
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
@@ -142,6 +181,8 @@ class AgendaEventsController extends Controller
 
     public function submit(Request $request, AgendaEvent $agendaEvent)
     {
+        $this->assertEventManageAccess($request, $agendaEvent);
+
         if (
             $agendaEvent->event_type === 'optional'
             && ! $agendaEvent->participations()
