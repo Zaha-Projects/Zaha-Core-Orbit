@@ -26,6 +26,8 @@ class RolePermissionSeeder extends Seeder
             'transport.view',
             'transport.manage',
             'reports.view',
+            'departments.view',
+            'departments.manage',
             'kpi.view',
             'kpi.manage',
             'agenda.participation.update',
