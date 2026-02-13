@@ -22,10 +22,34 @@
                 <div class="alert alert-success">{{ session('status') }}</div>
             @endif
 
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <form method="GET" action="{{ route('role.super_admin.departments') }}" class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">{{ __('app.roles.super_admin.departments.filters.search') }}</label>
+                            <input class="form-control" name="search" value="{{ $search ?? '' }}" placeholder="{{ __('app.roles.super_admin.departments.filters.search_placeholder') }}">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">{{ __('app.roles.super_admin.departments.filters.sort') }}</label>
+                            <select class="form-select" name="sort">
+                                <option value="name_asc" @selected(($sort ?? 'name_asc') === 'name_asc')>{{ __('app.roles.super_admin.departments.filters.sort_name_asc') }}</option>
+                                <option value="name_desc" @selected(($sort ?? 'name_asc') === 'name_desc')>{{ __('app.roles.super_admin.departments.filters.sort_name_desc') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2 d-flex justify-content-end">
+                            <button class="btn btn-outline-primary w-100" type="submit">{{ __('app.roles.super_admin.departments.filters.apply') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <h2 class="h6 mb-3">{{ __('app.roles.super_admin.departments.create_title') }}</h2>
                     <form method="POST" action="{{ route('role.super_admin.departments.store') }}" class="row g-3">
+                        <input type="hidden" name="search" value="{{ $search ?? '' }}">
+                        <input type="hidden" name="sort" value="{{ $sort ?? 'name_asc' }}">
                         @csrf
                         <div class="col-12 col-md-8">
                             <label class="form-label">{{ __('app.roles.super_admin.departments.fields.name') }}</label>
@@ -62,7 +86,7 @@
                                             <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-department-{{ $department->id }}">
                                                 {{ __('app.roles.super_admin.departments.actions.edit') }}
                                             </button>
-                                            <form class="d-inline" method="POST" action="{{ route('role.super_admin.departments.destroy', $department) }}">
+                                            <form class="d-inline" method="POST" action="{{ route('role.super_admin.departments.destroy', [$department, 'search' => $search ?? '', 'sort' => $sort ?? 'name_asc']) }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="btn btn-sm btn-outline-danger" type="submit">
@@ -73,9 +97,11 @@
                                     </tr>
                                     <tr class="collapse" id="edit-department-{{ $department->id }}">
                                         <td colspan="2">
-                                            <form method="POST" action="{{ route('role.super_admin.departments.update', $department) }}" class="row g-3">
+                                            <form method="POST" action="{{ route('role.super_admin.departments.update', [$department, 'search' => $search ?? '', 'sort' => $sort ?? 'name_asc']) }}" class="row g-3">
                                                 @csrf
                                                 @method('PUT')
+                                                <input type="hidden" name="search" value="{{ $search ?? '' }}">
+                                                <input type="hidden" name="sort" value="{{ $sort ?? 'name_asc' }}">
                                                 <div class="col-12 col-md-8">
                                                     <label class="form-label">{{ __('app.roles.super_admin.departments.fields.name') }}</label>
                                                     <input class="form-control" name="name" value="{{ $department->name }}" required>

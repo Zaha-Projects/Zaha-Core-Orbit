@@ -4,15 +4,32 @@ namespace App\Http\Controllers\Roles\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class DepartmentsManagementController extends Controller
 {
-    public function index()
+    private function indexRouteParameters(Request $request): array
     {
-        $departments = Department::orderBy('name')->get();
+        return [
+            'search' => trim((string) $request->input('search', '')),
+            'sort' => $request->input('sort') === 'name_desc' ? 'name_desc' : 'name_asc',
+        ];
+    }
 
-        return view('roles.super_admin.departments', compact('departments'));
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        $sort = $request->query('sort') === 'name_desc' ? 'name_desc' : 'name_asc';
+
+        $departments = Department::query()
+            ->when($search !== '', function (Builder $query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            })
+            ->orderBy('name', $sort === 'name_desc' ? 'desc' : 'asc')
+            ->get();
+
+        return view('roles.super_admin.departments', compact('departments', 'search', 'sort'));
     }
 
     public function store(Request $request)
@@ -24,7 +41,7 @@ class DepartmentsManagementController extends Controller
         Department::create($data);
 
         return redirect()
-            ->route('role.super_admin.departments')
+            ->route('role.super_admin.departments', $this->indexRouteParameters($request))
             ->with('status', __('app.roles.super_admin.departments.created'));
     }
 
@@ -37,17 +54,17 @@ class DepartmentsManagementController extends Controller
         $department->update($data);
 
         return redirect()
-            ->route('role.super_admin.departments')
+            ->route('role.super_admin.departments', $this->indexRouteParameters($request))
             ->with('status', __('app.roles.super_admin.departments.updated', ['department' => $department->name]));
     }
 
-    public function destroy(Department $department)
+    public function destroy(Request $request, Department $department)
     {
         $name = $department->name;
         $department->delete();
 
         return redirect()
-            ->route('role.super_admin.departments')
+            ->route('role.super_admin.departments', $this->indexRouteParameters($request))
             ->with('status', __('app.roles.super_admin.departments.deleted', ['department' => $name]));
     }
 }
