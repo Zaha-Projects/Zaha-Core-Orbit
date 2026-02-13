@@ -26,6 +26,9 @@
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.title') }}</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.date') }}</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.status') }}</th>
+                            <th>اعتماد العلاقات (ضابط/مدير)</th>
+                            <th>اعتماد البرامج (ضابط/مدير)</th>
+                            <th>اعتماد التنفيذي</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.last_decision') }}</th>
                             <th class="text-end">{{ __('app.roles.programs.monthly_activities.approvals.table.actions') }}</th>
                         </tr>
@@ -39,6 +42,9 @@
                                 <td>{{ $activity->title }}</td>
                                 <td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td>
                                 <td>{{ $activity->status }}</td>
+                                <td>{{ $activity->relations_officer_approval_status }} / {{ $activity->relations_manager_approval_status }}</td>
+                                <td>{{ $activity->programs_officer_approval_status }} / {{ $activity->programs_manager_approval_status }}</td>
+                                <td>{{ $activity->executive_approval_status }}</td>
                                 <td>{{ $latestApproval?->decision ?? __('app.roles.programs.monthly_activities.approvals.table.none') }}</td>
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#approval-{{ $activity->id }}">
@@ -47,7 +53,7 @@
                                 </td>
                             </tr>
                             <tr class="collapse" id="approval-{{ $activity->id }}">
-                                <td colspan="5">
+                                <td colspan="8">
                                     <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" class="row g-3">
                                         @csrf
                                         @method('PUT')
@@ -72,7 +78,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-muted">{{ __('app.roles.programs.monthly_activities.approvals.table.empty') }}</td>
+                                <td colspan="8" class="text-muted">{{ __('app.roles.programs.monthly_activities.approvals.table.empty') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
