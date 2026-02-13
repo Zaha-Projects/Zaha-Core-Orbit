@@ -241,3 +241,104 @@
 - `staff`
 
 > بالإضافة لدعم صلاحيات تفصيلية في بعض المسارات مثل: `departments.view` و `departments.manage`.
+
+---
+
+## 13) دليل اختبار السيناريوهات (Step-by-Step)
+
+> الهدف: كيف تختبر كل سيناريو عملياً من الواجهة.
+
+### A) سيناريو المصادقة
+1. افتح `/login`.
+2. أدخل بيانات مستخدم صحيح واضغط دخول.
+3. تأكد من التحويل إلى `/dashboard`.
+4. اختبر تسجيل الخروج من زر Logout.
+5. أعد فتح أي صفحة محمية (مثلاً `/dashboard/admin`) وتأكد أنه يطلب تسجيل دخول.
+
+### B) Super Admin — إدارة المستخدمين/الفروع/المراكز/الأقسام
+1. سجل بحساب `super_admin`.
+2. افتح `/dashboard/admin` وتأكد ظهور روابط الإدارة.
+3. اذهب إلى `/dashboard/admin/users`:
+   - أنشئ مستخدم جديد (POST).
+   - عدّل المستخدم (PUT).
+   - احذف المستخدم (DELETE).
+4. كرر نفس النمط على:
+   - `/dashboard/admin/branches`
+   - `/dashboard/admin/centers`
+   - `/dashboard/admin/departments`
+5. في صفحة الأقسام: اختبر البحث والترتيب ثم نفّذ create/update/delete وتأكد بقاء `search/sort` بعد العملية.
+
+### C) صلاحيات الأقسام (Permission-based)
+1. أنشئ مستخدم بدون دور `super_admin`.
+2. امنحه `departments.view` فقط:
+   - يجب يقدر يدخل `/dashboard/admin/departments`.
+   - يجب **لا** يقدر ينفذ create/update/delete.
+3. امنحه `departments.manage`:
+   - يجب يقدر ينفذ create/update/delete على الأقسام.
+
+### D) Relations — الأجندة
+1. سجل بحساب `relations_officer` أو `relations_manager`.
+2. افتح `/dashboard/relations/agenda`.
+3. أنشئ فعالية جديدة من `/create`.
+4. عدّل الفعالية من `/edit/{id}`.
+5. نفّذ submit للاعتماد.
+6. افتح `/dashboard/relations/agenda/approvals` وسجّل قرار الاعتماد/الإرجاع.
+
+### E) Programs — الخطة الشهرية
+1. سجل بحساب `programs_officer` أو `programs_manager`.
+2. افتح `/dashboard/programs/monthly-activities`.
+3. أنشئ نشاط جديد.
+4. أضف supplies + team + attachments.
+5. نفّذ submit ثم close.
+6. افتح `/dashboard/programs/monthly-activities/approvals` واختبر تحديث حالة الاعتماد.
+
+### F) Finance — الإيرادات والحجوزات
+1. سجل بحساب `finance_officer`.
+2. اختبر Donations:
+   - إنشاء من `/finance/donations/create`.
+   - تعديل من `/finance/donations/{id}/edit`.
+3. اختبر Bookings:
+   - إنشاء + تعديل.
+4. اختبر Zaha Time:
+   - إنشاء + تعديل.
+5. اختبر Payments:
+   - إضافة دفعة جديدة.
+   - تعديل دفعة قائمة.
+
+### G) Maintenance — الطلبات والاعتمادات
+1. سجل بحساب `maintenance_officer`.
+2. افتح `/dashboard/maintenance/requests` وأنشئ طلب صيانة.
+3. عدّل الطلب.
+4. أضف work details ومرفقات.
+5. نفّذ close للطلب.
+6. افتح `/dashboard/maintenance/approvals` واختبر تحديث قرار الاعتماد.
+
+### H) Transport — المركبات/السائقون/الرحلات
+1. سجل بحساب `transport_officer`.
+2. أنشئ مركبة وعدّلها.
+3. أنشئ سائق وعدّله.
+4. أنشئ رحلة جديدة.
+5. أضف segments وrounds وعدّل/احذف بعضها.
+6. أغلق الرحلة عبر `close` وتأكد تغير الحالة.
+
+### I) Reports — التقارير والتصدير
+1. سجل بحساب `reports_viewer`.
+2. افتح:
+   - `/dashboard/reports/overview`
+   - `/dashboard/reports/agenda`
+   - `/dashboard/reports/monthly`
+   - `/dashboard/reports/finance`
+   - `/dashboard/reports/maintenance`
+   - `/dashboard/reports/transport`
+3. لكل صفحة، اختبر زر/فورم التصدير (POST export).
+4. تحقق أن الملف الناتج يتم تنزيله أو أن الرسالة المناسبة تظهر بنجاح.
+
+### J) Staff — القراءة فقط
+1. سجل بحساب `staff`.
+2. افتح `/dashboard/staff`, `/dashboard/staff/agenda`, `/dashboard/staff/activities`.
+3. تأكد عدم وجود أزرار تعديل/حذف في هذه المسارات.
+
+### K) سيناريوهات رفض الوصول (Authorization Negative Tests)
+1. افتح مسار خاص برول آخر (مثال: مستخدم staff يدخل `/dashboard/admin/users`).
+2. تأكد رجوع `403` أو إعادة التوجيه المناسبة.
+3. كرر عينة على مسارات البرامج/المالية/النقل للتأكد من العزل بين الرولز.
