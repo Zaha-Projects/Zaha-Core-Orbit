@@ -106,6 +106,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
     Route::get('/dashboard/programs/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'index'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.index');
+    Route::post('/dashboard/programs/monthly-activities/sync-from-agenda', [ProgramsMonthlyActivitiesController::class, 'syncFromAgenda'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.sync_from_agenda');
     Route::get('/dashboard/programs/monthly-activities/create', [ProgramsMonthlyActivitiesController::class, 'create'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.create');
     Route::post('/dashboard/programs/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'store'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.store');
     Route::get('/dashboard/programs/monthly-activities/{monthlyActivity}/edit', [ProgramsMonthlyActivitiesController::class, 'edit'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.edit');

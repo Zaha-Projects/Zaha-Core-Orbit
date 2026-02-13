@@ -34,6 +34,65 @@ class MonthlyActivitiesController extends Controller
         return view('roles.programs.monthly_activities.create', compact('branches', 'centers', 'agendaEvents'));
     }
 
+    public function syncFromAgenda(Request $request)
+    {
+        $data = $request->validate([
+            'branch_id' => ['required', 'exists:branches,id'],
+            'center_id' => ['required', 'exists:centers,id'],
+            'month' => ['required', 'integer', 'between:1,12'],
+            'year' => ['required', 'integer', 'min:2020', 'max:2100'],
+        ]);
+
+        $events = AgendaEvent::query()
+            ->whereMonth('event_date', $data['month'])
+            ->whereYear('event_date', $data['year'])
+            ->whereIn('status', ['relations_approved', 'published'])
+            ->where(function ($query) use ($data) {
+                $query->where('event_type', 'mandatory')
+                    ->orWhereHas('participations', function ($participationQuery) use ($data) {
+                        $participationQuery
+                            ->where('entity_type', 'branch')
+                            ->where('entity_id', $data['branch_id'])
+                            ->where('participation_status', 'participant');
+                    });
+            })
+            ->get();
+
+        $created = 0;
+        foreach ($events as $event) {
+            $exists = MonthlyActivity::query()
+                ->where('agenda_event_id', $event->id)
+                ->where('branch_id', $data['branch_id'])
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            MonthlyActivity::create([
+                'month' => (int) $event->month,
+                'day' => (int) $event->day,
+                'title' => $event->event_name,
+                'proposed_date' => optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString(),
+                'is_in_agenda' => true,
+                'agenda_event_id' => $event->id,
+                'description' => $event->notes,
+                'location_type' => 'inside_center',
+                'location_details' => null,
+                'status' => 'draft',
+                'branch_id' => (int) $data['branch_id'],
+                'center_id' => (int) $data['center_id'],
+                'created_by' => $request->user()->id,
+            ]);
+
+            $created++;
+        }
+
+        return redirect()
+            ->route('role.programs.activities.index')
+            ->with('status', "تمت مزامنة {$created} فعالية من الأجندة إلى خطة الفرع.");
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
