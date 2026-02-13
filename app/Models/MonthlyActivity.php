@@ -29,6 +29,8 @@ class MonthlyActivity extends Model
         'time_to',
         'media_coverage',
         'status',
+        'lock_at',
+        'is_official',
         'branch_id',
         'center_id',
         'created_by',
@@ -41,6 +43,8 @@ class MonthlyActivity extends Model
         'proposed_date' => 'date',
         'modified_proposed_date' => 'date',
         'actual_date' => 'date',
+        'lock_at' => 'datetime',
+        'is_official' => 'boolean',
         'time_from' => 'datetime:H:i',
         'time_to' => 'datetime:H:i',
     ];
@@ -83,6 +87,11 @@ class MonthlyActivity extends Model
     public function approvals()
     {
         return $this->hasMany(MonthlyActivityApproval::class);
+    }
+
+    public function changeLogs()
+    {
+        return $this->hasMany(MonthlyActivityChangeLog::class);
     }
 
     public function attendance()

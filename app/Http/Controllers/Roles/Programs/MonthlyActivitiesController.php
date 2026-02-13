@@ -6,12 +6,48 @@ use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\Center;
+use App\Models\MonthlyActivityChangeLog;
 use App\Models\MonthlyActivity;
+use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MonthlyActivitiesController extends Controller
 {
+    protected function monthlyLockDays(): int
+    {
+        return max(0, (int) Setting::valueOf('monthly_plan_lock_days', '5'));
+    }
+
+    protected function buildLockAt(string $proposedDate): ?Carbon
+    {
+        return Carbon::parse($proposedDate)->subDays($this->monthlyLockDays())->endOfDay();
+    }
+
+    protected function isLocked(MonthlyActivity $monthlyActivity): bool
+    {
+        return $monthlyActivity->lock_at !== null && now()->greaterThanOrEqualTo($monthlyActivity->lock_at);
+    }
+
+    protected function logChanges(MonthlyActivity $monthlyActivity, array $oldValues, array $newValues, int $userId): void
+    {
+        foreach ($newValues as $field => $newValue) {
+            $oldValue = $oldValues[$field] ?? null;
+            if ((string) $oldValue === (string) $newValue) {
+                continue;
+            }
+
+            MonthlyActivityChangeLog::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'changed_by' => $userId,
+                'field_name' => $field,
+                'old_value' => $oldValue !== null ? (string) $oldValue : null,
+                'new_value' => $newValue !== null ? (string) $newValue : null,
+                'changed_at' => now(),
+            ]);
+        }
+    }
+
     public function index()
     {
         $activities = MonthlyActivity::with(['branch', 'center', 'agendaEvent', 'creator'])
@@ -97,6 +133,8 @@ class MonthlyActivitiesController extends Controller
                 'location_type' => 'inside_center',
                 'location_details' => null,
                 'status' => 'draft',
+                'lock_at' => $this->buildLockAt(optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString()),
+                'is_official' => false,
                 'branch_id' => (int) $data['branch_id'],
                 'center_id' => (int) $data['center_id'],
                 'created_by' => $request->user()->id,
@@ -138,6 +176,8 @@ class MonthlyActivitiesController extends Controller
             'location_type' => $data['location_type'],
             'location_details' => $data['location_details'] ?? null,
             'status' => $data['status'],
+            'lock_at' => $this->buildLockAt($data['proposed_date']),
+            'is_official' => false,
             'branch_id' => $data['branch_id'],
             'center_id' => $data['center_id'],
             'created_by' => $request->user()->id,
@@ -160,6 +200,10 @@ class MonthlyActivitiesController extends Controller
 
     public function update(Request $request, MonthlyActivity $monthlyActivity)
     {
+        if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
+            return back()->withErrors(['status' => 'تم قفل هذه الفعالية وأصبحت رسمية. التعديل متاح فقط للإدارة العامة.']);
+        }
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'activity_date' => ['required', 'date'],
@@ -175,12 +219,25 @@ class MonthlyActivitiesController extends Controller
 
         $date = Carbon::parse($data['activity_date']);
 
-        $monthlyActivity->update([
+        $oldValues = $monthlyActivity->only([
+            'title',
+            'proposed_date',
+            'agenda_event_id',
+            'description',
+            'location_type',
+            'location_details',
+            'status',
+            'branch_id',
+            'center_id',
+            'month',
+            'day',
+        ]);
+
+        $newValues = [
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
             'title' => $data['title'],
             'proposed_date' => $data['proposed_date'],
-            'is_in_agenda' => !empty($data['agenda_event_id']),
             'agenda_event_id' => $data['agenda_event_id'] ?? null,
             'description' => $data['description'] ?? null,
             'location_type' => $data['location_type'],
@@ -188,7 +245,26 @@ class MonthlyActivitiesController extends Controller
             'status' => $data['status'],
             'branch_id' => $data['branch_id'],
             'center_id' => $data['center_id'],
+        ];
+
+        $monthlyActivity->update([
+            'month' => $newValues['month'],
+            'day' => $newValues['day'],
+            'title' => $newValues['title'],
+            'proposed_date' => $newValues['proposed_date'],
+            'is_in_agenda' => !empty($data['agenda_event_id']),
+            'agenda_event_id' => $newValues['agenda_event_id'],
+            'description' => $newValues['description'],
+            'location_type' => $newValues['location_type'],
+            'location_details' => $newValues['location_details'],
+            'status' => $newValues['status'],
+            'branch_id' => $newValues['branch_id'],
+            'center_id' => $newValues['center_id'],
+            'lock_at' => $this->buildLockAt($data['proposed_date']),
+            'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
         ]);
+
+        $this->logChanges($monthlyActivity, $oldValues, $newValues, $request->user()->id);
 
         return redirect()
             ->route('role.programs.activities.index')
@@ -216,6 +292,7 @@ class MonthlyActivitiesController extends Controller
         $monthlyActivity->update([
             'actual_date' => $data['actual_date'] ?? $monthlyActivity->actual_date,
             'status' => $data['status'],
+            'is_official' => true,
         ]);
 
         return redirect()
