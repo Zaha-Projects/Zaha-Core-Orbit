@@ -71,6 +71,40 @@
                 </div>
 
                 <div class="col-12">
+                    <label class="form-label">مشاركة الجهات المركزية</label>
+                    <div class="row g-2">
+                        @foreach ($departmentUnits as $unit)
+                            @php
+                                $canEditUnit = auth()->user()->hasRole('relations_manager') || auth()->user()->hasRole($unit->role_name);
+                            @endphp
+                            <div class="col-12 col-md-6">
+                                <form method="POST" action="{{ route('role.relations.agenda.unit_participation.update', $agendaEvent) }}" class="border rounded p-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="unit_key" value="{{ $unit->unit_key }}">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-semibold">{{ $unit->name }}</span>
+                                        @if (!$canEditUnit)
+                                            <span class="badge text-bg-light">عرض فقط</span>
+                                        @endif
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" name="status" @disabled(!$canEditUnit)>
+                                            <option value="unspecified" @selected(($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'unspecified')>غير محدد</option>
+                                            <option value="participant" @selected(($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'participant')>مشارك</option>
+                                            <option value="not_participant" @selected(($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'not_participant')>غير مشارك</option>
+                                        </select>
+                                        @if ($canEditUnit)
+                                            <button class="btn btn-sm btn-outline-primary" type="submit">حفظ</button>
+                                        @endif
+                                    </div>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="col-12">
                     <label class="form-label">ملاحظات</label>
                     <textarea class="form-control" name="notes" rows="3">{{ old('notes', $agendaEvent->notes) }}</textarea>
                 </div>

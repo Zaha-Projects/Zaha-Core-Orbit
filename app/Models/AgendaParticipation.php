@@ -26,5 +26,9 @@ class AgendaParticipation extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
-}
 
+    public function departmentUnit()
+    {
+        return $this->belongsTo(DepartmentUnit::class, 'entity_id')->where('entity_type', 'department_unit');
+    }
+}

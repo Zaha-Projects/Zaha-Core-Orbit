@@ -7,7 +7,9 @@ use App\Models\AgendaEvent;
 use App\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
+use App\Models\DepartmentUnit;
 use App\Models\EventCategory;
+use App\Models\AuditLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -28,6 +30,16 @@ class AgendaEventsController extends Controller
             && in_array($agendaEvent->status, ['draft', 'changes_requested'], true),
             403
         );
+    }
+
+    protected function allowedUnitRoleMap(): array
+    {
+        return [
+            'workshops_committee' => ['workshops_secretary', 'relations_manager'],
+            'communication_head' => ['communication_head', 'relations_manager'],
+            'khalda_programs_manager' => ['programs_manager', 'relations_manager'],
+            'khalda_events_relations' => ['relations_manager'],
+        ];
     }
 
     public function index()
@@ -119,7 +131,18 @@ class AgendaEventsController extends Controller
             ->pluck('participation_status', 'entity_id')
             ->toArray();
 
-        return view('roles.relations.agenda.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations'));
+        $unitStatuses = $agendaEvent->participations
+            ->where('entity_type', 'department_unit')
+            ->mapWithKeys(function ($participation) {
+                $unit = DepartmentUnit::find($participation->entity_id);
+
+                return $unit ? [$unit->unit_key => $participation->participation_status] : [];
+            })
+            ->toArray();
+
+        $departmentUnits = DepartmentUnit::orderBy('id')->get();
+
+        return view('roles.relations.agenda.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
     }
 
     public function update(Request $request, AgendaEvent $agendaEvent)
@@ -200,5 +223,53 @@ class AgendaEventsController extends Controller
         return redirect()
             ->route('role.relations.agenda.index')
             ->with('status', __('app.roles.relations.agenda.submitted', ['event' => $agendaEvent->event_name]));
+    }
+
+    public function updateUnitParticipation(Request $request, AgendaEvent $agendaEvent)
+    {
+        $data = $request->validate([
+            'unit_key' => ['required', 'string'],
+            'status' => ['required', 'in:participant,not_participant,unspecified'],
+        ]);
+
+        $roleMap = $this->allowedUnitRoleMap();
+        abort_unless(isset($roleMap[$data['unit_key']]), 422);
+
+        $user = $request->user();
+        $allowedRoles = $roleMap[$data['unit_key']];
+        $hasAllowedRole = collect($allowedRoles)->contains(fn ($role) => $user->hasRole($role));
+        abort_unless($hasAllowedRole, 403);
+
+        $unit = DepartmentUnit::where('unit_key', $data['unit_key'])->firstOrFail();
+
+        $participation = $agendaEvent->participations()
+            ->where('entity_type', 'department_unit')
+            ->where('entity_id', $unit->id)
+            ->first();
+
+        $oldStatus = $participation?->participation_status;
+
+        $agendaEvent->participations()->updateOrCreate(
+            [
+                'entity_type' => 'department_unit',
+                'entity_id' => $unit->id,
+            ],
+            [
+                'participation_status' => $data['status'],
+                'updated_by' => $user->id,
+            ]
+        );
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'agenda.unit_participation.updated',
+            'module' => 'agenda',
+            'entity_type' => AgendaEvent::class,
+            'entity_id' => $agendaEvent->id,
+            'old_values' => ['unit_key' => $data['unit_key'], 'status' => $oldStatus],
+            'new_values' => ['unit_key' => $data['unit_key'], 'status' => $data['status']],
+        ]);
+
+        return back()->with('status', 'تم تحديث مشاركة الجهة بنجاح.');
     }
 }
