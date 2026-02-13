@@ -12,14 +12,12 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $branch = Branch::firstOrCreate(
-            ['name' => 'Main Branch'],
-            ['city' => 'Riyadh', 'address' => 'Main Office']
-        );
+        $branch = Branch::orderBy('id')->first();
+        $center = Center::where('branch_id', $branch?->id)->orderBy('id')->first();
 
-        $center = Center::firstOrCreate(
-            ['name' => 'Main Center', 'branch_id' => $branch->id]
-        );
+        if (! $branch || ! $center) {
+            return;
+        }
 
         $users = [
             [
@@ -61,6 +59,26 @@ class UserSeeder extends Seeder
                 'name' => 'Transport Officer',
                 'email' => 'transport_officer@zaha.test',
                 'role' => 'transport_officer',
+            ],
+            [
+                'name' => 'Executive Manager',
+                'email' => 'executive_manager@zaha.test',
+                'role' => 'executive_manager',
+            ],
+            [
+                'name' => 'Followup Officer',
+                'email' => 'followup_officer@zaha.test',
+                'role' => 'followup_officer',
+            ],
+            [
+                'name' => 'Communication Head',
+                'email' => 'communication_head@zaha.test',
+                'role' => 'communication_head',
+            ],
+            [
+                'name' => 'Workshops Secretary',
+                'email' => 'workshops_secretary@zaha.test',
+                'role' => 'workshops_secretary',
             ],
             [
                 'name' => 'Reports Viewer',

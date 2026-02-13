@@ -19,6 +19,44 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
+            <h2 class="h6 mb-3">مزامنة فعاليات الأجندة إلى خطة الفرع</h2>
+            <form method="POST" action="{{ route('role.programs.activities.sync_from_agenda') }}" class="row g-3">
+                @csrf
+                <div class="col-12 col-md-3">
+                    <label class="form-label">الفرع</label>
+                    <select class="form-select" name="branch_id" required>
+                        <option value="">--</option>
+                        @foreach ($branches as $branch)
+                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">المركز</label>
+                    <select class="form-select" name="center_id" required>
+                        <option value="">--</option>
+                        @foreach ($centers as $center)
+                            <option value="{{ $center->id }}">{{ $center->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">الشهر</label>
+                    <input type="number" min="1" max="12" class="form-control" name="month" value="{{ now()->month }}" required>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">السنة</label>
+                    <input type="number" min="2020" max="2100" class="form-control" name="year" value="{{ now()->year }}" required>
+                </div>
+                <div class="col-12 col-md-2 d-flex align-items-end">
+                    <button class="btn btn-outline-primary w-100" type="submit">مزامنة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.create_title') }}</h2>
             <form method="POST" action="{{ route('role.programs.activities.store') }}" class="row g-3">
                 @csrf
