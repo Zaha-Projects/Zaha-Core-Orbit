@@ -67,6 +67,80 @@
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.location_details') }}</label>
                     <input class="form-control" name="location_details" value="{{ old('location_details') }}">
                 </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">الجهة المسؤولة</label>
+                    <input class="form-control" name="responsible_party" value="{{ old('responsible_party') }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">وقت التنفيذ</label>
+                    <input class="form-control" name="execution_time" value="{{ old('execution_time') }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">الفئة المستهدفة</label>
+                    <input class="form-control" name="target_group" value="{{ old('target_group') }}">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">وصف مختصر</label>
+                    <input class="form-control" name="short_description" value="{{ old('short_description') }}">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">الحاجة إلى متطوعين</label>
+                    <input class="form-control" name="volunteer_need" value="{{ old('volunteer_need') }}">
+                </div>
+                <div class="col-12 col-md-3 d-flex align-items-center">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="has_sponsor" value="1" id="has_sponsor_create">
+                        <label class="form-check-label" for="has_sponsor_create">يوجد راعي رسمي</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-9">
+                    <label class="form-label">اسم الراعي الرسمي</label>
+                    <input class="form-control" name="sponsor_name_title" value="{{ old('sponsor_name_title') }}">
+                </div>
+                <div class="col-12 col-md-3 d-flex align-items-center">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="has_partners" value="1" id="has_partners_create">
+                        <label class="form-check-label" for="has_partners_create">يوجد شركاء</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3"><input class="form-control" name="partner_1_name" value="{{ old('partner_1_name') }}" placeholder="اسم الشريك 1"></div>
+                <div class="col-12 col-md-3"><input class="form-control" name="partner_1_role" value="{{ old('partner_1_role') }}" placeholder="دور الشريك 1"></div>
+                <div class="col-12 col-md-3"><input class="form-control" name="partner_2_name" value="{{ old('partner_2_name') }}" placeholder="اسم الشريك 2"></div>
+                <div class="col-12 col-md-3"><input class="form-control" name="partner_2_role" value="{{ old('partner_2_role') }}" placeholder="دور الشريك 2"></div>
+                <div class="col-12 col-md-3"><input class="form-control" name="partner_3_name" value="{{ old('partner_3_name') }}" placeholder="اسم الشريك 3"></div>
+                <div class="col-12 col-md-3"><input class="form-control" name="partner_3_role" value="{{ old('partner_3_role') }}" placeholder="دور الشريك 3"></div>
+                <div class="col-12 col-md-3 d-flex align-items-center">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="needs_official_letters" value="1" id="needs_letters_create">
+                        <label class="form-check-label" for="needs_letters_create">بحاجة إلى مخاطبات</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-9">
+                    <label class="form-label">سبب المخاطبة</label>
+                    <input class="form-control" name="letter_purpose" value="{{ old('letter_purpose') }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">تاريخ التعديل المقترح</label>
+                    <input class="form-control" type="date" name="rescheduled_date" value="{{ old('rescheduled_date') }}">
+                </div>
+                <div class="col-12 col-md-8">
+                    <label class="form-label">سبب التعديل</label>
+                    <input class="form-control" name="reschedule_reason" value="{{ old('reschedule_reason') }}">
+                </div>
+                <div class="col-12 col-md-3 d-flex align-items-center">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="relations_approval_on_reschedule" value="1" id="relations_reschedule_approve_create">
+                        <label class="form-check-label" for="relations_reschedule_approve_create">اعتماد العلاقات على التعديل</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">رضى الجمهور %</label>
+                    <input class="form-control" type="number" min="0" max="100" step="0.01" name="audience_satisfaction_percent" value="{{ old('audience_satisfaction_percent') }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">تقييم الفعالية %</label>
+                    <input class="form-control" type="number" min="0" max="100" step="0.01" name="evaluation_score" value="{{ old('evaluation_score') }}">
+                </div>
                 <div class="col-12">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.description') }}</label>
                     <textarea class="form-control" name="description" rows="3">{{ old('description') }}</textarea>
