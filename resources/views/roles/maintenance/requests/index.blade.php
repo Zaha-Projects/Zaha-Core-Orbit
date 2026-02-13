@@ -57,6 +57,41 @@
                         <option value="in_progress">{{ __('app.roles.maintenance.requests.statuses.in_progress') }}</option>
                     </select>
                 </div>
+                <div class="col-12">
+                    <h3 class="h6 mt-2">مسارات المعالجة (رئيس الفرع / الصيانة / الحاسوب)</h3>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">حالة رئيس الفرع</label>
+                    <input class="form-control" name="branch_head_status" value="{{ old('branch_head_status') }}" placeholder="approved / rejected / pending">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">حالة الصيانة</label>
+                    <input class="form-control" name="maintenance_track_status" value="{{ old('maintenance_track_status') }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">حالة الحاسوب</label>
+                    <input class="form-control" name="it_track_status" value="{{ old('it_track_status') }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">ملاحظات رئيس الفرع</label>
+                    <textarea class="form-control" rows="2" name="branch_head_note">{{ old('branch_head_note') }}</textarea>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">ملاحظات الصيانة</label>
+                    <textarea class="form-control" rows="2" name="maintenance_track_note">{{ old('maintenance_track_note') }}</textarea>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">ملاحظات الحاسوب</label>
+                    <textarea class="form-control" rows="2" name="it_track_note">{{ old('it_track_note') }}</textarea>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">الموارد المستخدمة</label>
+                    <textarea class="form-control" rows="2" name="support_resources">{{ old('support_resources') }}</textarea>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">جهة الدعم</label>
+                    <input class="form-control" name="support_party" value="{{ old('support_party') }}">
+                </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.branch') }}</label>
                     <select class="form-select" name="branch_id" required>
@@ -95,6 +130,9 @@
                             <th>{{ __('app.roles.maintenance.requests.table.category') }}</th>
                             <th>{{ __('app.roles.maintenance.requests.table.priority') }}</th>
                             <th>{{ __('app.roles.maintenance.requests.table.status') }}</th>
+                            <th>رئيس الفرع</th>
+                            <th>الصيانة</th>
+                            <th>الحاسوب</th>
                             <th class="text-end">{{ __('app.roles.maintenance.requests.table.actions') }}</th>
                         </tr>
                     </thead>
@@ -105,6 +143,9 @@
                                 <td>{{ $request->category }}</td>
                                 <td>{{ $request->priority }}</td>
                                 <td>{{ $request->status }}</td>
+                                <td>{{ $request->branch_head_status ?? '-' }}</td>
+                                <td>{{ $request->maintenance_track_status ?? '-' }}</td>
+                                <td>{{ $request->it_track_status ?? '-' }}</td>
                                 <td class="text-end">
                                     <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.maintenance.requests.edit', $request) }}">
                                         {{ __('app.roles.maintenance.requests.actions.edit') }}
@@ -113,7 +154,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-muted">{{ __('app.roles.maintenance.requests.table.empty') }}</td>
+                                <td colspan="8" class="text-muted">{{ __('app.roles.maintenance.requests.table.empty') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

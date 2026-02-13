@@ -28,6 +28,9 @@ class RolePermissionSeeder extends Seeder
             'reports.view',
             'departments.view',
             'departments.manage',
+            'kpi.view',
+            'kpi.manage',
+            'agenda.participation.update',
         ];
 
         foreach ($permissions as $permission) {
@@ -41,13 +44,17 @@ class RolePermissionSeeder extends Seeder
 
         $roles = [
             'super_admin' => $permissions,
-            'relations_manager' => ['agenda.view', 'agenda.approve', 'agenda.publish'],
-            'relations_officer' => ['agenda.view', 'agenda.create'],
+            'relations_manager' => ['agenda.view', 'agenda.approve', 'agenda.publish', 'monthly.view', 'monthly.approve'],
+            'relations_officer' => ['agenda.view', 'agenda.create', 'monthly.view', 'monthly.approve'],
             'programs_manager' => ['monthly.view', 'monthly.approve', 'monthly.execute'],
             'programs_officer' => ['monthly.view', 'monthly.create'],
             'finance_officer' => ['revenues.view', 'revenues.collect'],
             'maintenance_officer' => ['maintenance.view', 'maintenance.manage'],
             'transport_officer' => ['transport.view', 'transport.manage'],
+            'executive_manager' => ['agenda.view', 'agenda.approve', 'agenda.publish', 'monthly.view', 'monthly.approve'],
+            'followup_officer' => ['reports.view', 'kpi.view', 'kpi.manage', 'agenda.view', 'monthly.view'],
+            'communication_head' => ['agenda.view', 'agenda.participation.update'],
+            'workshops_secretary' => ['agenda.view', 'agenda.participation.update'],
             'reports_viewer' => ['reports.view'],
             'staff' => ['agenda.view', 'monthly.view'],
         ];

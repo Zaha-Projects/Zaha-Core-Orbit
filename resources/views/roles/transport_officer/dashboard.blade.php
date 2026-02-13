@@ -10,6 +10,11 @@
             'link' => route('role.transport.trips.index'),
         ],
         [
+            'title' => 'طلبات الحركة',
+            'description' => 'متابعة طلبات Form 3 واعتمادها وإغلاقها ثم مراجعة التقييم.',
+            'link' => route('role.transport.requests.index'),
+        ],
+        [
             'title' => __('app.roles.transport_officer.actions.fleet.title'),
             'description' => __('app.roles.transport_officer.actions.fleet.description'),
             'link' => route('role.transport.vehicles.index'),

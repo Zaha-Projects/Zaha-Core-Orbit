@@ -19,6 +19,11 @@
             'description' => __('app.roles.reports_viewer.actions.ops.description'),
             'link' => route('role.reports.index'),
         ],
+        [
+            'title' => 'مؤشرات الأداء الشهرية',
+            'description' => 'لوحة KPI الشهرية مع نسبة التعديلات والالتزام وكفاءة الحشد.',
+            'link' => route('role.reports.kpis.index'),
+        ],
     ];
 @endphp
 

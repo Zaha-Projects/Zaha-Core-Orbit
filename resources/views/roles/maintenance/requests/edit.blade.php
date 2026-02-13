@@ -81,6 +81,53 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-12">
+                    <h3 class="h6 mt-2">مسارات المعالجة (رئيس الفرع / الصيانة / الحاسوب)</h3>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">حالة رئيس الفرع</label>
+                    <input class="form-control" name="branch_head_status" value="{{ $maintenanceRequest->branch_head_status }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">حالة الصيانة</label>
+                    <input class="form-control" name="maintenance_track_status" value="{{ $maintenanceRequest->maintenance_track_status }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">حالة الحاسوب</label>
+                    <input class="form-control" name="it_track_status" value="{{ $maintenanceRequest->it_track_status }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">ملاحظات رئيس الفرع</label>
+                    <textarea class="form-control" rows="2" name="branch_head_note">{{ $maintenanceRequest->branch_head_note }}</textarea>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">ملاحظات الصيانة</label>
+                    <textarea class="form-control" rows="2" name="maintenance_track_note">{{ $maintenanceRequest->maintenance_track_note }}</textarea>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">ملاحظات الحاسوب</label>
+                    <textarea class="form-control" rows="2" name="it_track_note">{{ $maintenanceRequest->it_track_note }}</textarea>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">الموارد المستخدمة</label>
+                    <textarea class="form-control" rows="2" name="support_resources">{{ $maintenanceRequest->support_resources }}</textarea>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">جهة الدعم</label>
+                    <input class="form-control" name="support_party" value="{{ $maintenanceRequest->support_party }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">تحليل سبب العطل - رئيس الفرع</label>
+                    <textarea class="form-control" rows="2" name="root_cause_branch">{{ $maintenanceRequest->root_cause_branch }}</textarea>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">تحليل سبب العطل - الصيانة</label>
+                    <textarea class="form-control" rows="2" name="root_cause_maintenance">{{ $maintenanceRequest->root_cause_maintenance }}</textarea>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">تحليل سبب العطل - الحاسوب</label>
+                    <textarea class="form-control" rows="2" name="root_cause_it">{{ $maintenanceRequest->root_cause_it }}</textarea>
+                </div>
                 <div class="col-12 d-flex justify-content-end">
                     <button class="btn btn-outline-primary" type="submit">
                         {{ __('app.roles.maintenance.requests.actions.save') }}
@@ -240,6 +287,10 @@
                         <option value="closed">{{ __('app.roles.maintenance.requests.statuses.closed') }}</option>
                         <option value="completed">{{ __('app.roles.maintenance.requests.statuses.completed') }}</option>
                     </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">ملخص الإغلاق</label>
+                    <textarea class="form-control" rows="3" name="closure_summary">{{ $maintenanceRequest->closure_summary }}</textarea>
                 </div>
                 <div class="col-12 col-md-4 d-flex justify-content-end align-items-end">
                     <button class="btn btn-outline-primary" type="submit">
