@@ -26,19 +26,33 @@ class AgendaApprovalsController extends Controller
             'comment' => ['nullable', 'string'],
         ]);
 
+        $user = $request->user();
+        $step = $user->hasRole('executive_manager') ? 'executive_review' : 'relations_review';
+
         AgendaApproval::create([
             'agenda_event_id' => $agendaEvent->id,
-            'step' => 'relations_review',
+            'step' => $step,
             'decision' => $data['decision'],
             'comment' => $data['comment'] ?? null,
-            'approved_by' => $request->user()->id,
+            'approved_by' => $user->id,
             'approved_at' => now(),
         ]);
 
-        $agendaEvent->update([
-            'status' => $data['decision'] === 'approved' ? 'relations_approved' : 'changes_requested',
-            'approved_by_relations_at' => $data['decision'] === 'approved' ? now() : null,
-        ]);
+        if ($step === 'relations_review') {
+            $agendaEvent->update([
+                'status' => $data['decision'] === 'approved' ? 'relations_approved' : 'changes_requested',
+                'relations_approval_status' => $data['decision'],
+                'approved_by_relations_at' => $data['decision'] === 'approved' ? now() : null,
+            ]);
+        }
+
+        if ($step === 'executive_review') {
+            $agendaEvent->update([
+                'status' => $data['decision'] === 'approved' ? 'published' : 'changes_requested',
+                'executive_approval_status' => $data['decision'],
+                'approved_by_executive_at' => $data['decision'] === 'approved' ? now() : null,
+            ]);
+        }
 
         return redirect()
             ->route('role.relations.approvals.index')

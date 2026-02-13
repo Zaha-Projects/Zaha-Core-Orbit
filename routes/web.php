@@ -101,8 +101,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/relations/agenda/{agendaEvent}/edit', [RelationsAgendaEventsController::class, 'edit'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.edit');
     Route::put('/dashboard/relations/agenda/{agendaEvent}', [RelationsAgendaEventsController::class, 'update'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.update');
     Route::patch('/dashboard/relations/agenda/{agendaEvent}/submit', [RelationsAgendaEventsController::class, 'submit'])->middleware('role:relations_manager|relations_officer')->name('role.relations.agenda.submit');
-    Route::get('/dashboard/relations/agenda/approvals', [RelationsAgendaApprovalsController::class, 'index'])->middleware('role:relations_manager|relations_officer')->name('role.relations.approvals.index');
-    Route::put('/dashboard/relations/agenda/approvals/{agendaEvent}', [RelationsAgendaApprovalsController::class, 'update'])->middleware('role:relations_manager|relations_officer')->name('role.relations.approvals.update');
+    Route::get('/dashboard/relations/agenda/approvals', [RelationsAgendaApprovalsController::class, 'index'])->middleware('role:relations_manager|executive_manager')->name('role.relations.approvals.index');
+    Route::put('/dashboard/relations/agenda/approvals/{agendaEvent}', [RelationsAgendaApprovalsController::class, 'update'])->middleware('role:relations_manager|executive_manager')->name('role.relations.approvals.update');
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
     Route::get('/dashboard/programs/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'index'])->middleware('role:programs_manager|programs_officer')->name('role.programs.activities.index');

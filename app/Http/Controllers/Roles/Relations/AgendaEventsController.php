@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Roles\Relations;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
-use App\Models\AgendaEventTarget;
+use App\Models\AgendaParticipation;
+use App\Models\Branch;
+use App\Models\Department;
+use App\Models\EventCategory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -12,14 +15,20 @@ class AgendaEventsController extends Controller
 {
     public function index()
     {
-        $events = AgendaEvent::with(['targets', 'creator'])->orderBy('month')->orderBy('day')->get();
+        $events = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
+            ->orderBy('event_date')->orderBy('month')->orderBy('day')
+            ->get();
 
         return view('roles.relations.agenda.index', compact('events'));
     }
 
     public function create()
     {
-        return view('roles.relations.agenda.create');
+        $departments = Department::orderBy('name')->get();
+        $categories = EventCategory::where('active', true)->orderBy('name')->get();
+        $branches = Branch::orderBy('name')->get();
+
+        return view('roles.relations.agenda.create', compact('departments', 'categories', 'branches'));
     }
 
     public function store(Request $request)
@@ -27,11 +36,13 @@ class AgendaEventsController extends Controller
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
-            'event_category' => ['nullable', 'string', 'max:255'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'event_category_id' => ['nullable', 'exists:event_categories,id'],
+            'event_type' => ['required', 'in:mandatory,optional'],
+            'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
-            'target_type' => ['nullable', 'string', 'max:50'],
-            'target_id' => ['nullable', 'integer'],
-            'is_participant' => ['nullable', 'boolean'],
+            'branch_participation' => ['array'],
+            'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
         $date = Carbon::parse($data['event_date']);
@@ -39,19 +50,28 @@ class AgendaEventsController extends Controller
         $event = AgendaEvent::create([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
+            'event_date' => $date->toDateString(),
+            'event_day' => $date->translatedFormat('l'),
             'event_name' => $data['event_name'],
-            'event_category' => $data['event_category'] ?? null,
+            'department_id' => $data['department_id'] ?? null,
+            'event_category_id' => $data['event_category_id'] ?? null,
+            'event_type' => $data['event_type'],
+            'plan_type' => $data['plan_type'],
+            'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
             'status' => 'draft',
+            'relations_approval_status' => 'pending',
+            'executive_approval_status' => 'pending',
             'created_by' => $request->user()->id,
             'notes' => $data['notes'] ?? null,
         ]);
 
-        if (!empty($data['target_type']) && !empty($data['target_id'])) {
-            AgendaEventTarget::create([
+        foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
+            AgendaParticipation::create([
                 'agenda_event_id' => $event->id,
-                'target_type' => $data['target_type'],
-                'target_id' => $data['target_id'],
-                'is_participant' => (bool) ($data['is_participant'] ?? false),
+                'entity_type' => 'branch',
+                'entity_id' => $branchId,
+                'participation_status' => $status,
+                'updated_by' => $request->user()->id,
             ]);
         }
 
@@ -62,9 +82,16 @@ class AgendaEventsController extends Controller
 
     public function edit(AgendaEvent $agendaEvent)
     {
-        $agendaEvent->load('targets');
+        $agendaEvent->load('participations');
+        $departments = Department::orderBy('name')->get();
+        $categories = EventCategory::where('active', true)->orderBy('name')->get();
+        $branches = Branch::orderBy('name')->get();
+        $branchParticipations = $agendaEvent->participations
+            ->where('entity_type', 'branch')
+            ->pluck('participation_status', 'entity_id')
+            ->toArray();
 
-        return view('roles.relations.agenda.edit', compact('agendaEvent'));
+        return view('roles.relations.agenda.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations'));
     }
 
     public function update(Request $request, AgendaEvent $agendaEvent)
@@ -72,11 +99,13 @@ class AgendaEventsController extends Controller
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
-            'event_category' => ['nullable', 'string', 'max:255'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'event_category_id' => ['nullable', 'exists:event_categories,id'],
+            'event_type' => ['required', 'in:mandatory,optional'],
+            'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
-            'target_type' => ['nullable', 'string', 'max:50'],
-            'target_id' => ['nullable', 'integer'],
-            'is_participant' => ['nullable', 'boolean'],
+            'branch_participation' => ['array'],
+            'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
         $date = Carbon::parse($data['event_date']);
@@ -84,18 +113,25 @@ class AgendaEventsController extends Controller
         $agendaEvent->update([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
+            'event_date' => $date->toDateString(),
+            'event_day' => $date->translatedFormat('l'),
             'event_name' => $data['event_name'],
-            'event_category' => $data['event_category'] ?? null,
+            'department_id' => $data['department_id'] ?? null,
+            'event_category_id' => $data['event_category_id'] ?? null,
+            'event_type' => $data['event_type'],
+            'plan_type' => $data['plan_type'],
+            'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
             'notes' => $data['notes'] ?? null,
         ]);
 
-        if (!empty($data['target_type']) && !empty($data['target_id'])) {
-            $agendaEvent->targets()->delete();
-            AgendaEventTarget::create([
+        $agendaEvent->participations()->where('entity_type', 'branch')->delete();
+        foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
+            AgendaParticipation::create([
                 'agenda_event_id' => $agendaEvent->id,
-                'target_type' => $data['target_type'],
-                'target_id' => $data['target_id'],
-                'is_participant' => (bool) ($data['is_participant'] ?? false),
+                'entity_type' => 'branch',
+                'entity_id' => $branchId,
+                'participation_status' => $status,
+                'updated_by' => $request->user()->id,
             ]);
         }
 
@@ -106,6 +142,10 @@ class AgendaEventsController extends Controller
 
     public function submit(Request $request, AgendaEvent $agendaEvent)
     {
+        if ($agendaEvent->event_type === 'optional' && ! $agendaEvent->participations()->where('entity_type', 'branch')->exists()) {
+            return back()->withErrors(['branch_participation' => 'لا يمكن إرسال فعالية اختيارية بدون تحديد مشاركة الفروع.']);
+        }
+
         $agendaEvent->update([
             'status' => 'submitted',
         ]);

@@ -26,6 +26,7 @@ class RolePermissionSeeder extends Seeder
             'transport.view',
             'transport.manage',
             'reports.view',
+            'kpi.view',
         ];
 
         foreach ($permissions as $permission) {
@@ -41,6 +42,8 @@ class RolePermissionSeeder extends Seeder
             'finance_officer' => ['revenues.view', 'revenues.collect'],
             'maintenance_officer' => ['maintenance.view', 'maintenance.manage'],
             'transport_officer' => ['transport.view', 'transport.manage'],
+            'executive_manager' => ['agenda.view', 'agenda.approve', 'agenda.publish'],
+            'followup_officer' => ['reports.view', 'kpi.view', 'agenda.view', 'monthly.view'],
             'reports_viewer' => ['reports.view'],
             'staff' => ['agenda.view', 'monthly.view'],
         ];

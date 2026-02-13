@@ -13,6 +13,7 @@ class DashboardController extends Controller
         $roleRoutes = [
             'super_admin' => 'role.super_admin.dashboard',
             'relations_manager' => 'role.relations_manager.dashboard',
+            'executive_manager' => 'role.relations.approvals.index',
             'relations_officer' => 'role.relations_officer.dashboard',
             'programs_manager' => 'role.programs_manager.dashboard',
             'programs_officer' => 'role.programs_officer.dashboard',
@@ -20,6 +21,7 @@ class DashboardController extends Controller
             'maintenance_officer' => 'role.maintenance_officer.dashboard',
             'transport_officer' => 'role.transport_officer.dashboard',
             'reports_viewer' => 'role.reports_viewer.dashboard',
+            'followup_officer' => 'role.reports.index',
             'staff' => 'role.staff.dashboard',
         ];
 

@@ -1,15 +1,10 @@
 @extends('layouts.app')
 
-@php
-    $title = __('app.roles.relations.approvals.title');
-    $subtitle = __('app.roles.relations.approvals.subtitle');
-@endphp
-
 @section('content')
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <h1 class="h4 mb-2">{{ $title }}</h1>
-            <p class="text-muted mb-0">{{ $subtitle }}</p>
+            <h1 class="h4 mb-2">اعتمادات أجندة زها</h1>
+            <p class="text-muted mb-0">اعتماد العلاقات ثم اعتماد المدير التنفيذي.</p>
         </div>
     </div>
 
@@ -23,56 +18,54 @@
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>{{ __('app.roles.relations.approvals.table.event_name') }}</th>
-                            <th>{{ __('app.roles.relations.approvals.table.event_date') }}</th>
-                            <th>{{ __('app.roles.relations.approvals.table.status') }}</th>
-                            <th>{{ __('app.roles.relations.approvals.table.last_decision') }}</th>
-                            <th class="text-end">{{ __('app.roles.relations.approvals.table.actions') }}</th>
+                            <th>الفعالية</th>
+                            <th>التاريخ</th>
+                            <th>الحالة</th>
+                            <th>اعتماد العلاقات</th>
+                            <th>اعتماد التنفيذي</th>
+                            <th class="text-end">إجراء</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($events as $event)
-                            @php
-                                $latestApproval = $event->approvals->last();
-                            @endphp
+                            @php $latestApproval = $event->approvals->last(); @endphp
                             <tr>
                                 <td>{{ $event->event_name }}</td>
-                                <td>{{ sprintf('%02d-%02d', $event->month, $event->day) }}</td>
+                                <td>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</td>
                                 <td>{{ $event->status }}</td>
-                                <td>{{ $latestApproval?->decision ?? __('app.roles.relations.approvals.table.none') }}</td>
+                                <td>{{ $event->relations_approval_status }}</td>
+                                <td>{{ $event->executive_approval_status }}</td>
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#approval-{{ $event->id }}">
-                                        {{ __('app.roles.relations.approvals.actions.review') }}
+                                        مراجعة
                                     </button>
                                 </td>
                             </tr>
                             <tr class="collapse" id="approval-{{ $event->id }}">
-                                <td colspan="5">
+                                <td colspan="6">
                                     <form method="POST" action="{{ route('role.relations.approvals.update', $event) }}" class="row g-3">
                                         @csrf
                                         @method('PUT')
                                         <div class="col-12 col-md-4">
-                                            <label class="form-label">{{ __('app.roles.relations.approvals.fields.decision') }}</label>
+                                            <label class="form-label">القرار</label>
                                             <select class="form-select" name="decision" required>
-                                                <option value="approved">{{ __('app.roles.relations.approvals.decisions.approved') }}</option>
-                                                <option value="changes_requested">{{ __('app.roles.relations.approvals.decisions.changes_requested') }}</option>
+                                                <option value="approved">موافقة</option>
+                                                <option value="changes_requested">تعديل مطلوب</option>
                                             </select>
                                         </div>
                                         <div class="col-12 col-md-8">
-                                            <label class="form-label">{{ __('app.roles.relations.approvals.fields.comment') }}</label>
-                                            <input class="form-control" name="comment">
+                                            <label class="form-label">ملاحظة</label>
+                                            <input class="form-control" name="comment" value="{{ $latestApproval?->comment }}">
                                         </div>
                                         <div class="col-12 d-flex justify-content-end">
-                                            <button class="btn btn-outline-primary btn-sm" type="submit">
-                                                {{ __('app.roles.relations.approvals.actions.submit') }}
-                                            </button>
+                                            <button class="btn btn-outline-primary btn-sm" type="submit">حفظ القرار</button>
                                         </div>
                                     </form>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-muted">{{ __('app.roles.relations.approvals.table.empty') }}</td>
+                                <td colspan="6" class="text-muted">لا توجد فعاليات للمراجعة.</td>
                             </tr>
                         @endforelse
                     </tbody>
