@@ -13,6 +13,9 @@
         <a class="btn btn-sm btn-outline-primary text-start" href="{{ route('role.super_admin.centers') }}">
             {{ __('app.roles.super_admin.sidebar.centers') }}
         </a>
+        <a class="btn btn-sm btn-outline-primary text-start" href="{{ route('role.super_admin.departments') }}">
+            {{ __('app.roles.super_admin.sidebar.departments') }}
+        </a>
         <a class="btn btn-sm btn-outline-primary text-start" href="{{ route('role.super_admin.roles') }}">
             {{ __('app.roles.super_admin.sidebar.roles') }}
         </a>

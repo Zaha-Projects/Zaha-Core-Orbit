@@ -19,6 +19,7 @@ use App\Http\Controllers\Roles\SuperAdmin\ApprovalsController as SuperAdminAppro
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
 use App\Http\Controllers\Roles\SuperAdmin\BranchesManagementController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\SuperAdmin\CentersManagementController as SuperAdminCentersManagementController;
+use App\Http\Controllers\Roles\SuperAdmin\DepartmentsManagementController as SuperAdminDepartmentsManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 use App\Http\Controllers\Roles\Relations\AgendaEventsController as RelationsAgendaEventsController;
 use App\Http\Controllers\Roles\Relations\AgendaApprovalsController as RelationsAgendaApprovalsController;
@@ -89,6 +90,10 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/admin/branches/{branch}', [SuperAdminBranchesManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.branches.update');
     Route::delete('/dashboard/admin/branches/{branch}', [SuperAdminBranchesManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.branches.destroy');
     Route::get('/dashboard/admin/centers', [SuperAdminCentersManagementController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.centers');
+    Route::get('/dashboard/admin/departments', [SuperAdminDepartmentsManagementController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.departments');
+    Route::post('/dashboard/admin/departments', [SuperAdminDepartmentsManagementController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.departments.store');
+    Route::put('/dashboard/admin/departments/{department}', [SuperAdminDepartmentsManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.departments.update');
+    Route::delete('/dashboard/admin/departments/{department}', [SuperAdminDepartmentsManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.departments.destroy');
     Route::post('/dashboard/admin/centers', [SuperAdminCentersManagementController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.centers.store');
     Route::put('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.centers.update');
     Route::delete('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.centers.destroy');
