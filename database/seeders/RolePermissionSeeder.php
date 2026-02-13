@@ -27,6 +27,7 @@ class RolePermissionSeeder extends Seeder
             'transport.manage',
             'reports.view',
             'kpi.view',
+            'kpi.manage',
             'agenda.participation.update',
         ];
 
@@ -44,7 +45,7 @@ class RolePermissionSeeder extends Seeder
             'maintenance_officer' => ['maintenance.view', 'maintenance.manage'],
             'transport_officer' => ['transport.view', 'transport.manage'],
             'executive_manager' => ['agenda.view', 'agenda.approve', 'agenda.publish', 'monthly.view', 'monthly.approve'],
-            'followup_officer' => ['reports.view', 'kpi.view', 'agenda.view', 'monthly.view'],
+            'followup_officer' => ['reports.view', 'kpi.view', 'kpi.manage', 'agenda.view', 'monthly.view'],
             'communication_head' => ['agenda.view', 'agenda.participation.update'],
             'workshops_secretary' => ['agenda.view', 'agenda.participation.update'],
             'reports_viewer' => ['reports.view'],

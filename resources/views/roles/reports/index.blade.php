@@ -17,6 +17,10 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
+    <div class="mb-3 text-end">
+        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.reports.kpis.index') }}">فتح مؤشرات الأداء الشهرية</a>
+    </div>
+
     <div class="card shadow-sm">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.reports.filters_title') }}</h2>
