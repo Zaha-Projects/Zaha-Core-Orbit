@@ -20,6 +20,11 @@
             'link' => route('role.super_admin.centers'),
         ],
         [
+            'title' => __('app.roles.super_admin.actions.departments.title'),
+            'description' => __('app.roles.super_admin.actions.departments.description'),
+            'link' => route('role.super_admin.departments'),
+        ],
+        [
             'title' => __('app.roles.super_admin.actions.approvals.title'),
             'description' => __('app.roles.super_admin.actions.approvals.description'),
             'link' => route('role.super_admin.approvals'),

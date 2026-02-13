@@ -50,6 +50,10 @@ return [
                     'title' => 'Center management',
                     'description' => 'Add operational centers under each branch.',
                 ],
+                'departments' => [
+                    'title' => 'Department management',
+                    'description' => 'Create and update operational departments.',
+                ],
                 'approvals' => [
                     'title' => 'Approval tracking',
                     'description' => 'Review agenda, monthly plan, and approval status.',
@@ -69,6 +73,7 @@ return [
                 'users' => 'Users',
                 'branches' => 'Branches',
                 'centers' => 'Centers',
+                'departments' => 'Departments',
                 'roles' => 'Roles',
                 'approvals' => 'Approvals',
                 'reports' => 'Reports',
@@ -127,6 +132,37 @@ return [
                 'created' => 'Center created successfully.',
                 'updated' => 'Center updated: :center.',
                 'deleted' => 'Center removed: :center.',
+            ],
+            'departments' => [
+                'title' => 'Department management',
+                'subtitle' => 'Maintain operational departments and organizational units.',
+                'create_title' => 'Add a new department',
+                'list_title' => 'Current departments',
+                'fields' => [
+                    'name' => 'Department name',
+                ],
+                'table' => [
+                    'name' => 'Department',
+                    'actions' => 'Actions',
+                    'empty' => 'No departments available.',
+                ],
+                'actions' => [
+                    'create' => 'Create department',
+                    'edit' => 'Edit',
+                    'delete' => 'Delete',
+                    'save' => 'Save changes',
+                ],
+                'filters' => [
+                    'search' => 'Search',
+                    'search_placeholder' => 'Search by department name',
+                    'sort' => 'Sort',
+                    'sort_name_asc' => 'Name (A → Z)',
+                    'sort_name_desc' => 'Name (Z → A)',
+                    'apply' => 'Apply',
+                ],
+                'created' => 'Department created successfully.',
+                'updated' => 'Department updated: :department.',
+                'deleted' => 'Department removed: :department.',
             ],
             'roles' => [
                 'title' => 'Role management',
