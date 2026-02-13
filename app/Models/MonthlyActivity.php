@@ -123,6 +123,16 @@ class MonthlyActivity extends Model
         return $this->hasMany(MonthlyActivityChangeLog::class);
     }
 
+    public function sponsors()
+    {
+        return $this->hasMany(MonthlyActivitySponsor::class);
+    }
+
+    public function partners()
+    {
+        return $this->hasMany(MonthlyActivityPartner::class)->orderBy('sort_order');
+    }
+
     public function attendance()
     {
         return $this->hasOne(ActivityAttendance::class);

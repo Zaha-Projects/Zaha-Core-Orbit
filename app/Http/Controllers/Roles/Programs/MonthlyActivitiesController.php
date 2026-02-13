@@ -7,8 +7,11 @@ use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\Center;
 use App\Models\MonthlyActivityChangeLog;
+use App\Models\MonthlyActivityPartner;
+use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
 use App\Models\Setting;
+use App\Models\WorkflowActionLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -46,6 +49,53 @@ class MonthlyActivitiesController extends Controller
                 'changed_at' => now(),
             ]);
         }
+    }
+
+    protected function syncSponsorsAndPartners(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        $monthlyActivity->sponsors()->delete();
+        foreach (($data['sponsors'] ?? []) as $sponsor) {
+            $name = trim((string) ($sponsor['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            MonthlyActivitySponsor::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'name' => $name,
+                'title' => $sponsor['title'] ?? null,
+                'is_official' => (bool) ($sponsor['is_official'] ?? true),
+            ]);
+        }
+
+        $monthlyActivity->partners()->delete();
+        foreach (($data['partners'] ?? []) as $index => $partner) {
+            $name = trim((string) ($partner['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            MonthlyActivityPartner::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'name' => $name,
+                'role' => $partner['role'] ?? null,
+                'sort_order' => $index + 1,
+            ]);
+        }
+    }
+
+    protected function logWorkflowAction(string $actionType, MonthlyActivity $monthlyActivity, Request $request, ?string $status = null, ?array $meta = null): void
+    {
+        WorkflowActionLog::create([
+            'module' => 'monthly_activity',
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $monthlyActivity->id,
+            'action_type' => $actionType,
+            'status' => $status,
+            'performed_by' => $request->user()->id,
+            'meta' => $meta,
+            'performed_at' => now(),
+        ]);
     }
 
     public function index()
@@ -181,12 +231,19 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule' => ['nullable', 'boolean'],
             'audience_satisfaction_percent' => ['nullable', 'numeric', 'between:0,100'],
             'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+            'sponsors' => ['array'],
+            'sponsors.*.name' => ['nullable', 'string', 'max:255'],
+            'sponsors.*.title' => ['nullable', 'string', 'max:255'],
+            'sponsors.*.is_official' => ['nullable', 'boolean'],
+            'partners' => ['array'],
+            'partners.*.name' => ['nullable', 'string', 'max:255'],
+            'partners.*.role' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ]);
 
         $date = Carbon::parse($data['activity_date']);
 
-        MonthlyActivity::create([
+        $monthlyActivity = MonthlyActivity::create([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
             'title' => $data['title'],
@@ -202,15 +259,9 @@ class MonthlyActivitiesController extends Controller
             'target_group' => $data['target_group'] ?? null,
             'short_description' => $data['short_description'] ?? null,
             'volunteer_need' => $data['volunteer_need'] ?? null,
-            'has_sponsor' => (bool) ($data['has_sponsor'] ?? false),
+            'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
-            'has_partners' => (bool) ($data['has_partners'] ?? false),
-            'partner_1_name' => $data['partner_1_name'] ?? null,
-            'partner_1_role' => $data['partner_1_role'] ?? null,
-            'partner_2_name' => $data['partner_2_name'] ?? null,
-            'partner_2_role' => $data['partner_2_role'] ?? null,
-            'partner_3_name' => $data['partner_3_name'] ?? null,
-            'partner_3_role' => $data['partner_3_role'] ?? null,
+            'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
             'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
             'letter_purpose' => $data['letter_purpose'] ?? null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
@@ -225,6 +276,9 @@ class MonthlyActivitiesController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
+        $this->syncSponsorsAndPartners($monthlyActivity, $data);
+        $this->logWorkflowAction('created', $monthlyActivity, $request, $monthlyActivity->status);
+
         return redirect()
             ->route('role.programs.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.created'));
@@ -232,7 +286,7 @@ class MonthlyActivitiesController extends Controller
 
     public function edit(MonthlyActivity $monthlyActivity)
     {
-        $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals']);
+        $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners']);
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
@@ -277,6 +331,13 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule' => ['nullable', 'boolean'],
             'audience_satisfaction_percent' => ['nullable', 'numeric', 'between:0,100'],
             'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+            'sponsors' => ['array'],
+            'sponsors.*.name' => ['nullable', 'string', 'max:255'],
+            'sponsors.*.title' => ['nullable', 'string', 'max:255'],
+            'sponsors.*.is_official' => ['nullable', 'boolean'],
+            'partners' => ['array'],
+            'partners.*.name' => ['nullable', 'string', 'max:255'],
+            'partners.*.role' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -332,15 +393,9 @@ class MonthlyActivitiesController extends Controller
             'target_group' => $data['target_group'] ?? null,
             'short_description' => $data['short_description'] ?? null,
             'volunteer_need' => $data['volunteer_need'] ?? null,
-            'has_sponsor' => (bool) ($data['has_sponsor'] ?? false),
+            'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
-            'has_partners' => (bool) ($data['has_partners'] ?? false),
-            'partner_1_name' => $data['partner_1_name'] ?? null,
-            'partner_1_role' => $data['partner_1_role'] ?? null,
-            'partner_2_name' => $data['partner_2_name'] ?? null,
-            'partner_2_role' => $data['partner_2_role'] ?? null,
-            'partner_3_name' => $data['partner_3_name'] ?? null,
-            'partner_3_role' => $data['partner_3_role'] ?? null,
+            'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
             'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
             'letter_purpose' => $data['letter_purpose'] ?? null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
@@ -369,7 +424,11 @@ class MonthlyActivitiesController extends Controller
             'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
         ]);
 
+        $this->syncSponsorsAndPartners($monthlyActivity, $data);
         $this->logChanges($monthlyActivity, $oldValues, $newValues, $request->user()->id);
+        $this->logWorkflowAction('updated', $monthlyActivity, $request, $monthlyActivity->status, [
+            'changed_fields' => array_keys($newValues),
+        ]);
 
         return redirect()
             ->route('role.programs.activities.index')
@@ -381,6 +440,11 @@ class MonthlyActivitiesController extends Controller
         $monthlyActivity->update([
             'status' => 'submitted',
         ]);
+
+        $request = request();
+        if ($request && $request->user()) {
+            $this->logWorkflowAction('submitted', $monthlyActivity, $request, 'submitted');
+        }
 
         return redirect()
             ->route('role.programs.activities.index')
@@ -399,6 +463,8 @@ class MonthlyActivitiesController extends Controller
             'status' => $data['status'],
             'is_official' => true,
         ]);
+
+        $this->logWorkflowAction('closed', $monthlyActivity, $request, $data['status']);
 
         return redirect()
             ->route('role.programs.activities.index')

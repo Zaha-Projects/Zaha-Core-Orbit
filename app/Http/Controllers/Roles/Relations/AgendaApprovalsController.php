@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Roles\Relations;
 use App\Http\Controllers\Controller;
 use App\Models\AgendaApproval;
 use App\Models\AgendaEvent;
+use App\Models\WorkflowActionLog;
 use Illuminate\Http\Request;
 
 class AgendaApprovalsController extends Controller
@@ -79,6 +80,17 @@ class AgendaApprovalsController extends Controller
                 'approved_by_executive_at' => $data['decision'] === 'approved' ? now() : null,
             ]);
         }
+
+        WorkflowActionLog::create([
+            'module' => 'agenda',
+            'entity_type' => AgendaEvent::class,
+            'entity_id' => $agendaEvent->id,
+            'action_type' => 'approval_decision',
+            'status' => $data['decision'],
+            'performed_by' => $user->id,
+            'meta' => ['step' => $step],
+            'performed_at' => now(),
+        ]);
 
         return redirect()
             ->route('role.relations.approvals.index')

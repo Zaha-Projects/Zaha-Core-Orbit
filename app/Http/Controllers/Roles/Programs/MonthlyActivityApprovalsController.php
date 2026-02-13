@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Roles\Programs;
 use App\Http\Controllers\Controller;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivityApproval;
+use App\Models\WorkflowActionLog;
 use Illuminate\Http\Request;
 
 class MonthlyActivityApprovalsController extends Controller
@@ -98,6 +99,17 @@ class MonthlyActivityApprovalsController extends Controller
         }
 
         $monthlyActivity->update($updates);
+
+        WorkflowActionLog::create([
+            'module' => 'monthly_activity',
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $monthlyActivity->id,
+            'action_type' => 'approval_decision',
+            'status' => $data['decision'],
+            'performed_by' => $request->user()->id,
+            'meta' => ['step' => $step],
+            'performed_at' => now(),
+        ]);
 
         return redirect()
             ->route('role.programs.approvals.index')

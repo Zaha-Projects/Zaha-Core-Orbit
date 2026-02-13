@@ -106,28 +106,40 @@
                     <label class="form-label">الحاجة إلى متطوعين</label>
                     <input class="form-control" name="volunteer_need" value="{{ $monthlyActivity->volunteer_need }}">
                 </div>
-                <div class="col-12 col-md-3 d-flex align-items-center">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" name="has_sponsor" value="1" id="has_sponsor_edit" @checked($monthlyActivity->has_sponsor)>
-                        <label class="form-check-label" for="has_sponsor_edit">يوجد راعي رسمي</label>
+                <div class="col-12">
+                    <label class="form-label">الرعاة (عدد مفتوح)</label>
+                    <div class="row g-2">
+                        @for ($i = 0; $i < 5; $i++)
+                            @php $sponsor = $monthlyActivity->sponsors[$i] ?? null; @endphp
+                            <div class="col-12 col-md-4">
+                                <input class="form-control" name="sponsors[{{ $i }}][name]" value="{{ old("sponsors.$i.name", $sponsor->name ?? null) }}" placeholder="اسم الراعي">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <input class="form-control" name="sponsors[{{ $i }}][title]" value="{{ old("sponsors.$i.title", $sponsor->title ?? null) }}" placeholder="الصفة/المسمى">
+                            </div>
+                            <div class="col-12 col-md-4 d-flex align-items-center">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" name="sponsors[{{ $i }}][is_official]" value="1" id="sponsor-edit-official-{{ $i }}" @checked(old("sponsors.$i.is_official", $sponsor?->is_official ?? true))>
+                                    <label class="form-check-label" for="sponsor-edit-official-{{ $i }}">راعي رسمي</label>
+                                </div>
+                            </div>
+                        @endfor
                     </div>
                 </div>
-                <div class="col-12 col-md-9">
-                    <label class="form-label">اسم الراعي الرسمي</label>
-                    <input class="form-control" name="sponsor_name_title" value="{{ $monthlyActivity->sponsor_name_title }}">
-                </div>
-                <div class="col-12 col-md-3 d-flex align-items-center">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" name="has_partners" value="1" id="has_partners_edit" @checked($monthlyActivity->has_partners)>
-                        <label class="form-check-label" for="has_partners_edit">يوجد شركاء</label>
+                <div class="col-12">
+                    <label class="form-label">الشركاء (عدد مفتوح)</label>
+                    <div class="row g-2">
+                        @for ($i = 0; $i < 7; $i++)
+                            @php $partner = $monthlyActivity->partners[$i] ?? null; @endphp
+                            <div class="col-12 col-md-6">
+                                <input class="form-control" name="partners[{{ $i }}][name]" value="{{ old("partners.$i.name", $partner->name ?? null) }}" placeholder="اسم الشريك">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <input class="form-control" name="partners[{{ $i }}][role]" value="{{ old("partners.$i.role", $partner->role ?? null) }}" placeholder="دور الشريك">
+                            </div>
+                        @endfor
                     </div>
                 </div>
-                <div class="col-12 col-md-3"><input class="form-control" name="partner_1_name" value="{{ $monthlyActivity->partner_1_name }}" placeholder="اسم الشريك 1"></div>
-                <div class="col-12 col-md-3"><input class="form-control" name="partner_1_role" value="{{ $monthlyActivity->partner_1_role }}" placeholder="دور الشريك 1"></div>
-                <div class="col-12 col-md-3"><input class="form-control" name="partner_2_name" value="{{ $monthlyActivity->partner_2_name }}" placeholder="اسم الشريك 2"></div>
-                <div class="col-12 col-md-3"><input class="form-control" name="partner_2_role" value="{{ $monthlyActivity->partner_2_role }}" placeholder="دور الشريك 2"></div>
-                <div class="col-12 col-md-3"><input class="form-control" name="partner_3_name" value="{{ $monthlyActivity->partner_3_name }}" placeholder="اسم الشريك 3"></div>
-                <div class="col-12 col-md-3"><input class="form-control" name="partner_3_role" value="{{ $monthlyActivity->partner_3_role }}" placeholder="دور الشريك 3"></div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" name="needs_official_letters" value="1" id="needs_letters_edit" @checked($monthlyActivity->needs_official_letters)>
