@@ -142,7 +142,13 @@ class AgendaEventsController extends Controller
 
     public function submit(Request $request, AgendaEvent $agendaEvent)
     {
-        if ($agendaEvent->event_type === 'optional' && ! $agendaEvent->participations()->where('entity_type', 'branch')->exists()) {
+        if (
+            $agendaEvent->event_type === 'optional'
+            && ! $agendaEvent->participations()
+                ->where('entity_type', 'branch')
+                ->where('participation_status', 'participant')
+                ->exists()
+        ) {
             return back()->withErrors(['branch_participation' => 'لا يمكن إرسال فعالية اختيارية بدون تحديد مشاركة الفروع.']);
         }
 

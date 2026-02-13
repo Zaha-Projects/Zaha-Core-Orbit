@@ -44,8 +44,16 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $events = AgendaEvent::query()
-            ->whereMonth('event_date', $data['month'])
-            ->whereYear('event_date', $data['year'])
+            ->where(function ($query) use ($data) {
+                $query->where(function ($q) use ($data) {
+                    $q->whereNotNull('event_date')
+                        ->whereMonth('event_date', $data['month'])
+                        ->whereYear('event_date', $data['year']);
+                })->orWhere(function ($q) use ($data) {
+                    $q->whereNull('event_date')
+                        ->where('month', $data['month']);
+                });
+            })
             ->whereIn('status', ['relations_approved', 'published'])
             ->where(function ($query) use ($data) {
                 $query->where('event_type', 'mandatory')

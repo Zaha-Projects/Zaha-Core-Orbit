@@ -289,3 +289,5 @@ app/
 > بعد موافقتكم على هذه الخطة، التنفيذ يبدأ بالمرحلة 1 مباشرة.
 
 - مرجع حوكمة الأدوار ومنع التضارب: `docs/role-conflict-analysis-and-kickoff-plan.md`.
+
+- قائمة المتابعة التنفيذية (TODO): `docs/todo-zaha-ops-execution.md`.
