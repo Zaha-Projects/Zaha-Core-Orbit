@@ -6,6 +6,8 @@
 - توحيد أماكن الكنترولرات بحيث تصبح Module-based بدل الاعتماد على Role-based داخل المسارات.
 - توحيد هيكل `resources/views` بحيث تكون الصفحات تحت `pages/<module>/...`.
 - الحفاظ على سلوك النظام الحالي بدون كسر route names أو صلاحيات الوصول.
+- اعتماد واجهة الثيم الجديد في Layout موحد يحتوي: **App Header + Side Menu + Footer**.
+- الالتزام بدعم اللغتين **العربية / الإنجليزية** في كل صفحة يتم تعديلها.
 
 ---
 
@@ -75,6 +77,10 @@ app/Http/Controllers/
 resources/views/
   layouts/
     app.blade.php
+    app/
+      header.blade.php
+      sidebar.blade.php
+      footer.blade.php
     guest.blade.php
     components/
       forms/
@@ -168,7 +174,36 @@ resources/views/
 
 ---
 
-## 5) أمثلة انتقال مباشرة
+## 5) خطة العمل التنفيذية خطوة بخطوة (صفحة/كنترولر)
+
+### Sprint 0 — تجهيز الأساس (تم البدء)
+- [x] تقسيم Layout إلى `Header + Sidebar + Footer` ضمن `layouts/app/*`.
+- [x] ربط النصوص الأساسية للـ Layout بملفات الترجمة `ar/en`.
+- [ ] نقل أول صفحة تجريبية إلى `resources/views/pages/...` مع الحفاظ على route.
+
+### Sprint 1 — Access Module
+1. [ ] Controllers: Users, Roles, Branches, Centers, Approvals.
+2. [ ] Views: `pages/access/*` (index/create/edit/show حسب الحاجة).
+3. [ ] ترجمة عربية/إنجليزية لكل labels/buttons/messages المستحدثة.
+4. [ ] اختبار يدوي + lint.
+
+### Sprint 2 — Agenda Module
+1. [ ] Controllers: AgendaEvents, AgendaApprovals.
+2. [ ] Views: `pages/agenda/events/*` + `pages/agenda/approvals/*`.
+3. [ ] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+### Sprint 3 — Monthly Activities Module
+1. [ ] Controllers: MonthlyActivities, MonthlyActivitiesApprovals.
+2. [ ] Views: `pages/monthly_activities/activities/*` + `pages/monthly_activities/approvals/*`.
+3. [ ] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+> بعد كل Sprint يتم فتح PR مستقل مع قائمة Mapping واضحة للملفات المنقولة.
+
+---
+
+## 6) أمثلة انتقال مباشرة
 - `App\Http\Controllers\Roles\SuperAdmin\DepartmentsManagementController`
   -> `App\Http\Controllers\Web\Access\DepartmentsController`
 - `App\Http\Controllers\Roles\Relations\AgendaEventsController`
@@ -180,7 +215,7 @@ resources/views/
 
 ---
 
-## 6) ما تم تأجيله صراحةً
+## 7) ما تم تأجيله صراحةً
 - إعادة هيكلة Domain/Application/Infrastructure.
 - تقسيم ملفات routes إلى عدة ملفات.
 - إعادة تصميم authorization/policies.

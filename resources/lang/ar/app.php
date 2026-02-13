@@ -10,6 +10,10 @@ return [
         'open_reports' => 'فتح التقارير',
         'open_section' => 'فتح القسم',
     ],
+    'layout' => [
+        'sidebar_title' => 'قائمة التطبيق',
+        'footer_rights' => 'جميع الحقوق محفوظة.',
+    ],
     'welcome' => [
         'title' => 'مرحباً بكم في Zaha OPS',
         'subtitle' => 'منصة موحدة لإدارة العمليات والتقارير والاعتمادات.',

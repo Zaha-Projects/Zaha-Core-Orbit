@@ -10,6 +10,10 @@ return [
         'open_reports' => 'Open reports',
         'open_section' => 'Open section',
     ],
+    'layout' => [
+        'sidebar_title' => 'Application menu',
+        'footer_rights' => 'All rights reserved.',
+    ],
     'welcome' => [
         'title' => 'Welcome to Zaha OPS',
         'subtitle' => 'A unified platform to manage operations, reports, and approvals.',
