@@ -40,6 +40,7 @@ use App\Http\Controllers\Roles\Transport\DriversController as TransportDriversCo
 use App\Http\Controllers\Roles\Transport\TripsController as TransportTripsController;
 use App\Http\Controllers\Roles\Transport\TripSegmentsController as TransportTripSegmentsController;
 use App\Http\Controllers\Roles\Transport\TripRoundsController as TransportTripRoundsController;
+use App\Http\Controllers\Roles\Transport\TransportRequestsController as TransportTransportRequestsController;
 use App\Http\Controllers\Roles\Reports\ReportsController as ReportsController;
 use App\Http\Controllers\Roles\Reports\AgendaReportsController as AgendaReportsController;
 use App\Http\Controllers\Roles\Reports\MonthlyReportsController as MonthlyReportsController;
@@ -166,6 +167,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/transport/drivers', [TransportDriversController::class, 'store'])->middleware('role:transport_officer')->name('role.transport.drivers.store');
     Route::get('/dashboard/transport/drivers/{driver}/edit', [TransportDriversController::class, 'edit'])->middleware('role:transport_officer')->name('role.transport.drivers.edit');
     Route::put('/dashboard/transport/drivers/{driver}', [TransportDriversController::class, 'update'])->middleware('role:transport_officer')->name('role.transport.drivers.update');
+    Route::get('/dashboard/transport/requests', [TransportTransportRequestsController::class, 'index'])->name('role.transport.requests.index');
+    Route::post('/dashboard/transport/requests', [TransportTransportRequestsController::class, 'store'])->name('role.transport.requests.store');
+    Route::patch('/dashboard/transport/requests/{transportRequest}/process', [TransportTransportRequestsController::class, 'process'])->middleware('role:transport_officer')->name('role.transport.requests.process');
+    Route::patch('/dashboard/transport/requests/{transportRequest}/feedback', [TransportTransportRequestsController::class, 'feedback'])->name('role.transport.requests.feedback');
     Route::get('/dashboard/transport/trips', [TransportTripsController::class, 'index'])->middleware('role:transport_officer')->name('role.transport.trips.index');
     Route::get('/dashboard/transport/trips/create', [TransportTripsController::class, 'create'])->middleware('role:transport_officer')->name('role.transport.trips.create');
     Route::post('/dashboard/transport/trips', [TransportTripsController::class, 'store'])->middleware('role:transport_officer')->name('role.transport.trips.store');
