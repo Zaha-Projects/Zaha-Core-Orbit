@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\SuperAdmin;
+namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
-class UsersManagementController extends Controller
+class UsersController extends Controller
 {
     public function index()
     {
@@ -19,7 +19,7 @@ class UsersManagementController extends Controller
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.super_admin.users', compact('users', 'roles', 'branches', 'centers'));
+        return view('pages.access.users.index', compact('users', 'roles', 'branches', 'centers'));
     }
 
     public function store(Request $request)

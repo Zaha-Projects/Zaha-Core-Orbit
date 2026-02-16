@@ -40,7 +40,7 @@
 @section('content')
     <div class="row g-4">
         <div class="col-12 col-lg-3">
-            @include('roles.super_admin.partials.sidebar')
+            @include('pages.access.partials.sidebar')
         </div>
         <div class="col-12 col-lg-9">
             <div class="card shadow-sm">

@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Roles\SuperAdmin;
+namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 
-class BranchesManagementController extends Controller
+class BranchesController extends Controller
 {
     public function index()
     {
         $branches = Branch::orderBy('name')->get();
 
-        return view('roles.super_admin.branches', compact('branches'));
+        return view('pages.access.branches.index', compact('branches'));
     }
 
     public function store(Request $request)

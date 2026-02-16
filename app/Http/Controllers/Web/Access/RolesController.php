@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Roles\SuperAdmin;
+namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-class RolesManagementController extends Controller
+class RolesController extends Controller
 {
     public function index()
     {
         $roles = Role::with('permissions')->orderBy('name')->get();
         $permissions = Permission::orderBy('name')->get();
 
-        return view('roles.super_admin.roles', compact('roles', 'permissions'));
+        return view('pages.access.roles.index', compact('roles', 'permissions'));
     }
 
     public function store(Request $request)

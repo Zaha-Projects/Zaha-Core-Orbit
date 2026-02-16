@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Roles\SuperAdmin;
+namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Center;
 use Illuminate\Http\Request;
 
-class CentersManagementController extends Controller
+class CentersController extends Controller
 {
     public function index()
     {
         $centers = Center::with('branch')->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
 
-        return view('roles.super_admin.centers', compact('centers', 'branches'));
+        return view('pages.access.centers.index', compact('centers', 'branches'));
     }
 
     public function store(Request $request)

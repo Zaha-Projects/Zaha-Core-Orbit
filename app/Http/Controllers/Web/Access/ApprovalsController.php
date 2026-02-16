@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\SuperAdmin;
+namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 
@@ -31,6 +31,6 @@ class ApprovalsController extends Controller
             ],
         ];
 
-        return view('roles.super_admin.approvals', compact('steps'));
+        return view('pages.access.approvals.index', compact('steps'));
     }
 }

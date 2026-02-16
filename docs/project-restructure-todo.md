@@ -182,10 +182,32 @@ resources/views/
 - [ ] نقل أول صفحة تجريبية إلى `resources/views/pages/...` مع الحفاظ على route.
 
 ### Sprint 1 — Access Module
-1. [ ] Controllers: Users, Roles, Branches, Centers, Approvals.
-2. [ ] Views: `pages/access/*` (index/create/edit/show حسب الحاجة).
+1. [x] Controllers: Users, Roles, Branches, Centers, Approvals.
+2. [x] Views: `pages/access/*` (index/create/edit/show حسب الحاجة).
 3. [ ] ترجمة عربية/إنجليزية لكل labels/buttons/messages المستحدثة.
 4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 1
+- `App\Http\Controllers\Roles\SuperAdmin\UsersManagementController`
+  -> `App\Http\Controllers\Web\Access\UsersController`
+- `App\Http\Controllers\Roles\SuperAdmin\RolesManagementController`
+  -> `App\Http\Controllers\Web\Access\RolesController`
+- `App\Http\Controllers\Roles\SuperAdmin\BranchesManagementController`
+  -> `App\Http\Controllers\Web\Access\BranchesController`
+- `App\Http\Controllers\Roles\SuperAdmin\CentersManagementController`
+  -> `App\Http\Controllers\Web\Access\CentersController`
+- `App\Http\Controllers\Roles\SuperAdmin\ApprovalsController`
+  -> `App\Http\Controllers\Web\Access\ApprovalsController`
+- `resources/views/roles/super_admin/users.blade.php`
+  -> `resources/views/pages/access/users/index.blade.php`
+- `resources/views/roles/super_admin/roles.blade.php`
+  -> `resources/views/pages/access/roles/index.blade.php`
+- `resources/views/roles/super_admin/branches.blade.php`
+  -> `resources/views/pages/access/branches/index.blade.php`
+- `resources/views/roles/super_admin/centers.blade.php`
+  -> `resources/views/pages/access/centers/index.blade.php`
+- `resources/views/roles/super_admin/approvals.blade.php`
+  -> `resources/views/pages/access/approvals/index.blade.php`
 
 ### Sprint 2 — Agenda Module
 1. [ ] Controllers: AgendaEvents, AgendaApprovals.

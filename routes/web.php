@@ -13,12 +13,12 @@ use App\Http\Controllers\Roles\RelationsOfficer\DashboardController as Relations
 use App\Http\Controllers\Roles\ReportsViewer\DashboardController as ReportsViewerDashboardController;
 use App\Http\Controllers\Roles\Staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\Roles\SuperAdmin\DashboardController as SuperAdminDashboardController;
-use App\Http\Controllers\Roles\SuperAdmin\RolesManagementController as SuperAdminRolesManagementController;
-use App\Http\Controllers\Roles\SuperAdmin\UsersManagementController as SuperAdminUsersManagementController;
-use App\Http\Controllers\Roles\SuperAdmin\ApprovalsController as SuperAdminApprovalsController;
+use App\Http\Controllers\Web\Access\RolesController as SuperAdminRolesManagementController;
+use App\Http\Controllers\Web\Access\UsersController as SuperAdminUsersManagementController;
+use App\Http\Controllers\Web\Access\ApprovalsController as SuperAdminApprovalsController;
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
-use App\Http\Controllers\Roles\SuperAdmin\BranchesManagementController as SuperAdminBranchesManagementController;
-use App\Http\Controllers\Roles\SuperAdmin\CentersManagementController as SuperAdminCentersManagementController;
+use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
+use App\Http\Controllers\Web\Access\CentersController as SuperAdminCentersManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 use App\Http\Controllers\Roles\Relations\AgendaEventsController as RelationsAgendaEventsController;
 use App\Http\Controllers\Roles\Relations\AgendaApprovalsController as RelationsAgendaApprovalsController;

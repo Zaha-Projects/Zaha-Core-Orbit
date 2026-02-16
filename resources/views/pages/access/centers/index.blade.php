@@ -5,12 +5,13 @@
     $subtitle = __('app.roles.super_admin.centers.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.access.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="row g-4">
-        <div class="col-12 col-lg-3">
-            @include('roles.super_admin.partials.sidebar')
-        </div>
-        <div class="col-12 col-lg-9">
+        <div class="col-12">
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <h1 class="h4 mb-2">{{ $title }}</h1>
