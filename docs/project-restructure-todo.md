@@ -210,10 +210,24 @@ resources/views/
   -> `resources/views/pages/access/approvals/index.blade.php`
 
 ### Sprint 2 — Agenda Module
-1. [ ] Controllers: AgendaEvents, AgendaApprovals.
-2. [ ] Views: `pages/agenda/events/*` + `pages/agenda/approvals/*`.
-3. [ ] ترجمة عربية/إنجليزية.
+1. [x] Controllers: AgendaEvents, AgendaApprovals.
+2. [x] Views: `pages/agenda/events/*` + `pages/agenda/approvals/*`.
+3. [x] ترجمة عربية/إنجليزية.
 4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 2
+- `App\Http\Controllers\Roles\Relations\AgendaEventsController`
+  -> `App\Http\Controllers\Web\Agenda\AgendaEventsController`
+- `App\Http\Controllers\Roles\Relations\AgendaApprovalsController`
+  -> `App\Http\Controllers\Web\Agenda\AgendaApprovalsController`
+- `resources/views/roles/relations/agenda/index.blade.php`
+  -> `resources/views/pages/agenda/events/index.blade.php`
+- `resources/views/roles/relations/agenda/create.blade.php`
+  -> `resources/views/pages/agenda/events/create.blade.php`
+- `resources/views/roles/relations/agenda/edit.blade.php`
+  -> `resources/views/pages/agenda/events/edit.blade.php`
+- `resources/views/roles/relations/agenda/approvals.blade.php`
+  -> `resources/views/pages/agenda/approvals/index.blade.php`
 
 ### Sprint 3 — Monthly Activities Module
 1. [ ] Controllers: MonthlyActivities, MonthlyActivitiesApprovals.

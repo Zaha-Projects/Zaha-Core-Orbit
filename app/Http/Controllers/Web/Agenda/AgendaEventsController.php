@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Relations;
+namespace App\Http\Controllers\Web\Agenda;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
@@ -48,7 +48,7 @@ class AgendaEventsController extends Controller
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
             ->get();
 
-        return view('roles.relations.agenda.index', compact('events'));
+        return view('pages.agenda.events.index', compact('events'));
     }
 
     public function create()
@@ -57,7 +57,7 @@ class AgendaEventsController extends Controller
         $categories = EventCategory::where('active', true)->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
 
-        return view('roles.relations.agenda.create', compact('departments', 'categories', 'branches'));
+        return view('pages.agenda.events.create', compact('departments', 'categories', 'branches'));
     }
 
     public function store(Request $request)
@@ -142,7 +142,7 @@ class AgendaEventsController extends Controller
 
         $departmentUnits = DepartmentUnit::orderBy('id')->get();
 
-        return view('roles.relations.agenda.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
+        return view('pages.agenda.events.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
     }
 
     public function update(Request $request, AgendaEvent $agendaEvent)

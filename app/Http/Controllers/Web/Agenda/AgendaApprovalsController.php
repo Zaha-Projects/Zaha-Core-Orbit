@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Relations;
+namespace App\Http\Controllers\Web\Agenda;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgendaApproval;
@@ -17,7 +17,7 @@ class AgendaApprovalsController extends Controller
             ->orderBy('day')
             ->get();
 
-        return view('roles.relations.agenda.approvals', compact('events'));
+        return view('pages.agenda.approvals.index', compact('events'));
     }
 
     public function update(Request $request, AgendaEvent $agendaEvent)

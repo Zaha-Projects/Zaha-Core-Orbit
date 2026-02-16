@@ -20,8 +20,8 @@ use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReports
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Web\Access\CentersController as SuperAdminCentersManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
-use App\Http\Controllers\Roles\Relations\AgendaEventsController as RelationsAgendaEventsController;
-use App\Http\Controllers\Roles\Relations\AgendaApprovalsController as RelationsAgendaApprovalsController;
+use App\Http\Controllers\Web\Agenda\AgendaEventsController as RelationsAgendaEventsController;
+use App\Http\Controllers\Web\Agenda\AgendaApprovalsController as RelationsAgendaApprovalsController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivitiesController as ProgramsMonthlyActivitiesController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivitySuppliesController as ProgramsMonthlyActivitySuppliesController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityTeamController as ProgramsMonthlyActivityTeamController;
