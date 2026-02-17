@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.transport.trips.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.transport.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm">
         <div class="card-body">

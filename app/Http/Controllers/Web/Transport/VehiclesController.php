@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Transport;
+namespace App\Http\Controllers\Web\Transport;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -14,14 +14,14 @@ class VehiclesController extends Controller
         $vehicles = Vehicle::with('branch')->orderBy('vehicle_no')->get();
         $branches = Branch::orderBy('name')->get();
 
-        return view('roles.transport.vehicles.index', compact('vehicles', 'branches'));
+        return view('pages.transport.vehicles.index', compact('vehicles', 'branches'));
     }
 
     public function create()
     {
         $branches = Branch::orderBy('name')->get();
 
-        return view('roles.transport.vehicles.create', compact('branches'));
+        return view('pages.transport.vehicles.create', compact('branches'));
     }
 
     public function store(Request $request)
@@ -44,7 +44,7 @@ class VehiclesController extends Controller
     {
         $branches = Branch::orderBy('name')->get();
 
-        return view('roles.transport.vehicles.edit', compact('vehicle', 'branches'));
+        return view('pages.transport.vehicles.edit', compact('vehicle', 'branches'));
     }
 
     public function update(Request $request, Vehicle $vehicle)

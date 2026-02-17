@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Transport;
+namespace App\Http\Controllers\Web\Transport;
 
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
@@ -12,12 +12,12 @@ class DriversController extends Controller
     {
         $drivers = Driver::orderBy('name')->get();
 
-        return view('roles.transport.drivers.index', compact('drivers'));
+        return view('pages.transport.drivers.index', compact('drivers'));
     }
 
     public function create()
     {
-        return view('roles.transport.drivers.create');
+        return view('pages.transport.drivers.create');
     }
 
     public function store(Request $request)
@@ -37,7 +37,7 @@ class DriversController extends Controller
 
     public function edit(Driver $driver)
     {
-        return view('roles.transport.drivers.edit', compact('driver'));
+        return view('pages.transport.drivers.edit', compact('driver'));
     }
 
     public function update(Request $request, Driver $driver)

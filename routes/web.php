@@ -35,9 +35,9 @@ use App\Http\Controllers\Web\Maintenance\MaintenanceRequestsController as Mainte
 use App\Http\Controllers\Roles\Maintenance\MaintenanceWorkDetailsController as MaintenanceWorkDetailsController;
 use App\Http\Controllers\Roles\Maintenance\MaintenanceAttachmentsController as MaintenanceAttachmentsController;
 use App\Http\Controllers\Web\Maintenance\MaintenanceApprovalsController as MaintenanceApprovalsController;
-use App\Http\Controllers\Roles\Transport\VehiclesController as TransportVehiclesController;
-use App\Http\Controllers\Roles\Transport\DriversController as TransportDriversController;
-use App\Http\Controllers\Roles\Transport\TripsController as TransportTripsController;
+use App\Http\Controllers\Web\Transport\VehiclesController as TransportVehiclesController;
+use App\Http\Controllers\Web\Transport\DriversController as TransportDriversController;
+use App\Http\Controllers\Web\Transport\TripsController as TransportTripsController;
 use App\Http\Controllers\Roles\Transport\TripSegmentsController as TransportTripSegmentsController;
 use App\Http\Controllers\Roles\Transport\TripRoundsController as TransportTripRoundsController;
 use App\Http\Controllers\Roles\Transport\TransportRequestsController as TransportTransportRequestsController;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Transport;
+namespace App\Http\Controllers\Web\Transport;
 
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
@@ -16,7 +16,7 @@ class TripsController extends Controller
         $drivers = Driver::orderBy('name')->get();
         $vehicles = Vehicle::orderBy('vehicle_no')->get();
 
-        return view('roles.transport.trips.index', compact('trips', 'drivers', 'vehicles'));
+        return view('pages.transport.trips.index', compact('trips', 'drivers', 'vehicles'));
     }
 
     public function create()
@@ -24,7 +24,7 @@ class TripsController extends Controller
         $drivers = Driver::orderBy('name')->get();
         $vehicles = Vehicle::orderBy('vehicle_no')->get();
 
-        return view('roles.transport.trips.create', compact('drivers', 'vehicles'));
+        return view('pages.transport.trips.create', compact('drivers', 'vehicles'));
     }
 
     public function store(Request $request)
@@ -59,7 +59,7 @@ class TripsController extends Controller
         $drivers = Driver::orderBy('name')->get();
         $vehicles = Vehicle::orderBy('vehicle_no')->get();
 
-        return view('roles.transport.trips.edit', compact('trip', 'drivers', 'vehicles'));
+        return view('pages.transport.trips.edit', compact('trip', 'drivers', 'vehicles'));
     }
 
     public function update(Request $request, Trip $trip)

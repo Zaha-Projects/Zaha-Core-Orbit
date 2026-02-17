@@ -295,6 +295,27 @@ resources/views/
 - `resources/views/roles/maintenance/approvals.blade.php`
   -> `resources/views/pages/maintenance/approvals/index.blade.php`
 
+
+### Sprint 6 — Transport Module
+1. [x] Controllers: Vehicles, Drivers, Trips.
+2. [x] Views: `pages/transport/vehicles/*`, `pages/transport/drivers/*`, `pages/transport/trips/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 6
+- `App\Http\Controllers\Roles\Transport\VehiclesController`
+  -> `App\Http\Controllers\Web\Transport\VehiclesController`
+- `App\Http\Controllers\Roles\Transport\DriversController`
+  -> `App\Http\Controllers\Web\Transport\DriversController`
+- `App\Http\Controllers\Roles\Transport\TripsController`
+  -> `App\Http\Controllers\Web\Transport\TripsController`
+- `resources/views/roles/transport/vehicles/*.blade.php`
+  -> `resources/views/pages/transport/vehicles/*.blade.php`
+- `resources/views/roles/transport/drivers/*.blade.php`
+  -> `resources/views/pages/transport/drivers/*.blade.php`
+- `resources/views/roles/transport/trips/*.blade.php`
+  -> `resources/views/pages/transport/trips/*.blade.php`
+
 > بعد كل Sprint يتم فتح PR مستقل مع قائمة Mapping واضحة للملفات المنقولة.
 
 ---
