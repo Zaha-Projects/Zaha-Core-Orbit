@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.maintenance.requests.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.maintenance.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -82,50 +86,50 @@
                     </select>
                 </div>
                 <div class="col-12">
-                    <h3 class="h6 mt-2">مسارات المعالجة (رئيس الفرع / الصيانة / الحاسوب)</h3>
+                    <h3 class="h6 mt-2">{{ __('app.roles.maintenance.requests.fields_ext.processing_tracks') }}</h3>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">حالة رئيس الفرع</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.branch_head_status') }}</label>
                     <input class="form-control" name="branch_head_status" value="{{ $maintenanceRequest->branch_head_status }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">حالة الصيانة</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.maintenance_track_status') }}</label>
                     <input class="form-control" name="maintenance_track_status" value="{{ $maintenanceRequest->maintenance_track_status }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">حالة الحاسوب</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.it_track_status') }}</label>
                     <input class="form-control" name="it_track_status" value="{{ $maintenanceRequest->it_track_status }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">ملاحظات رئيس الفرع</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.branch_head_note') }}</label>
                     <textarea class="form-control" rows="2" name="branch_head_note">{{ $maintenanceRequest->branch_head_note }}</textarea>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">ملاحظات الصيانة</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.maintenance_track_note') }}</label>
                     <textarea class="form-control" rows="2" name="maintenance_track_note">{{ $maintenanceRequest->maintenance_track_note }}</textarea>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">ملاحظات الحاسوب</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.it_track_note') }}</label>
                     <textarea class="form-control" rows="2" name="it_track_note">{{ $maintenanceRequest->it_track_note }}</textarea>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">الموارد المستخدمة</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.support_resources') }}</label>
                     <textarea class="form-control" rows="2" name="support_resources">{{ $maintenanceRequest->support_resources }}</textarea>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">جهة الدعم</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.support_party') }}</label>
                     <input class="form-control" name="support_party" value="{{ $maintenanceRequest->support_party }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">تحليل سبب العطل - رئيس الفرع</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.root_cause_branch') }}</label>
                     <textarea class="form-control" rows="2" name="root_cause_branch">{{ $maintenanceRequest->root_cause_branch }}</textarea>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">تحليل سبب العطل - الصيانة</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.root_cause_maintenance') }}</label>
                     <textarea class="form-control" rows="2" name="root_cause_maintenance">{{ $maintenanceRequest->root_cause_maintenance }}</textarea>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">تحليل سبب العطل - الحاسوب</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.root_cause_it') }}</label>
                     <textarea class="form-control" rows="2" name="root_cause_it">{{ $maintenanceRequest->root_cause_it }}</textarea>
                 </div>
                 <div class="col-12 d-flex justify-content-end">
@@ -289,7 +293,7 @@
                     </select>
                 </div>
                 <div class="col-12">
-                    <label class="form-label">ملخص الإغلاق</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.closure_summary') }}</label>
                     <textarea class="form-control" rows="3" name="closure_summary">{{ $maintenanceRequest->closure_summary }}</textarea>
                 </div>
                 <div class="col-12 col-md-4 d-flex justify-content-end align-items-end">

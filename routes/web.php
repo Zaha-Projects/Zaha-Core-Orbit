@@ -31,10 +31,10 @@ use App\Http\Controllers\Web\Finance\DonationsController as FinanceDonationsCash
 use App\Http\Controllers\Web\Finance\BookingsController as FinanceBookingsController;
 use App\Http\Controllers\Web\Finance\ZahaTimeController as FinanceZahaTimeBookingsController;
 use App\Http\Controllers\Web\Finance\PaymentsController as FinancePaymentsController;
-use App\Http\Controllers\Roles\Maintenance\MaintenanceRequestsController as MaintenanceRequestsController;
+use App\Http\Controllers\Web\Maintenance\MaintenanceRequestsController as MaintenanceRequestsController;
 use App\Http\Controllers\Roles\Maintenance\MaintenanceWorkDetailsController as MaintenanceWorkDetailsController;
 use App\Http\Controllers\Roles\Maintenance\MaintenanceAttachmentsController as MaintenanceAttachmentsController;
-use App\Http\Controllers\Roles\Maintenance\MaintenanceApprovalsController as MaintenanceApprovalsController;
+use App\Http\Controllers\Web\Maintenance\MaintenanceApprovalsController as MaintenanceApprovalsController;
 use App\Http\Controllers\Roles\Transport\VehiclesController as TransportVehiclesController;
 use App\Http\Controllers\Roles\Transport\DriversController as TransportDriversController;
 use App\Http\Controllers\Roles\Transport\TripsController as TransportTripsController;

@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.maintenance.requests.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.maintenance.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm">
         <div class="card-body">

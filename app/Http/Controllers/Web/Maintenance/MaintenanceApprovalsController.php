@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Maintenance;
+namespace App\Http\Controllers\Web\Maintenance;
 
 use App\Http\Controllers\Controller;
 use App\Models\MaintenanceApproval;
@@ -15,7 +15,7 @@ class MaintenanceApprovalsController extends Controller
             ->orderByDesc('logged_at')
             ->get();
 
-        return view('roles.maintenance.approvals', compact('requests'));
+        return view('pages.maintenance.approvals.index', compact('requests'));
     }
 
     public function update(Request $request, MaintenanceRequest $maintenanceRequest)

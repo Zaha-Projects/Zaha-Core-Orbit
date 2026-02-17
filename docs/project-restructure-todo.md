@@ -274,6 +274,27 @@ resources/views/
 - `resources/views/roles/finance/payments/index.blade.php`
   -> `resources/views/pages/finance/payments/index.blade.php`
 
+
+### Sprint 5 — Maintenance Module
+1. [x] Controllers: MaintenanceRequests, MaintenanceApprovals.
+2. [x] Views: `pages/maintenance/requests/*` + `pages/maintenance/approvals/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 5
+- `App\Http\Controllers\Roles\Maintenance\MaintenanceRequestsController`
+  -> `App\Http\Controllers\Web\Maintenance\MaintenanceRequestsController`
+- `App\Http\Controllers\Roles\Maintenance\MaintenanceApprovalsController`
+  -> `App\Http\Controllers\Web\Maintenance\MaintenanceApprovalsController`
+- `resources/views/roles/maintenance/requests/index.blade.php`
+  -> `resources/views/pages/maintenance/requests/index.blade.php`
+- `resources/views/roles/maintenance/requests/create.blade.php`
+  -> `resources/views/pages/maintenance/requests/create.blade.php`
+- `resources/views/roles/maintenance/requests/edit.blade.php`
+  -> `resources/views/pages/maintenance/requests/edit.blade.php`
+- `resources/views/roles/maintenance/approvals.blade.php`
+  -> `resources/views/pages/maintenance/approvals/index.blade.php`
+
 > بعد كل Sprint يتم فتح PR مستقل مع قائمة Mapping واضحة للملفات المنقولة.
 
 ---

@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.maintenance.requests.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.maintenance.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -58,38 +62,38 @@
                     </select>
                 </div>
                 <div class="col-12">
-                    <h3 class="h6 mt-2">مسارات المعالجة (رئيس الفرع / الصيانة / الحاسوب)</h3>
+                    <h3 class="h6 mt-2">{{ __('app.roles.maintenance.requests.fields_ext.processing_tracks') }}</h3>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">حالة رئيس الفرع</label>
-                    <input class="form-control" name="branch_head_status" value="{{ old('branch_head_status') }}" placeholder="approved / rejected / pending">
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.branch_head_status') }}</label>
+                    <input class="form-control" name="branch_head_status" value="{{ old('branch_head_status') }}" placeholder="{{ __('app.roles.maintenance.requests.fields_ext.status_placeholder') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">حالة الصيانة</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.maintenance_track_status') }}</label>
                     <input class="form-control" name="maintenance_track_status" value="{{ old('maintenance_track_status') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">حالة الحاسوب</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.it_track_status') }}</label>
                     <input class="form-control" name="it_track_status" value="{{ old('it_track_status') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">ملاحظات رئيس الفرع</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.branch_head_note') }}</label>
                     <textarea class="form-control" rows="2" name="branch_head_note">{{ old('branch_head_note') }}</textarea>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">ملاحظات الصيانة</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.maintenance_track_note') }}</label>
                     <textarea class="form-control" rows="2" name="maintenance_track_note">{{ old('maintenance_track_note') }}</textarea>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">ملاحظات الحاسوب</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.it_track_note') }}</label>
                     <textarea class="form-control" rows="2" name="it_track_note">{{ old('it_track_note') }}</textarea>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">الموارد المستخدمة</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.support_resources') }}</label>
                     <textarea class="form-control" rows="2" name="support_resources">{{ old('support_resources') }}</textarea>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">جهة الدعم</label>
+                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields_ext.support_party') }}</label>
                     <input class="form-control" name="support_party" value="{{ old('support_party') }}">
                 </div>
                 <div class="col-12 col-md-4">
@@ -130,9 +134,9 @@
                             <th>{{ __('app.roles.maintenance.requests.table.category') }}</th>
                             <th>{{ __('app.roles.maintenance.requests.table.priority') }}</th>
                             <th>{{ __('app.roles.maintenance.requests.table.status') }}</th>
-                            <th>رئيس الفرع</th>
-                            <th>الصيانة</th>
-                            <th>الحاسوب</th>
+                            <th>{{ __('app.roles.maintenance.requests.table.branch_head') }}</th>
+                            <th>{{ __('app.roles.maintenance.requests.table.maintenance') }}</th>
+                            <th>{{ __('app.roles.maintenance.requests.table.it') }}</th>
                             <th class="text-end">{{ __('app.roles.maintenance.requests.table.actions') }}</th>
                         </tr>
                     </thead>

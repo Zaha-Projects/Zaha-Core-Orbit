@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Maintenance;
+namespace App\Http\Controllers\Web\Maintenance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -16,7 +16,7 @@ class MaintenanceRequestsController extends Controller
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.maintenance.requests.index', compact('requests', 'branches', 'centers'));
+        return view('pages.maintenance.requests.index', compact('requests', 'branches', 'centers'));
     }
 
     public function create()
@@ -24,7 +24,7 @@ class MaintenanceRequestsController extends Controller
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.maintenance.requests.create', compact('branches', 'centers'));
+        return view('pages.maintenance.requests.create', compact('branches', 'centers'));
     }
 
     public function store(Request $request)
@@ -90,7 +90,7 @@ class MaintenanceRequestsController extends Controller
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.maintenance.requests.edit', compact('maintenanceRequest', 'branches', 'centers'));
+        return view('pages.maintenance.requests.edit', compact('maintenanceRequest', 'branches', 'centers'));
     }
 
     public function update(Request $request, MaintenanceRequest $maintenanceRequest)
