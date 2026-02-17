@@ -249,6 +249,31 @@ resources/views/
 - `resources/views/roles/programs/monthly_activities/approvals.blade.php`
   -> `resources/views/pages/monthly_activities/approvals/index.blade.php`
 
+
+### Sprint 4 — Finance Module
+1. [x] Controllers: Donations, Bookings, ZahaTime, Payments.
+2. [x] Views: `pages/finance/donations/*`, `pages/finance/bookings/*`, `pages/finance/zaha_time/*`, `pages/finance/payments/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 4
+- `App\Http\Controllers\Roles\Finance\DonationsCashController`
+  -> `App\Http\Controllers\Web\Finance\DonationsController`
+- `App\Http\Controllers\Roles\Finance\BookingsController`
+  -> `App\Http\Controllers\Web\Finance\BookingsController`
+- `App\Http\Controllers\Roles\Finance\ZahaTimeBookingsController`
+  -> `App\Http\Controllers\Web\Finance\ZahaTimeController`
+- `App\Http\Controllers\Roles\Finance\PaymentsController`
+  -> `App\Http\Controllers\Web\Finance\PaymentsController`
+- `resources/views/roles/finance/donations/*.blade.php`
+  -> `resources/views/pages/finance/donations/*.blade.php`
+- `resources/views/roles/finance/bookings/*.blade.php`
+  -> `resources/views/pages/finance/bookings/*.blade.php`
+- `resources/views/roles/finance/zaha_time/*.blade.php`
+  -> `resources/views/pages/finance/zaha_time/*.blade.php`
+- `resources/views/roles/finance/payments/index.blade.php`
+  -> `resources/views/pages/finance/payments/index.blade.php`
+
 > بعد كل Sprint يتم فتح PR مستقل مع قائمة Mapping واضحة للملفات المنقولة.
 
 ---

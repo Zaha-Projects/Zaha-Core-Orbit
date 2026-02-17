@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Finance;
+namespace App\Http\Controllers\Web\Finance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
@@ -18,7 +18,7 @@ class PaymentsController extends Controller
     {
         $payments = Payment::orderByDesc('paid_at')->get();
 
-        return view('roles.finance.payments.index', compact('payments'));
+        return view('pages.finance.payments.index', compact('payments'));
     }
 
     public function store(Request $request)

@@ -10,6 +10,10 @@
     ];
 @endphp
 
+@section('sidebar')
+    @include('pages.finance.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm mb-4">
         <div class="card-body">

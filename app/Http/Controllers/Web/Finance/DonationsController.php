@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Finance;
+namespace App\Http\Controllers\Web\Finance;
 
 use App\Http\Controllers\Controller;
 use App\Models\DonationCash;
@@ -8,21 +8,21 @@ use App\Models\MonthlyActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class DonationsCashController extends Controller
+class DonationsController extends Controller
 {
     public function index()
     {
         $donations = DonationCash::with(['monthlyActivity', 'creator'])->orderByDesc('date')->get();
         $activities = MonthlyActivity::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.finance.donations.index', compact('donations', 'activities'));
+        return view('pages.finance.donations.index', compact('donations', 'activities'));
     }
 
     public function create()
     {
         $activities = MonthlyActivity::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.finance.donations.create', compact('activities'));
+        return view('pages.finance.donations.create', compact('activities'));
     }
 
     public function store(Request $request)
@@ -68,7 +68,7 @@ class DonationsCashController extends Controller
     {
         $activities = MonthlyActivity::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.finance.donations.edit', compact('donationCash', 'activities'));
+        return view('pages.finance.donations.edit', compact('donationCash', 'activities'));
     }
 
     public function update(Request $request, DonationCash $donationCash)

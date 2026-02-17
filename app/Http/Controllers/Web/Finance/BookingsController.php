@@ -1,22 +1,22 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Finance;
+namespace App\Http\Controllers\Web\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\Branch;
 use App\Models\Center;
-use App\Models\ZahaTimeBooking;
 use Illuminate\Http\Request;
 
-class ZahaTimeBookingsController extends Controller
+class BookingsController extends Controller
 {
     public function index()
     {
-        $bookings = ZahaTimeBooking::with(['branch', 'center'])->orderByDesc('booking_date')->get();
+        $bookings = Booking::with(['branch', 'center'])->orderByDesc('booking_date')->get();
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.finance.zaha_time.index', compact('bookings', 'branches', 'centers'));
+        return view('pages.finance.bookings.index', compact('bookings', 'branches', 'centers'));
     }
 
     public function create()
@@ -24,7 +24,7 @@ class ZahaTimeBookingsController extends Controller
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.finance.zaha_time.create', compact('branches', 'centers'));
+        return view('pages.finance.bookings.create', compact('branches', 'centers'));
     }
 
     public function store(Request $request)
@@ -34,12 +34,12 @@ class ZahaTimeBookingsController extends Controller
             'booking_date' => ['required', 'date'],
             'time_from' => ['required', 'date_format:H:i'],
             'time_to' => ['required', 'date_format:H:i'],
-            'entity_type' => ['required', 'string', 'max:255'],
-            'contact_person' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:50'],
-            'children_count' => ['nullable', 'integer', 'min:0'],
-            'payment_cash_ref' => ['nullable', 'string', 'max:255'],
-            'payment_electronic_ref' => ['nullable', 'string', 'max:255'],
+            'received_by' => ['required', 'string', 'max:255'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'facility_name' => ['required', 'string', 'max:255'],
+            'payment_type' => ['required', 'string', 'max:255'],
+            'receipt_ref' => ['nullable', 'string', 'max:255'],
+            'paid_at' => ['nullable', 'date'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_reason' => ['nullable', 'string'],
             'status' => ['required', 'string', 'max:50'],
@@ -47,17 +47,17 @@ class ZahaTimeBookingsController extends Controller
             'center_id' => ['required', 'exists:centers,id'],
         ]);
 
-        ZahaTimeBooking::create([
+        Booking::create([
             'received_at' => $data['received_at'],
             'booking_date' => $data['booking_date'],
             'time_from' => $data['time_from'],
             'time_to' => $data['time_to'],
-            'entity_type' => $data['entity_type'],
-            'contact_person' => $data['contact_person'],
-            'phone' => $data['phone'],
-            'children_count' => $data['children_count'] ?? 0,
-            'payment_cash_ref' => $data['payment_cash_ref'] ?? null,
-            'payment_electronic_ref' => $data['payment_electronic_ref'] ?? null,
+            'received_by' => $data['received_by'],
+            'customer_name' => $data['customer_name'],
+            'facility_name' => $data['facility_name'],
+            'payment_type' => $data['payment_type'],
+            'receipt_ref' => $data['receipt_ref'] ?? null,
+            'paid_at' => $data['paid_at'] ?? null,
             'discount_amount' => $data['discount_amount'] ?? 0,
             'discount_reason' => $data['discount_reason'] ?? null,
             'status' => $data['status'],
@@ -66,31 +66,31 @@ class ZahaTimeBookingsController extends Controller
         ]);
 
         return redirect()
-            ->route('role.finance.zaha_time.index')
-            ->with('status', __('app.roles.finance.zaha_time.created'));
+            ->route('role.finance.bookings.index')
+            ->with('status', __('app.roles.finance.bookings.created'));
     }
 
-    public function edit(ZahaTimeBooking $zahaTimeBooking)
+    public function edit(Booking $booking)
     {
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.finance.zaha_time.edit', compact('zahaTimeBooking', 'branches', 'centers'));
+        return view('pages.finance.bookings.edit', compact('booking', 'branches', 'centers'));
     }
 
-    public function update(Request $request, ZahaTimeBooking $zahaTimeBooking)
+    public function update(Request $request, Booking $booking)
     {
         $data = $request->validate([
             'received_at' => ['required', 'date'],
             'booking_date' => ['required', 'date'],
             'time_from' => ['required', 'date_format:H:i'],
             'time_to' => ['required', 'date_format:H:i'],
-            'entity_type' => ['required', 'string', 'max:255'],
-            'contact_person' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:50'],
-            'children_count' => ['nullable', 'integer', 'min:0'],
-            'payment_cash_ref' => ['nullable', 'string', 'max:255'],
-            'payment_electronic_ref' => ['nullable', 'string', 'max:255'],
+            'received_by' => ['required', 'string', 'max:255'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'facility_name' => ['required', 'string', 'max:255'],
+            'payment_type' => ['required', 'string', 'max:255'],
+            'receipt_ref' => ['nullable', 'string', 'max:255'],
+            'paid_at' => ['nullable', 'date'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_reason' => ['nullable', 'string'],
             'status' => ['required', 'string', 'max:50'],
@@ -98,17 +98,17 @@ class ZahaTimeBookingsController extends Controller
             'center_id' => ['required', 'exists:centers,id'],
         ]);
 
-        $zahaTimeBooking->update([
+        $booking->update([
             'received_at' => $data['received_at'],
             'booking_date' => $data['booking_date'],
             'time_from' => $data['time_from'],
             'time_to' => $data['time_to'],
-            'entity_type' => $data['entity_type'],
-            'contact_person' => $data['contact_person'],
-            'phone' => $data['phone'],
-            'children_count' => $data['children_count'] ?? 0,
-            'payment_cash_ref' => $data['payment_cash_ref'] ?? null,
-            'payment_electronic_ref' => $data['payment_electronic_ref'] ?? null,
+            'received_by' => $data['received_by'],
+            'customer_name' => $data['customer_name'],
+            'facility_name' => $data['facility_name'],
+            'payment_type' => $data['payment_type'],
+            'receipt_ref' => $data['receipt_ref'] ?? null,
+            'paid_at' => $data['paid_at'] ?? null,
             'discount_amount' => $data['discount_amount'] ?? 0,
             'discount_reason' => $data['discount_reason'] ?? null,
             'status' => $data['status'],
@@ -117,7 +117,7 @@ class ZahaTimeBookingsController extends Controller
         ]);
 
         return redirect()
-            ->route('role.finance.zaha_time.index')
-            ->with('status', __('app.roles.finance.zaha_time.updated', ['booking' => $zahaTimeBooking->contact_person]));
+            ->route('role.finance.bookings.index')
+            ->with('status', __('app.roles.finance.bookings.updated', ['booking' => $booking->customer_name]));
     }
 }

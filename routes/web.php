@@ -27,10 +27,10 @@ use App\Http\Controllers\Roles\Programs\MonthlyActivitySuppliesController as Pro
 use App\Http\Controllers\Roles\Programs\MonthlyActivityTeamController as ProgramsMonthlyActivityTeamController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityAttachmentsController as ProgramsMonthlyActivityAttachmentsController;
 use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesApprovalsController as ProgramsMonthlyActivityApprovalsController;
-use App\Http\Controllers\Roles\Finance\DonationsCashController as FinanceDonationsCashController;
-use App\Http\Controllers\Roles\Finance\BookingsController as FinanceBookingsController;
-use App\Http\Controllers\Roles\Finance\ZahaTimeBookingsController as FinanceZahaTimeBookingsController;
-use App\Http\Controllers\Roles\Finance\PaymentsController as FinancePaymentsController;
+use App\Http\Controllers\Web\Finance\DonationsController as FinanceDonationsCashController;
+use App\Http\Controllers\Web\Finance\BookingsController as FinanceBookingsController;
+use App\Http\Controllers\Web\Finance\ZahaTimeController as FinanceZahaTimeBookingsController;
+use App\Http\Controllers\Web\Finance\PaymentsController as FinancePaymentsController;
 use App\Http\Controllers\Roles\Maintenance\MaintenanceRequestsController as MaintenanceRequestsController;
 use App\Http\Controllers\Roles\Maintenance\MaintenanceWorkDetailsController as MaintenanceWorkDetailsController;
 use App\Http\Controllers\Roles\Maintenance\MaintenanceAttachmentsController as MaintenanceAttachmentsController;

@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.finance.donations.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.finance.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm">
         <div class="card-body">
