@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.reports.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.reports.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -18,7 +22,7 @@
     @endif
 
     <div class="mb-3 text-end">
-        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.reports.kpis.index') }}">فتح مؤشرات الأداء الشهرية</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.reports.kpis.index') }}">{{ __('app.roles.reports.actions.open_kpis') }}</a>
     </div>
 
     <div class="card shadow-sm">

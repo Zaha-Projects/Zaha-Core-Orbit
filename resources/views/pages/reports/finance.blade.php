@@ -1,9 +1,13 @@
 @extends('layouts.app')
 
 @php
-    $title = __('app.roles.reports.agenda.title');
-    $subtitle = __('app.roles.reports.agenda.subtitle');
+    $title = __('app.roles.reports.finance.title');
+    $subtitle = __('app.roles.reports.finance.subtitle');
 @endphp
+
+@section('sidebar')
+    @include('pages.reports.partials.sidebar')
+@endsection
 
 @section('content')
     <div class="card shadow-sm mb-4">
@@ -19,7 +23,7 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="POST" action="{{ route('role.reports.agenda.export') }}" class="row g-3">
+            <form method="POST" action="{{ route('role.reports.finance.export') }}" class="row g-3">
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.reports.fields.date_from') }}</label>
@@ -44,30 +48,9 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th>{{ __('app.roles.reports.agenda.table.event') }}</th>
-                            <th>{{ __('app.roles.reports.agenda.table.date') }}</th>
-                            <th>{{ __('app.roles.reports.agenda.table.status') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($events as $event)
-                            <tr>
-                                <td>{{ $event->event_name }}</td>
-                                <td>{{ sprintf('%02d-%02d', $event->month, $event->day) }}</td>
-                                <td>{{ $event->status }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-muted">{{ __('app.roles.reports.agenda.table.empty') }}</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            <p class="text-muted mb-0">
+                {{ __('app.roles.reports.finance.summary', ['donations' => $donations->count(), 'bookings' => $bookings->count(), 'zaha_time' => $zahaTimeBookings->count()]) }}
+            </p>
         </div>
     </div>
 @endsection

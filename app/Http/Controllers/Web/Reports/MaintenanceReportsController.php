@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Reports;
+namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\MaintenanceRequest;
@@ -12,7 +12,7 @@ class MaintenanceReportsController extends Controller
     {
         $requests = MaintenanceRequest::orderByDesc('logged_at')->get();
 
-        return view('roles.reports.maintenance', compact('requests'));
+        return view('pages.reports.maintenance', compact('requests'));
     }
 
     public function export(Request $request)

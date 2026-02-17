@@ -1,9 +1,13 @@
 @extends('layouts.app')
 
 @php
-    $title = __('app.roles.reports.monthly.title');
-    $subtitle = __('app.roles.reports.monthly.subtitle');
+    $title = __('app.roles.reports.agenda.title');
+    $subtitle = __('app.roles.reports.agenda.subtitle');
 @endphp
+
+@section('sidebar')
+    @include('pages.reports.partials.sidebar')
+@endsection
 
 @section('content')
     <div class="card shadow-sm mb-4">
@@ -19,7 +23,7 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="POST" action="{{ route('role.reports.monthly.export') }}" class="row g-3">
+            <form method="POST" action="{{ route('role.reports.agenda.export') }}" class="row g-3">
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.reports.fields.date_from') }}</label>
@@ -48,21 +52,21 @@
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>{{ __('app.roles.reports.monthly.table.activity') }}</th>
-                            <th>{{ __('app.roles.reports.monthly.table.date') }}</th>
-                            <th>{{ __('app.roles.reports.monthly.table.status') }}</th>
+                            <th>{{ __('app.roles.reports.agenda.table.event') }}</th>
+                            <th>{{ __('app.roles.reports.agenda.table.date') }}</th>
+                            <th>{{ __('app.roles.reports.agenda.table.status') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($activities as $activity)
+                        @forelse ($events as $event)
                             <tr>
-                                <td>{{ $activity->title }}</td>
-                                <td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td>
-                                <td>{{ $activity->status }}</td>
+                                <td>{{ $event->event_name }}</td>
+                                <td>{{ sprintf('%02d-%02d', $event->month, $event->day) }}</td>
+                                <td>{{ $event->status }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="text-muted">{{ __('app.roles.reports.monthly.table.empty') }}</td>
+                                <td colspan="3" class="text-muted">{{ __('app.roles.reports.agenda.table.empty') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

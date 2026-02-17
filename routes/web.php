@@ -41,13 +41,13 @@ use App\Http\Controllers\Web\Transport\TripsController as TransportTripsControll
 use App\Http\Controllers\Roles\Transport\TripSegmentsController as TransportTripSegmentsController;
 use App\Http\Controllers\Roles\Transport\TripRoundsController as TransportTripRoundsController;
 use App\Http\Controllers\Roles\Transport\TransportRequestsController as TransportTransportRequestsController;
-use App\Http\Controllers\Roles\Reports\ReportsController as ReportsController;
-use App\Http\Controllers\Roles\Reports\AgendaReportsController as AgendaReportsController;
-use App\Http\Controllers\Roles\Reports\MonthlyReportsController as MonthlyReportsController;
-use App\Http\Controllers\Roles\Reports\FinanceReportsController as FinanceReportsController;
-use App\Http\Controllers\Roles\Reports\MaintenanceReportsController as MaintenanceReportsController;
-use App\Http\Controllers\Roles\Reports\TransportReportsController as TransportReportsController;
-use App\Http\Controllers\Roles\Reports\MonthlyKpisController as MonthlyKpisController;
+use App\Http\Controllers\Web\Reports\ReportsController as ReportsController;
+use App\Http\Controllers\Web\Reports\AgendaReportsController as AgendaReportsController;
+use App\Http\Controllers\Web\Reports\MonthlyReportsController as MonthlyReportsController;
+use App\Http\Controllers\Web\Reports\FinanceReportsController as FinanceReportsController;
+use App\Http\Controllers\Web\Reports\MaintenanceReportsController as MaintenanceReportsController;
+use App\Http\Controllers\Web\Reports\TransportReportsController as TransportReportsController;
+use App\Http\Controllers\Web\Reports\MonthlyKpisController as MonthlyKpisController;
 use App\Http\Controllers\Roles\Staff\StaffAgendaController as StaffAgendaController;
 use App\Http\Controllers\Roles\Staff\StaffMonthlyActivitiesController as StaffMonthlyActivitiesController;
 

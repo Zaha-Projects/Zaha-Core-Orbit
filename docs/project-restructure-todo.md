@@ -316,6 +316,31 @@ resources/views/
 - `resources/views/roles/transport/trips/*.blade.php`
   -> `resources/views/pages/transport/trips/*.blade.php`
 
+
+### Sprint 7 — Reports Module
+1. [x] Controllers: Reports, AgendaReports, MonthlyReports, FinanceReports, MaintenanceReports, TransportReports, MonthlyKpis.
+2. [x] Views: `pages/reports/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 7
+- `App\Http\Controllers\Roles\Reports\ReportsController`
+  -> `App\Http\Controllers\Web\Reports\ReportsController`
+- `App\Http\Controllers\Roles\Reports\AgendaReportsController`
+  -> `App\Http\Controllers\Web\Reports\AgendaReportsController`
+- `App\Http\Controllers\Roles\Reports\MonthlyReportsController`
+  -> `App\Http\Controllers\Web\Reports\MonthlyReportsController`
+- `App\Http\Controllers\Roles\Reports\FinanceReportsController`
+  -> `App\Http\Controllers\Web\Reports\FinanceReportsController`
+- `App\Http\Controllers\Roles\Reports\MaintenanceReportsController`
+  -> `App\Http\Controllers\Web\Reports\MaintenanceReportsController`
+- `App\Http\Controllers\Roles\Reports\TransportReportsController`
+  -> `App\Http\Controllers\Web\Reports\TransportReportsController`
+- `App\Http\Controllers\Roles\Reports\MonthlyKpisController`
+  -> `App\Http\Controllers\Web\Reports\MonthlyKpisController`
+- `resources/views/roles/reports/*.blade.php`
+  -> `resources/views/pages/reports/*.blade.php`
+
 > بعد كل Sprint يتم فتح PR مستقل مع قائمة Mapping واضحة للملفات المنقولة.
 
 ---

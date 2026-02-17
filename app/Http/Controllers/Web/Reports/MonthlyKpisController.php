@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Reports;
+namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -19,7 +19,7 @@ class MonthlyKpisController extends Controller
             ->orderByDesc('month')
             ->get();
 
-        return view('roles.reports.kpis', compact('kpis', 'branches', 'centers'));
+        return view('pages.reports.kpis', compact('kpis', 'branches', 'centers'));
     }
 
     public function store(Request $request)
@@ -51,6 +51,6 @@ class MonthlyKpisController extends Controller
             array_merge($data, ['created_by' => $request->user()->id])
         );
 
-        return redirect()->route('role.reports.kpis.index')->with('status', 'تم حفظ مؤشرات الأداء الشهرية.');
+        return redirect()->route('role.reports.kpis.index')->with('status', __('app.roles.reports.kpis.saved'));
     }
 }

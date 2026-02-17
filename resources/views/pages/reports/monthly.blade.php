@@ -1,9 +1,13 @@
 @extends('layouts.app')
 
 @php
-    $title = __('app.roles.reports.transport.title');
-    $subtitle = __('app.roles.reports.transport.subtitle');
+    $title = __('app.roles.reports.monthly.title');
+    $subtitle = __('app.roles.reports.monthly.subtitle');
 @endphp
+
+@section('sidebar')
+    @include('pages.reports.partials.sidebar')
+@endsection
 
 @section('content')
     <div class="card shadow-sm mb-4">
@@ -19,7 +23,7 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="POST" action="{{ route('role.reports.transport.export') }}" class="row g-3">
+            <form method="POST" action="{{ route('role.reports.monthly.export') }}" class="row g-3">
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.reports.fields.date_from') }}</label>
@@ -48,19 +52,21 @@
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>{{ __('app.roles.reports.transport.table.trip_date') }}</th>
-                            <th>{{ __('app.roles.reports.transport.table.status') }}</th>
+                            <th>{{ __('app.roles.reports.monthly.table.activity') }}</th>
+                            <th>{{ __('app.roles.reports.monthly.table.date') }}</th>
+                            <th>{{ __('app.roles.reports.monthly.table.status') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($trips as $trip)
+                        @forelse ($activities as $activity)
                             <tr>
-                                <td>{{ optional($trip->trip_date)->format('Y-m-d') }}</td>
-                                <td>{{ $trip->status }}</td>
+                                <td>{{ $activity->title }}</td>
+                                <td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td>
+                                <td>{{ $activity->status }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="2" class="text-muted">{{ __('app.roles.reports.transport.table.empty') }}</td>
+                                <td colspan="3" class="text-muted">{{ __('app.roles.reports.monthly.table.empty') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

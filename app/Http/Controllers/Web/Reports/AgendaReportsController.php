@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Reports;
+namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
@@ -16,7 +16,7 @@ class AgendaReportsController extends Controller
         $centers = Center::orderBy('name')->get();
         $events = AgendaEvent::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.reports.agenda', compact('branches', 'centers', 'events'));
+        return view('pages.reports.agenda', compact('branches', 'centers', 'events'));
     }
 
     public function export(Request $request)

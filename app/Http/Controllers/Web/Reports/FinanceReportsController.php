@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Reports;
+namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
@@ -16,7 +16,7 @@ class FinanceReportsController extends Controller
         $bookings = Booking::orderByDesc('booking_date')->get();
         $zahaTimeBookings = ZahaTimeBooking::orderByDesc('booking_date')->get();
 
-        return view('roles.reports.finance', compact('donations', 'bookings', 'zahaTimeBookings'));
+        return view('pages.reports.finance', compact('donations', 'bookings', 'zahaTimeBookings'));
     }
 
     public function export(Request $request)

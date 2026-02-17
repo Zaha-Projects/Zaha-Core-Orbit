@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Reports;
+namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -16,7 +16,7 @@ class MonthlyReportsController extends Controller
         $centers = Center::orderBy('name')->get();
         $activities = MonthlyActivity::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.reports.monthly', compact('branches', 'centers', 'activities'));
+        return view('pages.reports.monthly', compact('branches', 'centers', 'activities'));
     }
 
     public function export(Request $request)

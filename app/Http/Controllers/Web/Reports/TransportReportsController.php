@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Reports;
+namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Trip;
@@ -12,7 +12,7 @@ class TransportReportsController extends Controller
     {
         $trips = Trip::orderByDesc('trip_date')->get();
 
-        return view('roles.reports.transport', compact('trips'));
+        return view('pages.reports.transport', compact('trips'));
     }
 
     public function export(Request $request)

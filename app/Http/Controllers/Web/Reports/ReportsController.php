@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Reports;
+namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -14,7 +14,7 @@ class ReportsController extends Controller
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('roles.reports.index', compact('branches', 'centers'));
+        return view('pages.reports.index', compact('branches', 'centers'));
     }
 
     public function export(Request $request)
