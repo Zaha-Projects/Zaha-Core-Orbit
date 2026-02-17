@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Programs;
+namespace App\Http\Controllers\Web\MonthlyActivities;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
@@ -108,7 +108,7 @@ class MonthlyActivitiesController extends Controller
         $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.programs.monthly_activities.index', compact('activities', 'branches', 'centers', 'agendaEvents'));
+        return view('pages.monthly_activities.activities.index', compact('activities', 'branches', 'centers', 'agendaEvents'));
     }
 
     public function create()
@@ -117,7 +117,7 @@ class MonthlyActivitiesController extends Controller
         $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.programs.monthly_activities.create', compact('branches', 'centers', 'agendaEvents'));
+        return view('pages.monthly_activities.activities.create', compact('branches', 'centers', 'agendaEvents'));
     }
 
     public function syncFromAgenda(Request $request)
@@ -135,7 +135,7 @@ class MonthlyActivitiesController extends Controller
             ->exists();
 
         if (! $centerBelongsToBranch) {
-            return back()->withErrors(['center_id' => 'المركز المختار لا يتبع الفرع المحدد.']);
+            return back()->withErrors(['center_id' => __('app.roles.programs.monthly_activities.errors.center_branch_mismatch')]);
         }
 
         $events = AgendaEvent::query()
@@ -195,7 +195,7 @@ class MonthlyActivitiesController extends Controller
 
         return redirect()
             ->route('role.programs.activities.index')
-            ->with('status', "تمت مزامنة {$created} فعالية من الأجندة إلى خطة الفرع.");
+            ->with('status', __('app.roles.programs.monthly_activities.sync.done', ['count' => $created]));
     }
 
     public function store(Request $request)
@@ -291,13 +291,13 @@ class MonthlyActivitiesController extends Controller
         $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
 
-        return view('roles.programs.monthly_activities.edit', compact('monthlyActivity', 'branches', 'centers', 'agendaEvents'));
+        return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'centers', 'agendaEvents'));
     }
 
     public function update(Request $request, MonthlyActivity $monthlyActivity)
     {
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
-            return back()->withErrors(['status' => 'تم قفل هذه الفعالية وأصبحت رسمية. التعديل متاح فقط للإدارة العامة.']);
+            return back()->withErrors(['status' => __('app.roles.programs.monthly_activities.errors.locked')]);
         }
 
         $data = $request->validate([

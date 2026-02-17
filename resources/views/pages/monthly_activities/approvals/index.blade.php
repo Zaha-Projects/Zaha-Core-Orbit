@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.programs.monthly_activities.approvals.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.monthly_activities.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -26,9 +30,9 @@
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.title') }}</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.date') }}</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.status') }}</th>
-                            <th>اعتماد العلاقات (ضابط/مدير)</th>
-                            <th>اعتماد البرامج (ضابط/مدير)</th>
-                            <th>اعتماد التنفيذي</th>
+                            <th>{{ __('app.roles.programs.monthly_activities.approvals.table.relations_lane') }}</th>
+                            <th>{{ __('app.roles.programs.monthly_activities.approvals.table.programs_lane') }}</th>
+                            <th>{{ __('app.roles.programs.monthly_activities.approvals.table.executive_approval') }}</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.last_decision') }}</th>
                             <th class="text-end">{{ __('app.roles.programs.monthly_activities.approvals.table.actions') }}</th>
                         </tr>

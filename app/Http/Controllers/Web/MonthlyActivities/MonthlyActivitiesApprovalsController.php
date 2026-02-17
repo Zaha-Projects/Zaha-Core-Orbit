@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Roles\Programs;
+namespace App\Http\Controllers\Web\MonthlyActivities;
 
 use App\Http\Controllers\Controller;
 use App\Models\MonthlyActivity;
@@ -8,7 +8,7 @@ use App\Models\MonthlyActivityApproval;
 use App\Models\WorkflowActionLog;
 use Illuminate\Http\Request;
 
-class MonthlyActivityApprovalsController extends Controller
+class MonthlyActivitiesApprovalsController extends Controller
 {
     protected function resolveStepAndField($user): array
     {
@@ -47,7 +47,7 @@ class MonthlyActivityApprovalsController extends Controller
 
         $requiredField = $requiredApprovedByStep[$step] ?? null;
         if ($requiredField && $monthlyActivity->{$requiredField} !== 'approved') {
-            abort(422, 'لا يمكن تنفيذ هذه المرحلة قبل اكتمال المرحلة السابقة.');
+            abort(422, __('app.roles.programs.monthly_activities.approvals.errors.prerequisite_missing'));
         }
     }
 
@@ -58,7 +58,7 @@ class MonthlyActivityApprovalsController extends Controller
             ->orderBy('day')
             ->get();
 
-        return view('roles.programs.monthly_activities.approvals', compact('activities'));
+        return view('pages.monthly_activities.approvals.index', compact('activities'));
     }
 
     public function update(Request $request, MonthlyActivity $monthlyActivity)

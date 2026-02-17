@@ -22,11 +22,11 @@ use App\Http\Controllers\Web\Access\CentersController as SuperAdminCentersManage
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 use App\Http\Controllers\Web\Agenda\AgendaEventsController as RelationsAgendaEventsController;
 use App\Http\Controllers\Web\Agenda\AgendaApprovalsController as RelationsAgendaApprovalsController;
-use App\Http\Controllers\Roles\Programs\MonthlyActivitiesController as ProgramsMonthlyActivitiesController;
+use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController as ProgramsMonthlyActivitiesController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivitySuppliesController as ProgramsMonthlyActivitySuppliesController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityTeamController as ProgramsMonthlyActivityTeamController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityAttachmentsController as ProgramsMonthlyActivityAttachmentsController;
-use App\Http\Controllers\Roles\Programs\MonthlyActivityApprovalsController as ProgramsMonthlyActivityApprovalsController;
+use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesApprovalsController as ProgramsMonthlyActivityApprovalsController;
 use App\Http\Controllers\Roles\Finance\DonationsCashController as FinanceDonationsCashController;
 use App\Http\Controllers\Roles\Finance\BookingsController as FinanceBookingsController;
 use App\Http\Controllers\Roles\Finance\ZahaTimeBookingsController as FinanceZahaTimeBookingsController;

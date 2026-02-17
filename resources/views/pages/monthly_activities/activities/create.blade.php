@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.monthly_activities.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm">
         <div class="card-body">
@@ -68,53 +72,53 @@
                     <input class="form-control" name="location_details" value="{{ old('location_details') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">الجهة المسؤولة</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.responsible_entity') }}</label>
                     <input class="form-control" name="responsible_party" value="{{ old('responsible_party') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">وقت التنفيذ</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.execution_time') }}</label>
                     <input class="form-control" name="execution_time" value="{{ old('execution_time') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">الفئة المستهدفة</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.target_group') }}</label>
                     <input class="form-control" name="target_group" value="{{ old('target_group') }}">
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">وصف مختصر</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.short_description') }}</label>
                     <input class="form-control" name="short_description" value="{{ old('short_description') }}">
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">الحاجة إلى متطوعين</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.need_volunteers') }}</label>
                     <input class="form-control" name="volunteer_need" value="{{ old('volunteer_need') }}">
                 </div>
                 <div class="col-12">
-                    <label class="form-label">الرعاة (عدد مفتوح)</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.sponsors_open') }}</label>
                     <div class="row g-2">
                         @for ($i = 0; $i < 3; $i++)
                             <div class="col-12 col-md-4">
-                                <input class="form-control" name="sponsors[{{ $i }}][name]" value="{{ old("sponsors.$i.name") }}" placeholder="اسم الراعي">
+                                <input class="form-control" name="sponsors[{{ $i }}][name]" value="{{ old("sponsors.$i.name") }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.sponsor_name') }}">
                             </div>
                             <div class="col-12 col-md-4">
-                                <input class="form-control" name="sponsors[{{ $i }}][title]" value="{{ old("sponsors.$i.title") }}" placeholder="الصفة/المسمى">
+                                <input class="form-control" name="sponsors[{{ $i }}][title]" value="{{ old("sponsors.$i.title") }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.sponsor_title') }}">
                             </div>
                             <div class="col-12 col-md-4 d-flex align-items-center">
                                 <div class="form-check mt-2">
                                     <input class="form-check-input" type="checkbox" name="sponsors[{{ $i }}][is_official]" value="1" id="sponsor-official-{{ $i }}" checked>
-                                    <label class="form-check-label" for="sponsor-official-{{ $i }}">راعي رسمي</label>
+                                    <label class="form-check-label" for="sponsor-official-{{ $i }}">{{ __('app.roles.programs.monthly_activities.fields_ext.official_sponsor') }}</label>
                                 </div>
                             </div>
                         @endfor
                     </div>
                 </div>
                 <div class="col-12">
-                    <label class="form-label">الشركاء (عدد مفتوح)</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.partners_open') }}</label>
                     <div class="row g-2">
                         @for ($i = 0; $i < 5; $i++)
                             <div class="col-12 col-md-6">
-                                <input class="form-control" name="partners[{{ $i }}][name]" value="{{ old("partners.$i.name") }}" placeholder="اسم الشريك">
+                                <input class="form-control" name="partners[{{ $i }}][name]" value="{{ old("partners.$i.name") }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.partner_name') }}">
                             </div>
                             <div class="col-12 col-md-6">
-                                <input class="form-control" name="partners[{{ $i }}][role]" value="{{ old("partners.$i.role") }}" placeholder="دور الشريك">
+                                <input class="form-control" name="partners[{{ $i }}][role]" value="{{ old("partners.$i.role") }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.partner_role') }}">
                             </div>
                         @endfor
                     </div>
@@ -122,33 +126,33 @@
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" name="needs_official_letters" value="1" id="needs_letters_create">
-                        <label class="form-check-label" for="needs_letters_create">بحاجة إلى مخاطبات</label>
+                        <label class="form-check-label" for="needs_letters_create">{{ __('app.roles.programs.monthly_activities.fields_ext.needs_letters') }}</label>
                     </div>
                 </div>
                 <div class="col-12 col-md-9">
-                    <label class="form-label">سبب المخاطبة</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.letter_reason') }}</label>
                     <input class="form-control" name="letter_purpose" value="{{ old('letter_purpose') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">تاريخ التعديل المقترح</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.proposed_date') }}</label>
                     <input class="form-control" type="date" name="rescheduled_date" value="{{ old('rescheduled_date') }}">
                 </div>
                 <div class="col-12 col-md-8">
-                    <label class="form-label">سبب التعديل</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.reschedule_reason') }}</label>
                     <input class="form-control" name="reschedule_reason" value="{{ old('reschedule_reason') }}">
                 </div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" name="relations_approval_on_reschedule" value="1" id="relations_reschedule_approve_create">
-                        <label class="form-check-label" for="relations_reschedule_approve_create">اعتماد العلاقات على التعديل</label>
+                        <label class="form-check-label" for="relations_reschedule_approve_create">{{ __('app.roles.programs.monthly_activities.fields_ext.relations_reschedule_approve') }}</label>
                     </div>
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">رضى الجمهور %</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.audience_satisfaction') }}</label>
                     <input class="form-control" type="number" min="0" max="100" step="0.01" name="audience_satisfaction_percent" value="{{ old('audience_satisfaction_percent') }}">
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">تقييم الفعالية %</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.event_evaluation') }}</label>
                     <input class="form-control" type="number" min="0" max="100" step="0.01" name="evaluation_score" value="{{ old('evaluation_score') }}">
                 </div>
                 <div class="col-12">

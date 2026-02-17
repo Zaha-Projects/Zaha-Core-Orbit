@@ -5,6 +5,10 @@
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
 @endphp
 
+@section('sidebar')
+    @include('pages.monthly_activities.partials.sidebar')
+@endsection
+
 @section('content')
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -19,11 +23,11 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <h2 class="h6 mb-3">مزامنة فعاليات الأجندة إلى خطة الفرع</h2>
+            <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.sync.title') }}</h2>
             <form method="POST" action="{{ route('role.programs.activities.sync_from_agenda') }}" class="row g-3">
                 @csrf
                 <div class="col-12 col-md-3">
-                    <label class="form-label">الفرع</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.branch') }}</label>
                     <select class="form-select" name="branch_id" required>
                         <option value="">--</option>
                         @foreach ($branches as $branch)
@@ -32,7 +36,7 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">المركز</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.center') }}</label>
                     <select class="form-select" name="center_id" required>
                         <option value="">--</option>
                         @foreach ($centers as $center)
@@ -41,15 +45,15 @@
                     </select>
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label">الشهر</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.month') }}</label>
                     <input type="number" min="1" max="12" class="form-control" name="month" value="{{ now()->month }}" required>
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label">السنة</label>
+                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.year') }}</label>
                     <input type="number" min="2020" max="2100" class="form-control" name="year" value="{{ now()->year }}" required>
                 </div>
                 <div class="col-12 col-md-2 d-flex align-items-end">
-                    <button class="btn btn-outline-primary w-100" type="submit">مزامنة</button>
+                    <button class="btn btn-outline-primary w-100" type="submit">{{ __('app.roles.programs.monthly_activities.sync.run') }}</button>
                 </div>
             </form>
         </div>

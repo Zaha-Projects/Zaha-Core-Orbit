@@ -230,10 +230,24 @@ resources/views/
   -> `resources/views/pages/agenda/approvals/index.blade.php`
 
 ### Sprint 3 — Monthly Activities Module
-1. [ ] Controllers: MonthlyActivities, MonthlyActivitiesApprovals.
-2. [ ] Views: `pages/monthly_activities/activities/*` + `pages/monthly_activities/approvals/*`.
-3. [ ] ترجمة عربية/إنجليزية.
+1. [x] Controllers: MonthlyActivities, MonthlyActivitiesApprovals.
+2. [x] Views: `pages/monthly_activities/activities/*` + `pages/monthly_activities/approvals/*`.
+3. [x] ترجمة عربية/إنجليزية.
 4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 3
+- `App\Http\Controllers\Roles\Programs\MonthlyActivitiesController`
+  -> `App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController`
+- `App\Http\Controllers\Roles\Programs\MonthlyActivityApprovalsController`
+  -> `App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesApprovalsController`
+- `resources/views/roles/programs/monthly_activities/index.blade.php`
+  -> `resources/views/pages/monthly_activities/activities/index.blade.php`
+- `resources/views/roles/programs/monthly_activities/create.blade.php`
+  -> `resources/views/pages/monthly_activities/activities/create.blade.php`
+- `resources/views/roles/programs/monthly_activities/edit.blade.php`
+  -> `resources/views/pages/monthly_activities/activities/edit.blade.php`
+- `resources/views/roles/programs/monthly_activities/approvals.blade.php`
+  -> `resources/views/pages/monthly_activities/approvals/index.blade.php`
 
 > بعد كل Sprint يتم فتح PR مستقل مع قائمة Mapping واضحة للملفات المنقولة.
 
