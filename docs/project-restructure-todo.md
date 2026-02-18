@@ -6,6 +6,8 @@
 - توحيد أماكن الكنترولرات بحيث تصبح Module-based بدل الاعتماد على Role-based داخل المسارات.
 - توحيد هيكل `resources/views` بحيث تكون الصفحات تحت `pages/<module>/...`.
 - الحفاظ على سلوك النظام الحالي بدون كسر route names أو صلاحيات الوصول.
+- اعتماد واجهة الثيم الجديد في Layout موحد يحتوي: **App Header + Side Menu + Footer**.
+- الالتزام بدعم اللغتين **العربية / الإنجليزية** في كل صفحة يتم تعديلها.
 
 ---
 
@@ -75,6 +77,10 @@ app/Http/Controllers/
 resources/views/
   layouts/
     app.blade.php
+    app/
+      header.blade.php
+      sidebar.blade.php
+      footer.blade.php
     guest.blade.php
     components/
       forms/
@@ -168,7 +174,178 @@ resources/views/
 
 ---
 
-## 5) أمثلة انتقال مباشرة
+## 5) خطة العمل التنفيذية خطوة بخطوة (صفحة/كنترولر)
+
+### Sprint 0 — تجهيز الأساس (تم البدء)
+- [x] تقسيم Layout إلى `Header + Sidebar + Footer` ضمن `layouts/app/*`.
+- [x] ربط النصوص الأساسية للـ Layout بملفات الترجمة `ar/en`.
+- [ ] نقل أول صفحة تجريبية إلى `resources/views/pages/...` مع الحفاظ على route.
+
+### Sprint 1 — Access Module
+1. [x] Controllers: Users, Roles, Branches, Centers, Approvals.
+2. [x] Views: `pages/access/*` (index/create/edit/show حسب الحاجة).
+3. [ ] ترجمة عربية/إنجليزية لكل labels/buttons/messages المستحدثة.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 1
+- `App\Http\Controllers\Roles\SuperAdmin\UsersManagementController`
+  -> `App\Http\Controllers\Web\Access\UsersController`
+- `App\Http\Controllers\Roles\SuperAdmin\RolesManagementController`
+  -> `App\Http\Controllers\Web\Access\RolesController`
+- `App\Http\Controllers\Roles\SuperAdmin\BranchesManagementController`
+  -> `App\Http\Controllers\Web\Access\BranchesController`
+- `App\Http\Controllers\Roles\SuperAdmin\CentersManagementController`
+  -> `App\Http\Controllers\Web\Access\CentersController`
+- `App\Http\Controllers\Roles\SuperAdmin\ApprovalsController`
+  -> `App\Http\Controllers\Web\Access\ApprovalsController`
+- `resources/views/roles/super_admin/users.blade.php`
+  -> `resources/views/pages/access/users/index.blade.php`
+- `resources/views/roles/super_admin/roles.blade.php`
+  -> `resources/views/pages/access/roles/index.blade.php`
+- `resources/views/roles/super_admin/branches.blade.php`
+  -> `resources/views/pages/access/branches/index.blade.php`
+- `resources/views/roles/super_admin/centers.blade.php`
+  -> `resources/views/pages/access/centers/index.blade.php`
+- `resources/views/roles/super_admin/approvals.blade.php`
+  -> `resources/views/pages/access/approvals/index.blade.php`
+
+### Sprint 2 — Agenda Module
+1. [x] Controllers: AgendaEvents, AgendaApprovals.
+2. [x] Views: `pages/agenda/events/*` + `pages/agenda/approvals/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 2
+- `App\Http\Controllers\Roles\Relations\AgendaEventsController`
+  -> `App\Http\Controllers\Web\Agenda\AgendaEventsController`
+- `App\Http\Controllers\Roles\Relations\AgendaApprovalsController`
+  -> `App\Http\Controllers\Web\Agenda\AgendaApprovalsController`
+- `resources/views/roles/relations/agenda/index.blade.php`
+  -> `resources/views/pages/agenda/events/index.blade.php`
+- `resources/views/roles/relations/agenda/create.blade.php`
+  -> `resources/views/pages/agenda/events/create.blade.php`
+- `resources/views/roles/relations/agenda/edit.blade.php`
+  -> `resources/views/pages/agenda/events/edit.blade.php`
+- `resources/views/roles/relations/agenda/approvals.blade.php`
+  -> `resources/views/pages/agenda/approvals/index.blade.php`
+
+### Sprint 3 — Monthly Activities Module
+1. [x] Controllers: MonthlyActivities, MonthlyActivitiesApprovals.
+2. [x] Views: `pages/monthly_activities/activities/*` + `pages/monthly_activities/approvals/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 3
+- `App\Http\Controllers\Roles\Programs\MonthlyActivitiesController`
+  -> `App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController`
+- `App\Http\Controllers\Roles\Programs\MonthlyActivityApprovalsController`
+  -> `App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesApprovalsController`
+- `resources/views/roles/programs/monthly_activities/index.blade.php`
+  -> `resources/views/pages/monthly_activities/activities/index.blade.php`
+- `resources/views/roles/programs/monthly_activities/create.blade.php`
+  -> `resources/views/pages/monthly_activities/activities/create.blade.php`
+- `resources/views/roles/programs/monthly_activities/edit.blade.php`
+  -> `resources/views/pages/monthly_activities/activities/edit.blade.php`
+- `resources/views/roles/programs/monthly_activities/approvals.blade.php`
+  -> `resources/views/pages/monthly_activities/approvals/index.blade.php`
+
+
+### Sprint 4 — Finance Module
+1. [x] Controllers: Donations, Bookings, ZahaTime, Payments.
+2. [x] Views: `pages/finance/donations/*`, `pages/finance/bookings/*`, `pages/finance/zaha_time/*`, `pages/finance/payments/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 4
+- `App\Http\Controllers\Roles\Finance\DonationsCashController`
+  -> `App\Http\Controllers\Web\Finance\DonationsController`
+- `App\Http\Controllers\Roles\Finance\BookingsController`
+  -> `App\Http\Controllers\Web\Finance\BookingsController`
+- `App\Http\Controllers\Roles\Finance\ZahaTimeBookingsController`
+  -> `App\Http\Controllers\Web\Finance\ZahaTimeController`
+- `App\Http\Controllers\Roles\Finance\PaymentsController`
+  -> `App\Http\Controllers\Web\Finance\PaymentsController`
+- `resources/views/roles/finance/donations/*.blade.php`
+  -> `resources/views/pages/finance/donations/*.blade.php`
+- `resources/views/roles/finance/bookings/*.blade.php`
+  -> `resources/views/pages/finance/bookings/*.blade.php`
+- `resources/views/roles/finance/zaha_time/*.blade.php`
+  -> `resources/views/pages/finance/zaha_time/*.blade.php`
+- `resources/views/roles/finance/payments/index.blade.php`
+  -> `resources/views/pages/finance/payments/index.blade.php`
+
+
+### Sprint 5 — Maintenance Module
+1. [x] Controllers: MaintenanceRequests, MaintenanceApprovals.
+2. [x] Views: `pages/maintenance/requests/*` + `pages/maintenance/approvals/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 5
+- `App\Http\Controllers\Roles\Maintenance\MaintenanceRequestsController`
+  -> `App\Http\Controllers\Web\Maintenance\MaintenanceRequestsController`
+- `App\Http\Controllers\Roles\Maintenance\MaintenanceApprovalsController`
+  -> `App\Http\Controllers\Web\Maintenance\MaintenanceApprovalsController`
+- `resources/views/roles/maintenance/requests/index.blade.php`
+  -> `resources/views/pages/maintenance/requests/index.blade.php`
+- `resources/views/roles/maintenance/requests/create.blade.php`
+  -> `resources/views/pages/maintenance/requests/create.blade.php`
+- `resources/views/roles/maintenance/requests/edit.blade.php`
+  -> `resources/views/pages/maintenance/requests/edit.blade.php`
+- `resources/views/roles/maintenance/approvals.blade.php`
+  -> `resources/views/pages/maintenance/approvals/index.blade.php`
+
+
+### Sprint 6 — Transport Module
+1. [x] Controllers: Vehicles, Drivers, Trips.
+2. [x] Views: `pages/transport/vehicles/*`, `pages/transport/drivers/*`, `pages/transport/trips/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 6
+- `App\Http\Controllers\Roles\Transport\VehiclesController`
+  -> `App\Http\Controllers\Web\Transport\VehiclesController`
+- `App\Http\Controllers\Roles\Transport\DriversController`
+  -> `App\Http\Controllers\Web\Transport\DriversController`
+- `App\Http\Controllers\Roles\Transport\TripsController`
+  -> `App\Http\Controllers\Web\Transport\TripsController`
+- `resources/views/roles/transport/vehicles/*.blade.php`
+  -> `resources/views/pages/transport/vehicles/*.blade.php`
+- `resources/views/roles/transport/drivers/*.blade.php`
+  -> `resources/views/pages/transport/drivers/*.blade.php`
+- `resources/views/roles/transport/trips/*.blade.php`
+  -> `resources/views/pages/transport/trips/*.blade.php`
+
+
+### Sprint 7 — Reports Module
+1. [x] Controllers: Reports, AgendaReports, MonthlyReports, FinanceReports, MaintenanceReports, TransportReports, MonthlyKpis.
+2. [x] Views: `pages/reports/*`.
+3. [x] ترجمة عربية/إنجليزية.
+4. [ ] اختبار يدوي + lint.
+
+#### Mapping المنفذ في Sprint 7
+- `App\Http\Controllers\Roles\Reports\ReportsController`
+  -> `App\Http\Controllers\Web\Reports\ReportsController`
+- `App\Http\Controllers\Roles\Reports\AgendaReportsController`
+  -> `App\Http\Controllers\Web\Reports\AgendaReportsController`
+- `App\Http\Controllers\Roles\Reports\MonthlyReportsController`
+  -> `App\Http\Controllers\Web\Reports\MonthlyReportsController`
+- `App\Http\Controllers\Roles\Reports\FinanceReportsController`
+  -> `App\Http\Controllers\Web\Reports\FinanceReportsController`
+- `App\Http\Controllers\Roles\Reports\MaintenanceReportsController`
+  -> `App\Http\Controllers\Web\Reports\MaintenanceReportsController`
+- `App\Http\Controllers\Roles\Reports\TransportReportsController`
+  -> `App\Http\Controllers\Web\Reports\TransportReportsController`
+- `App\Http\Controllers\Roles\Reports\MonthlyKpisController`
+  -> `App\Http\Controllers\Web\Reports\MonthlyKpisController`
+- `resources/views/roles/reports/*.blade.php`
+  -> `resources/views/pages/reports/*.blade.php`
+
+> بعد كل Sprint يتم فتح PR مستقل مع قائمة Mapping واضحة للملفات المنقولة.
+
+---
+
+## 6) أمثلة انتقال مباشرة
 - `App\Http\Controllers\Roles\SuperAdmin\DepartmentsManagementController`
   -> `App\Http\Controllers\Web\Access\DepartmentsController`
 - `App\Http\Controllers\Roles\Relations\AgendaEventsController`
@@ -180,7 +357,7 @@ resources/views/
 
 ---
 
-## 6) ما تم تأجيله صراحةً
+## 7) ما تم تأجيله صراحةً
 - إعادة هيكلة Domain/Application/Infrastructure.
 - تقسيم ملفات routes إلى عدة ملفات.
 - إعادة تصميم authorization/policies.

@@ -1,0 +1,113 @@
+@extends('layouts.app')
+
+@php
+    $title = __('app.roles.relations.agenda.create_title');
+    $subtitle = __('app.roles.relations.agenda.subtitle');
+@endphp
+
+@section('sidebar')
+    @include('pages.agenda.partials.sidebar')
+@endsection
+
+@section('content')
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h1 class="h4 mb-2">{{ $title }}</h1>
+            <p class="text-muted mb-4">{{ $subtitle }}</p>
+            <form method="POST" action="{{ route('role.relations.agenda.store') }}" class="row g-3">
+                @csrf
+                <div class="col-12 col-md-6">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_name') }}</label>
+                    <input class="form-control" name="event_name" value="{{ old('event_name') }}" required>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_date') }}</label>
+                    <input class="form-control" type="date" name="event_date" value="{{ old('event_date') }}" required>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.department') }}</label>
+                    <select class="form-select" name="department_id">
+                        <option value="">--</option>
+                        @foreach ($departments as $department)
+                            <option value="{{ $department->id }}" @selected(old('department_id') == $department->id)>{{ $department->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_category') }}</label>
+                    <select class="form-select" name="event_category_id" id="event_category_id">
+                        <option value="">--</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" @selected(old('event_category_id') == $category->id)>{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.event_type') }}</label>
+                    <select class="form-select" name="event_type" required>
+                        <option value="mandatory" @selected(old('event_type') === 'mandatory')>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
+                        <option value="optional" @selected(old('event_type') === 'optional')>{{ __('app.roles.relations.agenda.types.optional') }}</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</label>
+                    <select class="form-select" name="plan_type" required>
+                        <option value="unified" @selected(old('plan_type') === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
+                        <option value="non_unified" @selected(old('plan_type') === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</label>
+                    <div class="row g-2">
+                        @foreach ($branches as $branch)
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small mb-1">{{ $branch->name }}</label>
+                                <select class="form-select form-select-sm" name="branch_participation[{{ $branch->id }}]">
+                                    <option value="unspecified">{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
+                                    <option value="participant">{{ __('app.roles.relations.agenda.participation.participant') }}</option>
+                                    <option value="not_participant">{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
+                                </select>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.notes') }}</label>
+                    <textarea class="form-control" name="notes" rows="3">{{ old('notes') }}</textarea>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button class="btn btn-primary" type="submit">{{ __('app.roles.relations.agenda.actions.save') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const departmentEl = document.querySelector('select[name="department_id"]');
+            const categoryEl = document.getElementById('event_category_id');
+
+            function filterCategories() {
+                const departmentId = departmentEl.value;
+
+                Array.from(categoryEl.options).forEach((option) => {
+                    const categoryDepartmentId = option.dataset.departmentId;
+                    if (!categoryDepartmentId) {
+                        option.hidden = false;
+                        return;
+                    }
+                    option.hidden = departmentId !== '' && categoryDepartmentId !== departmentId;
+                });
+
+                if (categoryEl.selectedOptions[0]?.hidden) {
+                    categoryEl.value = '';
+                }
+            }
+
+            departmentEl.addEventListener('change', filterCategories);
+            filterCategories();
+        })();
+    </script>
+@endsection
