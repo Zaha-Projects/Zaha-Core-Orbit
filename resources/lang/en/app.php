@@ -344,6 +344,10 @@ return [
                 'created' => 'Agenda event created successfully.',
                 'updated' => 'Agenda event updated: :event.',
                 'submitted' => 'Agenda event submitted: :event.',
+                'unit_participation_updated' => 'Unit participation was updated successfully.',
+                'errors' => [
+                    'optional_requires_branch_participation' => 'Optional events cannot be submitted without selecting participating branches.',
+                ],
             ],
             'approvals' => [
                 'title' => 'Agenda approvals',
@@ -372,6 +376,12 @@ return [
                     'submit' => 'Submit decision',
                 ],
                 'updated' => 'Approval updated for :event.',
+                'errors' => [
+                    'self_approval_forbidden' => 'Event creators cannot approve their own events.',
+                    'executive_before_relations' => 'Executive approval cannot be recorded before relations approval.',
+                    'invalid_state' => 'This event cannot be approved in its current status.',
+                    'executive_requires_relations_completion' => 'Executive approval requires completed relations approval first.',
+                ],
             ],
         ],
         'programs_manager' => [
@@ -992,6 +1002,9 @@ return [
                 ],
                 'created' => 'Driver added.',
                 'updated' => 'Driver updated: :driver.',
+            ],
+            'requests' => [
+                'title' => 'Transport requests',
             ],
             'trips' => [
                 'title' => 'Trips',

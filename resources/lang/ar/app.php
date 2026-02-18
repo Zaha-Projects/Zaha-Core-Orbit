@@ -344,6 +344,10 @@ return [
                 'created' => 'تم إنشاء فعالية الأجندة بنجاح.',
                 'updated' => 'تم تحديث فعالية الأجندة :event.',
                 'submitted' => 'تم إرسال الفعالية :event للاعتماد.',
+                'unit_participation_updated' => 'تم تحديث مشاركة الجهة بنجاح.',
+                'errors' => [
+                    'optional_requires_branch_participation' => 'لا يمكن إرسال فعالية اختيارية بدون تحديد مشاركة الفروع.',
+                ],
             ],
             'approvals' => [
                 'title' => 'اعتمادات الأجندة',
@@ -372,6 +376,12 @@ return [
                     'submit' => 'إرسال القرار',
                 ],
                 'updated' => 'تم تحديث الاعتماد للفعالية :event.',
+                'errors' => [
+                    'self_approval_forbidden' => 'لا يمكن لمنشئ الفعالية اعتمادها بنفسه.',
+                    'executive_before_relations' => 'لا يمكن اعتماد المدير التنفيذي قبل اعتماد العلاقات.',
+                    'invalid_state' => 'لا يمكن اعتماد هذه الفعالية في حالتها الحالية.',
+                    'executive_requires_relations_completion' => 'لا يمكن اعتماد التنفيذي إلا بعد اكتمال اعتماد العلاقات.',
+                ],
             ],
         ],
         'programs_manager' => [
@@ -658,6 +668,9 @@ return [
                     'category' => 'الفئة',
                     'priority' => 'الأولوية',
                     'status' => 'الحالة',
+                    'branch_head' => 'رئيس الفرع',
+                    'maintenance' => 'الصيانة',
+                    'it' => 'الدعم التقني',
                     'actions' => 'الإجراءات',
                     'empty' => 'لا توجد بلاغات صيانة.',
                 ],
@@ -666,6 +679,22 @@ return [
                     'edit' => 'تعديل',
                     'save' => 'حفظ التعديلات',
                     'close' => 'إغلاق البلاغ',
+                ],
+                'fields_ext' => [
+                    'processing_tracks' => 'مسارات المعالجة (رئيس الفرع / الصيانة / الدعم التقني)',
+                    'branch_head_status' => 'حالة رئيس الفرع',
+                    'maintenance_track_status' => 'حالة الصيانة',
+                    'it_track_status' => 'حالة الدعم التقني',
+                    'branch_head_note' => 'ملاحظة رئيس الفرع',
+                    'maintenance_track_note' => 'ملاحظة فريق الصيانة',
+                    'it_track_note' => 'ملاحظة الدعم التقني',
+                    'support_resources' => 'موارد الدعم',
+                    'support_party' => 'جهة الدعم',
+                    'root_cause_branch' => 'تحليل السبب الجذري - رئيس الفرع',
+                    'root_cause_maintenance' => 'تحليل السبب الجذري - الصيانة',
+                    'root_cause_it' => 'تحليل السبب الجذري - الدعم التقني',
+                    'closure_summary' => 'ملخص الإغلاق',
+                    'status_placeholder' => 'مقبول / مرفوض / قيد المراجعة',
                 ],
                 'created' => 'تم تسجيل بلاغ الصيانة.',
                 'updated' => 'تم تحديث البلاغ :request.',
@@ -802,6 +831,9 @@ return [
                 ],
                 'created' => 'تمت إضافة السائق.',
                 'updated' => 'تم تحديث السائق :driver.',
+            ],
+            'requests' => [
+                'title' => 'طلبات النقل',
             ],
             'trips' => [
                 'title' => 'الرحلات',
@@ -980,35 +1012,6 @@ return [
                 'saved' => 'تم حفظ مؤشرات الأداء الشهرية بنجاح.',
             ],
             'exported' => 'تم تجهيز ملف التقرير.',
-        ],
-        'staff' => [
-            'agenda' => [
-                'title' => 'الأجندة المعتمدة',
-                'subtitle' => 'عرض فعاليات الأجندة.',
-                'table' => [
-                    'event' => 'الفعالية',
-                    'date' => 'التاريخ',
-                    'status' => 'الحالة',
-                    'empty' => 'لا توجد فعاليات للأجندة.',
-                ],
-            ],
-            'activities' => [
-                'title' => 'الأنشطة الشهرية',
-                'subtitle' => 'عرض الأنشطة الشهرية ذات الصلة.',
-                'table' => [
-                    'activity' => 'النشاط',
-                    'date' => 'التاريخ',
-                    'branch' => 'الفرع',
-                    'status' => 'الحالة',
-                    'empty' => 'لا توجد أنشطة.',
-                ],
-            ],
-            'filters' => [
-                'date' => 'التاريخ',
-                'branch' => 'الفرع',
-                'branch_placeholder' => 'اختر الفرع',
-                'apply' => 'تطبيق الفلاتر',
-            ],
         ],
         'finance' => [
             'donations' => [
@@ -1251,6 +1254,33 @@ return [
                     'title' => 'ملخص المهام',
                     'description' => 'عرض المهام المطلوبة حسب الدور الحالي.',
                 ],
+            ],
+            'agenda' => [
+                'title' => 'الأجندة المعتمدة',
+                'subtitle' => 'عرض فعاليات الأجندة.',
+                'table' => [
+                    'event' => 'الفعالية',
+                    'date' => 'التاريخ',
+                    'status' => 'الحالة',
+                    'empty' => 'لا توجد فعاليات للأجندة.',
+                ],
+            ],
+            'activities' => [
+                'title' => 'الأنشطة الشهرية',
+                'subtitle' => 'عرض الأنشطة الشهرية ذات الصلة.',
+                'table' => [
+                    'activity' => 'النشاط',
+                    'date' => 'التاريخ',
+                    'branch' => 'الفرع',
+                    'status' => 'الحالة',
+                    'empty' => 'لا توجد أنشطة.',
+                ],
+            ],
+            'filters' => [
+                'date' => 'التاريخ',
+                'branch' => 'الفرع',
+                'branch_placeholder' => 'اختر الفرع',
+                'apply' => 'تطبيق الفلاتر',
             ],
         ],
     ],

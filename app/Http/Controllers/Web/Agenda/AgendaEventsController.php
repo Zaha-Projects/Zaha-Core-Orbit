@@ -213,7 +213,7 @@ class AgendaEventsController extends Controller
                 ->where('participation_status', 'participant')
                 ->exists()
         ) {
-            return back()->withErrors(['branch_participation' => 'لا يمكن إرسال فعالية اختيارية بدون تحديد مشاركة الفروع.']);
+            return back()->withErrors(['branch_participation' => __('app.roles.relations.agenda.errors.optional_requires_branch_participation')]);
         }
 
         $agendaEvent->update([
@@ -270,6 +270,6 @@ class AgendaEventsController extends Controller
             'new_values' => ['unit_key' => $data['unit_key'], 'status' => $data['status']],
         ]);
 
-        return back()->with('status', 'تم تحديث مشاركة الجهة بنجاح.');
+        return back()->with('status', __('app.roles.relations.agenda.unit_participation_updated'));
     }
 }

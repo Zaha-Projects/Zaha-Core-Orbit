@@ -39,19 +39,19 @@ class AgendaApprovalsController extends Controller
         }
 
         if ((int) $agendaEvent->created_by === (int) $user->id) {
-            return back()->withErrors(['decision' => 'لا يمكن لمنشئ الفعالية اعتمادها بنفسه.']);
+            return back()->withErrors(['decision' => __('app.roles.relations.approvals.errors.self_approval_forbidden')]);
         }
 
         if ($step === 'executive_review' && $agendaEvent->relations_approval_status !== 'approved') {
-            return back()->withErrors(['decision' => 'لا يمكن اعتماد المدير التنفيذي قبل اعتماد العلاقات.']);
+            return back()->withErrors(['decision' => __('app.roles.relations.approvals.errors.executive_before_relations')]);
         }
 
         if ($step === 'relations_review' && ! in_array($agendaEvent->status, ['submitted', 'changes_requested'], true)) {
-            return back()->withErrors(['decision' => 'لا يمكن اعتماد هذه الفعالية في حالتها الحالية.']);
+            return back()->withErrors(['decision' => __('app.roles.relations.approvals.errors.invalid_state')]);
         }
 
         if ($step === 'executive_review' && $agendaEvent->status !== 'relations_approved') {
-            return back()->withErrors(['decision' => 'لا يمكن اعتماد التنفيذي إلا بعد اكتمال اعتماد العلاقات.']);
+            return back()->withErrors(['decision' => __('app.roles.relations.approvals.errors.executive_requires_relations_completion')]);
         }
 
         AgendaApproval::create([
