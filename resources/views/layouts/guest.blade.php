@@ -2,6 +2,7 @@
     $locale = app()->getLocale();
     $isRtl = $locale === 'ar';
     $theme = session('ui.theme', 'light');
+    $nextTheme = $theme === 'dark' ? 'light' : 'dark';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
@@ -17,11 +18,26 @@
     <link rel="stylesheet" href="{{ asset('assets/css/theme.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/zaha-duralux-overrides.css') }}" />
 </head>
-<body class="{{ $theme === 'dark' ? 'app-skin-dark' : 'app-skin-light' }}">
+<body class="{{ $theme === 'dark' ? 'app-skin-dark' : 'app-skin-light' }} guest-page-body">
 <main class="auth-minimal-wrapper">
+    <div class="container py-3">
+        <div class="d-flex justify-content-end align-items-center gap-2">
+            <form method="POST" action="{{ route('ui.theme', $nextTheme) }}" class="m-0">
+                @csrf
+                <button type="submit" class="nxl-head-link border-0 bg-transparent" title="{{ __('app.layout.theme_toggle') }}">
+                    <i class="feather-{{ $theme === 'dark' ? 'sun' : 'moon' }}"></i>
+                </button>
+            </form>
+            <form method="POST" action="{{ route('ui.locale', $isRtl ? 'en' : 'ar') }}" class="m-0">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-light-brand">{{ $isRtl ? 'English' : 'العربية' }}</button>
+            </form>
+        </div>
+    </div>
+
     <div class="auth-minimal-inner">
         <div class="minimal-card-wrapper">
-            <div class="card mb-4 mt-5 mx-4 mx-sm-0 position-relative">
+            <div class="card mb-4 mt-3 mx-4 mx-sm-0 position-relative">
                 <div class="wd-50 bg-white p-2 rounded-circle shadow-lg position-absolute translate-middle top-0 start-50">
                     <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="{{ __('app.common.app_name') }}" class="img-fluid">
                 </div>
