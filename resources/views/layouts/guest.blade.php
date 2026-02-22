@@ -1,33 +1,43 @@
 @php
     $locale = app()->getLocale();
     $isRtl = $locale === 'ar';
+    $theme = session('ui.theme', 'light');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{ config('app.name', __('app.common.app_name')) }}</title>
-    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/logos/favicon.png') }}" />
-    <link rel="stylesheet" href="{{ asset('assets/css/styles.min.css') }}" />
-</head>
-<body class="bg-light">
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-5 px-3">
-    <div class="w-100" style="max-width: 460px;">
-        <div class="text-center mb-4">
-            <img src="{{ asset('assets/images/logos/logo.svg') }}" alt="{{ __('app.common.app_name') }}" style="max-height: 48px;">
-            <h1 class="h4 mt-3 mb-1">{{ __('app.common.app_name') }}</h1>
-            <p class="text-muted mb-0">{{ __('app.welcome.subtitle') }}</p>
-        </div>
 
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body p-4 p-md-5">
-                @yield('content')
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.ico') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendors/css/vendors.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/theme.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/zaha-duralux-overrides.css') }}" />
+</head>
+<body class="{{ $theme === 'dark' ? 'app-skin-dark' : 'app-skin-light' }}">
+<main class="auth-minimal-wrapper">
+    <div class="auth-minimal-inner">
+        <div class="minimal-card-wrapper">
+            <div class="card mb-4 mt-5 mx-4 mx-sm-0 position-relative">
+                <div class="wd-50 bg-white p-2 rounded-circle shadow-lg position-absolute translate-middle top-0 start-50">
+                    <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="{{ __('app.common.app_name') }}" class="img-fluid">
+                </div>
+                <div class="card-body p-sm-5">
+                    <div class="text-center mb-4 mt-2">
+                        <h1 class="h4 mt-3 mb-1">{{ __('app.common.app_name') }}</h1>
+                        <p class="text-muted mb-0">{{ __('app.welcome.subtitle') }}</p>
+                    </div>
+                    @yield('content')
+                </div>
             </div>
         </div>
     </div>
-</div>
+</main>
 
-<script src="{{ asset('assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
+<script src="{{ asset('assets/js/common-init.min.js') }}"></script>
 </body>
 </html>
