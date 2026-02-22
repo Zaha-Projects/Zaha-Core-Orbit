@@ -1,4 +1,4 @@
-<header class="app-header border-bottom">
+<header class="app-header border-bottom bg-white" style="position: sticky; top: 0; z-index: 1030;">
     <nav class="navbar navbar-expand-lg navbar-light px-3 px-lg-4 py-3">
         <div class="d-flex align-items-center gap-2">
             <a class="nav-link sidebartoggler d-block d-xl-none p-0" id="headerCollapse" href="javascript:void(0)">
