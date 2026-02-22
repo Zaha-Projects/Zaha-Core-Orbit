@@ -9,6 +9,7 @@ return [
         'register' => 'Create account',
         'open_reports' => 'Open reports',
         'open_section' => 'Open section',
+        'database_unavailable' => 'Database service is currently unavailable. Please try again in a moment.',
     ],
     'layout' => [
         'sidebar_title' => 'Application menu',

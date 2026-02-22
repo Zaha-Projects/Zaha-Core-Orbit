@@ -9,6 +9,7 @@ return [
         'register' => 'إنشاء حساب',
         'open_reports' => 'فتح التقارير',
         'open_section' => 'فتح القسم',
+        'database_unavailable' => 'خدمة قاعدة البيانات غير متاحة حالياً. يرجى المحاولة بعد قليل.',
     ],
     'layout' => [
         'sidebar_title' => 'قائمة التطبيق',
