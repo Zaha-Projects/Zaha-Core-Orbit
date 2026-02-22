@@ -5,9 +5,6 @@
     $subtitle = __('app.roles.reports.finance.subtitle');
 @endphp
 
-@section('sidebar')
-    @include('pages.reports.partials.sidebar')
-@endsection
 
 @section('content')
     <div class="card shadow-sm mb-4">

@@ -19,11 +19,11 @@
     <div class="body-wrapper">
         @include('layouts.app.header')
 
-        <div class="body-wrapper-inner">
-            <div class="container-fluid py-3">
+        <main class="body-wrapper-inner" role="main">
+            <div class="container-fluid py-4 px-3 px-lg-4">
                 @yield('content')
             </div>
-        </div>
+        </main>
 
         @include('layouts.app.footer')
     </div>

@@ -5,9 +5,6 @@
     $subtitle = __('app.roles.programs.monthly_activities.approvals.subtitle');
 @endphp
 
-@section('sidebar')
-    @include('pages.monthly_activities.partials.sidebar')
-@endsection
 
 @section('content')
     <div class="card shadow-sm mb-4">

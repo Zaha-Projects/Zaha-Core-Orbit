@@ -5,9 +5,6 @@
     $subtitle = __('app.roles.transport.vehicles.subtitle');
 @endphp
 
-@section('sidebar')
-    @include('pages.transport.partials.sidebar')
-@endsection
 
 @section('content')
     <div class="card shadow-sm mb-4">

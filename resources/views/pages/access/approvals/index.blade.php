@@ -5,9 +5,6 @@
     $subtitle = __('app.roles.super_admin.approvals.subtitle');
 @endphp
 
-@section('sidebar')
-    @include('pages.access.partials.sidebar')
-@endsection
 
 @section('content')
     <div class="row g-4">

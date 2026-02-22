@@ -5,9 +5,6 @@
     $subtitle = __('app.roles.finance.zaha_time.subtitle');
 @endphp
 
-@section('sidebar')
-    @include('pages.finance.partials.sidebar')
-@endsection
 
 @section('content')
     <div class="card shadow-sm">

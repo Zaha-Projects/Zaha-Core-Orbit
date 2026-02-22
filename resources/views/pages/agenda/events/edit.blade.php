@@ -5,9 +5,6 @@
     $subtitle = __('app.roles.relations.agenda.subtitle');
 @endphp
 
-@section('sidebar')
-    @include('pages.agenda.partials.sidebar')
-@endsection
 
 @section('content')
     <div class="card shadow-sm">
