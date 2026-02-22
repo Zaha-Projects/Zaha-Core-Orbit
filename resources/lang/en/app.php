@@ -14,6 +14,7 @@ return [
     'layout' => [
         'sidebar_title' => 'Application menu',
         'footer_rights' => 'All rights reserved.',
+        'theme_toggle' => 'Theme mode',
     ],
     'welcome' => [
         'title' => 'Welcome to Zaha OPS',

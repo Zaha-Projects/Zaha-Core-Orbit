@@ -14,6 +14,7 @@ return [
     'layout' => [
         'sidebar_title' => 'قائمة التطبيق',
         'footer_rights' => 'جميع الحقوق محفوظة.',
+        'theme_toggle' => 'وضع المظهر',
     ],
     'welcome' => [
         'title' => 'مرحباً بكم في Zaha OPS',
