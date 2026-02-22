@@ -9,6 +9,8 @@ class DonationCash extends Model
 {
     use HasFactory;
 
+    protected $table = 'donations_cash';
+
     protected $fillable = [
         'donor_type',
         'donor_name',
