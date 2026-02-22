@@ -8,25 +8,25 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', __('app.common.app_name')) }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/logos/favicon.png') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/styles.min.css') }}" />
 </head>
-<body class="bg-light d-flex flex-column min-vh-100">
-    @include('layouts.app.header')
+<body>
+<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+     data-sidebar-position="fixed" data-header-position="fixed">
+    @include('layouts.app.sidebar')
 
-    <div class="container-fluid flex-grow-1">
-        <div class="row g-0 h-100">
-            <div class="col-12 col-lg-3 col-xl-2">
-                @include('layouts.app.sidebar')
-            </div>
+    <div class="body-wrapper">
+        @include('layouts.app.header')
 
-            <main class="col-12 col-lg-9 col-xl-10 p-3 p-lg-4">
+        <div class="body-wrapper-inner">
+            <div class="container-fluid py-3">
                 @yield('content')
-            </main>
+            </div>
         </div>
+
+        @include('layouts.app.footer')
     </div>
-
-    @include('layouts.app.footer')
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</div>
 </body>
 </html>

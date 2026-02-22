@@ -1,36 +1,35 @@
-<header class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top">
-    <div class="container-fluid px-3 px-lg-4">
-        <a class="navbar-brand fw-semibold" href="{{ url('/') }}">{{ __('app.common.app_name') }}</a>
+<header class="app-header">
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item d-block d-xl-none">
+                <a class="nav-link sidebartoggler" id="headerCollapse" href="javascript:void(0)">
+                    <i class="ti ti-menu-2"></i>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('dashboard') }}">
+                    <i class="ti ti-layout-dashboard"></i>
+                    <span class="ms-1">{{ __('app.common.dashboard') }}</span>
+                </a>
+            </li>
+        </ul>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#appHeaderNav" aria-controls="appHeaderNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="appHeaderNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('dashboard') }}">{{ __('app.common.dashboard') }}</a>
-                </li>
-            </ul>
-
-            <ul class="navbar-nav align-items-lg-center gap-lg-2">
+        <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
+            <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end gap-2">
                 @auth
-                    <li class="nav-item text-muted small">{{ auth()->user()->name }}</li>
+                    <li class="nav-item text-muted small d-none d-md-inline">{{ auth()->user()->name }}</li>
                     <li class="nav-item">
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button class="btn btn-outline-secondary btn-sm" type="submit">{{ __('app.common.logout') }}</button>
+                            <button class="btn btn-outline-primary btn-sm" type="submit">{{ __('app.common.logout') }}</button>
                         </form>
                     </li>
                 @else
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('login') }}">{{ __('app.common.login') }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('register') }}">{{ __('app.common.register') }}</a>
+                        <a class="btn btn-outline-primary btn-sm" href="{{ route('login') }}">{{ __('app.common.login') }}</a>
                     </li>
                 @endauth
             </ul>
         </div>
-    </div>
+    </nav>
 </header>
