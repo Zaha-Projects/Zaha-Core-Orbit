@@ -1,32 +1,43 @@
 @php
     $locale = app()->getLocale();
     $isRtl = $locale === 'ar';
+    $theme = session('ui.theme', 'light');
+    $skinClass = $theme === 'dark' ? 'app-skin-dark' : 'app-skin-light';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{ config('app.name', __('app.common.app_name')) }}</title>
-    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/logos/favicon.png') }}" />
-    <link rel="stylesheet" href="{{ asset('assets/css/styles.min.css') }}" />
+
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.ico') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendors/css/vendors.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/theme.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/zaha-duralux-overrides.css') }}" />
+    @stack('styles')
 </head>
-<body>
-<div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
-     data-sidebar-position="fixed" data-header-position="fixed">
+<body class="{{ $skinClass }}">
     @include('layouts.app.sidebar')
 
-    <div class="body-wrapper">
-        @include('layouts.app.header')
+    @include('layouts.app.header')
 
-        <main class="body-wrapper-inner" role="main">
-            <div class="container-fluid py-4 px-3 px-lg-4">
-                @yield('content')
+    <main class="nxl-container">
+        <div class="nxl-content">
+            <div class="main-content">
+                <div class="container-fluid py-4">
+                    @yield('content')
+                </div>
             </div>
-        </main>
+        </div>
 
         @include('layouts.app.footer')
-    </div>
-</div>
+    </main>
+
+    <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
+    <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
+    @stack('scripts')
 </body>
 </html>

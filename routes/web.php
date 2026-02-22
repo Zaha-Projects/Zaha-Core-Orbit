@@ -66,6 +66,22 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+
+Route::post('/ui/theme/{theme}', function (string $theme) {
+    abort_unless(in_array($theme, ['light', 'dark'], true), 404);
+    session(['ui.theme' => $theme]);
+
+    return back();
+})->name('ui.theme');
+
+Route::post('/ui/locale/{locale}', function (string $locale) {
+    abort_unless(in_array($locale, ['ar', 'en'], true), 404);
+    session(['ui.locale' => $locale]);
+    app()->setLocale($locale);
+
+    return back();
+})->name('ui.locale');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
