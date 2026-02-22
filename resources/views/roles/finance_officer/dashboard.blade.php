@@ -31,6 +31,9 @@
     ];
 @endphp
 
+@section('page_title', $title)
+@section('breadcrumb_current', $title)
+
 @section('content')
     @include('roles.partials.dashboard-actions')
 @endsection

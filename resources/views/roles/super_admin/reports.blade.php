@@ -5,6 +5,10 @@
     $subtitle = __('app.reports.subtitle');
 @endphp
 
+@section('page_title', $title)
+@section('page_subtitle', $subtitle)
+@section('breadcrumb_current', $title)
+
 @section('content')
     <div class="card stretch stretch-full mb-4">
         <div class="card-body">
