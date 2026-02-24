@@ -14,6 +14,7 @@ return [
     'layout' => [
         'sidebar_title' => 'Application menu',
         'footer_rights' => 'All rights reserved.',
+        'theme_toggle' => 'Theme mode',
     ],
     'welcome' => [
         'title' => 'Welcome to Zaha OPS',
@@ -1248,6 +1249,10 @@ return [
                     'title' => 'Transport reports',
                     'description' => 'View trip summaries by date and branch.',
                 ],
+                'transport_requests' => [
+                    'title' => 'Transport requests',
+                    'description' => 'Review Form 3 requests and complete service evaluations.',
+                ],
             ],
         ],
         'reports_viewer' => [
@@ -1265,6 +1270,10 @@ return [
                 'ops' => [
                     'title' => 'Maintenance & transport',
                     'description' => 'Analyze monthly operational performance.',
+                ],
+                'kpis' => [
+                    'title' => 'Monthly KPI indicators',
+                    'description' => 'Track monthly KPI trends, adjustments, and execution discipline.',
                 ],
             ],
         ],
