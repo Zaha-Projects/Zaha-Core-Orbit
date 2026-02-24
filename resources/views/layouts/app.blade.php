@@ -26,7 +26,10 @@
 
     <main class="nxl-container">
         <div class="nxl-content">
-            @include('layouts.app.page-header')
+            @hasSection('hide_page_header')
+            @else
+                @include('layouts.app.page-header')
+            @endif
 
             <div class="main-content">
                 <div class="container-fluid py-4">
