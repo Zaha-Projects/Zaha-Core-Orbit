@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('page_title', __('app.dashboard.no_role_title'))
-@section('breadcrumb_current', __('app.dashboard.no_role_title'))
+@section('page_breadcrumb', __('app.dashboard.no_role_title'))
+//@section('breadcrumb_current', __('app.dashboard.no_role_title'))
 
 @section('content')
     <div class="card stretch stretch-full">

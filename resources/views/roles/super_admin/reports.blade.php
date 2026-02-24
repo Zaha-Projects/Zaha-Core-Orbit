@@ -6,8 +6,7 @@
 @endphp
 
 @section('page_title', $title)
-@section('page_subtitle', $subtitle)
-@section('breadcrumb_current', $title)
+@section('page_breadcrumb', $title)
 
 @section('content')
     <div class="card stretch stretch-full mb-4">

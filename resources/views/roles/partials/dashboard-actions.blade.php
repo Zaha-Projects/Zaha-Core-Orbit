@@ -1,3 +1,6 @@
+@section('page_title', $title)
+@section('page_breadcrumb', $title)
+
 <div class="card stretch stretch-full">
     <div class="card-body">
         <h1 class="h4 mb-2">{{ $title }}</h1>
