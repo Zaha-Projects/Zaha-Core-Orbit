@@ -1,8 +1,12 @@
 @extends('layouts.app')
 
 @php
+    use Illuminate\Support\Str;
     $title = __('app.roles.super_admin.users.title');
     $subtitle = __('app.roles.super_admin.users.subtitle');
+    $translateRole = fn (string $name) => __('app.acl.roles.' . $name) !== 'app.acl.roles.' . $name
+        ? __('app.acl.roles.' . $name)
+        : Str::headline(str_replace(['_', '.'], ' ', $name));
 @endphp
 
 
@@ -72,7 +76,7 @@
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.role') }}</label>
                             <select class="form-select" name="role" required>
                                 @foreach ($roles as $role)
-                                    <option value="{{ $role->name }}">{{ $role->name }}</option>
+                                    <option value="{{ $role->name }}">{{ $translateRole($role->name) }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -121,7 +125,7 @@
                                             <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-user-{{ $user->id }}">
                                                 {{ __('app.roles.super_admin.users.actions.edit') }}
                                             </button>
-                                            <form class="d-inline" method="POST" action="{{ route('role.super_admin.users.destroy', $user) }}">
+                                            <form class="d-inline js-user-delete-form" method="POST" action="{{ route('role.super_admin.users.destroy', $user) }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="btn btn-sm btn-outline-danger" type="submit">
@@ -174,7 +178,7 @@
                                                     <select class="form-select" name="role" required>
                                                         @foreach ($roles as $role)
                                                             <option value="{{ $role->name }}" @selected($user->roles->contains('name', $role->name))>
-                                                                {{ $role->name }}
+                                                                {{ $translateRole($role->name) }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -215,3 +219,27 @@
         </div>
     </div>
 @endsection
+
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.querySelectorAll('.js-user-delete-form').forEach((form) => {
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        Swal.fire({
+            icon: 'warning',
+            title: @json(__('app.roles.super_admin.users.delete_confirm.title')),
+            text: @json(__('app.roles.super_admin.users.delete_confirm.text')),
+            showCancelButton: true,
+            confirmButtonText: @json(__('app.roles.super_admin.users.delete_confirm.confirm')),
+            cancelButtonText: @json(__('app.roles.super_admin.users.delete_confirm.cancel')),
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
+@endpush

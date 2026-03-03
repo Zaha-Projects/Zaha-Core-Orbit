@@ -1,8 +1,15 @@
 @extends('layouts.app')
 
 @php
+    use Illuminate\Support\Str;
     $title = __('app.roles.super_admin.roles.title');
     $subtitle = __('app.roles.super_admin.roles.subtitle');
+    $translateRole = fn (string $name) => __('app.acl.roles.' . $name) !== 'app.acl.roles.' . $name
+        ? __('app.acl.roles.' . $name)
+        : Str::headline(str_replace(['_', '.'], ' ', $name));
+    $translatePermission = fn (string $name) => __('app.acl.permissions.' . str_replace('.', '_', $name)) !== 'app.acl.permissions.' . str_replace('.', '_', $name)
+        ? __('app.acl.permissions.' . str_replace('.', '_', $name))
+        : Str::headline(str_replace(['_', '.'], ' ', $name));
 @endphp
 
 
@@ -49,7 +56,7 @@
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="heading-{{ $role->id }}">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#role-{{ $role->id }}">
-                                        {{ $role->name }}
+                                        {{ $translateRole($role->name) }}
                                     </button>
                                 </h2>
                                 <div id="role-{{ $role->id }}" class="accordion-collapse collapse" data-bs-parent="#rolesPermissions">
@@ -68,7 +75,7 @@
                                                                 value="{{ $permission->name }}"
                                                                 {{ $role->hasPermissionTo($permission) ? 'checked' : '' }}>
                                                             <label class="form-check-label" for="perm-{{ $role->id }}-{{ $permission->id }}">
-                                                                {{ $permission->name }}
+                                                                {{ $translatePermission($permission->name) }}
                                                             </label>
                                                         </div>
                                                     </div>

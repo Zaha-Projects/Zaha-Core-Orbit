@@ -23,7 +23,7 @@ class AgendaEventsController extends Controller
     {
         $user = $request->user();
 
-        if ($user->hasRole('relations_manager')) {
+        if ($user->hasRole('relations_manager') || $user->hasRole('super_admin')) {
             return;
         }
 

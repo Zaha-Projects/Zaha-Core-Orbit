@@ -17,9 +17,9 @@
                 <div class="dropdown filter-dropdown">
                     <a class="btn btn-md btn-light-brand" data-bs-toggle="dropdown" data-bs-offset="0, 10" data-bs-auto-close="outside">
                         <i class="feather-filter me-2"></i>
-                        <span>Filter</span>
+                        <span>{{ __('app.common.filter') }}</span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end"><a href="javascript:void(0);" class="dropdown-item">Static Filter</a></div>
+                    <div class="dropdown-menu dropdown-menu-end"><a href="javascript:void(0);" class="dropdown-item">{{ __('app.common.static_filter') }}</a></div>
                 </div>
             @endif
         </div>

@@ -182,18 +182,18 @@
 
     <div class="card stretch stretch-full mt-4">
         <div class="card-body enterprise-dashboard">
-            <h2 class="h5 mb-3">Enterprise Analytics</h2>
+            <h2 class="h5 mb-3">{{ __('app.enterprise.analytics_title') }}</h2>
             <form class="row g-2 align-items-end mb-3" method="GET" action="{{ route('role.super_admin.reports') }}">
                 <div class="col-md-3">
-                    <label class="form-label">Year</label>
+                    <label class="form-label">{{ __('app.enterprise.year') }}</label>
                     <select class="form-select" name="year">
-                        @foreach($years as $optionYear)
-                            <option value="{{ $optionYear }}" @selected(($enterpriseFilters['year'] ?? now()->year) == $optionYear)>{{ $optionYear }}</option>
+                        @foreach($years as $option{{ __('app.enterprise.year') }})
+                            <option value="{{ $option{{ __('app.enterprise.year') }} }}" @selected(($enterpriseFilters['year'] ?? now()->year) == $option{{ __('app.enterprise.year') }})>{{ $option{{ __('app.enterprise.year') }} }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button class="btn btn-primary w-100" type="submit">Apply</button>
+                    <button class="btn btn-primary w-100" type="submit">{{ __('app.enterprise.apply') }}</button>
                 </div>
             </form>
 

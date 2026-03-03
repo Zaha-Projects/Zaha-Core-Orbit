@@ -29,13 +29,13 @@ class AgendaApprovalsController extends Controller
         ]);
 
         $user = $request->user();
-        $step = $user->hasRole('executive_manager') ? 'executive_review' : 'relations_review';
+        $step = ($user->hasRole('executive_manager') || $user->hasRole('super_admin')) ? 'executive_review' : 'relations_review';
 
-        if ($step === 'relations_review' && ! $user->hasRole('relations_manager')) {
+        if ($step === 'relations_review' && ! $user->hasRole('relations_manager') && ! $user->hasRole('super_admin')) {
             abort(403);
         }
 
-        if ($step === 'executive_review' && ! $user->hasRole('executive_manager')) {
+        if ($step === 'executive_review' && ! $user->hasRole('executive_manager') && ! $user->hasRole('super_admin')) {
             abort(403);
         }
 
