@@ -7,6 +7,7 @@ use App\Models\AgendaApproval;
 use App\Models\AgendaEvent;
 use App\Models\WorkflowActionLog;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class AgendaApprovalsController extends Controller
 {
@@ -20,7 +21,7 @@ class AgendaApprovalsController extends Controller
         return view('pages.agenda.approvals.index', compact('events'));
     }
 
-    public function update(Request $request, AgendaEvent $agendaEvent)
+    public function update(Request $request, NotificationService $notifications, AgendaEvent $agendaEvent)
     {
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,changes_requested'],
@@ -80,6 +81,9 @@ class AgendaApprovalsController extends Controller
                 'approved_by_executive_at' => $data['decision'] === 'approved' ? now() : null,
             ]);
         }
+
+
+        $notifications->notifyUsers(collect([$agendaEvent->creator])->filter(), 'approval_decision', 'Approval update', 'Decision: '. $data['decision'], route('role.relations.approvals.index'));
 
         WorkflowActionLog::create([
             'module' => 'agenda',

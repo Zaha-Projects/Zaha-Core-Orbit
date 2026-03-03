@@ -48,6 +48,8 @@ class MonthlyActivity extends Model
         'evaluation_score',
         'media_coverage',
         'status',
+        'is_archived',
+        'archived_year',
         'relations_officer_approval_status',
         'relations_manager_approval_status',
         'programs_officer_approval_status',
@@ -75,7 +77,40 @@ class MonthlyActivity extends Model
         'is_official' => 'boolean',
         'time_from' => 'datetime:H:i',
         'time_to' => 'datetime:H:i',
+        'is_archived' => 'boolean',
     ];
+
+    public function scopeNotArchived($query)
+    {
+        return $query->where('is_archived', false);
+    }
+
+    public function scopeEnterpriseFilter($query, array $filters)
+    {
+        return $query
+            ->when($filters['year'] ?? null, fn ($q, $year) => $q->whereYear('proposed_date', $year))
+            ->when($filters['month'] ?? null, fn ($q, $month) => $q->where('month', $month))
+            ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
+            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($filters['department_id'] ?? null, function ($q, $departmentId) {
+                $q->whereHas('agendaEvent', fn ($agenda) => $agenda->where('department_id', $departmentId));
+            })
+            ->when($filters['event_category_id'] ?? null, function ($q, $categoryId) {
+                $q->whereHas('agendaEvent', fn ($agenda) => $agenda->where('event_category_id', $categoryId));
+            })
+            ->when($filters['plan_type'] ?? null, function ($q, $planType) {
+                $q->whereHas('agendaEvent', fn ($agenda) => $agenda->where('plan_type', $planType));
+            })
+            ->when($filters['event_type'] ?? null, function ($q, $eventType) {
+                $q->whereHas('agendaEvent', fn ($agenda) => $agenda->where('event_type', $eventType));
+            })
+            ->when(array_key_exists('archived', $filters), function ($q) use ($filters) {
+                $archived = filter_var($filters['archived'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($archived !== null) {
+                    $q->where('is_archived', $archived);
+                }
+            });
+    }
 
     public function branch()
     {

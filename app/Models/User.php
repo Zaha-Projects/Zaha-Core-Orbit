@@ -76,4 +76,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Trip::class, 'created_by');
     }
+
+    public function inAppNotifications()
+    {
+        return $this->hasMany(InAppNotification::class);
+    }
 }

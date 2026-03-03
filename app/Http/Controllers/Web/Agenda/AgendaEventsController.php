@@ -10,9 +10,12 @@ use App\Models\Department;
 use App\Models\DepartmentUnit;
 use App\Models\EventCategory;
 use App\Models\AuditLog;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Services\ConflictDetectionService;
+use App\Services\NotificationService;
 
 class AgendaEventsController extends Controller
 {
@@ -42,13 +45,18 @@ class AgendaEventsController extends Controller
         ];
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $events = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
+            ->enterpriseFilter($request->all())
+            ->notArchived()
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('pages.agenda.events.index', compact('events'));
+        $filters = $request->all();
+
+        return view('pages.agenda.events.index', compact('events', 'filters'));
     }
 
     public function create()
@@ -60,7 +68,7 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.create', compact('departments', 'categories', 'branches'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ConflictDetectionService $conflicts)
     {
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
@@ -84,6 +92,9 @@ class AgendaEventsController extends Controller
         ]);
 
         $date = Carbon::parse($data['event_date']);
+
+        $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
+        $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
         $event = AgendaEvent::create([
             'month' => (int) $date->format('m'),
@@ -115,7 +126,8 @@ class AgendaEventsController extends Controller
 
         return redirect()
             ->route('role.relations.agenda.index')
-            ->with('status', __('app.roles.relations.agenda.created'));
+            ->with('status', __('app.roles.relations.agenda.created'))
+            ->with('warning', $conflictWarning);
     }
 
     public function edit(AgendaEvent $agendaEvent)
@@ -145,7 +157,7 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
     }
 
-    public function update(Request $request, AgendaEvent $agendaEvent)
+    public function update(Request $request, AgendaEvent $agendaEvent, ConflictDetectionService $conflicts)
     {
         $this->assertEventManageAccess($request, $agendaEvent);
 
@@ -171,6 +183,9 @@ class AgendaEventsController extends Controller
         ]);
 
         $date = Carbon::parse($data['event_date']);
+
+        $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []), $agendaEvent->id);
+        $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
         $agendaEvent->update([
             'month' => (int) $date->format('m'),
@@ -199,10 +214,11 @@ class AgendaEventsController extends Controller
 
         return redirect()
             ->route('role.relations.agenda.index')
-            ->with('status', __('app.roles.relations.agenda.updated', ['event' => $agendaEvent->event_name]));
+            ->with('status', __('app.roles.relations.agenda.updated', ['event' => $agendaEvent->event_name]))
+            ->with('warning', $conflictWarning);
     }
 
-    public function submit(Request $request, AgendaEvent $agendaEvent)
+    public function submit(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications)
     {
         $this->assertEventManageAccess($request, $agendaEvent);
 
@@ -219,6 +235,8 @@ class AgendaEventsController extends Controller
         $agendaEvent->update([
             'status' => 'submitted',
         ]);
+        $notifications->notifyUsers(User::role('relations_manager')->get(), 'approval_requested', 'Agenda approval requested', $agendaEvent->event_name, route('role.relations.approvals.index'));
+
 
         return redirect()
             ->route('role.relations.agenda.index')

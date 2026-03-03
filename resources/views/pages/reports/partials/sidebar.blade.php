@@ -40,3 +40,15 @@
         <span class="nxl-mtext">{{ __('app.roles.reports.kpis.title') }}</span>
     </a>
 </li>
+<li class="nxl-item">
+    <a class="nxl-link {{ request()->routeIs('role.enterprise.*') ? 'active' : '' }}" href="{{ route('role.enterprise.dashboard') }}">
+        <span class="nxl-micon"><i class="feather-activity"></i></span>
+        <span class="nxl-mtext">Enterprise Dashboard</span>
+    </a>
+</li>
+<li class="nxl-item">
+    <a class="nxl-link {{ request()->routeIs('role.reports.enterprise.*') ? 'active' : '' }}" href="{{ route('role.reports.enterprise.branch_performance') }}">
+        <span class="nxl-micon"><i class="feather-trending-up"></i></span>
+        <span class="nxl-mtext">Branch Performance</span>
+    </a>
+</li>

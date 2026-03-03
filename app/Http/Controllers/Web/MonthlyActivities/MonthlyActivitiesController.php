@@ -12,8 +12,11 @@ use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
 use App\Models\Setting;
 use App\Models\WorkflowActionLog;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Services\ConflictDetectionService;
+use App\Services\NotificationService;
 
 class MonthlyActivitiesController extends Controller
 {
@@ -98,12 +101,15 @@ class MonthlyActivitiesController extends Controller
         ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $activities = MonthlyActivity::with(['branch', 'center', 'agendaEvent', 'creator'])
+            ->enterpriseFilter($request->all())
+            ->notArchived()
             ->orderBy('month')
             ->orderBy('day')
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
@@ -198,7 +204,7 @@ class MonthlyActivitiesController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.sync.done', ['count' => $created]));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ConflictDetectionService $conflicts)
     {
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -242,6 +248,8 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $date = Carbon::parse($data['activity_date']);
+        $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
+        $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
 
         $monthlyActivity = MonthlyActivity::create([
             'month' => (int) $date->format('m'),
@@ -281,7 +289,8 @@ class MonthlyActivitiesController extends Controller
 
         return redirect()
             ->route('role.programs.activities.index')
-            ->with('status', __('app.roles.programs.monthly_activities.created'));
+            ->with('status', __('app.roles.programs.monthly_activities.created'))
+            ->with('warning', $conflictWarning);
     }
 
     public function edit(MonthlyActivity $monthlyActivity)
@@ -294,7 +303,7 @@ class MonthlyActivitiesController extends Controller
         return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'centers', 'agendaEvents'));
     }
 
-    public function update(Request $request, MonthlyActivity $monthlyActivity)
+    public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts)
     {
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
             return back()->withErrors(['status' => __('app.roles.programs.monthly_activities.errors.locked')]);
@@ -342,7 +351,6 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $date = Carbon::parse($data['activity_date']);
-
         $oldValues = $monthlyActivity->only([
             'title',
             'proposed_date',
@@ -432,14 +440,17 @@ class MonthlyActivitiesController extends Controller
 
         return redirect()
             ->route('role.programs.activities.index')
-            ->with('status', __('app.roles.programs.monthly_activities.updated', ['activity' => $monthlyActivity->title]));
+            ->with('status', __('app.roles.programs.monthly_activities.updated', ['activity' => $monthlyActivity->title]))
+            ->with('warning', $conflictWarning);
     }
 
-    public function submit(MonthlyActivity $monthlyActivity)
+    public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications)
     {
         $monthlyActivity->update([
             'status' => 'submitted',
         ]);
+
+        $notifications->notifyUsers(User::role('relations_officer')->get(), 'approval_requested', 'Monthly activity approval requested', $monthlyActivity->title, route('role.programs.approvals.index'));
 
         $request = request();
         if ($request && $request->user()) {

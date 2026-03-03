@@ -50,6 +50,10 @@ use App\Http\Controllers\Web\Reports\TransportReportsController as TransportRepo
 use App\Http\Controllers\Web\Reports\MonthlyKpisController as MonthlyKpisController;
 use App\Http\Controllers\Roles\Staff\StaffAgendaController as StaffAgendaController;
 use App\Http\Controllers\Roles\Staff\StaffMonthlyActivitiesController as StaffMonthlyActivitiesController;
+use App\Http\Controllers\Web\Enterprise\EnterpriseDashboardController;
+use App\Http\Controllers\Web\Enterprise\EnterpriseReportsController;
+use App\Http\Controllers\Web\Enterprise\NotificationsController;
+use App\Http\Controllers\Web\Enterprise\ArchiveController;
 
 /*
 |--------------------------------------------------------------------------
@@ -215,6 +219,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/reports/transport/export', [TransportReportsController::class, 'export'])->middleware('role:reports_viewer|followup_officer')->name('role.reports.transport.export');
     Route::get('/dashboard/reports/kpis', [MonthlyKpisController::class, 'index'])->middleware('role:reports_viewer|followup_officer')->name('role.reports.kpis.index');
     Route::post('/dashboard/reports/kpis', [MonthlyKpisController::class, 'store'])->middleware('role:followup_officer')->name('role.reports.kpis.store');
+
+    Route::get('/dashboard/enterprise', [EnterpriseDashboardController::class, 'index'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.dashboard');
+    Route::get('/dashboard/enterprise/annual-planning', [EnterpriseDashboardController::class, 'annualPlanning'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.annual_planning');
+    Route::get('/dashboard/reports/enterprise/branch-performance', [EnterpriseDashboardController::class, 'branchReport'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.branch_performance');
+    Route::get('/dashboard/reports/enterprise/agenda-export', [EnterpriseReportsController::class, 'exportAgenda'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.agenda_export');
+    Route::get('/dashboard/reports/enterprise/monthly-export', [EnterpriseReportsController::class, 'exportMonthlyActivities'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.monthly_export');
+    Route::get('/dashboard/reports/enterprise/approval-export', [EnterpriseReportsController::class, 'exportApprovalReport'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.approval_export');
+    Route::get('/dashboard/reports/enterprise/printable', [EnterpriseReportsController::class, 'printable'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.printable');
+    Route::patch('/dashboard/notifications/{notification}/read', [NotificationsController::class, 'markRead'])->name('role.notifications.read');
+    Route::post('/dashboard/archive/year', [ArchiveController::class, 'archiveYear'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.archive.year');
+    Route::post('/dashboard/archive/year/restore', [ArchiveController::class, 'restoreYear'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.archive.year.restore');
+
     Route::get('/dashboard/reports', [ReportsViewerDashboardController::class, 'index'])->middleware('role:reports_viewer|followup_officer')->name('role.reports_viewer.dashboard');
     Route::get('/dashboard/staff/agenda', [StaffAgendaController::class, 'index'])->middleware('role:staff')->name('role.staff.agenda.index');
     Route::get('/dashboard/staff/activities', [StaffMonthlyActivitiesController::class, 'index'])->middleware('role:staff')->name('role.staff.activities.index');

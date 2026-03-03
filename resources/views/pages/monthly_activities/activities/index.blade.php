@@ -17,6 +17,9 @@
         @if (session('status'))
             <div class="alert alert-success">{{ session('status') }}</div>
         @endif
+        @if (session('warning'))
+            <div class="alert alert-warning">{{ session('warning') }}</div>
+        @endif
 
         <div class="event-kpi-grid">
             <div class="event-kpi-card"><div class="text-muted small">{{ __('app.roles.programs.monthly_activities.list_title') }}</div><div class="event-kpi-value">{{ $activities->count() }}</div></div>
@@ -77,5 +80,6 @@
                 </div>
             </div>
         </div>
+        <div class="mt-3">{{ $activities->links() }}</div>
     </div>
 @endsection

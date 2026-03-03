@@ -2,6 +2,7 @@
     $theme = session('ui.theme', 'light');
     $nextTheme = $theme === 'dark' ? 'light' : 'dark';
     $isArabic = app()->getLocale() === 'ar';
+    $unreadNotifications = auth()->check() ? auth()->user()->inAppNotifications()->whereNull('read_at')->latest()->take(5)->get() : collect();
 @endphp
 <header class="nxl-header">
     <div class="header-wrapper">
@@ -69,8 +70,18 @@
                 </div>
 
                 <div class="dropdown nxl-h-item">
-                    <a class="nxl-head-link me-3" data-bs-toggle="dropdown" href="#"><i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">3</span></a>
-                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown"><a class="dropdown-item" href="javascript:void(0);">Notifications</a></div>
+                    <a class="nxl-head-link me-3" data-bs-toggle="dropdown" href="#"><i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">{{ $unreadNotifications->count() }}</span></a>
+                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown" style="min-width: 320px;">
+                        @forelse($unreadNotifications as $notification)
+                            <div class="dropdown-item small">
+                                <div class="fw-semibold">{{ $notification->title }}</div>
+                                <div class="text-muted">{{ $notification->message }}</div>
+                                <form method="POST" action="{{ route('role.notifications.read', $notification) }}">@csrf @method('PATCH')<button class="btn btn-link p-0 small">Mark as read</button></form>
+                            </div>
+                        @empty
+                            <div class="dropdown-item text-muted">No new notifications</div>
+                        @endforelse
+                    </div>
                 </div>
 
                 @auth

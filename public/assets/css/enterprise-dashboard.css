@@ -1,0 +1,5 @@
+.enterprise-dashboard .enterprise-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.enterprise-dashboard .kpi{padding:14px;border-radius:12px;background:linear-gradient(145deg,#eef2ff,#f9fbff);transition:transform .2s ease}
+.enterprise-dashboard .kpi:hover{transform:translateY(-2px)}
+.app-skin-dark .enterprise-dashboard .kpi{background:linear-gradient(145deg,#2c3156,#1e2340);color:#e8ebff}
+[dir='rtl'] .enterprise-dashboard .kpi{text-align:right}

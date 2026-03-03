@@ -5,7 +5,7 @@
     $subtitle = __('app.roles.relations.agenda.subtitle');
     $isRtl = app()->getLocale() === 'ar';
 
-    $agendaEvents = $events->map(function ($event) {
+    $agendaEvents = $events->getCollection()->map(function ($event) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
 
@@ -36,6 +36,21 @@
         @if (session('status'))
             <div class="alert alert-success">{{ session('status') }}</div>
         @endif
+        @if (session('warning'))
+            <div class="alert alert-warning">{{ session('warning') }}</div>
+        @endif
+
+
+        <form method="GET" class="card card-body mb-3">
+            <div class="row g-2">
+                <div class="col-md-2"><input class="form-control" type="number" name="year" placeholder="Year" value="{{ request('year') }}"></div>
+                <div class="col-md-2"><input class="form-control" type="number" min="1" max="12" name="month" placeholder="Month" value="{{ request('month') }}"></div>
+                <div class="col-md-2"><input class="form-control" name="status" placeholder="Status" value="{{ request('status') }}"></div>
+                <div class="col-md-2"><input class="form-control" name="plan_type" placeholder="Plan Type" value="{{ request('plan_type') }}"></div>
+                <div class="col-md-2"><input class="form-control" name="event_type" placeholder="Event Type" value="{{ request('event_type') }}"></div>
+                <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filter</button></div>
+            </div>
+        </form>
 
         <div class="event-kpi-grid">
             <div class="event-kpi-card">

@@ -7,6 +7,7 @@ use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivityApproval;
 use App\Models\WorkflowActionLog;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
@@ -61,7 +62,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         return view('pages.monthly_activities.approvals.index', compact('activities'));
     }
 
-    public function update(Request $request, MonthlyActivity $monthlyActivity)
+    public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity)
     {
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,changes_requested'],
@@ -99,6 +100,9 @@ class MonthlyActivitiesApprovalsController extends Controller
         }
 
         $monthlyActivity->update($updates);
+
+
+        $notifications->notifyUsers(collect([$monthlyActivity->creator])->filter(), 'approval_decision', 'Approval update', 'Decision: '. $data['decision'], route('role.programs.approvals.index'));
 
         WorkflowActionLog::create([
             'module' => 'monthly_activity',
