@@ -178,6 +178,31 @@
         </div>
     </div>
 
+
+
+    <div class="card stretch stretch-full mt-4">
+        <div class="card-body enterprise-dashboard">
+            <h2 class="h5 mb-3">Enterprise Analytics</h2>
+            <form class="row g-2 align-items-end mb-3" method="GET" action="{{ route('role.super_admin.reports') }}">
+                <div class="col-md-3">
+                    <label class="form-label">Year</label>
+                    <select class="form-select" name="year">
+                        @foreach($years as $optionYear)
+                            <option value="{{ $optionYear }}" @selected(($enterpriseFilters['year'] ?? now()->year) == $optionYear)>{{ $optionYear }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Apply</button>
+                </div>
+            </form>
+
+            @include('pages.enterprise.partials.kpis')
+            @include('pages.enterprise.partials.charts')
+            @include('pages.enterprise.partials.branch-performance')
+        </div>
+    </div>
+
     <div class="card stretch stretch-full">
         <div class="card-body">
             <h2 class="h5 mb-3">{{ __('app.reports.flowcharts.title') }}</h2>
@@ -218,3 +243,10 @@
         mermaid.initialize({ startOnLoad: true });
     </script>
 @endpush
+
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/enterprise-dashboard.css') }}">
+@endpush
+
+@include('pages.enterprise.partials.charts-scripts')

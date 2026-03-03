@@ -15,10 +15,12 @@ use App\Models\Payment;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\EnterpriseAnalyticsService;
+use Illuminate\Http\Request;
 
 class ReportsController extends Controller
 {
-    public function index()
+    public function index(Request $request, EnterpriseAnalyticsService $analyticsService)
     {
         $overview = [
             'branches' => Branch::count(),
@@ -60,13 +62,24 @@ class ReportsController extends Controller
             ->orderByDesc('total')
             ->get();
 
+        $year = (int) $request->input('year', now()->year);
+        $analytics = $analyticsService->build($year);
+        $branchMetrics = $analyticsService->branchMetrics($year);
+        $years = range(now()->year - 2, now()->year + 1);
+        $enterpriseFilters = $request->only(['year']);
+
         return view('roles.super_admin.reports', compact(
             'overview',
             'operations',
             'financials',
             'maintenanceStatus',
             'agendaApprovals',
-            'bookingStatus'
+            'bookingStatus',
+            'analytics',
+            'branchMetrics',
+            'year',
+            'years',
+            'enterpriseFilters'
         ));
     }
 }
