@@ -32,6 +32,11 @@ class EnterpriseDemoSeeder extends Seeder
                 for ($i = 1; $i <= rand(2, 5); $i++) {
                     $date = Carbon::create($year, $m, rand(1, 25));
                     $department = $departments->random();
+                    $departmentCategories = $categories->where('department_id', $department->id);
+                    $category = $departmentCategories->isNotEmpty()
+                        ? $departmentCategories->random()
+                        : null;
+
                     $event = AgendaEvent::create([
                         'event_date' => $date->toDateString(),
                         'event_day' => $date->format('l'),
@@ -39,7 +44,7 @@ class EnterpriseDemoSeeder extends Seeder
                         'day' => (int) $date->format('d'),
                         'event_name' => "Enterprise Event {$year}-{$m}-{$i}",
                         'department_id' => $department->id,
-                        'event_category_id' => optional($categories->where('department_id', $department->id)->random())->id,
+                        'event_category_id' => $category?->id,
                         'event_category' => null,
                         'plan_type' => collect(['unified', 'non_unified'])->random(),
                         'event_type' => collect(['mandatory', 'optional'])->random(),
