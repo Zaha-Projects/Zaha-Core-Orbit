@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendors/css/vendors.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/theme.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/zaha-duralux-overrides.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/zaha-theme.css') }}" />
     @stack('styles')
 </head>
 <body class="{{ $skinClass }}">

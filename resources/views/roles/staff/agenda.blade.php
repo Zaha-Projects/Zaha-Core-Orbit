@@ -6,14 +6,15 @@
 @endphp
 
 @section('content')
-    <div class="card shadow-sm mb-4">
+    <div class="event-module">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-0">{{ $subtitle }}</p>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('role.staff.agenda.index') }}" class="row g-3">
                 <div class="col-12 col-md-4">
@@ -29,10 +30,10 @@
         </div>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card event-card">
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
+            <div class="event-table-wrap table-responsive">
+                <table class="table table-sm align-middle event-table">
                     <thead>
                         <tr>
                             <th>{{ __('app.roles.staff.agenda.table.event') }}</th>
@@ -45,7 +46,7 @@
                             <tr>
                                 <td>{{ $event->event_name }}</td>
                                 <td>{{ sprintf('%02d-%02d', $event->month, $event->day) }}</td>
-                                <td>{{ $event->status }}</td>
+                                <td><span class="event-status status-{{ $event->status }}">{{ $event->status }}</span></td>
                             </tr>
                         @empty
                             <tr>
@@ -56,5 +57,6 @@
                 </table>
             </div>
         </div>
+    </div>
     </div>
 @endsection

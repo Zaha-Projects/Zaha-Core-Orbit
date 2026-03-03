@@ -7,7 +7,8 @@
 
 
 @section('content')
-    <div class="card shadow-sm mb-4">
+    <div class="event-module">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-0">{{ $subtitle }}</p>
@@ -18,7 +19,7 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
-    <div class="card shadow-sm mb-4">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.edit_details') }}</h2>
             <form method="POST" action="{{ route('role.programs.activities.update', $monthlyActivity) }}" class="row g-3">
@@ -186,7 +187,7 @@
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.supplies.title') }}</h2>
             <form method="POST" action="{{ route('role.programs.supplies.store', $monthlyActivity) }}" class="row g-3 mb-3">
@@ -209,8 +210,8 @@
                     </button>
                 </div>
             </form>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
+            <div class="event-table-wrap table-responsive">
+                <table class="table table-sm align-middle event-table">
                     <thead>
                         <tr>
                             <th>{{ __('app.roles.programs.monthly_activities.supplies.table.item_name') }}</th>
@@ -244,7 +245,7 @@
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.team.title') }}</h2>
             <form method="POST" action="{{ route('role.programs.team.store', $monthlyActivity) }}" class="row g-3 mb-3">
@@ -263,8 +264,8 @@
                     </button>
                 </div>
             </form>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
+            <div class="event-table-wrap table-responsive">
+                <table class="table table-sm align-middle event-table">
                     <thead>
                         <tr>
                             <th>{{ __('app.roles.programs.monthly_activities.team.table.member_name') }}</th>
@@ -298,7 +299,7 @@
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.attachments.title') }}</h2>
             <form method="POST" action="{{ route('role.programs.attachments.store', $monthlyActivity) }}" class="row g-3 mb-3">
@@ -317,8 +318,8 @@
                     </button>
                 </div>
             </form>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
+            <div class="event-table-wrap table-responsive">
+                <table class="table table-sm align-middle event-table">
                     <thead>
                         <tr>
                             <th>{{ __('app.roles.programs.monthly_activities.attachments.table.file_type') }}</th>
@@ -352,7 +353,7 @@
         </div>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card event-card">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.close_title') }}</h2>
             <form method="POST" action="{{ route('role.programs.activities.close', $monthlyActivity) }}" class="row g-3">
@@ -376,5 +377,6 @@
                 </div>
             </form>
         </div>
+    </div>
     </div>
 @endsection

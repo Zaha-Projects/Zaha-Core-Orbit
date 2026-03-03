@@ -7,11 +7,11 @@
 
 
 @section('content')
-    <div class="card shadow-sm">
+    <div class="event-module"><div class="card event-card">
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-4">{{ $subtitle }}</p>
-            <form method="POST" action="{{ route('role.relations.agenda.update', $agendaEvent) }}" class="row g-3">
+            <form method="POST" action="{{ route('role.relations.agenda.update', $agendaEvent) }}" class="row event-form-grid">
                 @csrf
                 @method('PUT')
                 <div class="col-12 col-md-6">
@@ -55,8 +55,8 @@
                     </select>
                 </div>
 
-                <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</label>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</h2>
                     <div class="row g-2">
                         @foreach ($branches as $branch)
                             <div class="col-12 col-md-4">
@@ -69,17 +69,17 @@
                             </div>
                         @endforeach
                     </div>
-                </div>
+                </div></div>
 
-                <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.unit_participation') }}</label>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields_ext.unit_participation') }}</h2>
                     <div class="row g-2">
                         @foreach ($departmentUnits as $unit)
                             @php
                                 $canEditUnit = auth()->user()->hasRole('relations_manager') || auth()->user()->hasRole($unit->role_name);
                             @endphp
                             <div class="col-12 col-md-6">
-                                <form method="POST" action="{{ route('role.relations.agenda.unit_participation.update', $agendaEvent) }}" class="border rounded p-2">
+                                <form method="POST" action="{{ route('role.relations.agenda.unit_participation.update', $agendaEvent) }}" class="event-approval-panel">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="unit_key" value="{{ $unit->unit_key }}">
@@ -103,18 +103,18 @@
                             </div>
                         @endforeach
                     </div>
-                </div>
+                </div></div>
 
-                <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.notes') }}</label>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields.notes') }}</h2>
                     <textarea class="form-control" name="notes" rows="3">{{ old('notes', $agendaEvent->notes) }}</textarea>
-                </div>
+                </div></div>
                 <div class="col-12 d-flex justify-content-end gap-2">
                     <button class="btn btn-primary" type="submit">{{ __('app.roles.relations.agenda.actions.update') }}</button>
                 </div>
             </form>
         </div>
-    </div>
+    </div></div>
 
     <script>
         (function () {

@@ -7,7 +7,8 @@
 
 
 @section('content')
-    <div class="card shadow-sm mb-4">
+    <div class="event-module">
+    <div class="card event-card mb-4">
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-0">{{ $subtitle }}</p>
@@ -18,10 +19,10 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
-    <div class="card shadow-sm">
+    <div class="card event-card">
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
+            <div class="event-table-wrap table-responsive">
+                <table class="table table-sm align-middle event-table">
                     <thead>
                         <tr>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.title') }}</th>
@@ -42,7 +43,7 @@
                             <tr>
                                 <td>{{ $activity->title }}</td>
                                 <td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td>
-                                <td>{{ $activity->status }}</td>
+                                <td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
                                 <td>{{ $activity->relations_officer_approval_status }} / {{ $activity->relations_manager_approval_status }}</td>
                                 <td>{{ $activity->programs_officer_approval_status }} / {{ $activity->programs_manager_approval_status }}</td>
                                 <td>{{ $activity->executive_approval_status }}</td>
@@ -86,5 +87,6 @@
                 </table>
             </div>
         </div>
+    </div>
     </div>
 @endsection

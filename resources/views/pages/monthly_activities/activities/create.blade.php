@@ -7,11 +7,11 @@
 
 
 @section('content')
-    <div class="card shadow-sm">
+    <div class="event-module"><div class="card event-card">
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-4">{{ $subtitle }}</p>
-            <form method="POST" action="{{ route('role.programs.activities.store') }}" class="row g-3">
+            <form method="POST" action="{{ route('role.programs.activities.store') }}" class="row event-form-grid">
                 @csrf
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.title') }}</label>
@@ -68,6 +68,8 @@
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.location_details') }}</label>
                     <input class="form-control" name="location_details" value="{{ old('location_details') }}">
                 </div>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.edit_details') }}</h2></div></div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.responsible_entity') }}</label>
                     <input class="form-control" name="responsible_party" value="{{ old('responsible_party') }}">
@@ -88,8 +90,8 @@
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.need_volunteers') }}</label>
                     <input class="form-control" name="volunteer_need" value="{{ old('volunteer_need') }}">
                 </div>
-                <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.sponsors_open') }}</label>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.fields_ext.sponsors_open') }}</h2>
                     <div class="row g-2">
                         @for ($i = 0; $i < 3; $i++)
                             <div class="col-12 col-md-4">
@@ -106,9 +108,9 @@
                             </div>
                         @endfor
                     </div>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.partners_open') }}</label>
+                </div></div>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.fields_ext.partners_open') }}</h2>
                     <div class="row g-2">
                         @for ($i = 0; $i < 5; $i++)
                             <div class="col-12 col-md-6">
@@ -119,7 +121,7 @@
                             </div>
                         @endfor
                     </div>
-                </div>
+                </div></div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" name="needs_official_letters" value="1" id="needs_letters_create">
@@ -137,7 +139,7 @@
                 <div class="col-12 col-md-8">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.reschedule_reason') }}</label>
                     <input class="form-control" name="reschedule_reason" value="{{ old('reschedule_reason') }}">
-                </div>
+                </div></div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" name="relations_approval_on_reschedule" value="1" id="relations_reschedule_approve_create">
@@ -163,5 +165,5 @@
                 </div>
             </form>
         </div>
-    </div>
+    </div></div>
 @endsection

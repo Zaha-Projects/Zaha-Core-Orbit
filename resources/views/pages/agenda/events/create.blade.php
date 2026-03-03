@@ -7,11 +7,11 @@
 
 
 @section('content')
-    <div class="card shadow-sm">
+    <div class="event-module"><div class="card event-card">
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-4">{{ $subtitle }}</p>
-            <form method="POST" action="{{ route('role.relations.agenda.store') }}" class="row g-3">
+            <form method="POST" action="{{ route('role.relations.agenda.store') }}" class="row event-form-grid">
                 @csrf
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_name') }}</label>
@@ -54,8 +54,8 @@
                     </select>
                 </div>
 
-                <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</label>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</h2>
                     <div class="row g-2">
                         @foreach ($branches as $branch)
                             <div class="col-12 col-md-4">
@@ -68,18 +68,18 @@
                             </div>
                         @endforeach
                     </div>
-                </div>
+                </div></div>
 
-                <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.notes') }}</label>
+                <div class="col-12"><div class="event-form-section">
+                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields.notes') }}</h2>
                     <textarea class="form-control" name="notes" rows="3">{{ old('notes') }}</textarea>
-                </div>
+                </div></div>
                 <div class="col-12 d-flex justify-content-end">
                     <button class="btn btn-primary" type="submit">{{ __('app.roles.relations.agenda.actions.save') }}</button>
                 </div>
             </form>
         </div>
-    </div>
+    </div></div>
 
     <script>
         (function () {
