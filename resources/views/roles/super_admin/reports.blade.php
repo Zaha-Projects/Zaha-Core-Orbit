@@ -7,6 +7,7 @@
 
 @section('page_title', $title)
 @section('page_breadcrumb', $title)
+@section('enable_header_search', '1')
 
 @section('content')
     <div class="card stretch stretch-full mb-4">
@@ -187,8 +188,8 @@
                 <div class="col-md-3">
                     <label class="form-label">{{ __('app.enterprise.year') }}</label>
                     <select class="form-select" name="year">
-                        @foreach($years as $option{{ __('app.enterprise.year') }})
-                            <option value="{{ $option{{ __('app.enterprise.year') }} }}" @selected(($enterpriseFilters['year'] ?? now()->year) == $option{{ __('app.enterprise.year') }})>{{ $option{{ __('app.enterprise.year') }} }}</option>
+                        @foreach ($years as $option)
+                            <option value="{{ $option }}" @selected(($enterpriseFilters['year'] ?? now()->year) == $option)>{{ $option }}</option>
                         @endforeach
                     </select>
                 </div>

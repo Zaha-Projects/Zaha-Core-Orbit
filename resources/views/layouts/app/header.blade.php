@@ -3,6 +3,7 @@
     $nextTheme = $theme === 'dark' ? 'light' : 'dark';
     $isArabic = app()->getLocale() === 'ar';
     $unreadNotifications = auth()->check() ? auth()->user()->inAppNotifications()->whereNull('read_at')->latest()->take(5)->get() : collect();
+    $showHeaderSearch = trim($__env->yieldContent('enable_header_search', '0')) === '1';
 @endphp
 <header class="nxl-header nxl-header-clean">
     <div class="header-wrapper">
@@ -14,36 +15,29 @@
             </a>
             <div class="nxl-navigation-toggle">
                 <a href="javascript:void(0);" id="menu-mini-button"><i class="feather-align-left"></i></a>
-                <a href="javascript:void(0);" id="menu-expend-button" style="display: none"><i class="feather-{{ $isArabic ? 'arrow-left' : 'arrow-right' }}"></i></a>
+                <a href="javascript:void(0);" id="menu-expend-button" style="display: none"><i class="feather-{{ $isArabic ? 'arrow-left' : 'arrow-right' }} rtl-flip"></i></a>
             </div>
         </div>
 
         <div class="header-right ms-auto">
             <div class="d-flex align-items-center gap-1 gap-sm-2">
-                <div class="dropdown nxl-h-item nxl-header-search">
-                    <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="feather-search"></i></a>
-                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-search-dropdown">
-                        <div class="input-group search-form">
-                            <span class="input-group-text"><i class="feather-search fs-6 text-muted"></i></span>
-                            <input type="text" class="form-control search-input-field" placeholder="{{ __('app.common.filter') }}" />
-                            <span class="input-group-text"><button type="button" class="btn-close"></button></span>
+                @if ($showHeaderSearch)
+                    <div class="dropdown nxl-h-item nxl-header-search d-none d-md-block">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="feather-search"></i></a>
+                        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-search-dropdown">
+                            <div class="input-group search-form">
+                                <span class="input-group-text"><i class="feather-search fs-6 text-muted"></i></span>
+                                <input type="text" class="form-control search-input-field" placeholder="{{ __('app.common.filter') }}" />
+                                <span class="input-group-text"><button type="button" class="btn-close"></button></span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
-                <div class="dropdown nxl-h-item nxl-header-language">
-                    <a href="javascript:void(0);" class="nxl-head-link me-0 nxl-language-link" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-                        <img src="{{ asset($isArabic ? 'assets/vendors/img/flags/4x3/sa.svg' : 'assets/vendors/img/flags/4x3/us.svg') }}" alt="" class="img-fluid wd-20" />
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-language-dropdown">
-                        <div class="row px-3 py-2 g-2">
-                            <div class="col-6 language_select {{ $isArabic ? 'active' : '' }}">
-                                <form method="POST" action="{{ route('ui.locale', 'ar') }}" class="js-locale-switch" data-locale="ar">@csrf<button class="btn p-0 border-0 bg-transparent d-flex align-items-center gap-2" type="submit"><div class="avatar-image avatar-sm"><img src="{{ asset('assets/vendors/img/flags/1x1/sa.svg') }}" alt="" class="img-fluid" /></div><span>العربية</span></button></form>
-                            </div>
-                            <div class="col-6 language_select {{ $isArabic ? '' : 'active' }}">
-                                <form method="POST" action="{{ route('ui.locale', 'en') }}" class="js-locale-switch" data-locale="en">@csrf<button class="btn p-0 border-0 bg-transparent d-flex align-items-center gap-2" type="submit"><div class="avatar-image avatar-sm"><img src="{{ asset('assets/vendors/img/flags/1x1/us.svg') }}" alt="" class="img-fluid" /></div><span>English</span></button></form>
-                            </div>
-                        </div>
+                <div class="nxl-h-item nxl-header-language">
+                    <div class="lang-toggle" role="group" aria-label="Language switch">
+                        <form method="POST" action="{{ route('ui.locale', 'ar') }}" class="js-locale-switch" data-locale="ar">@csrf<button class="lang-toggle__btn {{ $isArabic ? 'is-active' : '' }}" type="submit">AR</button></form>
+                        <form method="POST" action="{{ route('ui.locale', 'en') }}" class="js-locale-switch" data-locale="en">@csrf<button class="lang-toggle__btn {{ $isArabic ? '' : 'is-active' }}" type="submit">EN</button></form>
                     </div>
                 </div>
 
