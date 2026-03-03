@@ -8,6 +8,17 @@ use Illuminate\Support\Collection;
 
 class NotificationService
 {
+    protected function normalizeMeta(array $meta): ?string
+    {
+        if (empty($meta)) {
+            return null;
+        }
+
+        $encoded = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return $encoded === false ? '{}' : $encoded;
+    }
+
     public function notifyUsers(Collection $users, string $type, string $title, ?string $message = null, ?string $actionUrl = null, array $meta = []): void
     {
         $payload = $users
@@ -18,7 +29,7 @@ class NotificationService
                 'title' => $title,
                 'message' => $message,
                 'action_url' => $actionUrl,
-                'meta' => $meta,
+                'meta' => $this->normalizeMeta($meta),
                 'created_at' => now(),
                 'updated_at' => now(),
             ])

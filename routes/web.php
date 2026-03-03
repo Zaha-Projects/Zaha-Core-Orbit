@@ -117,7 +117,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/admin/approvals', [SuperAdminApprovalsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.approvals');
     Route::get('/dashboard/relations/manager', [RelationsManagerDashboardController::class, 'index'])->middleware('role:relations_manager|super_admin')->name('role.relations_manager.dashboard');
     Route::get('/dashboard/relations/officer', [RelationsOfficerDashboardController::class, 'index'])->middleware('role:relations_officer|super_admin')->name('role.relations_officer.dashboard');
-    Route::get('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'index'])->middleware('role:relations_manager|relations_officer|super_admin')->name('role.relations.agenda.index');
+    Route::get('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'index'])->middleware('role:relations_manager|relations_officer|executive_manager|super_admin')->name('role.relations.agenda.index');
     Route::get('/dashboard/relations/agenda/create', [RelationsAgendaEventsController::class, 'create'])->middleware('role:relations_manager|relations_officer|super_admin')->name('role.relations.agenda.create');
     Route::post('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'store'])->middleware('role:relations_manager|relations_officer|super_admin')->name('role.relations.agenda.store');
     Route::get('/dashboard/relations/agenda/{agendaEvent}/edit', [RelationsAgendaEventsController::class, 'edit'])->middleware('role:relations_manager|relations_officer|super_admin')->name('role.relations.agenda.edit');
