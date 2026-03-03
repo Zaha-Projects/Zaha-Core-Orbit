@@ -1,4 +1,4 @@
-@extends('layouts.guest')
+@extends('layouts.auth')
 
 @section('content')
     <h1 class="h4 mb-4 text-center">{{ __('app.auth.login_title') }}</h1>
@@ -30,7 +30,4 @@
         <button class="btn btn-primary w-100" type="submit">{{ __('app.auth.submit_login') }}</button>
     </form>
 
-    <div class="text-center mt-3">
-        <a href="{{ route('register') }}">{{ __('app.auth.new_account') }}</a>
-    </div>
 @endsection

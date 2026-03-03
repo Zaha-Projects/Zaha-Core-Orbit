@@ -1,4 +1,4 @@
-<nav class="nxl-navigation">
+<nav class="nxl-navigation nxl-navigation-clean">
     <div class="navbar-wrapper">
         <div class="m-header">
             <a href="{{ route('dashboard') }}" class="b-brand">
