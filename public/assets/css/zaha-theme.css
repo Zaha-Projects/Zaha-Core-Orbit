@@ -727,3 +727,49 @@ textarea {
 .dashboard-shell.page-header-actions-open .page-header-right-open-toggle {
     opacity: 0.8;
 }
+
+/* header full-width alignment from sidebar edge to viewport edge */
+@media (min-width: 1200px) {
+    .dashboard-shell .nxl-header {
+        left: 280px !important;
+        right: 0 !important;
+        width: auto !important;
+    }
+
+    html.minimenu .dashboard-shell .nxl-header {
+        left: 80px !important;
+    }
+
+    [dir='rtl'] .dashboard-shell .nxl-header {
+        left: 0 !important;
+        right: 280px !important;
+    }
+
+    [dir='rtl'] html.minimenu .dashboard-shell .nxl-header {
+        right: 80px !important;
+    }
+
+    .dashboard-shell .nxl-header .header-wrapper {
+        width: 100%;
+        max-width: 100%;
+        padding-inline: 0 !important;
+        margin-inline: 0 !important;
+    }
+
+    .dashboard-shell .nxl-header .header-left,
+    .dashboard-shell .nxl-header .header-right {
+        padding-inline: 1rem;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .dashboard-shell .nxl-header {
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+    }
+
+    .dashboard-shell .nxl-header .header-wrapper {
+        padding-inline: 0.5rem;
+    }
+}
