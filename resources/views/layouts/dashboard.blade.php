@@ -22,6 +22,7 @@
 </head>
 <body class="{{ $skinClass }} dashboard-shell" data-locale="{{ $locale }}">
     @include('layouts.app.sidebar')
+    <button type="button" class="sidebar-backdrop border-0 bg-transparent" id="sidebar-backdrop" aria-label="Close sidebar"></button>
 
     @include('layouts.app.header')
 
@@ -55,6 +56,42 @@
                     document.body.classList.toggle('rtl-active', isRtl);
                 });
             });
+
+            var mobileToggle = document.getElementById('mobile-collapse');
+            var sidebarBackdrop = document.getElementById('sidebar-backdrop');
+            var pageHeaderActionOpen = document.querySelector('.page-header-right-open-toggle');
+            var pageHeaderActions = document.querySelector('.page-header-right-items');
+
+            var closeSidebar = function () {
+                document.body.classList.remove('dashboard-sidebar-open');
+            };
+
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function () {
+                    document.body.classList.toggle('dashboard-sidebar-open');
+                });
+            }
+
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', closeSidebar);
+            }
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 991) {
+                    closeSidebar();
+                    if (pageHeaderActions) {
+                        pageHeaderActions.classList.remove('page-header-right-open');
+                    }
+                }
+            });
+
+            if (pageHeaderActionOpen && pageHeaderActions) {
+                document.addEventListener('click', function (event) {
+                    if (!pageHeaderActions.contains(event.target) && !pageHeaderActionOpen.contains(event.target)) {
+                        pageHeaderActions.classList.remove('page-header-right-open');
+                    }
+                });
+            }
         });
     </script>
     @stack('scripts')
