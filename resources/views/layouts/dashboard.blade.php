@@ -61,7 +61,21 @@
             var sidebarBackdrop = document.getElementById('sidebar-backdrop');
             var sidebar = document.querySelector('.nxl-navigation');
             var pageHeaderActionOpen = document.querySelector('.page-header-right-open-toggle');
+            var pageHeaderActionClose = document.querySelector('.page-header-right-close-toggle');
             var pageHeaderActions = document.querySelector('.page-header-right-items');
+
+            var closePageHeaderActions = function () {
+                if (!pageHeaderActions) {
+                    return;
+                }
+
+                pageHeaderActions.classList.remove('page-header-right-open');
+                document.body.classList.remove('page-header-actions-open');
+
+                if (pageHeaderActionOpen) {
+                    pageHeaderActionOpen.setAttribute('aria-expanded', 'false');
+                }
+            };
 
             var closeSidebar = function () {
                 document.body.classList.remove('dashboard-sidebar-open');
@@ -85,16 +99,33 @@
             window.addEventListener('resize', function () {
                 if (window.innerWidth > 991) {
                     closeSidebar();
-                    if (pageHeaderActions) {
-                        pageHeaderActions.classList.remove('page-header-right-open');
-                    }
+                    closePageHeaderActions();
                 }
             });
 
             if (pageHeaderActionOpen && pageHeaderActions) {
+                pageHeaderActionOpen.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    var isOpen = pageHeaderActions.classList.toggle('page-header-right-open');
+                    document.body.classList.toggle('page-header-actions-open', isOpen);
+                    pageHeaderActionOpen.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                });
+
+                if (pageHeaderActionClose) {
+                    pageHeaderActionClose.addEventListener('click', function () {
+                        closePageHeaderActions();
+                    });
+                }
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        closePageHeaderActions();
+                    }
+                });
+
                 document.addEventListener('click', function (event) {
                     if (!pageHeaderActions.contains(event.target) && !pageHeaderActionOpen.contains(event.target)) {
-                        pageHeaderActions.classList.remove('page-header-right-open');
+                        closePageHeaderActions();
                     }
                 });
             }

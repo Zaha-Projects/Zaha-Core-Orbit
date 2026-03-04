@@ -10,14 +10,14 @@
     </div>
 
     <div class="page-header-right ms-auto">
-        <button class="btn btn-sm btn-light-brand page-header-right-open-toggle d-md-none" type="button" aria-label="Toggle page actions">
+        <button class="btn btn-sm btn-light-brand page-header-right-open-toggle d-md-none" type="button" aria-label="Toggle page actions" aria-controls="page-header-right-items" aria-expanded="false">
             <i class="feather-sliders"></i>
         </button>
 
-        <div class="page-header-right-items">
-            <a href="javascript:void(0)" class="page-header-right-close-toggle d-md-none" aria-label="Close page actions">
+        <div class="page-header-right-items" id="page-header-right-items">
+            <button type="button" class="btn btn-sm btn-light-brand page-header-right-close-toggle d-md-none" aria-label="Close page actions">
                 <i class="feather-x"></i>
-            </a>
+            </button>
             <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                 @hasSection('page_header_actions')
                     @yield('page_header_actions')
