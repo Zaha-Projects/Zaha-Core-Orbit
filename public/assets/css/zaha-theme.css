@@ -682,3 +682,38 @@ textarea {
         row-gap: 0.25rem;
     }
 }
+
+/* mobile hamburger + rtl sidebar hardening */
+@media (max-width: 1024px) {
+    [dir='rtl'] .nxl-header .nxl-head-link#mobile-collapse {
+        left: auto;
+        right: 15px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-shell .nxl-navigation {
+        left: 0 !important;
+        right: auto !important;
+        transform: translateX(-105%);
+    }
+
+    [dir='rtl'] .dashboard-shell .nxl-navigation {
+        left: auto !important;
+        right: 0 !important;
+        transform: translateX(105%);
+    }
+
+    .dashboard-shell .nxl-navigation.mob-navigation-active,
+    .dashboard-shell.dashboard-sidebar-open .nxl-navigation {
+        transform: translateX(0) !important;
+    }
+
+    .dashboard-shell {
+        overflow-x: hidden;
+    }
+
+    .dashboard-shell.dashboard-sidebar-open {
+        overflow: hidden;
+    }
+}
