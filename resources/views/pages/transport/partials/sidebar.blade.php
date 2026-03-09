@@ -22,3 +22,10 @@
         <span class="nxl-mtext">{{ __('app.roles.transport.requests.title') }}</span>
     </a>
 </li>
+
+<li class="nxl-item">
+    <a class="nxl-link {{ request()->routeIs('role.transport.movements.*') ? 'active' : '' }}" href="{{ route('role.transport.movements.index') }}">
+        <span class="nxl-micon"><i class="feather-map-pin"></i></span>
+        <span class="nxl-mtext">{{ __('app.roles.transport.movements.title') }}</span>
+    </a>
+</li>

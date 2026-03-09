@@ -38,6 +38,7 @@ use App\Http\Controllers\Web\Maintenance\MaintenanceApprovalsController as Maint
 use App\Http\Controllers\Web\Transport\VehiclesController as TransportVehiclesController;
 use App\Http\Controllers\Web\Transport\DriversController as TransportDriversController;
 use App\Http\Controllers\Web\Transport\TripsController as TransportTripsController;
+use App\Http\Controllers\Web\Transport\MovementsController as TransportMovementsController;
 use App\Http\Controllers\Roles\Transport\TripSegmentsController as TransportTripSegmentsController;
 use App\Http\Controllers\Roles\Transport\TripRoundsController as TransportTripRoundsController;
 use App\Http\Controllers\Roles\Transport\TransportRequestsController as TransportTransportRequestsController;
@@ -199,6 +200,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/transport/trips/{trip}', [TransportTripsController::class, 'update'])->middleware('role:transport_officer')->name('role.transport.trips.update');
     Route::patch('/dashboard/transport/trips/{trip}/close', [TransportTripsController::class, 'close'])->middleware('role:transport_officer')->name('role.transport.trips.close');
     Route::post('/dashboard/transport/trips/{trip}/segments', [TransportTripSegmentsController::class, 'store'])->middleware('role:transport_officer')->name('role.transport.segments.store');
+    Route::get('/dashboard/transport/movements', [TransportMovementsController::class, 'index'])->middleware('role:transport_officer|movement_manager|movement_editor|movement_viewer|super_admin')->name('role.transport.movements.index');
+    Route::get('/dashboard/transport/movements/create', [TransportMovementsController::class, 'create'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.create');
+    Route::post('/dashboard/transport/movements', [TransportMovementsController::class, 'store'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.store');
+    Route::get('/dashboard/transport/movements/{movementDay}', [TransportMovementsController::class, 'show'])->middleware('role:transport_officer|movement_manager|movement_editor|movement_viewer|super_admin')->name('role.transport.movements.show');
+    Route::get('/dashboard/transport/movements/{movementDay}/edit', [TransportMovementsController::class, 'edit'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.edit');
+    Route::put('/dashboard/transport/movements/{movementDay}', [TransportMovementsController::class, 'update'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.update');
+    Route::delete('/dashboard/transport/movements/{movementDay}', [TransportMovementsController::class, 'destroy'])->middleware('role:transport_officer|movement_manager|super_admin')->name('role.transport.movements.destroy');
     Route::put('/dashboard/transport/segments/{tripSegment}', [TransportTripSegmentsController::class, 'update'])->middleware('role:transport_officer')->name('role.transport.segments.update');
     Route::delete('/dashboard/transport/segments/{tripSegment}', [TransportTripSegmentsController::class, 'destroy'])->middleware('role:transport_officer')->name('role.transport.segments.destroy');
     Route::post('/dashboard/transport/trips/{trip}/rounds', [TransportTripRoundsController::class, 'store'])->middleware('role:transport_officer')->name('role.transport.rounds.store');
