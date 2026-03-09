@@ -115,7 +115,7 @@ class MovementsController extends Controller
 
     private function validateMovement(Request $request, ?int $movementDayId = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'driver_id' => ['required', 'exists:drivers,id'],
             'date' => ['required', 'date', 'unique:movement_days,date,'.$movementDayId.',id,driver_id,'.$request->input('driver_id')],
             'notes' => ['nullable', 'string'],
@@ -123,8 +123,20 @@ class MovementsController extends Controller
             'trips.*.vehicle_id' => ['nullable', 'exists:vehicles,id'],
             'trips.*.destination' => ['required', 'string', 'max:255'],
             'trips.*.team' => ['nullable', 'string', 'max:255'],
-            'trips.*.departure_time' => ['nullable', 'date_format:H:i'],
-            'trips.*.return_time' => ['nullable', 'date_format:H:i'],
+            'trips.*.departure_time' => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+            'trips.*.return_time' => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
         ]);
+
+        foreach ($data['trips'] as &$trip) {
+            if (! empty($trip['departure_time'])) {
+                $trip['departure_time'] = substr($trip['departure_time'], 0, 5);
+            }
+
+            if (! empty($trip['return_time'])) {
+                $trip['return_time'] = substr($trip['return_time'], 0, 5);
+            }
+        }
+
+        return $data;
     }
 }
