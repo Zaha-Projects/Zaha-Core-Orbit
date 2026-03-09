@@ -1,4 +1,15 @@
 @csrf
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="row g-3">
     <div class="col-12 col-md-4">
         <label class="form-label">{{ __('app.roles.transport.movements.fields.driver') }}</label>
@@ -89,14 +100,21 @@
         const addBtn = document.getElementById('add-trip');
         const trips = @json($initialTrips);
 
+        const reindexTrips = () => {
+            wrapper.querySelectorAll('.trip-item').forEach((item, index) => {
+                item.querySelectorAll('[data-name]').forEach((field) => {
+                    const key = field.getAttribute('data-name');
+                    field.name = `trips[${index}][${key}]`;
+                });
+            });
+        };
+
         const addTripRow = (trip = {}) => {
-            const index = wrapper.querySelectorAll('.trip-item').length;
             const node = template.content.cloneNode(true);
             const item = node.querySelector('.trip-item');
 
             item.querySelectorAll('[data-name]').forEach((field) => {
                 const key = field.getAttribute('data-name');
-                field.name = `trips[${index}][${key}]`;
                 if (trip[key] !== undefined && trip[key] !== null) {
                     field.value = trip[key];
                 }
@@ -106,16 +124,22 @@
                 item.remove();
                 if (!wrapper.querySelector('.trip-item')) {
                     addTripRow();
+                    return;
                 }
+
+                reindexTrips();
             });
 
             wrapper.appendChild(node);
+            reindexTrips();
         };
 
         addBtn.addEventListener('click', () => addTripRow());
 
-        if (Array.isArray(trips) && trips.length) {
-            trips.forEach((trip) => addTripRow(trip));
+        const normalizedTrips = Array.isArray(trips) ? trips : Object.values(trips || {});
+
+        if (normalizedTrips.length) {
+            normalizedTrips.forEach((trip) => addTripRow(trip));
         } else {
             addTripRow();
         }
