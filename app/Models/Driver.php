@@ -19,4 +19,9 @@ class Driver extends Model
     {
         return $this->hasMany(Trip::class);
     }
+
+    public function movementDays()
+    {
+        return $this->hasMany(MovementDay::class);
+    }
 }

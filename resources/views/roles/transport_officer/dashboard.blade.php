@@ -24,6 +24,11 @@
             'description' => __('app.roles.transport_officer.actions.reports.description'),
             'link' => route('role.transport.drivers.index'),
         ],
+        [
+            'title' => __('app.roles.transport.movements.title'),
+            'description' => __('app.roles.transport.movements.subtitle'),
+            'link' => route('role.transport.movements.index'),
+        ],
     ];
 @endphp
 
