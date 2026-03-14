@@ -63,12 +63,12 @@
             </div>
         </div>
 
-        <div class="agenda-view-switch mb-3" role="tablist" aria-label="Agenda view switcher">
+        <div class="agenda-view-switch mb-3" role="tablist" aria-label="{{ __('app.roles.relations.agenda.calendar.view_switcher') }}">
             <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">
-                {{ $isRtl ? 'عرض الجدول' : 'Table View' }}
+                {{ __('app.roles.relations.agenda.calendar.table_view') }}
             </button>
             <button type="button" class="btn btn-sm btn-outline-primary" data-view-toggle="calendar" aria-pressed="false">
-                {{ $isRtl ? 'عرض التقويم' : 'Calendar View' }}
+                {{ __('app.roles.relations.agenda.calendar.calendar_view') }}
             </button>
         </div>
 
@@ -148,9 +148,9 @@
             <div class="card event-card">
                 <div class="card-body">
                     <div class="agenda-calendar-toolbar">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">{{ $isRtl ? 'الشهر السابق' : 'Previous' }}</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">{{ __('app.roles.relations.agenda.calendar.previous_month') }}</button>
                         <h2 class="h6 mb-0" data-calendar-title></h2>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">{{ $isRtl ? 'الشهر التالي' : 'Next' }}</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">{{ __('app.roles.relations.agenda.calendar.next_month') }}</button>
                     </div>
 
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
@@ -186,13 +186,9 @@
             });
 
             const events = JSON.parse(document.getElementById('agenda-events-json')?.textContent ?? '[]');
-            const weekDayLabels = isRtl
-                ? ['السبت', 'الجمعة', 'الخميس', 'الأربعاء', 'الثلاثاء', 'الاثنين', 'الأحد']
-                : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const weekDayLabels = @json(__('app.roles.relations.agenda.calendar.weekdays'));
 
-            const monthNames = isRtl
-                ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
-                : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthNames = @json(__('app.roles.relations.agenda.calendar.months'));
 
             let currentDate = new Date();
             currentDate.setDate(1);

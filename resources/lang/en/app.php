@@ -457,6 +457,15 @@ return [
                 'updated' => 'Agenda event updated: :event.',
                 'submitted' => 'Agenda event submitted: :event.',
                 'unit_participation_updated' => 'Unit participation was updated successfully.',
+                'calendar' => [
+                    'view_switcher' => 'Agenda view switcher',
+                    'table_view' => 'Table view',
+                    'calendar_view' => 'Calendar view',
+                    'previous_month' => 'Previous month',
+                    'next_month' => 'Next month',
+                    'weekdays' => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                    'months' => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                ],
                 'errors' => [
                     'optional_requires_branch_participation' => 'Optional events cannot be submitted without selecting participating branches.',
                 ],
