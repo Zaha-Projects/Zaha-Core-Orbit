@@ -35,7 +35,7 @@
                 @endif
 
                 <div class="nxl-h-item nxl-header-language">
-                    <div class="lang-toggle" role="group" aria-label="Language switch">
+                    <div class="lang-toggle" role="group" aria-label="{{ __('app.layout.language_switch') }}">
                         <form method="POST" action="{{ route('ui.locale', 'ar') }}" class="js-locale-switch" data-locale="ar">@csrf<button class="lang-toggle__btn {{ $isArabic ? 'is-active' : '' }}" type="submit">AR</button></form>
                         <form method="POST" action="{{ route('ui.locale', 'en') }}" class="js-locale-switch" data-locale="en">@csrf<button class="lang-toggle__btn {{ $isArabic ? '' : 'is-active' }}" type="submit">EN</button></form>
                     </div>
@@ -64,7 +64,7 @@
 
                 @auth
                     <div class="dropdown nxl-h-item">
-                        <a href="javascript:void(0);" data-bs-toggle="dropdown"><img src="{{ asset('assets/images/avatar/1.png') }}" alt="user-image" class="img-fluid user-avtar me-0" /></a>
+                        <a href="javascript:void(0);" data-bs-toggle="dropdown"><img src="{{ asset('assets/images/avatar/1.png') }}" alt="{{ __('app.layout.user_avatar') }}" class="img-fluid user-avtar me-0" /></a>
                         <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                             <div class="dropdown-header"><h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6></div>
                             <div class="dropdown-divider"></div>

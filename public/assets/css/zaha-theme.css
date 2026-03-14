@@ -762,9 +762,12 @@ textarea {
     text-align: right;
 }
 
-[dir='rtl'] .event-mobile-row,
-[dir='rtl'] .d-flex.justify-content-between {
+[dir='rtl'] .event-mobile-row {
     flex-direction: row-reverse;
+}
+
+[dir='rtl'] .event-module .event-actions {
+    justify-content: flex-start;
 }
 
 .dashboard-shell .nxl-navigation .m-header .logo.logo-lg {
@@ -800,5 +803,27 @@ textarea {
 
     .dashboard-shell .nxl-content .container-fluid {
         padding-inline: 0.65rem;
+    }
+}
+
+
+/* Notification/mobile dropdown hardening */
+.dashboard-shell .nxl-header .nxl-h-dropdown {
+    max-width: min(92vw, 360px);
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-shell .nxl-header .nxl-h-dropdown {
+        min-width: auto !important;
+        width: calc(100vw - 1.5rem);
+        inset-inline: 0.75rem auto !important;
+    }
+
+    [dir='rtl'] .dashboard-shell .nxl-header .nxl-h-dropdown {
+        inset-inline: auto 0.75rem !important;
+    }
+
+    .dashboard-shell .event-actions .btn {
+        width: 100%;
     }
 }

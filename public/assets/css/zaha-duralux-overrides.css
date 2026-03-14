@@ -73,3 +73,27 @@ body.app-skin-dark .text-muted {
         align-items: flex-start !important;
     }
 }
+
+/* Logical shell spacing for LTR/RTL */
+.dashboard-shell .nxl-container,
+.dashboard-shell .nxl-header {
+    margin-inline-start: 250px;
+    margin-inline-end: 0;
+}
+
+html[dir='rtl'] .dashboard-shell .nxl-container,
+html[dir='rtl'] .dashboard-shell .nxl-header {
+    margin-inline-start: 0;
+    margin-inline-end: 250px;
+    margin-right: 0;
+}
+
+@media (max-width: 991px) {
+    .dashboard-shell .nxl-container,
+    .dashboard-shell .nxl-header,
+    html[dir='rtl'] .dashboard-shell .nxl-container,
+    html[dir='rtl'] .dashboard-shell .nxl-header {
+        margin-inline-start: 0;
+        margin-inline-end: 0;
+    }
+}

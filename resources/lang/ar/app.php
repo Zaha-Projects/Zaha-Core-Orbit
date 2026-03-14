@@ -21,6 +21,11 @@ return [
         'sidebar_title' => 'قائمة التطبيق',
         'footer_rights' => 'جميع الحقوق محفوظة.',
         'theme_toggle' => 'وضع المظهر',
+        'language_switch' => 'تبديل اللغة',
+        'close_sidebar' => 'إغلاق القائمة الجانبية',
+        'toggle_page_actions' => 'إظهار إجراءات الصفحة',
+        'close_page_actions' => 'إغلاق إجراءات الصفحة',
+        'user_avatar' => 'صورة المستخدم',
     ],
     'welcome' => [
         'title' => 'مرحباً بكم في Zaha - Core Orbit',

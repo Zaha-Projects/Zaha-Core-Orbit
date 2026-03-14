@@ -30,7 +30,7 @@
                     <i class="feather-{{ $theme === 'dark' ? 'sun' : 'moon' }}"></i>
                 </button>
             </form>
-            <div class="lang-toggle" role="group" aria-label="Language switch">
+            <div class="lang-toggle" role="group" aria-label="{{ __('app.layout.language_switch') }}">
                 <form method="POST" action="{{ route('ui.locale', 'ar') }}" class="m-0 js-locale-switch" data-locale="ar">@csrf<button type="submit" class="lang-toggle__btn {{ $isRtl ? 'is-active' : '' }}">AR</button></form>
                 <form method="POST" action="{{ route('ui.locale', 'en') }}" class="m-0 js-locale-switch" data-locale="en">@csrf<button type="submit" class="lang-toggle__btn {{ $isRtl ? '' : 'is-active' }}">EN</button></form>
             </div>

@@ -21,6 +21,11 @@ return [
         'sidebar_title' => 'Application menu',
         'footer_rights' => 'All rights reserved.',
         'theme_toggle' => 'Theme mode',
+        'language_switch' => 'Language switch',
+        'close_sidebar' => 'Close sidebar',
+        'toggle_page_actions' => 'Toggle page actions',
+        'close_page_actions' => 'Close page actions',
+        'user_avatar' => 'User avatar',
     ],
     'welcome' => [
         'title' => 'Welcome to Zaha - Core Orbit',

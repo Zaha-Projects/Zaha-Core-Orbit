@@ -10,12 +10,12 @@
     </div>
 
     <div class="page-header-right ms-auto">
-        <button class="btn btn-sm btn-light-brand page-header-right-open-toggle d-md-none" type="button" aria-label="Toggle page actions" aria-controls="page-header-right-items" aria-expanded="false">
+        <button class="btn btn-sm btn-light-brand page-header-right-open-toggle d-md-none" type="button" aria-label="{{ __('app.layout.toggle_page_actions') }}" aria-controls="page-header-right-items" aria-expanded="false">
             <i class="feather-sliders"></i>
         </button>
 
         <div class="page-header-right-items" id="page-header-right-items">
-            <button type="button" class="btn btn-sm btn-light-brand page-header-right-close-toggle d-md-none" aria-label="Close page actions">
+            <button type="button" class="btn btn-sm btn-light-brand page-header-right-close-toggle d-md-none" aria-label="{{ __('app.layout.close_page_actions') }}">
                 <i class="feather-x"></i>
             </button>
             <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">

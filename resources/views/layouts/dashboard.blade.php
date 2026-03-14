@@ -20,9 +20,9 @@
     <link rel="stylesheet" href="{{ asset('assets/css/zaha-theme.css') }}" />
     @stack('styles')
 </head>
-<body class="{{ $skinClass }} dashboard-shell" data-locale="{{ $locale }}">
+<body class="{{ $skinClass }} dashboard-shell {{ $isRtl ? 'rtl-active' : '' }}" data-locale="{{ $locale }}">
     @include('layouts.app.sidebar')
-    <button type="button" class="sidebar-backdrop border-0 bg-transparent" id="sidebar-backdrop" aria-label="Close sidebar"></button>
+    <button type="button" class="sidebar-backdrop border-0 bg-transparent" id="sidebar-backdrop" aria-label="{{ __('app.layout.close_sidebar') }}"></button>
 
     @include('layouts.app.header')
 
