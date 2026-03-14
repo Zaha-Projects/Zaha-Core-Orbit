@@ -25,10 +25,34 @@ html[dir='rtl'] .nxl-navigation {
     left: auto;
 }
 
-html[dir='rtl'] .nxl-container,
 html[dir='rtl'] .nxl-header {
-    margin-right: 250px;
+    left: 0;
+    right: 280px;
+}
+
+html[dir='rtl'] .nxl-container {
     margin-left: 0;
+    margin-right: 280px;
+}
+
+html[dir='rtl'] .page-header {
+    left: 0;
+    right: 280px;
+}
+
+html[dir='rtl'].minimenu .nxl-header {
+    left: 0;
+    right: 100px;
+}
+
+html[dir='rtl'].minimenu .nxl-container {
+    margin-left: 0;
+    margin-right: 100px;
+}
+
+html[dir='rtl'].minimenu .page-header {
+    left: 0;
+    right: 100px;
 }
 
 html[dir='rtl'] .header-left,
@@ -63,37 +87,18 @@ body.app-skin-dark .text-muted {
 }
 
 @media (max-width: 991px) {
-    html[dir='rtl'] .nxl-container,
-    html[dir='rtl'] .nxl-header {
+    html[dir='rtl'] .nxl-header,
+    html[dir='rtl'] .page-header {
+        left: 0;
+        right: 0;
+    }
+
+    html[dir='rtl'] .nxl-container {
         margin-right: 0;
     }
 
     html[dir='rtl'] .page-header-left {
         flex-direction: column;
         align-items: flex-start !important;
-    }
-}
-
-/* Logical shell spacing for LTR/RTL */
-.dashboard-shell .nxl-container,
-.dashboard-shell .nxl-header {
-    margin-inline-start: 250px;
-    margin-inline-end: 0;
-}
-
-html[dir='rtl'] .dashboard-shell .nxl-container,
-html[dir='rtl'] .dashboard-shell .nxl-header {
-    margin-inline-start: 0;
-    margin-inline-end: 250px;
-    margin-right: 0;
-}
-
-@media (max-width: 991px) {
-    .dashboard-shell .nxl-container,
-    .dashboard-shell .nxl-header,
-    html[dir='rtl'] .dashboard-shell .nxl-container,
-    html[dir='rtl'] .dashboard-shell .nxl-header {
-        margin-inline-start: 0;
-        margin-inline-end: 0;
     }
 }
