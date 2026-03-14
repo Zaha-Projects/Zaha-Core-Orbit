@@ -80,7 +80,10 @@
                                 <td>{{ $transportRequest->branch?->name ?? '-' }}</td>
                                 <td>{{ optional($transportRequest->request_date)->format('Y-m-d') }}</td>
                                 <td>{{ $trip?->destination ?? '-' }}</td>
-                                <td>{{ $transportRequest->status }}</td>
+                                <td>
+                                    @php($requestStatus = __('app.roles.transport.requests.statuses.' . $transportRequest->status))
+                                    {{ $requestStatus !== 'app.roles.transport.requests.statuses.' . $transportRequest->status ? $requestStatus : $transportRequest->status }}
+                                </td>
                                 <td>{{ $transportRequest->driver?->name ?? '-' }}</td>
                             </tr>
                             <tr>
