@@ -43,12 +43,12 @@
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.enterprise.*') ? 'active' : '' }}" href="{{ route('role.enterprise.dashboard') }}">
         <span class="nxl-micon"><i class="feather-activity"></i></span>
-        <span class="nxl-mtext">Enterprise Dashboard</span>
+        <span class="nxl-mtext">{{ __('app.enterprise.analytics_title') }}</span>
     </a>
 </li>
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.reports.enterprise.*') ? 'active' : '' }}" href="{{ route('role.reports.enterprise.branch_performance') }}">
         <span class="nxl-micon"><i class="feather-trending-up"></i></span>
-        <span class="nxl-mtext">Branch Performance</span>
+        <span class="nxl-mtext">{{ __('app.enterprise.branch_performance.report_title') }}</span>
     </a>
 </li>

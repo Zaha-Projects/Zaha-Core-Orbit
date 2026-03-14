@@ -123,6 +123,9 @@ return [
         'analytics_title' => 'Enterprise Analytics',
         'year' => 'Year',
         'apply' => 'Apply',
+        'printable' => [
+            'title' => 'Enterprise printable report',
+        ],
         'filters' => [
             'month' => 'Month',
             'status' => 'Status',
@@ -159,6 +162,9 @@ return [
             'participation' => 'Participation %',
             'approval' => 'Approval %',
             'completion' => 'Completion %',
+            'report_title' => 'Branch performance report',
+            'report_title_with_year' => 'Branch performance report - :year',
+            'empty' => 'No branch performance data.',
         ],
     ],
 

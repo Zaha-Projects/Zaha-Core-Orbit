@@ -123,6 +123,9 @@ return [
         'analytics_title' => 'تحليلات المؤسسة',
         'year' => 'السنة',
         'apply' => 'تطبيق',
+        'printable' => [
+            'title' => 'تقرير المؤسسة للطباعة',
+        ],
         'filters' => [
             'month' => 'الشهر',
             'status' => 'الحالة',
@@ -159,6 +162,9 @@ return [
             'participation' => 'نسبة المشاركة %',
             'approval' => 'نسبة الاعتماد %',
             'completion' => 'نسبة الإنجاز %',
+            'report_title' => 'تقرير أداء الفروع',
+            'report_title_with_year' => 'تقرير أداء الفروع - :year',
+            'empty' => 'لا توجد بيانات لأداء الفروع.',
         ],
     ],
 
