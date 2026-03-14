@@ -102,3 +102,21 @@ body.app-skin-dark .text-muted {
         align-items: flex-start !important;
     }
 }
+
+
+/* Keep header/page-header actions aligned to edge in RTL */
+html[dir='rtl'] .nxl-header .header-wrapper,
+html[dir='rtl'] .page-header {
+    justify-content: space-between;
+}
+
+html[dir='rtl'] .nxl-header .header-right,
+html[dir='rtl'] .page-header .page-header-right {
+    margin-right: auto;
+    margin-left: 0 !important;
+}
+
+html[dir='rtl'] .nxl-header .header-left,
+html[dir='rtl'] .page-header .page-header-left {
+    margin-right: 0;
+}
