@@ -972,7 +972,17 @@ return [
                     'departure_time' => 'وقت الانطلاق',
                     'return_time' => 'وقت العودة',
                 ],
-                'filters' => [
+                'statuses' => [
+                'approved' => 'معتمد',
+                'submitted' => 'مُرسل',
+                'pending' => 'قيد الانتظار',
+                'draft' => 'مسودة',
+                'rejected' => 'مرفوض',
+                'changes_requested' => 'مطلوب تعديل',
+                'closed' => 'مغلق',
+                'completed' => 'مكتمل',
+            ],
+            'filters' => [
                     'search' => 'بحث في الملاحظات أو السائق',
                     'driver' => 'كل السائقين',
                 ],
@@ -1501,6 +1511,16 @@ return [
                     'status' => 'الحالة',
                     'empty' => 'لا توجد أنشطة.',
                 ],
+            ],
+            'statuses' => [
+                'approved' => 'معتمد',
+                'submitted' => 'مُرسل',
+                'pending' => 'قيد الانتظار',
+                'draft' => 'مسودة',
+                'rejected' => 'مرفوض',
+                'changes_requested' => 'مطلوب تعديل',
+                'closed' => 'مغلق',
+                'completed' => 'مكتمل',
             ],
             'filters' => [
                 'date' => 'التاريخ',

@@ -1143,7 +1143,17 @@ return [
                     'departure_time' => 'Departure time',
                     'return_time' => 'Return time',
                 ],
-                'filters' => [
+                'statuses' => [
+                'approved' => 'Approved',
+                'submitted' => 'Submitted',
+                'pending' => 'Pending',
+                'draft' => 'Draft',
+                'rejected' => 'Rejected',
+                'changes_requested' => 'Changes requested',
+                'closed' => 'Closed',
+                'completed' => 'Completed',
+            ],
+            'filters' => [
                     'search' => 'Search notes or driver',
                     'driver' => 'All drivers',
                 ],
@@ -1530,6 +1540,16 @@ return [
                     'status' => 'Status',
                     'empty' => 'No activities found.',
                 ],
+            ],
+            'statuses' => [
+                'approved' => 'Approved',
+                'submitted' => 'Submitted',
+                'pending' => 'Pending',
+                'draft' => 'Draft',
+                'rejected' => 'Rejected',
+                'changes_requested' => 'Changes requested',
+                'closed' => 'Closed',
+                'completed' => 'Completed',
             ],
             'filters' => [
                 'date' => 'Date',

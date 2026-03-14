@@ -59,7 +59,10 @@
                                 <td>{{ $activity->title }}</td>
                                 <td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td>
                                 <td>{{ $activity->branch?->name ?? '-' }}</td>
-                                <td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
+                                <td>
+                                    @php($statusLabel = __('app.roles.staff.statuses.' . $activity->status))
+                                    <span class="event-status status-{{ $activity->status }}">{{ $statusLabel !== 'app.roles.staff.statuses.' . $activity->status ? $statusLabel : $activity->status }}</span>
+                                </td>
                             </tr>
                         @empty
                             <tr>
