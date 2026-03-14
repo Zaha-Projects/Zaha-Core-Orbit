@@ -54,10 +54,10 @@
                             <div class="dropdown-item small">
                                 <div class="fw-semibold">{{ $notification->title }}</div>
                                 <div class="text-muted">{{ $notification->message }}</div>
-                                <form method="POST" action="{{ route('role.notifications.read', $notification) }}">@csrf @method('PATCH')<button class="btn btn-link p-0 small" type="submit">Mark as read</button></form>
+                                <form method="POST" action="{{ route('role.notifications.read', $notification) }}">@csrf @method('PATCH')<button class="btn btn-link p-0 small" type="submit">{{ __('app.common.mark_as_read') }}</button></form>
                             </div>
                         @empty
-                            <div class="dropdown-item text-muted">No new notifications</div>
+                            <div class="dropdown-item text-muted">{{ __('app.common.no_new_notifications') }}</div>
                         @endforelse
                     </div>
                 </div>

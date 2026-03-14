@@ -4,7 +4,7 @@
             <h5 class="m-b-10">@yield('page_title', __('app.common.dashboard'))</h5>
         </div>
         <ul class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">@yield('page_breadcrumb_home', 'Home')</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">@yield('page_breadcrumb_home', __('app.common.home'))</a></li>
             <li class="breadcrumb-item">@yield('page_breadcrumb', __('app.common.dashboard'))</li>
         </ul>
     </div>

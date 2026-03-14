@@ -2,7 +2,7 @@
 
 return [
     'common' => [
-        'app_name' => 'Zaha OPS',
+        'app_name' => 'Zaha - Core Orbit',
         'dashboard' => 'لوحة التحكم',
         'logout' => 'تسجيل الخروج',
         'login' => 'تسجيل الدخول',
@@ -13,6 +13,9 @@ return [
         'filter' => 'فلتر',
         'static_filter' => 'فلتر ثابت',
         'database_unavailable' => 'خدمة قاعدة البيانات غير متاحة حالياً. يرجى المحاولة بعد قليل.',
+        'home' => 'الرئيسية',
+        'mark_as_read' => 'تحديد كمقروء',
+        'no_new_notifications' => 'لا توجد إشعارات جديدة',
     ],
     'layout' => [
         'sidebar_title' => 'قائمة التطبيق',
@@ -20,7 +23,7 @@ return [
         'theme_toggle' => 'وضع المظهر',
     ],
     'welcome' => [
-        'title' => 'مرحباً بكم في Zaha OPS',
+        'title' => 'مرحباً بكم في Zaha - Core Orbit',
         'subtitle' => 'منصة موحدة لإدارة العمليات والتقارير والاعتمادات.',
         'login_cta' => 'تسجيل الدخول',
         'register_cta' => 'إنشاء حساب جديد',

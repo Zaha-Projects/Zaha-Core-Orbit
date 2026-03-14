@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="52" viewBox="0 0 220 52" fill="none" role="img" aria-label="Zaha - Core Orbit">
+  <defs>
+    <linearGradient id="g" x1="10" y1="8" x2="44" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4F6EF7"/>
+      <stop offset="1" stop-color="#6A8BFF"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <circle cx="26" cy="26" r="18" stroke="url(#g)" stroke-width="4"/>
+    <circle cx="26" cy="26" r="5" fill="#4F6EF7"/>
+    <path d="M26 8C36 8 44 16 44 26" stroke="#9EB0FF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="58" y="24" fill="#1F2A44" font-family="Inter, Tajawal, Arial, sans-serif" font-size="15" font-weight="700">Zaha</text>
+  <text x="58" y="41" fill="#4F6EF7" font-family="Inter, Tajawal, Arial, sans-serif" font-size="13" font-weight="600">Core Orbit</text>
+</svg>

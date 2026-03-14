@@ -727,3 +727,78 @@ textarea {
 .dashboard-shell.page-header-actions-open .page-header-right-open-toggle {
     opacity: 0.8;
 }
+
+/* Core Orbit Arabic/RTL refinements */
+[dir='rtl'] body,
+[dir='rtl'] button,
+[dir='rtl'] input,
+[dir='rtl'] select,
+[dir='rtl'] textarea {
+    font-family: 'Tajawal', 'Inter', 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+[dir='rtl'] .page-header-title,
+[dir='rtl'] .nxl-mtext,
+[dir='rtl'] .card-title,
+[dir='rtl'] h1,
+[dir='rtl'] h2,
+[dir='rtl'] h3,
+[dir='rtl'] h4,
+[dir='rtl'] h5 {
+    text-align: right;
+}
+
+[dir='rtl'] .page-header-clean {
+    align-items: flex-start;
+}
+
+[dir='rtl'] .page-header-clean .page-header-right {
+    margin-right: auto;
+    margin-left: 0 !important;
+}
+
+[dir='rtl'] .nxl-h-dropdown,
+[dir='rtl'] .dropdown-menu {
+    text-align: right;
+}
+
+[dir='rtl'] .event-mobile-row,
+[dir='rtl'] .d-flex.justify-content-between {
+    flex-direction: row-reverse;
+}
+
+.dashboard-shell .nxl-navigation .m-header .logo.logo-lg {
+    max-height: 34px;
+    width: auto;
+}
+
+.dashboard-shell .nxl-navigation .m-header .logo.logo-sm {
+    max-height: 28px;
+    width: auto;
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-shell .nxl-content {
+        width: 100%;
+    }
+
+    .dashboard-shell .card {
+        border-radius: 12px;
+    }
+
+    [dir='rtl'] .page-header-clean .page-header-left,
+    [dir='rtl'] .page-header-clean .page-header-right {
+        align-items: stretch;
+        width: 100%;
+    }
+}
+
+@media (max-width: 767.98px) {
+    [dir='rtl'] .breadcrumb {
+        justify-content: flex-start;
+    }
+
+    .dashboard-shell .nxl-content .container-fluid {
+        padding-inline: 0.65rem;
+    }
+}

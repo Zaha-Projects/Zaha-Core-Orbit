@@ -2,7 +2,7 @@
 
 return [
     'common' => [
-        'app_name' => 'Zaha OPS',
+        'app_name' => 'Zaha - Core Orbit',
         'dashboard' => 'Dashboard',
         'logout' => 'Log out',
         'login' => 'Log in',
@@ -13,6 +13,9 @@ return [
         'filter' => 'Filter',
         'static_filter' => 'Static filter',
         'database_unavailable' => 'Database service is currently unavailable. Please try again in a moment.',
+        'home' => 'Home',
+        'mark_as_read' => 'Mark as read',
+        'no_new_notifications' => 'No new notifications',
     ],
     'layout' => [
         'sidebar_title' => 'Application menu',
@@ -20,7 +23,7 @@ return [
         'theme_toggle' => 'Theme mode',
     ],
     'welcome' => [
-        'title' => 'Welcome to Zaha OPS',
+        'title' => 'Welcome to Zaha - Core Orbit',
         'subtitle' => 'A unified platform to manage operations, reports, and approvals.',
         'login_cta' => 'Log in',
         'register_cta' => 'Create a new account',

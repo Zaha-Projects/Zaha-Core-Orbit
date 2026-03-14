@@ -41,7 +41,7 @@
         <div class="minimal-card-wrapper">
             <div class="card mb-4 mt-3 mx-4 mx-sm-0 position-relative auth-card">
                 <div class="wd-50 bg-white p-2 rounded-circle shadow-lg position-absolute translate-middle top-0 start-50">
-                    <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="{{ __('app.common.app_name') }}" class="img-fluid">
+                    <img src="{{ asset('assets/images/zaha-core-orbit-mark.svg') }}" alt="{{ __('app.common.app_name') }}" class="img-fluid">
                 </div>
                 <div class="card-body p-sm-5">
                     <div class="text-center mb-4 mt-2">

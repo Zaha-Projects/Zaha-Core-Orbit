@@ -2,8 +2,8 @@
     <div class="navbar-wrapper">
         <div class="m-header">
             <a href="{{ route('dashboard') }}" class="b-brand">
-                <img src="{{ asset('assets/images/logo-full.png') }}" alt="{{ __('app.common.app_name') }}" class="logo logo-lg" />
-                <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="{{ __('app.common.app_name') }}" class="logo logo-sm" />
+                <img src="{{ asset('assets/images/zaha-core-orbit-logo.svg') }}" alt="{{ __('app.common.app_name') }}" class="logo logo-lg" />
+                <img src="{{ asset('assets/images/zaha-core-orbit-mark.svg') }}" alt="{{ __('app.common.app_name') }}" class="logo logo-sm" />
             </a>
         </div>
 

@@ -19,7 +19,7 @@ body.app-skin-dark .nxl-navigation .nxl-navbar .nxl-link.active {
     display: none !important;
 }
 
-/* RTL support for Duralux main shell */
+/* RTL support for Core Orbit dashboard shell */
 html[dir='rtl'] .nxl-navigation {
     right: 0;
     left: auto;
