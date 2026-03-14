@@ -6,7 +6,17 @@
     $isRtl = app()->getLocale() === 'ar';
     $canManageAgenda = auth()->user()?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']);
 
-    $agendaEvents = $events->getCollection()->map(function ($event) {
+    $agendaStatusLabel = function (?string $status): string {
+        if (!$status) {
+            return '-';
+        }
+
+        $translated = __('app.roles.relations.agenda.status_labels.' . $status);
+
+        return $translated !== 'app.roles.relations.agenda.status_labels.' . $status ? $translated : $status;
+    };
+
+    $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
 
@@ -17,6 +27,7 @@
             'department' => $event->department?->name ?? '-',
             'category' => $event->eventCategory?->name ?? $event->event_category ?? '-',
             'status' => $event->relations_approval_status ?? $event->status,
+            'status_label' => $agendaStatusLabel($event->relations_approval_status ?? $event->status),
             'edit_url' => $canManageAgenda ? route('role.relations.agenda.edit', $event) : null,
             'view_url' => route('role.relations.agenda.index', ['year' => optional($event->event_date)->format('Y') ?? now()->year, 'month' => $event->month]),
             'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
@@ -98,8 +109,8 @@
                                         <td>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</td>
                                         <td>{{ __('app.roles.relations.agenda.types.' . $event->event_type) }} / {{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</td>
                                         <td>
-                                            <span class="event-status status-{{ $event->relations_approval_status }}">{{ $event->relations_approval_status }}</span>
-                                            <span class="event-status status-{{ $event->executive_approval_status }}">{{ $event->executive_approval_status }}</span>
+                                            <span class="event-status status-{{ $event->relations_approval_status }}">{{ $agendaStatusLabel($event->relations_approval_status) }}</span>
+                                            <span class="event-status status-{{ $event->executive_approval_status }}">{{ $agendaStatusLabel($event->executive_approval_status) }}</span>
                                         </td>
                                         <td>{{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</td>
                                         <td class="text-end">
@@ -131,7 +142,7 @@
                             <div class="event-mobile-card">
                                 <div class="fw-semibold mb-2">{{ $event->event_name }}</div>
                                 <div class="event-mobile-row"><span class="text-muted">{{ __('app.roles.relations.agenda.table.event_date') }}</span><span>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span></div>
-                                <div class="event-mobile-row"><span class="text-muted">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span><span class="event-status status-{{ $event->relations_approval_status }}">{{ $event->relations_approval_status }}</span></div>
+                                <div class="event-mobile-row"><span class="text-muted">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span><span class="event-status status-{{ $event->relations_approval_status }}">{{ $agendaStatusLabel($event->relations_approval_status) }}</span></div>
                                 @if($canManageAgenda)
                                     <div class="event-actions mt-2">
                                         <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
@@ -262,7 +273,7 @@
                         eventLink.className = `agenda-event-chip status-${event.status}`;
                         eventLink.innerHTML = `
                             <span class="agenda-event-chip-title">${event.name}</span>
-                            <span class="event-status status-${event.status}">${event.status}</span>
+                            <span class="event-status status-${event.status}">${event.status_label ?? event.status}</span>
                         `;
                         dayCell.appendChild(eventLink);
                     });

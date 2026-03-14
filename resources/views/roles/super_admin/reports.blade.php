@@ -3,6 +3,25 @@
 @php
     $title = __('app.reports.title');
     $subtitle = __('app.reports.subtitle');
+    $reportStatusLabel = function (?string $value): string {
+        if (!$value) {
+            return '-';
+        }
+
+        $translated = __('app.reports.status.value_labels.' . $value);
+
+        return $translated !== 'app.reports.status.value_labels.' . $value ? $translated : $value;
+    };
+
+    $reportDecisionLabel = function (?string $value): string {
+        if (!$value) {
+            return '-';
+        }
+
+        $translated = __('app.reports.status.decision_labels.' . $value);
+
+        return $translated !== 'app.reports.status.decision_labels.' . $value ? $translated : $value;
+    };
 @endphp
 
 @section('page_title', $title)
@@ -129,7 +148,7 @@
                     <ul class="list-group list-group-flush">
                         @forelse ($maintenanceStatus as $item)
                             <li class="list-group-item d-flex justify-content-between">
-                                <span>{{ $item->status }}</span>
+                                <span>{{ $reportStatusLabel($item->status) }}</span>
                                 <strong>{{ $item->total }}</strong>
                             </li>
                         @empty
@@ -148,7 +167,7 @@
                     <ul class="list-group list-group-flush">
                         @forelse ($agendaApprovals as $item)
                             <li class="list-group-item d-flex justify-content-between">
-                                <span>{{ $item->decision }}</span>
+                                <span>{{ $reportDecisionLabel($item->decision) }}</span>
                                 <strong>{{ $item->total }}</strong>
                             </li>
                         @empty
@@ -167,7 +186,7 @@
                     <ul class="list-group list-group-flush">
                         @forelse ($bookingStatus as $item)
                             <li class="list-group-item d-flex justify-content-between">
-                                <span>{{ $item->status }}</span>
+                                <span>{{ $reportStatusLabel($item->status) }}</span>
                                 <strong>{{ $item->total }}</strong>
                             </li>
                         @empty
