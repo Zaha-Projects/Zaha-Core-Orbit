@@ -103,20 +103,20 @@ body.app-skin-dark .text-muted {
     }
 }
 
-
-/* Keep header/page-header actions aligned to edge in RTL */
+/* RTL ordering for header/page-header groups */
 html[dir='rtl'] .nxl-header .header-wrapper,
-html[dir='rtl'] .page-header {
-    justify-content: space-between;
-}
-
-html[dir='rtl'] .nxl-header .header-right,
-html[dir='rtl'] .page-header .page-header-right {
-    margin-right: auto;
-    margin-left: 0 !important;
+html[dir='rtl'] .page-header-clean {
+    direction: rtl;
 }
 
 html[dir='rtl'] .nxl-header .header-left,
-html[dir='rtl'] .page-header .page-header-left {
-    margin-right: 0;
+html[dir='rtl'] .page-header-clean .page-header-left {
+    order: 2;
+}
+
+html[dir='rtl'] .nxl-header .header-right,
+html[dir='rtl'] .page-header-clean .page-header-right {
+    order: 1;
+    margin-left: 0 !important;
+    margin-right: auto !important;
 }
