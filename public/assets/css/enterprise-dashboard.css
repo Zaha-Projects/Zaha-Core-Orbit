@@ -3,3 +3,12 @@
 .enterprise-dashboard .kpi:hover{transform:translateY(-2px)}
 .app-skin-dark .enterprise-dashboard .kpi{background:linear-gradient(145deg,#2c3156,#1e2340);color:#e8ebff}
 [dir='rtl'] .enterprise-dashboard .kpi{text-align:right}
+.enterprise-dashboard .card.card-body .form-label{font-weight:600;margin-bottom:.35rem}
+.enterprise-dashboard .annual-planning-card{background:var(--card-bg,#fff);border-color:var(--border-soft,#e5e9f2)!important}
+.enterprise-dashboard .annual-planning-list{padding-inline-start:1rem;margin-bottom:.5rem}
+.enterprise-dashboard .annual-planning-list li{margin-bottom:.35rem}
+[dir='rtl'] .enterprise-dashboard .annual-planning-list{padding-inline-start:0;padding-inline-end:1rem}
+@media (max-width: 767.98px){
+  .enterprise-dashboard .annual-planning-card{padding:.85rem!important}
+  .enterprise-dashboard .annual-planning-list li{flex-direction:column;align-items:flex-start!important}
+}

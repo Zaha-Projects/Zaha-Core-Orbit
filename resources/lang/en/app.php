@@ -123,6 +123,19 @@ return [
         'analytics_title' => 'Enterprise Analytics',
         'year' => 'Year',
         'apply' => 'Apply',
+        'filters' => [
+            'month' => 'Month',
+            'status' => 'Status',
+            'branch' => 'Branch',
+            'all' => 'All',
+        ],
+        'annual_overview' => [
+            'title' => 'Annual Planning Overview',
+            'title_with_year' => 'Annual Planning Overview - :year',
+            'month_label' => 'Month :month (:count)',
+            'participation' => 'Participation: :count',
+            'no_events' => 'No events for this month.',
+        ],
         'kpis' => [
             'total_events' => 'Total events',
             'approved' => 'Approved',

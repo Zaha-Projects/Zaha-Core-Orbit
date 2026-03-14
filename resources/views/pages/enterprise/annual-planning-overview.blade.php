@@ -1,9 +1,56 @@
 @extends('layouts.app')
+
+@section('page_title', __('app.enterprise.annual_overview.title'))
+@section('page_breadcrumb', __('app.enterprise.annual_overview.title'))
+
 @section('content')
-<div class="card"><div class="card-body"><h4>Annual Planning Overview - {{ $year }}</h4>
-<div class="row g-3">
-@for($m=1;$m<=12;$m++)
-<div class="col-md-6 col-xl-4"><div class="border rounded p-3 h-100"><h6>Month {{ $m }} ({{ $events->get($m, collect())->count() }})</h6><ul class="small">@foreach($events->get($m, collect())->take(5) as $event)<li>{{ $event->event_name }} <span class="badge bg-light text-dark">{{ $event->status }}</span></li>@endforeach</ul><div class="text-muted">Participation: {{ $events->get($m, collect())->sum(fn($e)=>$e->participations->where('entity_type','branch')->where('participation_status','participant')->count()) }}</div></div></div>
-@endfor
-</div></div></div>
+    <div class="card">
+        <div class="card-body">
+            <h4 class="mb-3">{{ __('app.enterprise.annual_overview.title_with_year', ['year' => $year]) }}</h4>
+
+            <div class="row g-3">
+                @for ($month = 1; $month <= 12; $month++)
+                    @php
+                        $monthEvents = $events->get($month, collect());
+                        $participationCount = $monthEvents->sum(
+                            fn ($event) => $event->participations
+                                ->where('entity_type', 'branch')
+                                ->where('participation_status', 'participant')
+                                ->count()
+                        );
+                    @endphp
+
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <div class="border rounded p-3 h-100 annual-planning-card">
+                            <h6 class="mb-2">
+                                {{ __('app.enterprise.annual_overview.month_label', ['month' => $month, 'count' => $monthEvents->count()]) }}
+                            </h6>
+
+                            @if ($monthEvents->isEmpty())
+                                <p class="text-muted small mb-2">{{ __('app.enterprise.annual_overview.no_events') }}</p>
+                            @else
+                                <ul class="small mb-2 annual-planning-list">
+                                    @foreach ($monthEvents->take(5) as $event)
+                                        <li class="d-flex justify-content-between align-items-start gap-2">
+                                            <span>{{ $event->event_name }}</span>
+                                            <span class="badge bg-light text-dark">{{ $event->status }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            <div class="text-muted small">
+                                {{ __('app.enterprise.annual_overview.participation', ['count' => $participationCount]) }}
+                            </div>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+        </div>
+    </div>
 @endsection
+
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/enterprise-dashboard.css') }}">
+@endpush

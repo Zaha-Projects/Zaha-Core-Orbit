@@ -123,6 +123,19 @@ return [
         'analytics_title' => 'تحليلات المؤسسة',
         'year' => 'السنة',
         'apply' => 'تطبيق',
+        'filters' => [
+            'month' => 'الشهر',
+            'status' => 'الحالة',
+            'branch' => 'الفرع',
+            'all' => 'الكل',
+        ],
+        'annual_overview' => [
+            'title' => 'نظرة عامة على التخطيط السنوي',
+            'title_with_year' => 'نظرة عامة على التخطيط السنوي - :year',
+            'month_label' => 'الشهر :month (:count)',
+            'participation' => 'المشاركة: :count',
+            'no_events' => 'لا توجد فعاليات لهذا الشهر.',
+        ],
         'kpis' => [
             'total_events' => 'إجمالي الفعاليات',
             'approved' => 'المعتمدة',
