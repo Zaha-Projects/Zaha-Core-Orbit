@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+    @php
+        $user = auth()->user();
+    @endphp
+
     <div class="event-module">
         <div class="card event-card mb-4">
             <div class="card-body">
@@ -30,11 +34,33 @@
                         </thead>
                         <tbody>
                             @forelse ($events as $event)
-                                @php $latestApproval = $event->approvals->last(); @endphp
+                                @php
+                                    $latestApproval = $event->approvals->last();
+                                    $requestedChanges = $event->approvals
+                                        ->where('decision', 'changes_requested')
+                                        ->filter(fn ($approval) => filled($approval->comment));
+
+                                    $isRelationsReviewer = $user?->hasRole('relations_manager');
+                                    $isExecutiveReviewer = $user?->hasRole('executive_manager') || $user?->hasRole('super_admin');
+
+                                    $canRelationsReview = $isRelationsReviewer && in_array($event->status, ['submitted', 'changes_requested'], true);
+                                    $canExecutiveReview = $isExecutiveReviewer
+                                        && $event->relations_approval_status === 'approved'
+                                        && $event->status === 'relations_approved';
+
+                                    $reviewLockedMessage = null;
+                                    if ($isExecutiveReviewer && ! $canExecutiveReview) {
+                                        $reviewLockedMessage = __('app.roles.relations.approvals.workflow.awaiting_relations_approval');
+                                    } elseif ($isRelationsReviewer && ! $canRelationsReview) {
+                                        $reviewLockedMessage = __('app.roles.relations.approvals.workflow.not_available_for_current_state');
+                                    }
+                                @endphp
                                 <tr>
                                     <td>{{ $event->event_name }}</td>
                                     <td>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</td>
-                                    <td><span class="event-status status-{{ $event->status }}">{{ $event->status }}</span></td>
+                                    <td>
+                                        <span class="event-status status-{{ $event->workflow_state }}">{{ $event->workflow_state }}</span>
+                                    </td>
                                     <td><span class="event-status status-{{ $event->relations_approval_status }}">{{ $event->relations_approval_status }}</span></td>
                                     <td><span class="event-status status-{{ $event->executive_approval_status }}">{{ $event->executive_approval_status }}</span></td>
                                     <td>
@@ -51,12 +77,6 @@
                                 </tr>
                                 <tr class="collapse" id="approval-{{ $event->id }}">
                                     <td colspan="7">
-                                        @php
-                                            $requestedChanges = $event->approvals
-                                                ->where('decision', 'changes_requested')
-                                                ->filter(fn ($approval) => filled($approval->comment));
-                                        @endphp
-
                                         @if($requestedChanges->isNotEmpty())
                                             <div class="alert alert-warning py-2">
                                                 <div class="fw-semibold mb-1">{{ __('app.roles.relations.approvals.change_requests.title') }}</div>
@@ -72,24 +92,30 @@
                                         @endif
 
                                         <div class="event-approval-panel">
-                                            <form method="POST" action="{{ route('role.relations.approvals.update', $event) }}" class="row g-3">
-                                                @csrf
-                                                @method('PUT')
-                                                <div class="col-12 col-md-4">
-                                                    <label class="form-label">{{ __('app.roles.relations.approvals.fields.decision') }}</label>
-                                                    <select class="form-select" name="decision" required>
-                                                        <option value="approved">{{ __('app.roles.relations.approvals.decisions.approved') }}</option>
-                                                        <option value="changes_requested">{{ __('app.roles.relations.approvals.decisions.changes_requested') }}</option>
-                                                    </select>
+                                            @if ($canRelationsReview || $canExecutiveReview)
+                                                <form method="POST" action="{{ route('role.relations.approvals.update', $event) }}" class="row g-3">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label">{{ __('app.roles.relations.approvals.fields.decision') }}</label>
+                                                        <select class="form-select" name="decision" required>
+                                                            <option value="approved">{{ __('app.roles.relations.approvals.decisions.approved') }}</option>
+                                                            <option value="changes_requested">{{ __('app.roles.relations.approvals.decisions.changes_requested') }}</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 col-md-8">
+                                                        <label class="form-label">{{ __('app.roles.relations.approvals.fields.comment') }}</label>
+                                                        <input class="form-control" name="comment" value="{{ $latestApproval?->comment }}">
+                                                    </div>
+                                                    <div class="col-12 event-actions">
+                                                        <button class="btn btn-outline-primary btn-sm" type="submit">{{ __('app.roles.relations.approvals.actions.submit') }}</button>
+                                                    </div>
+                                                </form>
+                                            @else
+                                                <div class="alert alert-secondary py-2 mb-0">
+                                                    {{ $reviewLockedMessage ?? __('app.roles.relations.approvals.workflow.not_available_for_current_state') }}
                                                 </div>
-                                                <div class="col-12 col-md-8">
-                                                    <label class="form-label">{{ __('app.roles.relations.approvals.fields.comment') }}</label>
-                                                    <input class="form-control" name="comment" value="{{ $latestApproval?->comment }}">
-                                                </div>
-                                                <div class="col-12 event-actions">
-                                                    <button class="btn btn-outline-primary btn-sm" type="submit">{{ __('app.roles.relations.approvals.actions.submit') }}</button>
-                                                </div>
-                                            </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

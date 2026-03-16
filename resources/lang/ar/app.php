@@ -512,6 +512,10 @@ return [
                     'step_relations_review' => 'مرحلة العلاقات',
                     'step_executive_review' => 'المرحلة التنفيذية',
                 ],
+                'workflow' => [
+                    'awaiting_relations_approval' => 'مراجعة المدير التنفيذي غير متاحة قبل اكتمال اعتماد العلاقات.',
+                    'not_available_for_current_state' => 'المراجعة غير متاحة في حالة سير العمل الحالية.',
+                ],
                 'actions' => [
                     'review' => 'مراجعة',
                     'submit' => 'إرسال القرار',

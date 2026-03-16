@@ -512,6 +512,10 @@ return [
                     'step_relations_review' => 'Relations stage',
                     'step_executive_review' => 'Executive stage',
                 ],
+                'workflow' => [
+                    'awaiting_relations_approval' => 'Executive review is locked until relations approval is completed.',
+                    'not_available_for_current_state' => 'Review is not available for the current workflow state.',
+                ],
                 'actions' => [
                     'review' => 'Review',
                     'submit' => 'Submit decision',

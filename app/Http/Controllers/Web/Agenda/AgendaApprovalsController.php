@@ -11,6 +11,27 @@ use App\Services\NotificationService;
 
 class AgendaApprovalsController extends Controller
 {
+    protected function resolveWorkflowState(AgendaEvent $agendaEvent): string
+    {
+        if ($agendaEvent->relations_approval_status === 'changes_requested' || $agendaEvent->executive_approval_status === 'changes_requested') {
+            return 'changes_requested';
+        }
+
+        if ($agendaEvent->relations_approval_status === 'approved' && $agendaEvent->executive_approval_status === 'approved') {
+            return 'final_approved';
+        }
+
+        if ($agendaEvent->relations_approval_status === 'approved') {
+            return 'executive_review';
+        }
+
+        if ($agendaEvent->status === 'submitted') {
+            return 'relations_review';
+        }
+
+        return $agendaEvent->status;
+    }
+
     public function index()
     {
         $events = AgendaEvent::with(['approvals' => function ($query) {
@@ -26,7 +47,14 @@ class AgendaApprovalsController extends Controller
             ])
             ->orderBy('month')
             ->orderBy('day')
-            ->get();
+            ->get()
+            ->each(function (AgendaEvent $event) {
+                if ($event->relations_approval_status !== 'approved') {
+                    $event->setAttribute('executive_approval_status', 'pending');
+                }
+
+                $event->setAttribute('workflow_state', $this->resolveWorkflowState($event));
+            });
 
         return view('pages.agenda.approvals.index', compact('events'));
     }
