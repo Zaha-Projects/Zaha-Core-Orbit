@@ -11,6 +11,14 @@ use App\Services\NotificationService;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
+    protected array $stepToStatusField = [
+        'relations_officer_review' => 'relations_officer_approval_status',
+        'relations_manager_review' => 'relations_manager_approval_status',
+        'programs_officer_review' => 'programs_officer_approval_status',
+        'programs_manager_review' => 'programs_manager_approval_status',
+        'executive_review' => 'executive_approval_status',
+    ];
+
     protected function resolveStepAndField($user): array
     {
         if ($user->hasRole('relations_officer')) {
@@ -59,7 +67,15 @@ class MonthlyActivitiesApprovalsController extends Controller
             ->orderBy('day')
             ->get();
 
-        return view('pages.monthly_activities.approvals.index', compact('activities'));
+        $stepLabels = [
+            'relations_officer_review' => __('Relations officer'),
+            'relations_manager_review' => __('Relations manager'),
+            'programs_officer_review' => __('Programs officer'),
+            'programs_manager_review' => __('Programs manager'),
+            'executive_review' => __('Executive manager'),
+        ];
+
+        return view('pages.monthly_activities.approvals.index', compact('activities', 'stepLabels'));
     }
 
     public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity)
@@ -94,11 +110,13 @@ class MonthlyActivitiesApprovalsController extends Controller
         }
 
         if ($data['decision'] === 'changes_requested') {
-            if ($step !== 'relations_officer_review') {
-                $updates['relations_manager_approval_status'] = 'pending';
-                $updates['programs_officer_approval_status'] = 'pending';
-                $updates['programs_manager_approval_status'] = 'pending';
-                $updates['executive_approval_status'] = 'pending';
+            $workflowSteps = array_keys($this->stepToStatusField);
+            $currentStepIndex = array_search($step, $workflowSteps, true);
+
+            if ($currentStepIndex !== false) {
+                foreach (array_slice($workflowSteps, $currentStepIndex + 1) as $downstreamStep) {
+                    $updates[$this->stepToStatusField[$downstreamStep]] = 'pending';
+                }
             }
         }
 

@@ -49,7 +49,10 @@
                                 <td>{{ $activity->executive_approval_status }}</td>
                                 <td>
                                     {{ $latestApproval?->decision ?? __('app.roles.programs.monthly_activities.approvals.table.none') }}
-                                    @php $changeRequests = $activity->approvals->where('decision', 'changes_requested'); @endphp
+                                    @php
+                                        $changeRequests = $activity->approvals->where('decision', 'changes_requested');
+                                        $changeRequestCounts = $changeRequests->groupBy('step')->map->count();
+                                    @endphp
                                     @if($changeRequests->isNotEmpty())
                                         <div class="small text-warning">طلبات تعديل: {{ $changeRequests->count() }}</div>
                                     @endif
@@ -62,16 +65,23 @@
                             </tr>
                             <tr class="collapse" id="approval-{{ $activity->id }}">
                                 <td colspan="8">
-                                    @php $changeRequests = $activity->approvals->where('decision', 'changes_requested'); @endphp
                                     @if($changeRequests->isNotEmpty())
                                         <div class="alert alert-warning py-2">
                                             <div class="fw-semibold mb-1">سجل طلبات التعديل</div>
+                                            <div class="small mb-2">
+                                                @foreach($stepLabels as $stepKey => $stepLabel)
+                                                    <span class="me-2">{{ $stepLabel }}: {{ $changeRequestCounts->get($stepKey, 0) }}</span>
+                                                @endforeach
+                                            </div>
                                             <ul class="mb-0 ps-3">
                                                 @foreach($changeRequests as $requestItem)
                                                     <li>
-                                                        <span class="fw-semibold">{{ $requestItem->step }}</span> -
+                                                        <span class="fw-semibold">{{ $stepLabels[$requestItem->step] ?? $requestItem->step }}</span> -
                                                         {{ optional($requestItem->approved_at)->format('Y-m-d H:i') }} -
                                                         {{ $requestItem->comment ?? 'بدون ملاحظات' }}
+                                                        @if($requestItem->is_edit_request_implemented)
+                                                            <span class="text-success">(تم تنفيذ التعديل)</span>
+                                                        @endif
                                                     </li>
                                                 @endforeach
                                             </ul>
