@@ -28,8 +28,16 @@ return new class extends Migration {
 
         Schema::create('monthly_activity_evaluation_responses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('evaluation_question_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('monthly_activity_id');
+            $table->unsignedBigInteger('evaluation_question_id');
+            $table->foreign('monthly_activity_id', 'fk_eval_activity')
+                ->references('id')
+                ->on('monthly_activities')
+                ->cascadeOnDelete();
+            $table->foreign('evaluation_question_id', 'fk_eval_question')
+                ->references('id')
+                ->on('evaluation_questions')
+                ->cascadeOnDelete();
             $table->string('answer_value')->nullable();
             $table->decimal('score', 5, 2)->nullable();
             $table->text('note')->nullable();
