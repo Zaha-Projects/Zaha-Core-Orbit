@@ -381,7 +381,9 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
-        $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
+        if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
+            $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
+        }
         $this->logWorkflowAction('created', $monthlyActivity, $request, $monthlyActivity->status);
 
         return redirect()
@@ -406,6 +408,10 @@ class MonthlyActivitiesController extends Controller
     {
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
             return back()->withErrors(['status' => __('app.roles.programs.monthly_activities.errors.locked')]);
+        }
+
+        if ($request->user()->hasRole('programs_officer') && $monthlyActivity->executive_approval_status === 'approved') {
+            return back()->withErrors(['status' => 'لا يمكن تعديل الفعالية بعد الاعتماد التنفيذي النهائي.']);
         }
 
         $data = $request->validate([
@@ -626,7 +632,9 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
-        $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
+        if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
+            $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
+        }
         $this->logChanges($monthlyActivity, $oldValues, $newValues, $request->user()->id);
         $this->logWorkflowAction('updated', $monthlyActivity, $request, $monthlyActivity->status, [
             'changed_fields' => array_keys($newValues),

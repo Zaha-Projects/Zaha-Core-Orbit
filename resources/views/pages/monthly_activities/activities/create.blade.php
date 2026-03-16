@@ -69,7 +69,6 @@
                     <select class="form-select" name="status" required>
                         <option value="draft" @selected(old('status', 'draft') === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
                         <option value="submitted" @selected(old('status') === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
-                        <option value="approved" @selected(old('status') === 'approved')>{{ __('app.roles.programs.monthly_activities.statuses.approved') }}</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
@@ -186,11 +185,6 @@
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.audience_satisfaction') }}</label>
                     <input class="form-control" type="number" min="0" max="100" step="0.01" name="audience_satisfaction_percent" value="{{ old('audience_satisfaction_percent') }}">
                 </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.event_evaluation') }}</label>
-                    <input class="form-control" type="number" min="0" max="100" step="0.01" name="evaluation_score" value="{{ old('evaluation_score') }}">
-                </div>
-
                 <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">الحضور والمتطوعين</h2></div></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور المتوقع</label><input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance') }}"></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور الفعلي</label><input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance') }}"></div>
@@ -203,13 +197,6 @@
                 <div class="col-12 col-md-8"><label class="form-label">سبب المخاطبة</label><input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason') }}"></div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_media_coverage" value="1" id="needs_media_coverage" @checked(old('needs_media_coverage'))><label class="form-check-label" for="needs_media_coverage">تحتاج تغطية إعلامية</label></div></div>
                 <div class="col-12 col-md-8"><label class="form-label">ملاحظات التغطية الإعلامية</label><input class="form-control" name="media_coverage_notes" value="{{ old('media_coverage_notes') }}"></div>
-
-                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">التقييم والمتابعة</h2></div></div>
-                @foreach($evaluationQuestions as $question)
-                    <div class="col-12 col-md-8"><label class="form-label">{{ $question->question }}</label><input class="form-control" name="evaluations[{{ $question->id }}][note]" value="{{ old('evaluations.'.$question->id.'.note') }}" placeholder="ملاحظة/إجابة"></div>
-                    <div class="col-12 col-md-4"><label class="form-label">الدرجة (0-5)</label><input class="form-control" type="number" min="0" max="5" step="0.5" name="evaluations[{{ $question->id }}][score]" value="{{ old('evaluations.'.$question->id.'.score') }}"></div>
-                @endforeach
-                <div class="col-12"><label class="form-label">ملاحظات المتابعة العامة</label><textarea class="form-control" name="followup_remarks" rows="2">{{ old('followup_remarks') }}</textarea></div>
 
                 <div class="col-12">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.description') }}</label>
