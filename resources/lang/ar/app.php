@@ -499,10 +499,18 @@ return [
                     'status' => 'الحالة',
                     'relations_approval' => 'اعتماد العلاقات',
                     'executive_approval' => 'اعتماد التنفيذي',
+                    'change_requests' => 'طلبات التعديل',
+                    'relations_changes_count' => 'تعديلات العلاقات: :count',
+                    'executive_changes_count' => 'تعديلات التنفيذي: :count',
                     'last_decision' => 'آخر قرار',
                     'actions' => 'الإجراءات',
                     'none' => 'لا يوجد قرار',
                     'empty' => 'لا توجد فعاليات للمراجعة حالياً.',
+                ],
+                'change_requests' => [
+                    'title' => 'تفاصيل التعديلات المطلوبة',
+                    'step_relations_review' => 'مرحلة العلاقات',
+                    'step_executive_review' => 'المرحلة التنفيذية',
                 ],
                 'actions' => [
                     'review' => 'مراجعة',
@@ -894,6 +902,11 @@ return [
                     'branch' => 'الفرع',
                     'actions' => 'الإجراءات',
                     'empty' => 'لا توجد بلاغات للمراجعة.',
+                ],
+                'change_requests' => [
+                    'title' => 'تفاصيل التعديلات المطلوبة',
+                    'step_relations_review' => 'مرحلة العلاقات',
+                    'step_executive_review' => 'المرحلة التنفيذية',
                 ],
                 'actions' => [
                     'review' => 'مراجعة',

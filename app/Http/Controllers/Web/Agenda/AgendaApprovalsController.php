@@ -13,7 +13,17 @@ class AgendaApprovalsController extends Controller
 {
     public function index()
     {
-        $events = AgendaEvent::with(['approvals', 'creator'])
+        $events = AgendaEvent::with(['approvals' => function ($query) {
+                $query->orderBy('approved_at');
+            }, 'creator'])
+            ->withCount([
+                'approvals as relations_changes_requested_count' => function ($query) {
+                    $query->where('step', 'relations_review')->where('decision', 'changes_requested');
+                },
+                'approvals as executive_changes_requested_count' => function ($query) {
+                    $query->where('step', 'executive_review')->where('decision', 'changes_requested');
+                },
+            ])
             ->orderBy('month')
             ->orderBy('day')
             ->get();
@@ -25,7 +35,7 @@ class AgendaApprovalsController extends Controller
     {
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,changes_requested'],
-            'comment' => ['nullable', 'string'],
+            'comment' => ['nullable', 'string', 'required_if:decision,changes_requested'],
         ]);
 
         $user = $request->user();

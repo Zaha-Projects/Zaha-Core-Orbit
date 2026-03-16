@@ -499,10 +499,18 @@ return [
                     'status' => 'Status',
                     'relations_approval' => 'Relations approval',
                     'executive_approval' => 'Executive approval',
+                    'change_requests' => 'Change requests',
+                    'relations_changes_count' => 'Relations changes: :count',
+                    'executive_changes_count' => 'Executive changes: :count',
                     'last_decision' => 'Last decision',
                     'actions' => 'Actions',
                     'none' => 'No decision yet',
                     'empty' => 'No agenda events to review.',
+                ],
+                'change_requests' => [
+                    'title' => 'Requested changes details',
+                    'step_relations_review' => 'Relations stage',
+                    'step_executive_review' => 'Executive stage',
                 ],
                 'actions' => [
                     'review' => 'Review',
@@ -1065,6 +1073,11 @@ return [
                     'branch' => 'Branch',
                     'actions' => 'Actions',
                     'empty' => 'No requests to review.',
+                ],
+                'change_requests' => [
+                    'title' => 'Requested changes details',
+                    'step_relations_review' => 'Relations stage',
+                    'step_executive_review' => 'Executive stage',
                 ],
                 'actions' => [
                     'review' => 'Review',

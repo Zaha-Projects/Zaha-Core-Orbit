@@ -24,6 +24,7 @@
                                 <th>{{ __('app.roles.relations.approvals.table.status') }}</th>
                                 <th>{{ __('app.roles.relations.approvals.table.relations_approval') }}</th>
                                 <th>{{ __('app.roles.relations.approvals.table.executive_approval') }}</th>
+                                <th>{{ __('app.roles.relations.approvals.table.change_requests') }}</th>
                                 <th class="text-end">{{ __('app.roles.relations.approvals.table.actions') }}</th>
                             </tr>
                         </thead>
@@ -36,12 +37,40 @@
                                     <td><span class="event-status status-{{ $event->status }}">{{ $event->status }}</span></td>
                                     <td><span class="event-status status-{{ $event->relations_approval_status }}">{{ $event->relations_approval_status }}</span></td>
                                     <td><span class="event-status status-{{ $event->executive_approval_status }}">{{ $event->executive_approval_status }}</span></td>
+                                    <td>
+                                        <div class="small text-muted">
+                                            {{ __('app.roles.relations.approvals.table.relations_changes_count', ['count' => $event->relations_changes_requested_count]) }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            {{ __('app.roles.relations.approvals.table.executive_changes_count', ['count' => $event->executive_changes_requested_count]) }}
+                                        </div>
+                                    </td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#approval-{{ $event->id }}">{{ __('app.roles.relations.approvals.actions.review') }}</button>
                                     </td>
                                 </tr>
                                 <tr class="collapse" id="approval-{{ $event->id }}">
-                                    <td colspan="6">
+                                    <td colspan="7">
+                                        @php
+                                            $requestedChanges = $event->approvals
+                                                ->where('decision', 'changes_requested')
+                                                ->filter(fn ($approval) => filled($approval->comment));
+                                        @endphp
+
+                                        @if($requestedChanges->isNotEmpty())
+                                            <div class="alert alert-warning py-2">
+                                                <div class="fw-semibold mb-1">{{ __('app.roles.relations.approvals.change_requests.title') }}</div>
+                                                <ul class="mb-0 ps-3">
+                                                    @foreach($requestedChanges as $change)
+                                                        <li>
+                                                            <span class="fw-semibold">{{ __('app.roles.relations.approvals.change_requests.step_' . $change->step) }}:</span>
+                                                            {{ $change->comment }}
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+
                                         <div class="event-approval-panel">
                                             <form method="POST" action="{{ route('role.relations.approvals.update', $event) }}" class="row g-3">
                                                 @csrf
@@ -66,7 +95,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-muted">{{ __('app.roles.relations.approvals.table.empty') }}</td>
+                                    <td colspan="7" class="text-muted">{{ __('app.roles.relations.approvals.table.empty') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>
