@@ -12,6 +12,17 @@
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-0">{{ $subtitle }}</p>
+
+            @if ($errors->any())
+                <div class="alert alert-danger mt-3">
+                    <div class="fw-semibold mb-2">يرجى تصحيح الأخطاء التالية:</div>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -27,7 +38,8 @@
                 @method('PUT')
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.title') }}</label>
-                    <input class="form-control" name="title" value="{{ $monthlyActivity->title }}" required>
+                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title', $monthlyActivity->title) }}" required>
+                    @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.activity_date') }}</label>
@@ -82,26 +94,26 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">نوع المكان</label>
-                    <select class="form-select js-location-type" name="location_type" required>
+                    <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type" required>
                         <option value="inside_center" @selected(old('location_type', $monthlyActivity->location_type) === 'inside_center')>داخل المركز</option>
                         <option value="outside_center" @selected(old('location_type', $monthlyActivity->location_type) === 'outside_center')>خارج المركز</option>
                     </select>
+                    @error('location_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 js-inside-location">
-                    <label class="form-label">قاعة / غرفة / موقع داخلي</label>
-                    <input class="form-control" name="internal_location" value="{{ old('internal_location', $monthlyActivity->internal_location) }}">
+                    <label class="form-label">أي قاعة</label>
+                    <input class="form-control @error('internal_location') is-invalid @enderror" name="internal_location" value="{{ old('internal_location', $monthlyActivity->internal_location) }}">
+                    @error('internal_location')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">اسم المكان الخارجي</label>
-                    <input class="form-control" name="outside_place_name" value="{{ old('outside_place_name', $monthlyActivity->outside_place_name) }}">
+                    <label class="form-label">اسم الموقع</label>
+                    <input class="form-control @error('outside_place_name') is-invalid @enderror" name="outside_place_name" value="{{ old('outside_place_name', $monthlyActivity->outside_place_name) }}">
+                    @error('outside_place_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">رابط Google Maps</label>
-                    <input class="form-control" name="outside_google_maps_url" value="{{ old('outside_google_maps_url', $monthlyActivity->outside_google_maps_url) }}">
-                </div>
-                <div class="col-12 js-outside-location">
-                    <label class="form-label">العنوان النصي</label>
-                    <input class="form-control" name="outside_address" value="{{ old('outside_address', $monthlyActivity->outside_address) }}">
+                    <label class="form-label">رابط الموقع من Google Maps</label>
+                    <input class="form-control @error('outside_google_maps_url') is-invalid @enderror" name="outside_google_maps_url" value="{{ old('outside_google_maps_url', $monthlyActivity->outside_google_maps_url) }}">
+                    @error('outside_google_maps_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.responsible_entity') }}</label>

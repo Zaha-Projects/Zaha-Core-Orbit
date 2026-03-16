@@ -11,11 +11,23 @@
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-4">{{ $subtitle }}</p>
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <div class="fw-semibold mb-2">يرجى تصحيح الأخطاء التالية:</div>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <form method="POST" action="{{ route('role.programs.activities.store') }}" class="row event-form-grid">
                 @csrf
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.title') }}</label>
-                    <input class="form-control" name="title" value="{{ old('title') }}" required>
+                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title') }}" required>
+                    @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.activity_date') }}</label>
@@ -30,7 +42,7 @@
                     <select class="form-select" name="branch_id" required>
                         <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
                         @foreach ($branches as $branch)
-                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                            <option value="{{ $branch->id }}" @selected((string) old('branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -39,7 +51,7 @@
                     <select class="form-select" name="center_id" required>
                         <option value="">{{ __('app.roles.programs.monthly_activities.fields.center_placeholder') }}</option>
                         @foreach ($centers as $center)
-                            <option value="{{ $center->id }}">{{ $center->name }}</option>
+                            <option value="{{ $center->id }}" @selected((string) old('center_id') === (string) $center->id)>{{ $center->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -48,40 +60,40 @@
                     <select class="form-select" name="agenda_event_id">
                         <option value="">{{ __('app.roles.programs.monthly_activities.fields.agenda_event_placeholder') }}</option>
                         @foreach ($agendaEvents as $event)
-                            <option value="{{ $event->id }}">{{ $event->event_name }}</option>
+                            <option value="{{ $event->id }}" @selected((string) old('agenda_event_id') === (string) $event->id)>{{ $event->event_name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>
                     <select class="form-select" name="status" required>
-                        <option value="draft">{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
-                        <option value="submitted">{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
-                        <option value="approved">{{ __('app.roles.programs.monthly_activities.statuses.approved') }}</option>
+                        <option value="draft" @selected(old('status', 'draft') === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
+                        <option value="submitted" @selected(old('status') === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
+                        <option value="approved" @selected(old('status') === 'approved')>{{ __('app.roles.programs.monthly_activities.statuses.approved') }}</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">نوع المكان</label>
-                    <select class="form-select js-location-type" name="location_type" required>
-                        <option value="inside_center" @selected(old('location_type') === 'inside_center')>داخل المركز</option>
-                        <option value="outside_center" @selected(old('location_type') === 'outside_center')>خارج المركز</option>
+                    <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type" required>
+                        <option value="inside_center" @selected(old('location_type', 'inside_center') === 'inside_center')>داخل المركز</option>
+                        <option value="outside_center" @selected(old('location_type', 'inside_center') === 'outside_center')>خارج المركز</option>
                     </select>
+                    @error('location_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 js-inside-location">
-                    <label class="form-label">قاعة / غرفة / موقع داخلي</label>
-                    <input class="form-control" name="internal_location" value="{{ old('internal_location') }}">
+                    <label class="form-label">أي قاعة</label>
+                    <input class="form-control @error('internal_location') is-invalid @enderror" name="internal_location" value="{{ old('internal_location') }}">
+                    @error('internal_location')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">اسم المكان الخارجي</label>
-                    <input class="form-control" name="outside_place_name" value="{{ old('outside_place_name') }}">
+                    <label class="form-label">اسم الموقع</label>
+                    <input class="form-control @error('outside_place_name') is-invalid @enderror" name="outside_place_name" value="{{ old('outside_place_name') }}">
+                    @error('outside_place_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">رابط Google Maps</label>
-                    <input class="form-control" name="outside_google_maps_url" value="{{ old('outside_google_maps_url') }}">
-                </div>
-                <div class="col-12 js-outside-location">
-                    <label class="form-label">العنوان النصي</label>
-                    <input class="form-control" name="outside_address" value="{{ old('outside_address') }}">
+                    <label class="form-label">رابط الموقع من Google Maps</label>
+                    <input class="form-control @error('outside_google_maps_url') is-invalid @enderror" name="outside_google_maps_url" value="{{ old('outside_google_maps_url') }}">
+                    @error('outside_google_maps_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12"><div class="event-form-section">
                     <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.edit_details') }}</h2></div></div>

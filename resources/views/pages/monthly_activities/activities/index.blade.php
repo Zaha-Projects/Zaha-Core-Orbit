@@ -20,6 +20,16 @@
         @if (session('warning'))
             <div class="alert alert-warning">{{ session('warning') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <div class="fw-semibold mb-2">يرجى تصحيح الأخطاء التالية:</div>
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <div class="event-kpi-grid">
             <div class="event-kpi-card"><div class="text-muted small">{{ __('app.roles.programs.monthly_activities.list_title') }}</div><div class="event-kpi-value">{{ $activities->count() }}</div></div>
@@ -52,8 +62,10 @@
                     <div class="col-12 col-md-4"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.center') }}</label><select class="form-select" name="center_id" required><option value="">{{ __('app.roles.programs.monthly_activities.fields.center_placeholder') }}</option>@foreach ($centers as $center)<option value="{{ $center->id }}">{{ $center->name }}</option>@endforeach</select></div>
                     <div class="col-12 col-md-4"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.agenda_event') }}</label><select class="form-select" name="agenda_event_id"><option value="">{{ __('app.roles.programs.monthly_activities.fields.agenda_event_placeholder') }}</option>@foreach ($agendaEvents as $event)<option value="{{ $event->id }}">{{ $event->event_name }}</option>@endforeach</select></div>
                     <div class="col-12 col-md-4"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label><select class="form-select" name="status" required><option value="draft">{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option><option value="submitted">{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option><option value="approved">{{ __('app.roles.programs.monthly_activities.statuses.approved') }}</option></select></div>
-                    <div class="col-12 col-md-4"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.location_type') }}</label><input class="form-control" name="location_type" value="{{ old('location_type') }}" required></div>
-                    <div class="col-12 col-md-4"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.location_details') }}</label><input class="form-control" name="location_details" value="{{ old('location_details') }}"></div>
+                    <div class="col-12 col-md-4"><label class="form-label">نوع المكان</label><select class="form-select js-location-type" name="location_type" required><option value="inside_center" @selected(old('location_type', 'inside_center') === 'inside_center')>داخل المركز</option><option value="outside_center" @selected(old('location_type', 'inside_center') === 'outside_center')>خارج المركز</option></select></div>
+                    <div class="col-12 col-md-4 js-inside-location"><label class="form-label">أي قاعة</label><input class="form-control" name="internal_location" value="{{ old('internal_location') }}"></div>
+                    <div class="col-12 col-md-4 js-outside-location"><label class="form-label">اسم الموقع</label><input class="form-control" name="outside_place_name" value="{{ old('outside_place_name') }}"></div>
+                    <div class="col-12 col-md-4 js-outside-location"><label class="form-label">رابط الموقع من Google Maps</label><input class="form-control" name="outside_google_maps_url" value="{{ old('outside_google_maps_url') }}"></div>
                     <div class="col-12"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.description') }}</label><textarea class="form-control" name="description" rows="3">{{ old('description') }}</textarea></div>
                     <div class="col-12 event-actions"><button class="btn btn-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.create') }}</button></div>
                 </form>
@@ -83,3 +95,21 @@
         <div class="mt-3">{{ $activities->links() }}</div>
     </div>
 @endsection
+
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const locType = document.querySelector('.js-location-type');
+  const inside = document.querySelectorAll('.js-inside-location');
+  const outside = document.querySelectorAll('.js-outside-location');
+  const toggle = () => {
+    const outsideSelected = locType && locType.value === 'outside_center';
+    inside.forEach(el => el.style.display = outsideSelected ? 'none' : 'block');
+    outside.forEach(el => el.style.display = outsideSelected ? 'block' : 'none');
+  };
+  locType?.addEventListener('change', toggle);
+  toggle();
+});
+</script>
+@endpush

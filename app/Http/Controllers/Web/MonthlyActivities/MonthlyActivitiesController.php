@@ -252,9 +252,9 @@ class MonthlyActivitiesController extends Controller
 
             'location_type' => ['required', 'in:inside_center,outside_center'],
             'location_details' => ['nullable', 'string', 'max:255'],
-            'internal_location' => ['nullable', 'string', 'max:255'],
-            'outside_place_name' => ['nullable', 'string', 'max:255'],
-            'outside_google_maps_url' => ['nullable', 'url', 'max:500'],
+            'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
+            'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
+            'outside_google_maps_url' => ['nullable', 'url', 'max:500', 'required_if:location_type,outside_center'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
@@ -302,6 +302,14 @@ class MonthlyActivitiesController extends Controller
             'followup_remarks' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
         ]);
+
+        if (($data['location_type'] ?? null) === 'inside_center') {
+            $data['outside_place_name'] = null;
+            $data['outside_google_maps_url'] = null;
+            $data['outside_address'] = null;
+        } else {
+            $data['internal_location'] = null;
+        }
 
         $date = Carbon::parse($data['activity_date']);
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
@@ -412,9 +420,9 @@ class MonthlyActivitiesController extends Controller
 
             'location_type' => ['required', 'in:inside_center,outside_center'],
             'location_details' => ['nullable', 'string', 'max:255'],
-            'internal_location' => ['nullable', 'string', 'max:255'],
-            'outside_place_name' => ['nullable', 'string', 'max:255'],
-            'outside_google_maps_url' => ['nullable', 'url', 'max:500'],
+            'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
+            'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
+            'outside_google_maps_url' => ['nullable', 'url', 'max:500', 'required_if:location_type,outside_center'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
@@ -462,6 +470,14 @@ class MonthlyActivitiesController extends Controller
             'followup_remarks' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
         ]);
+
+        if (($data['location_type'] ?? null) === 'inside_center') {
+            $data['outside_place_name'] = null;
+            $data['outside_google_maps_url'] = null;
+            $data['outside_address'] = null;
+        } else {
+            $data['internal_location'] = null;
+        }
 
         $date = Carbon::parse($data['activity_date']);
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
