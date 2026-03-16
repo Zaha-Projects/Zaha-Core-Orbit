@@ -47,7 +47,13 @@
                                 <td>{{ $activity->relations_officer_approval_status }} / {{ $activity->relations_manager_approval_status }}</td>
                                 <td>{{ $activity->programs_officer_approval_status }} / {{ $activity->programs_manager_approval_status }}</td>
                                 <td>{{ $activity->executive_approval_status }}</td>
-                                <td>{{ $latestApproval?->decision ?? __('app.roles.programs.monthly_activities.approvals.table.none') }}</td>
+                                <td>
+                                    {{ $latestApproval?->decision ?? __('app.roles.programs.monthly_activities.approvals.table.none') }}
+                                    @php $changeRequests = $activity->approvals->where('decision', 'changes_requested'); @endphp
+                                    @if($changeRequests->isNotEmpty())
+                                        <div class="small text-warning">طلبات تعديل: {{ $changeRequests->count() }}</div>
+                                    @endif
+                                </td>
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#approval-{{ $activity->id }}">
                                         {{ __('app.roles.programs.monthly_activities.approvals.actions.review') }}
@@ -56,6 +62,21 @@
                             </tr>
                             <tr class="collapse" id="approval-{{ $activity->id }}">
                                 <td colspan="8">
+                                    @php $changeRequests = $activity->approvals->where('decision', 'changes_requested'); @endphp
+                                    @if($changeRequests->isNotEmpty())
+                                        <div class="alert alert-warning py-2">
+                                            <div class="fw-semibold mb-1">سجل طلبات التعديل</div>
+                                            <ul class="mb-0 ps-3">
+                                                @foreach($changeRequests as $requestItem)
+                                                    <li>
+                                                        <span class="fw-semibold">{{ $requestItem->step }}</span> -
+                                                        {{ optional($requestItem->approved_at)->format('Y-m-d H:i') }} -
+                                                        {{ $requestItem->comment ?? 'بدون ملاحظات' }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
                                     <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" class="row g-3">
                                         @csrf
                                         @method('PUT')
@@ -66,9 +87,15 @@
                                                 <option value="changes_requested">{{ __('app.roles.programs.monthly_activities.approvals.decisions.changes_requested') }}</option>
                                             </select>
                                         </div>
-                                        <div class="col-12 col-md-8">
+                                        <div class="col-12 col-md-6">
                                             <label class="form-label">{{ __('app.roles.programs.monthly_activities.approvals.fields.comment') }}</label>
                                             <input class="form-control" name="comment">
+                                        </div>
+                                        <div class="col-12 col-md-2 d-flex align-items-center">
+                                            <div class="form-check mt-4">
+                                                <input class="form-check-input" type="checkbox" name="is_edit_request_implemented" value="1" id="implemented-{{ $activity->id }}">
+                                                <label class="form-check-label" for="implemented-{{ $activity->id }}">تم تنفيذ التعديل</label>
+                                            </div>
                                         </div>
                                         <div class="col-12 d-flex justify-content-end">
                                             <button class="btn btn-outline-primary btn-sm" type="submit">

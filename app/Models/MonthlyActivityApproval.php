@@ -16,10 +16,14 @@ class MonthlyActivityApproval extends Model
         'comment',
         'approved_by',
         'approved_at',
+        'is_edit_request_implemented',
+        'implemented_at',
     ];
 
     protected $casts = [
         'approved_at' => 'datetime',
+        'implemented_at' => 'datetime',
+        'is_edit_request_implemented' => 'boolean',
     ];
 
     public function monthlyActivity()

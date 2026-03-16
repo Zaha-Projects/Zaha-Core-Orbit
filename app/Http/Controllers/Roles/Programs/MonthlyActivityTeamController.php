@@ -12,13 +12,17 @@ class MonthlyActivityTeamController extends Controller
     public function store(Request $request, MonthlyActivity $monthlyActivity)
     {
         $data = $request->validate([
+            'team_name' => ['nullable', 'string', 'max:255'],
             'member_name' => ['required', 'string', 'max:255'],
+            'member_email' => ['nullable', 'email', 'max:255'],
             'role_desc' => ['nullable', 'string', 'max:255'],
         ]);
 
         MonthlyActivityTeam::create([
             'monthly_activity_id' => $monthlyActivity->id,
+            'team_name' => $data['team_name'] ?? null,
             'member_name' => $data['member_name'],
+            'member_email' => $data['member_email'] ?? null,
             'role_desc' => $data['role_desc'] ?? null,
         ]);
 
@@ -30,12 +34,16 @@ class MonthlyActivityTeamController extends Controller
     public function update(Request $request, MonthlyActivityTeam $monthlyActivityTeam)
     {
         $data = $request->validate([
+            'team_name' => ['nullable', 'string', 'max:255'],
             'member_name' => ['required', 'string', 'max:255'],
+            'member_email' => ['nullable', 'email', 'max:255'],
             'role_desc' => ['nullable', 'string', 'max:255'],
         ]);
 
         $monthlyActivityTeam->update([
+            'team_name' => $data['team_name'] ?? null,
             'member_name' => $data['member_name'],
+            'member_email' => $data['member_email'] ?? null,
             'role_desc' => $data['role_desc'] ?? null,
         ]);
 

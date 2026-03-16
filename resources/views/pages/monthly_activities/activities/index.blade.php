@@ -65,15 +65,15 @@
                 <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
                 <div class="event-table-wrap table-responsive">
                     <table class="table table-sm align-middle event-table">
-                        <thead><tr><th>{{ __('app.roles.programs.monthly_activities.table.title') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.date') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.branch') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.status') }}</th><th class="text-end">{{ __('app.roles.programs.monthly_activities.table.actions') }}</th></tr></thead>
+                        <thead><tr><th>{{ __('app.roles.programs.monthly_activities.table.title') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.date') }}</th><th>مصدر الفعالية</th><th>{{ __('app.roles.programs.monthly_activities.table.branch') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.status') }}</th><th class="text-end">{{ __('app.roles.programs.monthly_activities.table.actions') }}</th></tr></thead>
                         <tbody>
                             @forelse ($activities as $activity)
                                 <tr>
-                                    <td>{{ $activity->title }}</td><td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td><td>{{ $activity->branch?->name ?? '-' }}</td><td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
+                                    <td>{{ $activity->title }}</td><td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td><td>@if($activity->is_in_agenda)<span class='badge bg-success-subtle text-success'>من الأجندة</span>@else<span class='badge bg-warning-subtle text-warning'>خارج الأجندة</span>@endif</td><td>{{ $activity->branch?->name ?? '-' }}</td><td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
                                     <td class="text-end"><div class="event-actions"><a class="btn btn-sm btn-outline-secondary" href="{{ route('role.programs.activities.edit', $activity) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a><form method="POST" action="{{ route('role.programs.activities.submit', $activity) }}">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button></form></div></td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="text-muted">{{ __('app.roles.programs.monthly_activities.table.empty') }}</td></tr>
+                                <tr><td colspan="6" class="text-muted">{{ __('app.roles.programs.monthly_activities.table.empty') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>

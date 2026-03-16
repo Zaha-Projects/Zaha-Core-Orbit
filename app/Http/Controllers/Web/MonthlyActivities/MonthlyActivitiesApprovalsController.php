@@ -67,6 +67,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,changes_requested'],
             'comment' => ['nullable', 'string'],
+            'is_edit_request_implemented' => ['nullable', 'boolean'],
         ]);
 
         [$step, $statusField] = $this->resolveStepAndField($request->user());
@@ -79,6 +80,8 @@ class MonthlyActivitiesApprovalsController extends Controller
             'comment' => $data['comment'] ?? null,
             'approved_by' => $request->user()->id,
             'approved_at' => now(),
+            'is_edit_request_implemented' => (bool) ($data['is_edit_request_implemented'] ?? false),
+            'implemented_at' => !empty($data['is_edit_request_implemented']) ? now() : null,
         ]);
 
         $updates = [

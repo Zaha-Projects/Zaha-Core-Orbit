@@ -23,6 +23,7 @@ use App\Http\Controllers\Roles\TransportOfficer\DashboardController as Transport
 use App\Http\Controllers\Web\Agenda\AgendaEventsController as RelationsAgendaEventsController;
 use App\Http\Controllers\Web\Agenda\AgendaApprovalsController as RelationsAgendaApprovalsController;
 use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController as ProgramsMonthlyActivitiesController;
+use App\Http\Controllers\Web\MonthlyActivities\EventLookupsController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivitySuppliesController as ProgramsMonthlyActivitySuppliesController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityTeamController as ProgramsMonthlyActivityTeamController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityAttachmentsController as ProgramsMonthlyActivityAttachmentsController;
@@ -116,6 +117,10 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.centers.update');
     Route::delete('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.centers.destroy');
     Route::get('/dashboard/admin/approvals', [SuperAdminApprovalsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.approvals');
+
+    Route::get('/dashboard/admin/events-lookups', [EventLookupsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.index');
+    Route::post('/dashboard/admin/events-lookups/target-groups', [EventLookupsController::class, 'storeTargetGroup'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.target_groups.store');
+    Route::post('/dashboard/admin/events-lookups/evaluation-questions', [EventLookupsController::class, 'storeEvaluationQuestion'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.evaluation_questions.store');
     Route::get('/dashboard/relations/manager', [RelationsManagerDashboardController::class, 'index'])->middleware('role:relations_manager|super_admin')->name('role.relations_manager.dashboard');
     Route::get('/dashboard/relations/officer', [RelationsOfficerDashboardController::class, 'index'])->middleware('role:relations_officer|super_admin')->name('role.relations_officer.dashboard');
     Route::get('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'index'])->middleware('role:relations_manager|relations_officer|executive_manager|super_admin')->name('role.relations.agenda.index');

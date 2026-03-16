@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
         $this->call(CenterSeeder::class);
         $this->call(DepartmentUnitSeeder::class);
         $this->call(EventCategorySeeder::class);
+        $this->call(TargetGroupSeeder::class);
+        $this->call(EvaluationQuestionSeeder::class);
         $this->call(UserSeeder::class);
         $this->call(MovementSeeder::class);
         $this->call(MonthlyKpiSeeder::class);

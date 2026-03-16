@@ -12,7 +12,9 @@ class MonthlyActivityTeam extends Model
     protected $fillable = [
         'monthly_activity_id',
         'user_id',
+        'team_name',
         'member_name',
+        'member_email',
         'role_desc',
     ];
 

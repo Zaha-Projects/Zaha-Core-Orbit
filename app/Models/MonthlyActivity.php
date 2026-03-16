@@ -35,18 +35,35 @@ class MonthlyActivity extends Model
         'has_official_attendance',
         'official_attendance_details',
         'needs_official_letters',
+        'needs_official_correspondence',
+        'official_correspondence_reason',
         'letter_purpose',
         'location_type',
         'location_details',
+
+        'internal_location',
+        'outside_place_name',
+        'outside_google_maps_url',
+        'outside_address',
         'time_from',
         'time_to',
         'execution_time',
         'target_group',
+        'target_group_id',
+        'target_group_other',
         'short_description',
+        'work_teams_count',
         'volunteer_need',
+        'needs_volunteers',
+        'required_volunteers',
+        'expected_attendance',
+        'actual_attendance',
+        'attendance_notes',
         'audience_satisfaction_percent',
         'evaluation_score',
         'media_coverage',
+        'needs_media_coverage',
+        'media_coverage_notes',
         'status',
         'is_archived',
         'archived_year',
@@ -66,9 +83,12 @@ class MonthlyActivity extends Model
         'is_in_agenda' => 'boolean',
         'has_official_attendance' => 'boolean',
         'needs_official_letters' => 'boolean',
+        'needs_official_correspondence' => 'boolean',
         'relations_approval_on_reschedule' => 'boolean',
         'has_sponsor' => 'boolean',
         'has_partners' => 'boolean',
+        'needs_volunteers' => 'boolean',
+        'needs_media_coverage' => 'boolean',
         'proposed_date' => 'date',
         'modified_proposed_date' => 'date',
         'rescheduled_date' => 'date',
@@ -170,6 +190,21 @@ class MonthlyActivity extends Model
     public function attendance()
     {
         return $this->hasOne(ActivityAttendance::class);
+    }
+
+    public function targetGroup()
+    {
+        return $this->belongsTo(TargetGroup::class);
+    }
+
+    public function evaluationResponses()
+    {
+        return $this->hasMany(MonthlyActivityEvaluationResponse::class);
+    }
+
+    public function followups()
+    {
+        return $this->hasMany(MonthlyActivityFollowup::class);
     }
 
     public function donations()

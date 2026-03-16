@@ -10,6 +10,10 @@ use App\Models\MonthlyActivityChangeLog;
 use App\Models\MonthlyActivityPartner;
 use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
+use App\Models\EvaluationQuestion;
+use App\Models\MonthlyActivityFollowup;
+use App\Models\MonthlyActivityEvaluationResponse;
+use App\Models\TargetGroup;
 use App\Models\Setting;
 use App\Models\WorkflowActionLog;
 use App\Models\User;
@@ -101,6 +105,34 @@ class MonthlyActivitiesController extends Controller
         ]);
     }
 
+
+    protected function syncEvaluationData(MonthlyActivity $monthlyActivity, array $data, int $userId): void
+    {
+        $monthlyActivity->evaluationResponses()->delete();
+        foreach (($data['evaluations'] ?? []) as $questionId => $payload) {
+            if (empty($payload['score']) && empty($payload['answer_value']) && empty($payload['note'])) {
+                continue;
+            }
+
+            MonthlyActivityEvaluationResponse::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'evaluation_question_id' => (int) $questionId,
+                'score' => $payload['score'] ?? null,
+                'answer_value' => $payload['answer_value'] ?? null,
+                'note' => $payload['note'] ?? null,
+                'created_by' => $userId,
+            ]);
+        }
+
+        if (! empty($data['followup_remarks'])) {
+            MonthlyActivityFollowup::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'remarks' => $data['followup_remarks'],
+                'created_by' => $userId,
+            ]);
+        }
+    }
+
     public function index(Request $request)
     {
         $activities = MonthlyActivity::with(['branch', 'center', 'agendaEvent', 'creator'])
@@ -122,8 +154,10 @@ class MonthlyActivitiesController extends Controller
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
+        $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
+        $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('pages.monthly_activities.activities.create', compact('branches', 'centers', 'agendaEvents'));
+        return view('pages.monthly_activities.activities.create', compact('branches', 'centers', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
     }
 
     public function syncFromAgenda(Request $request)
@@ -215,12 +249,29 @@ class MonthlyActivitiesController extends Controller
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'status' => ['required', 'string', 'max:50'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
-            'location_type' => ['required', 'string', 'max:255'],
+
+            'location_type' => ['required', 'in:inside_center,outside_center'],
             'location_details' => ['nullable', 'string', 'max:255'],
+            'internal_location' => ['nullable', 'string', 'max:255'],
+            'outside_place_name' => ['nullable', 'string', 'max:255'],
+            'outside_google_maps_url' => ['nullable', 'url', 'max:500'],
+            'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
+            'target_group_id' => ['nullable', 'exists:target_groups,id'],
+            'target_group_other' => ['nullable', 'string', 'max:255'],
             'short_description' => ['nullable', 'string'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
+            'needs_volunteers' => ['nullable', 'boolean'],
+            'required_volunteers' => ['nullable', 'integer', 'min:0'],
+            'expected_attendance' => ['nullable', 'integer', 'min:0'],
+            'actual_attendance' => ['nullable', 'integer', 'min:0'],
+            'attendance_notes' => ['nullable', 'string'],
+            'work_teams_count' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'needs_media_coverage' => ['nullable', 'boolean'],
+            'media_coverage_notes' => ['nullable', 'string'],
+            'needs_official_correspondence' => ['nullable', 'boolean'],
+            'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
             'has_sponsor' => ['nullable', 'boolean'],
             'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
@@ -244,6 +295,11 @@ class MonthlyActivitiesController extends Controller
             'partners' => ['array'],
             'partners.*.name' => ['nullable', 'string', 'max:255'],
             'partners.*.role' => ['nullable', 'string', 'max:255'],
+            'evaluations' => ['nullable', 'array'],
+            'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
+            'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
+            'evaluations.*.note' => ['nullable', 'string'],
+            'followup_remarks' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -261,22 +317,54 @@ class MonthlyActivitiesController extends Controller
             'description' => $data['description'] ?? null,
             'location_type' => $data['location_type'],
             'location_details' => $data['location_details'] ?? null,
+            'internal_location' => $data['internal_location'] ?? null,
+            'outside_place_name' => $data['outside_place_name'] ?? null,
+            'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
+            'outside_address' => $data['outside_address'] ?? null,
+            'internal_location' => $data['internal_location'] ?? null,
+            'outside_place_name' => $data['outside_place_name'] ?? null,
+            'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
+            'outside_address' => $data['outside_address'] ?? null,
             'status' => $data['status'],
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
             'target_group' => $data['target_group'] ?? null,
+            'target_group_id' => $data['target_group_id'] ?? null,
+            'target_group_other' => $data['target_group_other'] ?? null,
+            'target_group_id' => $data['target_group_id'] ?? null,
+            'target_group_other' => $data['target_group_other'] ?? null,
             'short_description' => $data['short_description'] ?? null,
+            'work_teams_count' => $data['work_teams_count'] ?? null,
+            'work_teams_count' => $data['work_teams_count'] ?? null,
             'volunteer_need' => $data['volunteer_need'] ?? null,
+            'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
+            'required_volunteers' => $data['required_volunteers'] ?? null,
+            'expected_attendance' => $data['expected_attendance'] ?? null,
+            'actual_attendance' => $data['actual_attendance'] ?? null,
+            'attendance_notes' => $data['attendance_notes'] ?? null,
+            'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
+            'required_volunteers' => $data['required_volunteers'] ?? null,
+            'expected_attendance' => $data['expected_attendance'] ?? null,
+            'actual_attendance' => $data['actual_attendance'] ?? null,
+            'attendance_notes' => $data['attendance_notes'] ?? null,
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
             'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
+            'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
+            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
+            'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
+            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'letter_purpose' => $data['letter_purpose'] ?? null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'relations_approval_on_reschedule' => (bool) ($data['relations_approval_on_reschedule'] ?? false),
             'audience_satisfaction_percent' => $data['audience_satisfaction_percent'] ?? null,
             'evaluation_score' => $data['evaluation_score'] ?? null,
+            'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
+            'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
+            'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
+            'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
             'branch_id' => $data['branch_id'],
@@ -285,6 +373,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
+        $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
         $this->logWorkflowAction('created', $monthlyActivity, $request, $monthlyActivity->status);
 
         return redirect()
@@ -295,12 +384,14 @@ class MonthlyActivitiesController extends Controller
 
     public function edit(MonthlyActivity $monthlyActivity)
     {
-        $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners']);
+        $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
+        $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
+        $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'centers', 'agendaEvents'));
+        return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'centers', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
     }
 
     public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts)
@@ -318,12 +409,29 @@ class MonthlyActivitiesController extends Controller
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'status' => ['required', 'string', 'max:50'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
-            'location_type' => ['required', 'string', 'max:255'],
+
+            'location_type' => ['required', 'in:inside_center,outside_center'],
             'location_details' => ['nullable', 'string', 'max:255'],
+            'internal_location' => ['nullable', 'string', 'max:255'],
+            'outside_place_name' => ['nullable', 'string', 'max:255'],
+            'outside_google_maps_url' => ['nullable', 'url', 'max:500'],
+            'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
+            'target_group_id' => ['nullable', 'exists:target_groups,id'],
+            'target_group_other' => ['nullable', 'string', 'max:255'],
             'short_description' => ['nullable', 'string'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
+            'needs_volunteers' => ['nullable', 'boolean'],
+            'required_volunteers' => ['nullable', 'integer', 'min:0'],
+            'expected_attendance' => ['nullable', 'integer', 'min:0'],
+            'actual_attendance' => ['nullable', 'integer', 'min:0'],
+            'attendance_notes' => ['nullable', 'string'],
+            'work_teams_count' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'needs_media_coverage' => ['nullable', 'boolean'],
+            'media_coverage_notes' => ['nullable', 'string'],
+            'needs_official_correspondence' => ['nullable', 'boolean'],
+            'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
             'has_sponsor' => ['nullable', 'boolean'],
             'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
@@ -347,10 +455,18 @@ class MonthlyActivitiesController extends Controller
             'partners' => ['array'],
             'partners.*.name' => ['nullable', 'string', 'max:255'],
             'partners.*.role' => ['nullable', 'string', 'max:255'],
+            'evaluations' => ['nullable', 'array'],
+            'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
+            'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
+            'evaluations.*.note' => ['nullable', 'string'],
+            'followup_remarks' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
         ]);
 
         $date = Carbon::parse($data['activity_date']);
+        $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
+        $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
+
         $oldValues = $monthlyActivity->only([
             'title',
             'proposed_date',
@@ -358,12 +474,24 @@ class MonthlyActivitiesController extends Controller
             'description',
             'location_type',
             'location_details',
+            'internal_location',
+            'outside_place_name',
+            'outside_google_maps_url',
+            'outside_address',
             'status',
             'responsible_party',
             'execution_time',
             'target_group',
+            'target_group_id',
+            'target_group_other',
             'short_description',
+            'work_teams_count',
             'volunteer_need',
+            'needs_volunteers',
+            'required_volunteers',
+            'expected_attendance',
+            'actual_attendance',
+            'attendance_notes',
             'has_sponsor',
             'sponsor_name_title',
             'has_partners',
@@ -374,6 +502,8 @@ class MonthlyActivitiesController extends Controller
             'partner_3_name',
             'partner_3_role',
             'needs_official_letters',
+            'needs_official_correspondence',
+            'official_correspondence_reason',
             'letter_purpose',
             'rescheduled_date',
             'reschedule_reason',
@@ -395,22 +525,38 @@ class MonthlyActivitiesController extends Controller
             'description' => $data['description'] ?? null,
             'location_type' => $data['location_type'],
             'location_details' => $data['location_details'] ?? null,
+            'internal_location' => $data['internal_location'] ?? null,
+            'outside_place_name' => $data['outside_place_name'] ?? null,
+            'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
+            'outside_address' => $data['outside_address'] ?? null,
             'status' => $data['status'],
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
             'target_group' => $data['target_group'] ?? null,
+            'target_group_id' => $data['target_group_id'] ?? null,
+            'target_group_other' => $data['target_group_other'] ?? null,
             'short_description' => $data['short_description'] ?? null,
+            'work_teams_count' => $data['work_teams_count'] ?? null,
             'volunteer_need' => $data['volunteer_need'] ?? null,
+            'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
+            'required_volunteers' => $data['required_volunteers'] ?? null,
+            'expected_attendance' => $data['expected_attendance'] ?? null,
+            'actual_attendance' => $data['actual_attendance'] ?? null,
+            'attendance_notes' => $data['attendance_notes'] ?? null,
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
             'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
+            'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
+            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'letter_purpose' => $data['letter_purpose'] ?? null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'relations_approval_on_reschedule' => (bool) ($data['relations_approval_on_reschedule'] ?? false),
             'audience_satisfaction_percent' => $data['audience_satisfaction_percent'] ?? null,
             'evaluation_score' => $data['evaluation_score'] ?? null,
+            'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
+            'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'branch_id' => $data['branch_id'],
             'center_id' => $data['center_id'],
         ];
@@ -425,7 +571,38 @@ class MonthlyActivitiesController extends Controller
             'description' => $newValues['description'],
             'location_type' => $newValues['location_type'],
             'location_details' => $newValues['location_details'],
+            'internal_location' => $newValues['internal_location'],
+            'outside_place_name' => $newValues['outside_place_name'],
+            'outside_google_maps_url' => $newValues['outside_google_maps_url'],
+            'outside_address' => $newValues['outside_address'],
             'status' => $newValues['status'],
+            'responsible_party' => $newValues['responsible_party'],
+            'execution_time' => $newValues['execution_time'],
+            'target_group' => $newValues['target_group'],
+            'target_group_id' => $newValues['target_group_id'],
+            'target_group_other' => $newValues['target_group_other'],
+            'short_description' => $newValues['short_description'],
+            'work_teams_count' => $newValues['work_teams_count'],
+            'volunteer_need' => $newValues['volunteer_need'],
+            'needs_volunteers' => $newValues['needs_volunteers'],
+            'required_volunteers' => $newValues['required_volunteers'],
+            'expected_attendance' => $newValues['expected_attendance'],
+            'actual_attendance' => $newValues['actual_attendance'],
+            'attendance_notes' => $newValues['attendance_notes'],
+            'has_sponsor' => $newValues['has_sponsor'],
+            'sponsor_name_title' => $newValues['sponsor_name_title'],
+            'has_partners' => $newValues['has_partners'],
+            'needs_official_letters' => $newValues['needs_official_letters'],
+            'needs_official_correspondence' => $newValues['needs_official_correspondence'],
+            'official_correspondence_reason' => $newValues['official_correspondence_reason'],
+            'letter_purpose' => $newValues['letter_purpose'],
+            'rescheduled_date' => $newValues['rescheduled_date'],
+            'reschedule_reason' => $newValues['reschedule_reason'],
+            'relations_approval_on_reschedule' => $newValues['relations_approval_on_reschedule'],
+            'audience_satisfaction_percent' => $newValues['audience_satisfaction_percent'],
+            'evaluation_score' => $newValues['evaluation_score'],
+            'needs_media_coverage' => $newValues['needs_media_coverage'],
+            'media_coverage_notes' => $newValues['media_coverage_notes'],
             'branch_id' => $newValues['branch_id'],
             'center_id' => $newValues['center_id'],
             'lock_at' => $this->buildLockAt($data['proposed_date']),
@@ -433,6 +610,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
+        $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
         $this->logChanges($monthlyActivity, $oldValues, $newValues, $request->user()->id);
         $this->logWorkflowAction('updated', $monthlyActivity, $request, $monthlyActivity->status, [
             'changed_fields' => array_keys($newValues),

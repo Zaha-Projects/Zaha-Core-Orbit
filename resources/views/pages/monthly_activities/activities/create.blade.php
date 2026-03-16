@@ -61,12 +61,27 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.location_type') }}</label>
-                    <input class="form-control" name="location_type" value="{{ old('location_type') }}" required>
+                    <label class="form-label">نوع المكان</label>
+                    <select class="form-select js-location-type" name="location_type" required>
+                        <option value="inside_center" @selected(old('location_type') === 'inside_center')>داخل المركز</option>
+                        <option value="outside_center" @selected(old('location_type') === 'outside_center')>خارج المركز</option>
+                    </select>
                 </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.location_details') }}</label>
-                    <input class="form-control" name="location_details" value="{{ old('location_details') }}">
+                <div class="col-12 col-md-4 js-inside-location">
+                    <label class="form-label">قاعة / غرفة / موقع داخلي</label>
+                    <input class="form-control" name="internal_location" value="{{ old('internal_location') }}">
+                </div>
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">اسم المكان الخارجي</label>
+                    <input class="form-control" name="outside_place_name" value="{{ old('outside_place_name') }}">
+                </div>
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">رابط Google Maps</label>
+                    <input class="form-control" name="outside_google_maps_url" value="{{ old('outside_google_maps_url') }}">
+                </div>
+                <div class="col-12 js-outside-location">
+                    <label class="form-label">العنوان النصي</label>
+                    <input class="form-control" name="outside_address" value="{{ old('outside_address') }}">
                 </div>
                 <div class="col-12"><div class="event-form-section">
                     <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.edit_details') }}</h2></div></div>
@@ -79,8 +94,17 @@
                     <input class="form-control" name="execution_time" value="{{ old('execution_time') }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.target_group') }}</label>
-                    <input class="form-control" name="target_group" value="{{ old('target_group') }}">
+                    <label class="form-label">الفئة المستهدفة</label>
+                    <select class="form-select js-target-group" name="target_group_id">
+                        <option value="">-- اختر --</option>
+                        @foreach($targetGroups as $group)
+                            <option value="{{ $group->id }}" data-is-other="{{ $group->is_other ? 1 : 0 }}" @selected((string) old('target_group_id') === (string) $group->id)>{{ $group->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-4 js-target-group-other">
+                    <label class="form-label">أخرى (توضيح)</label>
+                    <input class="form-control" name="target_group_other" value="{{ old('target_group_other') }}">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.short_description') }}</label>
@@ -154,6 +178,27 @@
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.event_evaluation') }}</label>
                     <input class="form-control" type="number" min="0" max="100" step="0.01" name="evaluation_score" value="{{ old('evaluation_score') }}">
                 </div>
+
+                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">الحضور والمتطوعين</h2></div></div>
+                <div class="col-12 col-md-3"><label class="form-label">الحضور المتوقع</label><input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance') }}"></div>
+                <div class="col-12 col-md-3"><label class="form-label">الحضور الفعلي</label><input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance') }}"></div>
+                <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers'))><label class="form-check-label" for="needs_volunteers">تحتاج متطوعين</label></div></div>
+                <div class="col-12 col-md-3"><label class="form-label">عدد المتطوعين المطلوب</label><input class="form-control" type="number" min="0" name="required_volunteers" value="{{ old('required_volunteers') }}"></div>
+                <div class="col-12"><label class="form-label">ملاحظات الحضور</label><textarea class="form-control" name="attendance_notes" rows="2">{{ old('attendance_notes') }}</textarea></div>
+
+                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">المخاطبات والتغطية الإعلامية</h2></div></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence'))><label class="form-check-label" for="needs_official_correspondence">تحتاج مخاطبات رسمية</label></div></div>
+                <div class="col-12 col-md-8"><label class="form-label">سبب المخاطبة</label><input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason') }}"></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_media_coverage" value="1" id="needs_media_coverage" @checked(old('needs_media_coverage'))><label class="form-check-label" for="needs_media_coverage">تحتاج تغطية إعلامية</label></div></div>
+                <div class="col-12 col-md-8"><label class="form-label">ملاحظات التغطية الإعلامية</label><input class="form-control" name="media_coverage_notes" value="{{ old('media_coverage_notes') }}"></div>
+
+                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">التقييم والمتابعة</h2></div></div>
+                @foreach($evaluationQuestions as $question)
+                    <div class="col-12 col-md-8"><label class="form-label">{{ $question->question }}</label><input class="form-control" name="evaluations[{{ $question->id }}][note]" value="{{ old('evaluations.'.$question->id.'.note') }}" placeholder="ملاحظة/إجابة"></div>
+                    <div class="col-12 col-md-4"><label class="form-label">الدرجة (0-5)</label><input class="form-control" type="number" min="0" max="5" step="0.5" name="evaluations[{{ $question->id }}][score]" value="{{ old('evaluations.'.$question->id.'.score') }}"></div>
+                @endforeach
+                <div class="col-12"><label class="form-label">ملاحظات المتابعة العامة</label><textarea class="form-control" name="followup_remarks" rows="2">{{ old('followup_remarks') }}</textarea></div>
+
                 <div class="col-12">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.description') }}</label>
                     <textarea class="form-control" name="description" rows="3">{{ old('description') }}</textarea>
@@ -166,4 +211,28 @@
             </form>
         </div>
     </div></div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const locType = document.querySelector('.js-location-type');
+  const inside = document.querySelectorAll('.js-inside-location');
+  const outside = document.querySelectorAll('.js-outside-location');
+  const tg = document.querySelector('.js-target-group');
+  const tgOther = document.querySelectorAll('.js-target-group-other');
+  const toggle = () => {
+    const outsideSelected = locType && locType.value === 'outside_center';
+    inside.forEach(el => el.style.display = outsideSelected ? 'none' : 'block');
+    outside.forEach(el => el.style.display = outsideSelected ? 'block' : 'none');
+    const selected = tg?.selectedOptions?.[0];
+    const isOther = selected && selected.dataset.isOther === '1';
+    tgOther.forEach(el => el.style.display = isOther ? 'block' : 'none');
+  };
+  locType?.addEventListener('change', toggle);
+  tg?.addEventListener('change', toggle);
+  toggle();
+});
+</script>
+@endpush
+
 @endsection
