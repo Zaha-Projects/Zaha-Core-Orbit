@@ -26,14 +26,35 @@ class AgendaEventsController extends Controller
             return null;
         }
 
-        $slugSource = mb_strtolower(trim(($branch->name ?? '').' '.($branch->city ?? '')));
+        $explicitCode = strtolower(trim((string) data_get($branch, 'code', '')));
+        if (in_array($explicitCode, ['khalda', 'zarqa', 'irbid'], true)) {
+            return $explicitCode;
+        }
 
-        return match (true) {
-            str_contains($slugSource, 'خلدا') || str_contains($slugSource, 'khalda') => 'khalda',
-            str_contains($slugSource, 'زرق') || str_contains($slugSource, 'zarqa') => 'zarqa',
-            str_contains($slugSource, 'إربد') || str_contains($slugSource, 'اربد') || str_contains($slugSource, 'irbid') => 'irbid',
-            default => null,
-        };
+        $text = $this->normalizeBranchText((string) ($branch->name ?? '').' '.(string) ($branch->city ?? ''));
+
+        if (str_contains($text, 'khalda') || str_contains($text, 'خلدا') || str_contains($text, 'عمان') || str_contains($text, 'amman')) {
+            return 'khalda';
+        }
+
+        if (str_contains($text, 'zarqa') || str_contains($text, 'زرق')) {
+            return 'zarqa';
+        }
+
+        if (str_contains($text, 'irbid') || str_contains($text, 'اربد') || str_contains($text, 'إربد')) {
+            return 'irbid';
+        }
+
+        return null;
+    }
+
+    protected function normalizeBranchText(string $value): string
+    {
+        $value = mb_strtolower(trim($value));
+        $value = str_replace(['أ', 'إ', 'آ'], 'ا', $value);
+        $value = preg_replace('/[\x{064B}-\x{0652}]/u', '', $value) ?? $value;
+
+        return $value;
     }
 
     protected function assertKhaldaHqAgendaAuthority(Request $request): void
