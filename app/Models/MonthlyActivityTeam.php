@@ -9,6 +9,8 @@ class MonthlyActivityTeam extends Model
 {
     use HasFactory;
 
+    protected $table = 'monthly_activity_team';
+
     protected $fillable = [
         'monthly_activity_id',
         'user_id',
