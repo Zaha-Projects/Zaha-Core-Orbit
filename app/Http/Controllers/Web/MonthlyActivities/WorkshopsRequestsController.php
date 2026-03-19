@@ -8,11 +8,32 @@ use Illuminate\Http\Request;
 
 class WorkshopsRequestsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $requests = WorkshopsRequest::with('event')->latest()->paginate(20);
+        $status = $request->string('status')->toString();
+        $requiresWorkshops = $request->input('requires_workshops', '1');
 
-        return view('pages.monthly_activities.workshops.index', compact('requests'));
+        $requests = WorkshopsRequest::query()
+            ->with(['event.branch', 'event.creator'])
+            ->whereHas('event', function ($query) use ($requiresWorkshops) {
+                if ($requiresWorkshops === '1') {
+                    $query->where('requires_workshops', true);
+                }
+            })
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        $statuses = [
+            'pending' => 'قيد الانتظار',
+            'in_progress' => 'قيد التنفيذ',
+            'approved' => 'تمت الموافقة',
+            'rejected' => 'مرفوض',
+            'completed' => 'تم إنشاء المطلوب',
+        ];
+
+        return view('pages.monthly_activities.workshops.index', compact('requests', 'statuses', 'status', 'requiresWorkshops'));
     }
 
     public function update(Request $request, WorkshopsRequest $workshopsRequest)
