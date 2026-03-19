@@ -42,6 +42,17 @@
                                 $latestApproval = $activity->approvals->last();
                                 $changeRequests = $activity->approvals->where('decision', 'changes_requested');
                                 $changeRequestCounts = $changeRequests->groupBy('step')->map->count();
+                                $changeRequestByUser = $changeRequests
+                                    ->groupBy('approved_by')
+                                    ->map(function ($items) {
+                                        $name = optional(optional($items->first())->approver)->name ?? 'غير معروف';
+
+                                        return [
+                                            'name' => $name,
+                                            'count' => $items->count(),
+                                        ];
+                                    })
+                                    ->values();
                             @endphp
                             <tr>
                                 <td>{{ $activity->title }}</td>
@@ -74,6 +85,33 @@
                                                 @foreach($stepLabels as $stepKey => $stepLabel)
                                                     <span class="me-2">{{ $stepLabel }}: {{ $changeRequestCounts->get($stepKey, 0) }}</span>
                                                 @endforeach
+                                            </div>
+                                            <div class="small">
+                                                @foreach($changeRequestByUser as $requester)
+                                                    <span class="me-2">{{ $requester['name'] }}: {{ $requester['count'] }}</span>
+                                                @endforeach
+                                            </div>
+                                            <div class="table-responsive mt-2">
+                                                <table class="table table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>المرحلة</th>
+                                                            <th>طالب التعديل</th>
+                                                            <th>التعليق</th>
+                                                            <th>التاريخ</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($changeRequests as $changeRequest)
+                                                            <tr>
+                                                                <td>{{ $stepLabels[$changeRequest->step] ?? $changeRequest->step }}</td>
+                                                                <td>{{ optional($changeRequest->approver)->name ?? '-' }}</td>
+                                                                <td>{{ $changeRequest->comment ?: '-' }}</td>
+                                                                <td>{{ $changeRequest->approved_at?->format('Y-m-d H:i') ?: '-' }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     @endif

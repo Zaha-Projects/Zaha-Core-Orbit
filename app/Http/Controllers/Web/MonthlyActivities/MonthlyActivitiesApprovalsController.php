@@ -16,7 +16,7 @@ class MonthlyActivitiesApprovalsController extends Controller
 {
     public function index(Request $request, MonthlyActivityWorkflowService $workflowService)
     {
-        $activities = MonthlyActivity::with(['approvals', 'creator', 'notes.user'])
+        $activities = MonthlyActivity::with(['approvals.approver', 'creator', 'notes.user'])
             ->orderBy('month')
             ->orderBy('day')
             ->get();
@@ -85,7 +85,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         }
 
         if ($data['decision'] === 'changes_requested') {
-            $updates = array_merge($updates, $workflowService->resetDownstreamSteps($monthlyActivity, $step['key']));
+            $updates = array_merge($updates, $workflowService->rollbackToBranchForChanges($monthlyActivity, $step['key']));
         }
 
         $monthlyActivity->update($updates);

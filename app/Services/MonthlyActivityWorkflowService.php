@@ -71,8 +71,14 @@ class MonthlyActivityWorkflowService
     public function currentStepForUser(MonthlyActivity $activity, User $user): ?array
     {
         return collect($this->stepsFor($activity))
-            ->first(function (array $step) use ($user) {
-                return $user->hasRole($step['role']);
+            ->first(function (array $step) use ($user, $activity) {
+                if (! $user->hasRole($step['role']) || ! $step['status_field']) {
+                    return false;
+                }
+
+                $status = (string) $activity->{$step['status_field']};
+
+                return in_array($status, ['pending', 'changes_requested'], true);
             });
     }
 
@@ -144,6 +150,33 @@ class MonthlyActivityWorkflowService
                     $updates[$step['status_field']] = 'pending';
                 }
             });
+
+        return $updates;
+    }
+
+    public function rollbackToBranchForChanges(MonthlyActivity $activity, string $currentStepKey): array
+    {
+        $updates = $this->resetDownstreamSteps($activity, $currentStepKey);
+        $steps = collect($this->stepsFor($activity));
+        $currentIndex = $steps->search(fn (array $step) => $step['key'] === $currentStepKey);
+
+        if ($currentIndex === false) {
+            return $updates;
+        }
+
+        $currentStep = $steps->get($currentIndex);
+
+        if (($currentStep['status_field'] ?? null) === 'relations_officer_approval_status') {
+            return $updates;
+        }
+
+        foreach (['relations_officer_approval_status', 'relations_manager_approval_status'] as $branchStatusField) {
+            if (array_key_exists($branchStatusField, $updates) || ! in_array($branchStatusField, $activity->getFillable(), true)) {
+                continue;
+            }
+
+            $updates[$branchStatusField] = 'pending';
+        }
 
         return $updates;
     }
