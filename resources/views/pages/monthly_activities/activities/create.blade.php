@@ -213,12 +213,12 @@
                 </div>
 
                 <div class="col-12 col-md-4">
-                    <label class="form-label">عدد أعضاء فريق العمل</label>
-                    <input class="form-control js-team-count" type="number" min="1" max="20" value="{{ old('team_count', 1) }}">
+                    <label class="form-label">عدد فرق العمل</label>
+                    <input class="form-control js-team-groups-count" type="number" min="1" max="10" value="{{ old('team_groups_count', 1) }}">
                 </div>
 
                 <div class="col-12">
-                    <div class="row g-2 js-team-container"></div>
+                    <div class="js-team-groups-container"></div>
                 </div>
 
                 <div class="col-12 d-flex justify-content-end mt-2">
@@ -250,8 +250,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const suppliesWrap = document.querySelectorAll('.js-supplies-wrapper');
   const suppliesCount = document.querySelector('.js-supplies-count');
   const suppliesContainer = document.querySelector('.js-supplies-container');
-  const teamCount = document.querySelector('.js-team-count');
-  const teamContainer = document.querySelector('.js-team-container');
+  const teamGroupsCount = document.querySelector('.js-team-groups-count');
+  const teamGroupsContainer = document.querySelector('.js-team-groups-container');
 
   function renderPartners() {
     if (!partnersContainer) return;
@@ -265,16 +265,54 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function renderTeam() {
-    if (!teamContainer) return;
-    const count = Math.max(1, Math.min(20, parseInt(teamCount?.value || '1', 10)));
-    teamContainer.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-      teamContainer.insertAdjacentHTML('beforeend', `
-        <div class="col-12 col-md-6"><input class="form-control" name="team_members[${i}][member_name]" placeholder="اسم العضو ${i + 1}"></div>
-        <div class="col-12 col-md-6"><input class="form-control" name="team_members[${i}][role_desc]" placeholder="مسؤولية العضو ${i + 1}"></div>
-      `);
+  function renderTeamGroups() {
+    if (!teamGroupsContainer) return;
+    const groupsCount = Math.max(1, Math.min(10, parseInt(teamGroupsCount?.value || '1', 10)));
+    teamGroupsContainer.innerHTML = '';
+
+    for (let g = 0; g < groupsCount; g++) {
+      const membersCountId = `team-group-members-count-${g}`;
+      const groupHtml = `
+        <div class="card border rounded-3 p-3 mb-3 js-team-group" data-group-index="${g}">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label">اسم الفريق ${g + 1}</label>
+              <input class="form-control" name="team_groups[${g}][team_name]" placeholder="مثال: الفريق ${g + 1}" value="فريق ${g + 1}">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">عدد أعضاء الفريق ${g + 1}</label>
+              <input class="form-control js-team-members-count" id="${membersCountId}" type="number" min="1" max="30" value="1">
+            </div>
+          </div>
+          <div class="row g-2 mt-2 js-team-members-container"></div>
+        </div>
+      `;
+      teamGroupsContainer.insertAdjacentHTML('beforeend', groupHtml);
     }
+
+    teamGroupsContainer.querySelectorAll('.js-team-group').forEach((groupEl) => {
+      const groupIndex = parseInt(groupEl.dataset.groupIndex || '0', 10);
+      const countInput = groupEl.querySelector('.js-team-members-count');
+      const membersContainer = groupEl.querySelector('.js-team-members-container');
+
+      const renderMembers = () => {
+        const membersCount = Math.max(1, Math.min(30, parseInt(countInput?.value || '1', 10)));
+        membersContainer.innerHTML = '';
+        for (let m = 0; m < membersCount; m++) {
+          membersContainer.insertAdjacentHTML('beforeend', `
+            <div class="col-12 col-md-6">
+              <input class="form-control" name="team_groups[${groupIndex}][members][${m}][member_name]" placeholder="اسم عضو الفريق ${groupIndex + 1} - ${m + 1}">
+            </div>
+            <div class="col-12 col-md-6">
+              <input class="form-control" name="team_groups[${groupIndex}][members][${m}][role_desc]" placeholder="مسؤولية العضو ${m + 1}">
+            </div>
+          `);
+        }
+      };
+
+      countInput?.addEventListener('input', renderMembers);
+      renderMembers();
+    });
   }
 
   function renderSupplies() {
@@ -311,11 +349,11 @@ document.addEventListener('DOMContentLoaded', function () {
   needsLetters?.addEventListener('change', toggle);
   needsSupplies?.addEventListener('change', toggle);
   partnersCount?.addEventListener('input', renderPartners);
-  teamCount?.addEventListener('input', renderTeam);
+  teamGroupsCount?.addEventListener('input', renderTeamGroups);
   suppliesCount?.addEventListener('input', renderSupplies);
 
   renderPartners();
-  renderTeam();
+  renderTeamGroups();
   renderSupplies();
   toggle();
 });

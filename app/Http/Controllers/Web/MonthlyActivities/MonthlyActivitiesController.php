@@ -369,6 +369,11 @@ class MonthlyActivitiesController extends Controller
             'team_members.*.member_name' => ['nullable', 'string', 'max:255'],
             'team_members.*.member_email' => ['nullable', 'email', 'max:255'],
             'team_members.*.role_desc' => ['nullable', 'string', 'max:255'],
+            'team_groups' => ['nullable', 'array'],
+            'team_groups.*.team_name' => ['nullable', 'string', 'max:255'],
+            'team_groups.*.members' => ['nullable', 'array'],
+            'team_groups.*.members.*.member_name' => ['nullable', 'string', 'max:255'],
+            'team_groups.*.members.*.role_desc' => ['nullable', 'string', 'max:255'],
             'requires_supplies' => ['nullable', 'boolean'],
             'supplies' => ['nullable', 'array'],
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
@@ -484,6 +489,22 @@ class MonthlyActivitiesController extends Controller
         $workflowService->initializeDynamicStatuses($monthlyActivity);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
+        foreach (($data['team_groups'] ?? []) as $groupIndex => $group) {
+            $teamName = trim((string) ($group['team_name'] ?? '')) ?: 'فريق '.((int) $groupIndex + 1);
+            foreach (($group['members'] ?? []) as $member) {
+                $memberName = trim((string) ($member['member_name'] ?? ''));
+                if ($memberName === '') {
+                    continue;
+                }
+                MonthlyActivityTeam::create([
+                    'monthly_activity_id' => $monthlyActivity->id,
+                    'team_name' => $teamName,
+                    'member_name' => $memberName,
+                    'member_email' => null,
+                    'role_desc' => $member['role_desc'] ?? null,
+                ]);
+            }
+        }
         foreach (($data['team_members'] ?? []) as $member) {
             $memberName = trim((string) ($member['member_name'] ?? ''));
             if ($memberName === '') {
