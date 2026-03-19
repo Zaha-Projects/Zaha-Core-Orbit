@@ -4,7 +4,11 @@
     $title = __('app.roles.relations.agenda.title');
     $subtitle = __('app.roles.relations.agenda.subtitle');
     $isRtl = app()->getLocale() === 'ar';
-    $canManageAgenda = auth()->user()?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']);
+    $authUser = auth()->user();
+    $branchText = mb_strtolower(trim((string) optional($authUser?->branch)->name . ' ' . (string) optional($authUser?->branch)->city));
+    $isKhaldaHq = str_contains($branchText, 'khalda') || str_contains($branchText, 'خلدا') || str_contains($branchText, 'عمان') || str_contains($branchText, 'عمّان') || str_contains($branchText, 'amman');
+    $canManageAgenda = $authUser?->hasRole('super_admin')
+        || ($authUser?->hasRole('relations_manager') && $isKhaldaHq);
 
     $agendaStatusLabel = function (?string $status): string {
         if (!$status) {
