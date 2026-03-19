@@ -37,12 +37,16 @@ class MonthlyActivity extends Model
         'official_attendance_details',
         'needs_official_letters',
         'needs_official_correspondence',
+        'correspondence_reason_id',
+        'correspondence_status',
         'official_correspondence_reason',
         'letter_purpose',
         'location_type',
         'location_details',
 
         'internal_location',
+        'building',
+        'room',
         'outside_place_name',
         'outside_google_maps_url',
         'outside_address',
@@ -51,14 +55,20 @@ class MonthlyActivity extends Model
         'execution_time',
         'target_group',
         'target_group_id',
+        'event_type_id',
         'target_group_other',
         'short_description',
         'work_teams_count',
         'volunteer_need',
         'needs_volunteers',
+        'volunteers_required',
+        'volunteers_count',
         'required_volunteers',
         'expected_attendance',
         'actual_attendance',
+        'attendance_rate',
+        'attendance_gap',
+        'attendance_percentage',
         'attendance_notes',
         'audience_satisfaction_percent',
         'evaluation_score',
@@ -70,6 +80,7 @@ class MonthlyActivity extends Model
         'requires_workshops',
         'requires_communications',
         'status',
+        'lifecycle_status',
         'participation_status',
         'plan_type',
         'branch_plan_file',
@@ -99,6 +110,7 @@ class MonthlyActivity extends Model
         'has_sponsor' => 'boolean',
         'has_partners' => 'boolean',
         'needs_volunteers' => 'boolean',
+        'volunteers_required' => 'boolean',
         'needs_media_coverage' => 'boolean',
         'requires_programs' => 'boolean',
         'is_program_related' => 'boolean',
@@ -114,6 +126,35 @@ class MonthlyActivity extends Model
         'time_to' => 'datetime:H:i',
         'is_archived' => 'boolean',
     ];
+
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $activity) {
+            $expected = (int) ($activity->expected_attendance ?? 0);
+            $actual = (int) ($activity->actual_attendance ?? 0);
+
+            if ($expected > 0) {
+                $activity->attendance_rate = round($actual / $expected, 4);
+                $activity->attendance_percentage = round(($actual / $expected) * 100, 2);
+                $activity->attendance_gap = $expected - $actual;
+            } else {
+                $activity->attendance_rate = null;
+                $activity->attendance_percentage = null;
+                $activity->attendance_gap = null;
+            }
+        });
+
+        static::saved(function (self $activity) {
+            if ($activity->requires_workshops) {
+                WorkshopsRequest::firstOrCreate(['event_id' => $activity->id], ['status' => 'pending']);
+            }
+
+            if ($activity->requires_communications || $activity->needs_media_coverage) {
+                CommunicationsRequest::firstOrCreate(['event_id' => $activity->id], ['status' => 'pending']);
+            }
+        });
+    }
 
     public function scopeNotArchived($query)
     {
@@ -231,4 +272,27 @@ class MonthlyActivity extends Model
     {
         return $this->hasMany(DonationCash::class);
     }
+
+    public function workshopsRequest()
+    {
+        return $this->hasOne(WorkshopsRequest::class, 'event_id');
+    }
+
+    public function communicationsRequest()
+    {
+        return $this->hasOne(CommunicationsRequest::class, 'event_id');
+    }
+
+    public function eventType()
+    {
+        return $this->belongsTo(EventType::class);
+    }
+
+    public function targetGroups()
+    {
+        return $this->belongsToMany(TargetGroup::class, 'event_target_group')
+            ->withPivot('custom_text')
+            ->withTimestamps();
+    }
+
 }

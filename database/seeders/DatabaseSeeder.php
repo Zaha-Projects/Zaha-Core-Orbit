@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call(UsersSeeder::class);
         $this->call(MovementSeeder::class);
         $this->call(MonthlyKpiSeeder::class);
+        $this->call(EventTypeSeeder::class);
         $this->call(EnterpriseDemoSeeder::class);
     }
 }

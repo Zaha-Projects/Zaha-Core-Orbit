@@ -13,13 +13,15 @@ class MonthlyActivitySuppliesController extends Controller
     {
         $data = $request->validate([
             'item_name' => ['required', 'string', 'max:255'],
+            'status' => ['required', 'in:available,missing'],
             'available' => ['nullable', 'boolean'],
         ]);
 
         MonthlyActivitySupply::create([
             'monthly_activity_id' => $monthlyActivity->id,
             'item_name' => $data['item_name'],
-            'available' => (bool) ($data['available'] ?? false),
+            'status' => $data['status'],
+            'available' => ($data['status'] ?? 'available') === 'available',
         ]);
 
         return redirect()
@@ -31,12 +33,14 @@ class MonthlyActivitySuppliesController extends Controller
     {
         $data = $request->validate([
             'item_name' => ['required', 'string', 'max:255'],
+            'status' => ['required', 'in:available,missing'],
             'available' => ['nullable', 'boolean'],
         ]);
 
         $monthlyActivitySupply->update([
             'item_name' => $data['item_name'],
-            'available' => (bool) ($data['available'] ?? false),
+            'status' => $data['status'],
+            'available' => ($data['status'] ?? 'available') === 'available',
         ]);
 
         return redirect()

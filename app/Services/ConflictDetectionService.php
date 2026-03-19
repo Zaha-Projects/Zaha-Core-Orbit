@@ -22,7 +22,7 @@ class ConflictDetectionService
         return $query->limit(5)->pluck('event_name')->all();
     }
 
-    public function findMonthlyActivityConflicts(string $proposedDate, int $branchId, ?int $ignoreActivityId = null): array
+    public function findMonthlyActivityConflicts(string $proposedDate, int $branchId, ?int $ignoreActivityId = null, ?string $executionTime = null): array
     {
         $query = MonthlyActivity::query()
             ->whereDate('proposed_date', $proposedDate)
@@ -32,6 +32,27 @@ class ConflictDetectionService
             $query->where('id', '!=', $ignoreActivityId);
         }
 
-        return $query->limit(5)->pluck('title')->all();
+        if (empty($executionTime) || strpos($executionTime, '-') === false) {
+            return $query->limit(5)->pluck('title')->all();
+        }
+
+        [$newStart, $newEnd] = array_map('trim', explode('-', $executionTime, 2));
+
+        return $query
+            ->whereNotNull('execution_time')
+            ->get()
+            ->filter(function (MonthlyActivity $activity) use ($newStart, $newEnd) {
+                if (! str_contains((string) $activity->execution_time, '-')) {
+                    return false;
+                }
+
+                [$start, $end] = array_map('trim', explode('-', (string) $activity->execution_time, 2));
+
+                return $newStart < $end && $newEnd > $start;
+            })
+            ->pluck('title')
+            ->take(5)
+            ->values()
+            ->all();
     }
 }

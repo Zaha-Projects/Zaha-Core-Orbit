@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use App\Services\ConflictDetectionService;
 use App\Services\NotificationService;
 use App\Services\MonthlyActivityWorkflowService;
+use App\Services\MonthlyActivityLifecycleService;
 use Illuminate\Support\Facades\Storage;
 
 class MonthlyActivitiesController extends Controller
@@ -78,16 +79,20 @@ class MonthlyActivitiesController extends Controller
         }
 
         $monthlyActivity->partners()->delete();
+        $seen = [];
         foreach (($data['partners'] ?? []) as $index => $partner) {
             $name = trim((string) ($partner['name'] ?? ''));
-            if ($name === '') {
+            if ($name === '' || in_array(mb_strtolower($name), $seen, true)) {
                 continue;
             }
+
+            $seen[] = mb_strtolower($name);
 
             MonthlyActivityPartner::create([
                 'monthly_activity_id' => $monthlyActivity->id,
                 'name' => $name,
                 'role' => $partner['role'] ?? null,
+                'contact_info' => $partner['contact_info'] ?? null,
                 'sort_order' => $index + 1,
             ]);
         }
@@ -264,7 +269,7 @@ class MonthlyActivitiesController extends Controller
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
-            'target_group_other' => ['nullable', 'string', 'max:255'],
+            'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
             'short_description' => ['nullable', 'string'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
@@ -305,7 +310,8 @@ class MonthlyActivitiesController extends Controller
             'sponsors.*.is_official' => ['nullable', 'boolean'],
             'partners' => ['array'],
             'partners.*.name' => ['nullable', 'string', 'max:255'],
-            'partners.*.role' => ['nullable', 'string', 'max:255'],
+            'partners.*.role' => ['required_with:partners.*.name', 'string', 'max:255'],
+            'partners.*.contact_info' => ['nullable', 'string', 'max:255'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -323,7 +329,7 @@ class MonthlyActivitiesController extends Controller
         }
 
         $date = Carbon::parse($data['activity_date']);
-        $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
+        $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id'], null, $data['execution_time'] ?? null);
         $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
         $isFromAgenda = ! empty($data['agenda_event_id']);
         $requiresBranchPlan = ! $isFromAgenda;
@@ -463,7 +469,7 @@ class MonthlyActivitiesController extends Controller
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
-            'target_group_other' => ['nullable', 'string', 'max:255'],
+            'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
             'short_description' => ['nullable', 'string'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
@@ -504,7 +510,8 @@ class MonthlyActivitiesController extends Controller
             'sponsors.*.is_official' => ['nullable', 'boolean'],
             'partners' => ['array'],
             'partners.*.name' => ['nullable', 'string', 'max:255'],
-            'partners.*.role' => ['nullable', 'string', 'max:255'],
+            'partners.*.role' => ['required_with:partners.*.name', 'string', 'max:255'],
+            'partners.*.contact_info' => ['nullable', 'string', 'max:255'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -522,7 +529,7 @@ class MonthlyActivitiesController extends Controller
         }
 
         $date = Carbon::parse($data['activity_date']);
-        $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
+        $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id'], $monthlyActivity->id, $data['execution_time'] ?? null);
         $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
         $isFromAgenda = ! empty($data['agenda_event_id']);
         $planType = $isFromAgenda ? optional(AgendaEvent::find($data['agenda_event_id']))->plan_type : 'non_unified';
@@ -721,11 +728,13 @@ class MonthlyActivitiesController extends Controller
             ->with('warning', $conflictWarning);
     }
 
-    public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications)
+    public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications, MonthlyActivityLifecycleService $lifecycle)
     {
         $monthlyActivity->update([
             'status' => 'submitted',
         ]);
+
+        $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
 
         $notifications->notifyUsers(User::role('relations_officer')->get(), 'approval_requested', 'Monthly activity approval requested', $monthlyActivity->title, route('role.programs.approvals.index'));
 
@@ -739,7 +748,7 @@ class MonthlyActivitiesController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.submitted', ['activity' => $monthlyActivity->title]));
     }
 
-    public function close(Request $request, MonthlyActivity $monthlyActivity)
+    public function close(Request $request, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle)
     {
         $data = $request->validate([
             'actual_date' => ['nullable', 'date'],
@@ -751,6 +760,10 @@ class MonthlyActivitiesController extends Controller
             'status' => $data['status'],
             'is_official' => true,
         ]);
+
+        if (($data['status'] ?? null) === 'executed') {
+            $lifecycle->transitionOrFail($monthlyActivity, 'Executed');
+        }
 
         $this->logWorkflowAction('closed', $monthlyActivity, $request, $data['status']);
 

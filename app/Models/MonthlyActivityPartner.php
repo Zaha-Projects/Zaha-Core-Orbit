@@ -13,6 +13,7 @@ class MonthlyActivityPartner extends Model
         'monthly_activity_id',
         'name',
         'role',
+        'contact_info',
         'sort_order',
     ];
 

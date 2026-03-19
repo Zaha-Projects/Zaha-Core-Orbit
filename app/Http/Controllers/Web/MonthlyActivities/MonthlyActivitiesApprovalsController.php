@@ -10,6 +10,7 @@ use App\Models\WorkflowActionLog;
 use App\Services\MonthlyActivityWorkflowService;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
+use App\Services\MonthlyActivityLifecycleService;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
@@ -37,7 +38,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         return view('pages.monthly_activities.approvals.index', compact('activities', 'stepLabels'));
     }
 
-    public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity, MonthlyActivityWorkflowService $workflowService)
+    public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity, MonthlyActivityWorkflowService $workflowService, MonthlyActivityLifecycleService $lifecycleService)
     {
         $data = $request->validate([
             'decision' => ['nullable', 'string', 'in:approved,changes_requested'],
@@ -88,6 +89,19 @@ class MonthlyActivitiesApprovalsController extends Controller
         }
 
         $monthlyActivity->update($updates);
+
+        if ($data['decision'] === 'approved') {
+            $stepLifecycleMap = [
+                'branch_relations_officer_review' => 'Branch Approved',
+                'hq_liaison_review' => 'Khelda Liaison Approved',
+                'hq_relations_manager_review' => 'Khelda Director Approved',
+                'executive_review' => 'Exec Director Approved',
+            ];
+
+            if (isset($stepLifecycleMap[$step['key']])) {
+                $lifecycleService->transitionOrFail($monthlyActivity, $stepLifecycleMap[$step['key']]);
+            }
+        }
 
         $notifications->notifyUsers(collect([$monthlyActivity->creator])->filter(), 'approval_decision', 'Approval update', 'Decision: '. $data['decision'], route('role.programs.approvals.index'));
 

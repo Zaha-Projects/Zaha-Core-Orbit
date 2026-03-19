@@ -24,6 +24,8 @@ use App\Http\Controllers\Web\Agenda\AgendaEventsController as RelationsAgendaEve
 use App\Http\Controllers\Web\Agenda\AgendaApprovalsController as RelationsAgendaApprovalsController;
 use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController as ProgramsMonthlyActivitiesController;
 use App\Http\Controllers\Web\MonthlyActivities\EventLookupsController;
+use App\Http\Controllers\Web\MonthlyActivities\WorkshopsRequestsController;
+use App\Http\Controllers\Web\MonthlyActivities\CommunicationsRequestsController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivitySuppliesController as ProgramsMonthlyActivitySuppliesController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityTeamController as ProgramsMonthlyActivityTeamController;
 use App\Http\Controllers\Roles\Programs\MonthlyActivityAttachmentsController as ProgramsMonthlyActivityAttachmentsController;
@@ -151,6 +153,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/programs/monthly-activities/{monthlyActivity}/attachments', [ProgramsMonthlyActivityAttachmentsController::class, 'store'])->middleware('role:programs_manager|programs_officer')->name('role.programs.attachments.store');
     Route::delete('/dashboard/programs/attachments/{monthlyActivityAttachment}', [ProgramsMonthlyActivityAttachmentsController::class, 'destroy'])->middleware('role:programs_manager|programs_officer')->name('role.programs.attachments.destroy');
     Route::get('/dashboard/programs/monthly-activities/approvals', [ProgramsMonthlyActivityApprovalsController::class, 'index'])->middleware('role:relations_officer|relations_manager|programs_officer|programs_manager|executive_manager')->name('role.programs.approvals.index');
+
+    Route::get('/dashboard/programs/workshops-requests', [WorkshopsRequestsController::class, 'index'])->middleware('role:workshops_secretary|super_admin')->name('role.programs.workshops_requests.index');
+    Route::put('/dashboard/programs/workshops-requests/{workshopsRequest}', [WorkshopsRequestsController::class, 'update'])->middleware('role:workshops_secretary|super_admin')->name('role.programs.workshops_requests.update');
+    Route::get('/dashboard/programs/communications-requests', [CommunicationsRequestsController::class, 'index'])->middleware('role:communication_head|super_admin')->name('role.programs.communications_requests.index');
+    Route::put('/dashboard/programs/communications-requests/{communicationsRequest}', [CommunicationsRequestsController::class, 'update'])->middleware('role:communication_head|super_admin')->name('role.programs.communications_requests.update');
+
     Route::put('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}', [ProgramsMonthlyActivityApprovalsController::class, 'update'])->middleware('role:relations_officer|relations_manager|programs_officer|programs_manager|executive_manager')->name('role.programs.approvals.update');
     Route::get('/dashboard/finance', [FinanceOfficerDashboardController::class, 'index'])->middleware('role:finance_officer')->name('role.finance_officer.dashboard');
     Route::get('/dashboard/finance/donations', [FinanceDonationsCashController::class, 'index'])->middleware('role:finance_officer')->name('role.finance.donations.index');

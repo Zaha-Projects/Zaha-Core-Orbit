@@ -12,6 +12,7 @@ class MonthlyActivitySupply extends Model
     protected $fillable = [
         'monthly_activity_id',
         'item_name',
+        'status',
         'available',
     ];
 
