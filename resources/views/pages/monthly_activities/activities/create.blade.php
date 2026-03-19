@@ -3,6 +3,12 @@
 @php
     $title = __('app.roles.programs.monthly_activities.create_title');
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
+    $oldPartners = old('partners', []);
+    $oldSupplies = old('supplies', []);
+    $oldTeamGroups = old('team_groups', []);
+    $partnersCount = max(1, count($oldPartners));
+    $suppliesCount = max(1, count($oldSupplies));
+    $teamGroupsCount = max(1, count($oldTeamGroups));
 @endphp
 
 
@@ -67,6 +73,12 @@
                             <option value="{{ $center->id }}" @selected((string) old('center_id') === (string) $center->id)>{{ $center->name }}</option>
                         @endforeach
                     </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label">رفع خطة الفرع</label>
+                    <input class="form-control @error('branch_plan_file') is-invalid @enderror" type="file" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                    @error('branch_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12 col-md-4">
@@ -173,7 +185,7 @@
 
                 <div class="col-12 col-md-4 js-partners-wrapper">
                     <label class="form-label">عدد الشركاء</label>
-                    <input class="form-control js-partners-count" type="number" min="1" max="10" value="{{ old('partners_count', 1) }}">
+                    <input class="form-control js-partners-count" type="number" min="1" max="10" value="{{ old('partners_count', $partnersCount) }}">
                 </div>
 
                 <div class="col-12 js-partners-wrapper">
@@ -201,7 +213,7 @@
 
                 <div class="col-12 col-md-4 js-supplies-wrapper">
                     <label class="form-label">عدد المستلزمات</label>
-                    <input class="form-control js-supplies-count" type="number" min="1" max="20" value="{{ old('supplies_count', 1) }}">
+                    <input class="form-control js-supplies-count" type="number" min="1" max="20" value="{{ old('supplies_count', $suppliesCount) }}">
                 </div>
 
                 <div class="col-12 js-supplies-wrapper">
@@ -214,7 +226,7 @@
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">عدد فرق العمل</label>
-                    <input class="form-control js-team-groups-count" type="number" min="1" max="10" value="{{ old('team_groups_count', 1) }}">
+                    <input class="form-control js-team-groups-count" type="number" min="1" max="10" value="{{ old('team_groups_count', $teamGroupsCount) }}">
                 </div>
 
                 <div class="col-12">
@@ -252,6 +264,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const suppliesContainer = document.querySelector('.js-supplies-container');
   const teamGroupsCount = document.querySelector('.js-team-groups-count');
   const teamGroupsContainer = document.querySelector('.js-team-groups-container');
+  const oldPartners = @json($oldPartners);
+  const oldSupplies = @json($oldSupplies);
+  const oldTeamGroups = @json($oldTeamGroups);
+  const esc = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 
   function renderPartners() {
     if (!partnersContainer) return;
@@ -259,8 +280,8 @@ document.addEventListener('DOMContentLoaded', function () {
     partnersContainer.innerHTML = '';
     for (let i = 0; i < count; i++) {
       partnersContainer.insertAdjacentHTML('beforeend', `
-        <div class="col-12 col-md-6"><input class="form-control" name="partners[${i}][name]" placeholder="اسم الشريك ${i + 1}"></div>
-        <div class="col-12 col-md-6"><input class="form-control" name="partners[${i}][role]" placeholder="دور الشريك ${i + 1}"></div>
+        <div class="col-12 col-md-6"><input class="form-control" name="partners[${i}][name]" placeholder="اسم الشريك ${i + 1}" value="${esc(oldPartners?.[i]?.name)}"></div>
+        <div class="col-12 col-md-6"><input class="form-control" name="partners[${i}][role]" placeholder="دور الشريك ${i + 1}" value="${esc(oldPartners?.[i]?.role)}"></div>
       `);
     }
   }
@@ -277,11 +298,11 @@ document.addEventListener('DOMContentLoaded', function () {
           <div class="row g-2 align-items-end">
             <div class="col-12 col-md-4">
               <label class="form-label">اسم الفريق ${g + 1}</label>
-              <input class="form-control" name="team_groups[${g}][team_name]" placeholder="مثال: الفريق ${g + 1}" value="فريق ${g + 1}">
+              <input class="form-control" name="team_groups[${g}][team_name]" placeholder="مثال: الفريق ${g + 1}" value="${esc(oldTeamGroups?.[g]?.team_name || ('فريق ' + (g + 1)))}">
             </div>
             <div class="col-12 col-md-4">
               <label class="form-label">عدد أعضاء الفريق ${g + 1}</label>
-              <input class="form-control js-team-members-count" id="${membersCountId}" type="number" min="1" max="30" value="1">
+              <input class="form-control js-team-members-count" id="${membersCountId}" type="number" min="1" max="30" value="${Math.max(1, oldTeamGroups?.[g]?.members?.length || 1)}">
             </div>
           </div>
           <div class="row g-2 mt-2 js-team-members-container"></div>
@@ -301,10 +322,10 @@ document.addEventListener('DOMContentLoaded', function () {
         for (let m = 0; m < membersCount; m++) {
           membersContainer.insertAdjacentHTML('beforeend', `
             <div class="col-12 col-md-6">
-              <input class="form-control" name="team_groups[${groupIndex}][members][${m}][member_name]" placeholder="اسم عضو الفريق ${groupIndex + 1} - ${m + 1}">
+              <input class="form-control" name="team_groups[${groupIndex}][members][${m}][member_name]" placeholder="اسم عضو الفريق ${groupIndex + 1} - ${m + 1}" value="${esc(oldTeamGroups?.[groupIndex]?.members?.[m]?.member_name)}">
             </div>
             <div class="col-12 col-md-6">
-              <input class="form-control" name="team_groups[${groupIndex}][members][${m}][role_desc]" placeholder="مسؤولية العضو ${m + 1}">
+              <input class="form-control" name="team_groups[${groupIndex}][members][${m}][role_desc]" placeholder="مسؤولية العضو ${m + 1}" value="${esc(oldTeamGroups?.[groupIndex]?.members?.[m]?.role_desc)}">
             </div>
           `);
         }
@@ -321,8 +342,8 @@ document.addEventListener('DOMContentLoaded', function () {
     suppliesContainer.innerHTML = '';
     for (let i = 0; i < count; i++) {
       suppliesContainer.insertAdjacentHTML('beforeend', `
-        <div class="col-12 col-md-6"><input class="form-control" name="supplies[${i}][item_name]" placeholder="اسم المستلزم ${i + 1}"></div>
-        <div class="col-12 col-md-6 d-flex align-items-center"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="supplies[${i}][available]" value="1" id="supply-${i}"><label class="form-check-label" for="supply-${i}">متوفر</label></div></div>
+        <div class="col-12 col-md-6"><input class="form-control" name="supplies[${i}][item_name]" placeholder="اسم المستلزم ${i + 1}" value="${esc(oldSupplies?.[i]?.item_name)}"></div>
+        <div class="col-12 col-md-6 d-flex align-items-center"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="supplies[${i}][available]" value="1" id="supply-${i}" ${oldSupplies?.[i]?.available ? 'checked' : ''}><label class="form-check-label" for="supply-${i}">متوفر</label></div></div>
       `);
     }
   }
