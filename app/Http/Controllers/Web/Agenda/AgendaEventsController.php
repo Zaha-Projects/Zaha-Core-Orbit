@@ -19,6 +19,36 @@ use App\Services\NotificationService;
 
 class AgendaEventsController extends Controller
 {
+
+    protected function branchCode(?Branch $branch): ?string
+    {
+        if (! $branch) {
+            return null;
+        }
+
+        $slugSource = mb_strtolower(trim(($branch->name ?? '').' '.($branch->city ?? '')));
+
+        return match (true) {
+            str_contains($slugSource, 'خلدا') || str_contains($slugSource, 'khalda') => 'khalda',
+            str_contains($slugSource, 'زرق') || str_contains($slugSource, 'zarqa') => 'zarqa',
+            str_contains($slugSource, 'إربد') || str_contains($slugSource, 'اربد') || str_contains($slugSource, 'irbid') => 'irbid',
+            default => null,
+        };
+    }
+
+    protected function assertKhaldaHqAgendaAuthority(Request $request): void
+    {
+        $user = $request->user();
+        if ($user->hasRole('super_admin')) {
+            return;
+        }
+
+        abort_unless($user->hasRole('relations_manager'), 403);
+
+        $user->loadMissing('branch');
+        abort_unless($this->branchCode($user->branch) === 'khalda', 403);
+    }
+
     protected function assertEventManageAccess(Request $request, AgendaEvent $agendaEvent): void
     {
         $user = $request->user();
@@ -27,12 +57,7 @@ class AgendaEventsController extends Controller
             return;
         }
 
-        abort_unless(
-            $user->hasRole('relations_officer')
-            && (int) $agendaEvent->created_by === (int) $user->id
-            && in_array($agendaEvent->status, ['draft', 'changes_requested'], true),
-            403
-        );
+        abort(403);
     }
 
     protected function allowedUnitRoleMap(): array
@@ -61,6 +86,8 @@ class AgendaEventsController extends Controller
 
     public function create()
     {
+        $this->assertKhaldaHqAgendaAuthority(request());
+
         $departments = Department::orderBy('name')->get();
         $categories = EventCategory::where('active', true)->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
@@ -70,6 +97,8 @@ class AgendaEventsController extends Controller
 
     public function store(Request $request, ConflictDetectionService $conflicts)
     {
+        $this->assertKhaldaHqAgendaAuthority($request);
+
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
@@ -132,6 +161,7 @@ class AgendaEventsController extends Controller
 
     public function edit(AgendaEvent $agendaEvent)
     {
+        $this->assertKhaldaHqAgendaAuthority(request());
         $this->assertEventManageAccess(request(), $agendaEvent);
 
         $agendaEvent->load('participations');
@@ -159,6 +189,7 @@ class AgendaEventsController extends Controller
 
     public function update(Request $request, AgendaEvent $agendaEvent, ConflictDetectionService $conflicts)
     {
+        $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
 
         $data = $request->validate([
@@ -220,6 +251,7 @@ class AgendaEventsController extends Controller
 
     public function submit(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications)
     {
+        $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
 
         if (

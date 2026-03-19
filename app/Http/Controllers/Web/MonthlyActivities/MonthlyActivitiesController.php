@@ -21,6 +21,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Services\ConflictDetectionService;
 use App\Services\NotificationService;
+use App\Services\MonthlyActivityWorkflowService;
 
 class MonthlyActivitiesController extends Controller
 {
@@ -238,7 +239,7 @@ class MonthlyActivitiesController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.sync.done', ['count' => $created]));
     }
 
-    public function store(Request $request, ConflictDetectionService $conflicts)
+    public function store(Request $request, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
     {
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -270,6 +271,9 @@ class MonthlyActivitiesController extends Controller
             'work_teams_count' => ['nullable', 'integer', 'min:1', 'max:20'],
             'needs_media_coverage' => ['nullable', 'boolean'],
             'media_coverage_notes' => ['nullable', 'string'],
+            'requires_programs' => ['nullable', 'boolean'],
+            'requires_workshops' => ['nullable', 'boolean'],
+            'requires_communications' => ['nullable', 'boolean'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
             'has_sponsor' => ['nullable', 'boolean'],
@@ -373,12 +377,17 @@ class MonthlyActivitiesController extends Controller
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
+            'requires_programs' => (bool) ($data['requires_programs'] ?? false),
+            'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
+            'requires_communications' => (bool) ($data['requires_communications'] ?? false),
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
             'branch_id' => $data['branch_id'],
             'center_id' => $data['center_id'],
             'created_by' => $request->user()->id,
         ]);
+
+        $workflowService->initializeDynamicStatuses($monthlyActivity);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
         if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
@@ -404,7 +413,7 @@ class MonthlyActivitiesController extends Controller
         return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'centers', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
     }
 
-    public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts)
+    public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
     {
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
             return back()->withErrors(['status' => __('app.roles.programs.monthly_activities.errors.locked')]);
@@ -444,6 +453,9 @@ class MonthlyActivitiesController extends Controller
             'work_teams_count' => ['nullable', 'integer', 'min:1', 'max:20'],
             'needs_media_coverage' => ['nullable', 'boolean'],
             'media_coverage_notes' => ['nullable', 'string'],
+            'requires_programs' => ['nullable', 'boolean'],
+            'requires_workshops' => ['nullable', 'boolean'],
+            'requires_communications' => ['nullable', 'boolean'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
             'has_sponsor' => ['nullable', 'boolean'],
@@ -532,6 +544,9 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule',
             'audience_satisfaction_percent',
             'evaluation_score',
+            'requires_programs',
+            'requires_workshops',
+            'requires_communications',
             'branch_id',
             'center_id',
             'month',
@@ -579,6 +594,9 @@ class MonthlyActivitiesController extends Controller
             'evaluation_score' => $data['evaluation_score'] ?? null,
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
+            'requires_programs' => (bool) ($data['requires_programs'] ?? false),
+            'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
+            'requires_communications' => (bool) ($data['requires_communications'] ?? false),
             'branch_id' => $data['branch_id'],
             'center_id' => $data['center_id'],
         ];
@@ -625,11 +643,16 @@ class MonthlyActivitiesController extends Controller
             'evaluation_score' => $newValues['evaluation_score'],
             'needs_media_coverage' => $newValues['needs_media_coverage'],
             'media_coverage_notes' => $newValues['media_coverage_notes'],
+            'requires_programs' => $newValues['requires_programs'],
+            'requires_workshops' => $newValues['requires_workshops'],
+            'requires_communications' => $newValues['requires_communications'],
             'branch_id' => $newValues['branch_id'],
             'center_id' => $newValues['center_id'],
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
         ]);
+
+        $workflowService->initializeDynamicStatuses($monthlyActivity);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
         if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {

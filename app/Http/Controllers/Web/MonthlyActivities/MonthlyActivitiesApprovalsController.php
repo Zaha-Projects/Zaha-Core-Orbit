@@ -3,125 +3,91 @@
 namespace App\Http\Controllers\Web\MonthlyActivities;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityNote;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivityApproval;
 use App\Models\WorkflowActionLog;
+use App\Services\MonthlyActivityWorkflowService;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
-    protected array $stepToStatusField = [
-        'relations_officer_review' => 'relations_officer_approval_status',
-        'relations_manager_review' => 'relations_manager_approval_status',
-        'programs_officer_review' => 'programs_officer_approval_status',
-        'programs_manager_review' => 'programs_manager_approval_status',
-        'executive_review' => 'executive_approval_status',
-    ];
-
-    protected function resolveStepAndField($user): array
+    public function index(Request $request, MonthlyActivityWorkflowService $workflowService)
     {
-        if ($user->hasRole('relations_officer')) {
-            return ['relations_officer_review', 'relations_officer_approval_status'];
-        }
-
-        if ($user->hasRole('relations_manager')) {
-            return ['relations_manager_review', 'relations_manager_approval_status'];
-        }
-
-        if ($user->hasRole('programs_officer')) {
-            return ['programs_officer_review', 'programs_officer_approval_status'];
-        }
-
-        if ($user->hasRole('programs_manager')) {
-            return ['programs_manager_review', 'programs_manager_approval_status'];
-        }
-
-        if ($user->hasRole('executive_manager')) {
-            return ['executive_review', 'executive_approval_status'];
-        }
-
-        abort(403);
-    }
-
-    protected function assertStepOrder(MonthlyActivity $monthlyActivity, string $step): void
-    {
-        $requiredApprovedByStep = [
-            'relations_officer_review' => null,
-            'relations_manager_review' => 'relations_officer_approval_status',
-            'programs_officer_review' => 'relations_manager_approval_status',
-            'programs_manager_review' => 'programs_officer_approval_status',
-            'executive_review' => 'programs_manager_approval_status',
-        ];
-
-        $requiredField = $requiredApprovedByStep[$step] ?? null;
-        if ($requiredField && $monthlyActivity->{$requiredField} !== 'approved') {
-            abort(422, __('app.roles.programs.monthly_activities.approvals.errors.prerequisite_missing'));
-        }
-    }
-
-    public function index()
-    {
-        $activities = MonthlyActivity::with(['approvals', 'creator'])
+        $activities = MonthlyActivity::with(['approvals', 'creator', 'notes.user'])
             ->orderBy('month')
             ->orderBy('day')
             ->get();
 
-        $stepLabels = [
-            'relations_officer_review' => __('Relations officer'),
-            'relations_manager_review' => __('Relations manager'),
-            'programs_officer_review' => __('Programs officer'),
-            'programs_manager_review' => __('Programs manager'),
-            'executive_review' => __('Executive manager'),
-        ];
+        $viewer = $request->user();
+
+        if ($viewer->hasRole('workshops_secretary')) {
+            $activities = $activities->where('requires_workshops', true)->values();
+        }
+
+        if ($viewer->hasRole('communication_head')) {
+            $activities = $activities->where('requires_communications', true)->values();
+        }
+
+        $stepLabels = $activities
+            ->flatMap(fn (MonthlyActivity $activity) => $workflowService->buildStepLabelMap($activity))
+            ->all();
 
         return view('pages.monthly_activities.approvals.index', compact('activities', 'stepLabels'));
     }
 
-    public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity)
+    public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity, MonthlyActivityWorkflowService $workflowService)
     {
         $data = $request->validate([
-            'decision' => ['required', 'string', 'in:approved,changes_requested'],
+            'decision' => ['nullable', 'string', 'in:approved,changes_requested'],
             'comment' => ['nullable', 'string'],
             'is_edit_request_implemented' => ['nullable', 'boolean'],
+            'note' => ['nullable', 'string'],
+            'coverage_status' => ['nullable', 'string', 'in:not_required,planned,in_progress,completed'],
         ]);
 
-        [$step, $statusField] = $this->resolveStepAndField($request->user());
-        $this->assertStepOrder($monthlyActivity, $step);
+        $user = $request->user();
+
+        if ($user->hasRole('workshops_secretary') || $user->hasRole('communication_head')) {
+            $this->storeDepartmentNote($monthlyActivity, $user, $data);
+
+            return redirect()
+                ->route('role.programs.approvals.index')
+                ->with('status', __('تم حفظ الملاحظة بنجاح.'));
+        }
+
+        $step = $workflowService->currentStepForUser($monthlyActivity, $user);
+        abort_unless($step !== null, 403);
+        $workflowService->assertPrerequisites($monthlyActivity, $step['key']);
+
+        abort_if(empty($data['decision']), 422, __('Decision is required'));
 
         MonthlyActivityApproval::create([
             'monthly_activity_id' => $monthlyActivity->id,
-            'step' => $step,
+            'step' => $step['key'],
             'decision' => $data['decision'],
             'comment' => $data['comment'] ?? null,
-            'approved_by' => $request->user()->id,
+            'approved_by' => $user->id,
             'approved_at' => now(),
             'is_edit_request_implemented' => (bool) ($data['is_edit_request_implemented'] ?? false),
-            'implemented_at' => !empty($data['is_edit_request_implemented']) ? now() : null,
+            'implemented_at' => ! empty($data['is_edit_request_implemented']) ? now() : null,
         ]);
 
         $updates = [
-            $statusField => $data['decision'],
+            $step['status_field'] => $data['decision'],
             'status' => $data['decision'] === 'approved' ? 'in_review' : 'changes_requested',
         ];
 
-        if ($step === 'executive_review') {
+        if ($step['key'] === 'executive_review') {
             $updates['status'] = $data['decision'] === 'approved' ? 'approved' : 'changes_requested';
         }
 
         if ($data['decision'] === 'changes_requested') {
-            $workflowSteps = array_keys($this->stepToStatusField);
-            $currentStepIndex = array_search($step, $workflowSteps, true);
-
-            if ($currentStepIndex !== false) {
-                foreach (array_slice($workflowSteps, $currentStepIndex + 1) as $downstreamStep) {
-                    $updates[$this->stepToStatusField[$downstreamStep]] = 'pending';
-                }
-            }
+            $updates = array_merge($updates, $workflowService->resetDownstreamSteps($monthlyActivity, $step['key']));
         }
 
         $monthlyActivity->update($updates);
-
 
         $notifications->notifyUsers(collect([$monthlyActivity->creator])->filter(), 'approval_decision', 'Approval update', 'Decision: '. $data['decision'], route('role.programs.approvals.index'));
 
@@ -131,13 +97,34 @@ class MonthlyActivitiesApprovalsController extends Controller
             'entity_id' => $monthlyActivity->id,
             'action_type' => 'approval_decision',
             'status' => $data['decision'],
-            'performed_by' => $request->user()->id,
-            'meta' => ['step' => $step],
+            'performed_by' => $user->id,
+            'meta' => ['step' => $step['key']],
             'performed_at' => now(),
         ]);
 
         return redirect()
             ->route('role.programs.approvals.index')
             ->with('status', __('app.roles.programs.monthly_activities.approvals.updated', ['activity' => $monthlyActivity->title]));
+    }
+
+    protected function storeDepartmentNote(MonthlyActivity $monthlyActivity, $user, array $data): void
+    {
+        abort_if(empty(trim((string) ($data['note'] ?? ''))), 422, __('Note is required'));
+
+        if ($user->hasRole('workshops_secretary')) {
+            $role = 'workshops';
+            abort_unless((bool) $monthlyActivity->requires_workshops, 403);
+        } else {
+            $role = 'communications';
+            abort_unless((bool) $monthlyActivity->requires_communications, 403);
+        }
+
+        ActivityNote::create([
+            'activity_id' => $monthlyActivity->id,
+            'user_id' => $user->id,
+            'role' => $role,
+            'note' => trim((string) $data['note']),
+            'coverage_status' => $role === 'communications' ? ($data['coverage_status'] ?? null) : null,
+        ]);
     }
 }

@@ -64,6 +64,9 @@ class MonthlyActivity extends Model
         'media_coverage',
         'needs_media_coverage',
         'media_coverage_notes',
+        'requires_programs',
+        'requires_workshops',
+        'requires_communications',
         'status',
         'is_archived',
         'archived_year',
@@ -71,6 +74,8 @@ class MonthlyActivity extends Model
         'relations_manager_approval_status',
         'programs_officer_approval_status',
         'programs_manager_approval_status',
+        'liaison_approval_status',
+        'hq_relations_manager_approval_status',
         'executive_approval_status',
         'lock_at',
         'is_official',
@@ -89,6 +94,9 @@ class MonthlyActivity extends Model
         'has_partners' => 'boolean',
         'needs_volunteers' => 'boolean',
         'needs_media_coverage' => 'boolean',
+        'requires_programs' => 'boolean',
+        'requires_workshops' => 'boolean',
+        'requires_communications' => 'boolean',
         'proposed_date' => 'date',
         'modified_proposed_date' => 'date',
         'rescheduled_date' => 'date',
@@ -170,6 +178,11 @@ class MonthlyActivity extends Model
     public function approvals()
     {
         return $this->hasMany(MonthlyActivityApproval::class);
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(ActivityNote::class, 'activity_id')->latest();
     }
 
     public function changeLogs()
