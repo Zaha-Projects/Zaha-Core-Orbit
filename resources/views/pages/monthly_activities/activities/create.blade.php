@@ -213,7 +213,7 @@
                 </div>
 
                 <div class="col-12 col-md-4">
-                    <label class="form-label">عدد أفراد فريق العمل</label>
+                    <label class="form-label">عدد أعضاء فريق العمل</label>
                     <input class="form-control js-team-count" type="number" min="1" max="20" value="{{ old('team_count', 1) }}">
                 </div>
 
@@ -271,10 +271,8 @@ document.addEventListener('DOMContentLoaded', function () {
     teamContainer.innerHTML = '';
     for (let i = 0; i < count; i++) {
       teamContainer.insertAdjacentHTML('beforeend', `
-        <div class="col-12 col-md-3"><input class="form-control" name="team_members[${i}][team_name]" placeholder="اسم الفريق"></div>
-        <div class="col-12 col-md-3"><input class="form-control" name="team_members[${i}][member_name]" placeholder="اسم العضو ${i + 1}"></div>
-        <div class="col-12 col-md-3"><input class="form-control" type="email" name="team_members[${i}][member_email]" placeholder="إيميل العضو ${i + 1}"></div>
-        <div class="col-12 col-md-3"><input class="form-control" name="team_members[${i}][role_desc]" placeholder="مسؤولية العضو"></div>
+        <div class="col-12 col-md-6"><input class="form-control" name="team_members[${i}][member_name]" placeholder="اسم العضو ${i + 1}"></div>
+        <div class="col-12 col-md-6"><input class="form-control" name="team_members[${i}][role_desc]" placeholder="مسؤولية العضو ${i + 1}"></div>
       `);
     }
   }
