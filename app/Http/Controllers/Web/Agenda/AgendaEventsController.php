@@ -99,7 +99,7 @@ class AgendaEventsController extends Controller
     public function index(Request $request)
     {
         $allowedPerPage = [10, 20, 50, 100];
-        $perPage = (int) $request->integer('per_page', 20);
+        $perPage = (int) $request->input('per_page', 20);
         if (! in_array($perPage, $allowedPerPage, true)) {
             $perPage = 20;
         }
