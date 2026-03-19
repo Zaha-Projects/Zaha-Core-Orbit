@@ -65,7 +65,8 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->hasRole('branch_relations_officer');
+        return $this->hasRole('branch_relations_officer')
+            || $this->hasRole('relations_officer');
     }
 
     public function branch()

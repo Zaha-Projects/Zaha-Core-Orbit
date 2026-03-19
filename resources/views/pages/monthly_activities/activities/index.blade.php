@@ -104,6 +104,17 @@
         </div>
     </div>
 
+    <style>
+        .monthly-calendar-badge { border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; width: fit-content; }
+        .monthly-calendar-badge--draft { background: #e5e7eb; color: #374151; }
+        .monthly-calendar-badge--in-review { background: #fff4e5; color: #a16207; }
+        .monthly-calendar-badge--approved { background: #e8f7ef; color: #166534; }
+        .monthly-calendar-badge--rejected { background: #fee2e2; color: #991b1b; }
+        .monthly-calendar-branch { font-size: 12px; color: #6b7280; margin-bottom: 4px; display: block; }
+        .monthly-calendar-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
+        .monthly-calendar-icons { display: inline-flex; gap: 4px; font-size: 13px; }
+    </style>
+
     <script>
         (function () {
             const module = document.querySelector('.monthly-activities-module');
@@ -147,13 +158,14 @@
                 const firstDay = new Date(currentYear, currentMonth - 1, 1);
                 const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
                 const firstOffset = mapPos(firstDay.getDay());
+                const today = new Date();
 
                 titleContainer.textContent = `${firstDay.toLocaleString(undefined, { month: 'long' })} ${currentYear}`;
 
                 gridContainer.innerHTML = '';
                 for (let i = 0; i < firstOffset; i++) {
                     const pad = document.createElement('div');
-                    pad.className = 'agenda-day is-padding';
+                    pad.className = 'agenda-calendar-day agenda-calendar-day--empty';
                     gridContainer.appendChild(pad);
                 }
 
@@ -161,14 +173,31 @@
                     const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const dayItems = items.filter((it) => it.date === dateStr);
                     const cell = document.createElement('div');
-                    cell.className = 'agenda-day';
-                    cell.innerHTML = `<div class="agenda-day-number">${day}</div>`;
+                    cell.className = 'agenda-calendar-day';
+                    if (today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth && today.getDate() === day) {
+                        cell.classList.add('agenda-calendar-day--today');
+                    }
+                    cell.innerHTML = `<div class="agenda-calendar-day-number">${day}</div>`;
 
                     dayItems.forEach((item) => {
                         const a = document.createElement('a');
                         a.href = item.edit_url;
                         a.className = `agenda-event-chip status-${item.status}`;
-                        a.innerHTML = `<strong>${item.title}</strong><br><small>${item.branch || ''}</small>${item.requires_workshops ? ' 🛠️' : ''}${item.requires_communications ? ' 📣' : ''}`;
+                        const badgeClass = item.status === 'approved'
+                            ? 'monthly-calendar-badge--approved'
+                            : (item.status === 'rejected'
+                                ? 'monthly-calendar-badge--rejected'
+                                : (item.status === 'in_review'
+                                    ? 'monthly-calendar-badge--in-review'
+                                    : 'monthly-calendar-badge--draft'));
+                        a.innerHTML = `
+                            <span class="agenda-event-chip-title">${item.title}</span>
+                            <span class="monthly-calendar-branch">${item.branch || ''}</span>
+                            <div class="monthly-calendar-meta">
+                                <span class="monthly-calendar-badge ${badgeClass}">${item.status}</span>
+                                <span class="monthly-calendar-icons">${item.requires_workshops ? '🛠️' : ''}${item.requires_communications ? '📣' : ''}</span>
+                            </div>
+                        `;
                         cell.appendChild(a);
                     });
 

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class MonthlyActivityBranchVisibilityTest extends TestCase
@@ -24,9 +25,10 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
     {
         $branch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
         $user = User::factory()->create(['branch_id' => $branch->id]);
+        Role::findOrCreate('relations_officer');
+        $user->assignRole('relations_officer');
 
         $this->assertFalse($user->isKheldaUser());
-        // Role assignment requires spatie role tables in runtime; this assertion covers default behavior.
-        $this->assertFalse($user->hasBranchScopedMonthlyVisibility());
+        $this->assertTrue($user->hasBranchScopedMonthlyVisibility());
     }
 }
