@@ -3,6 +3,7 @@
 @php
     $title = __('app.roles.programs.monthly_activities.edit_title');
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
+    $isPostMode = request('mode') === 'post';
 @endphp
 
 
@@ -33,9 +34,16 @@
         <div class="alert alert-info">أنت الآن في وضع <strong>إكمال التعبئة بعد التنفيذ</strong>. أكمل الحقول التنفيذية في أسفل الصفحة.</div>
     @endif
 
+    @if (! $isPostMode)
     <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.edit_details') }}</h2>
+            <div class="alert alert-light border mb-3">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <span>هذا النموذج مخصص لتعديل بيانات التخطيط قبل التنفيذ.</span>
+                    <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post']) }}">الانتقال إلى إكمال بعد التنفيذ</a>
+                </div>
+            </div>
             <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" enctype="multipart/form-data" class="row g-3">
                 @csrf
                 @method('PUT')
@@ -244,7 +252,9 @@
             </form>
         </div>
     </div>
+    @endif
 
+    @if (! $isPostMode)
     <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.supplies.title') }}</h2>
@@ -302,7 +312,9 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if (! $isPostMode)
     <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.team.title') }}</h2>
@@ -368,9 +380,17 @@
             </div>
         </div>
     </div>
+    @endif
 
+    @if ($isPostMode)
     <div class="card event-card mb-4" id="post-execution-attachments">
         <div class="card-body">
+            <div class="alert alert-light border mb-3">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <span>هذه الصفحة مخصصة فقط لمدخلات ما بعد التنفيذ.</span>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', $monthlyActivity) }}">الرجوع لتعديل التخطيط</a>
+                </div>
+            </div>
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.attachments.title') }}</h2>
             <form method="POST" action="{{ route('role.programs.attachments.store', $monthlyActivity) }}" class="row g-3 mb-3">
                 @csrf
@@ -448,6 +468,7 @@
             </form>
         </div>
     </div>
+    @endif
     </div>
 
 @push('scripts')
