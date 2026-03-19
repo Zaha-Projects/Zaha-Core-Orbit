@@ -39,14 +39,19 @@ class AgendaEventsController extends Controller
     protected function assertKhaldaHqAgendaAuthority(Request $request): void
     {
         $user = $request->user();
+
         if ($user->hasRole('super_admin')) {
             return;
         }
 
-        abort_unless($user->hasRole('relations_manager'), 403);
-
         $user->loadMissing('branch');
-        abort_unless($this->branchCode($user->branch) === 'khalda', 403);
+        $isKhaldaHq = $this->branchCode($user->branch) === 'khalda';
+
+        abort_unless(
+            $isKhaldaHq
+            && $user->hasAnyRole(['super_admin', 'relations_manager']),
+            403
+        );
     }
 
     protected function assertEventManageAccess(Request $request, AgendaEvent $agendaEvent): void
