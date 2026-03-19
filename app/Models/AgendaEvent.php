@@ -20,6 +20,8 @@ class AgendaEvent extends Model
         'event_category',
         'plan_type',
         'event_type',
+        'is_mandatory',
+        'is_unified',
         'status',
         'is_archived',
         'archived_year',
@@ -29,6 +31,7 @@ class AgendaEvent extends Model
         'approved_by_relations_at',
         'approved_by_executive_at',
         'notes',
+        'agenda_plan_file',
     ];
 
     protected $casts = [
@@ -36,6 +39,8 @@ class AgendaEvent extends Model
         'approved_by_relations_at' => 'datetime',
         'approved_by_executive_at' => 'datetime',
         'is_archived' => 'boolean',
+        'is_mandatory' => 'boolean',
+        'is_unified' => 'boolean',
     ];
 
     public function scopeNotArchived($query)

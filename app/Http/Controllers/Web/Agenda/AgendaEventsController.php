@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Services\ConflictDetectionService;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\Storage;
 
 class AgendaEventsController extends Controller
 {
@@ -150,9 +151,14 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
+            'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
+
+        if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file')) {
+            return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        }
 
         $date = Carbon::parse($data['event_date']);
 
@@ -168,13 +174,16 @@ class AgendaEventsController extends Controller
             'department_id' => $data['department_id'] ?? null,
             'event_category_id' => $data['event_category_id'] ?? null,
             'event_type' => $data['event_type'],
+            'is_mandatory' => $data['event_type'] === 'mandatory',
             'plan_type' => $data['plan_type'],
+            'is_unified' => $data['plan_type'] === 'unified',
             'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
             'status' => 'draft',
             'relations_approval_status' => 'pending',
             'executive_approval_status' => 'pending',
             'created_by' => $request->user()->id,
             'notes' => $data['notes'] ?? null,
+            'agenda_plan_file' => $request->file('agenda_plan_file')?->store('agenda/plans', 'public'),
         ]);
 
         foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
@@ -243,14 +252,27 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
+            'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
+
+        if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
+            return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        }
 
         $date = Carbon::parse($data['event_date']);
 
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []), $agendaEvent->id);
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
+
+        $agendaPlanFile = $agendaEvent->agenda_plan_file;
+        if ($request->hasFile('agenda_plan_file')) {
+            if ($agendaPlanFile) {
+                Storage::disk('public')->delete($agendaPlanFile);
+            }
+            $agendaPlanFile = $request->file('agenda_plan_file')->store('agenda/plans', 'public');
+        }
 
         $agendaEvent->update([
             'month' => (int) $date->format('m'),
@@ -261,9 +283,12 @@ class AgendaEventsController extends Controller
             'department_id' => $data['department_id'] ?? null,
             'event_category_id' => $data['event_category_id'] ?? null,
             'event_type' => $data['event_type'],
+            'is_mandatory' => $data['event_type'] === 'mandatory',
             'plan_type' => $data['plan_type'],
+            'is_unified' => $data['plan_type'] === 'unified',
             'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
             'notes' => $data['notes'] ?? null,
+            'agenda_plan_file' => $agendaPlanFile,
         ]);
 
         $agendaEvent->participations()->where('entity_type', 'branch')->delete();

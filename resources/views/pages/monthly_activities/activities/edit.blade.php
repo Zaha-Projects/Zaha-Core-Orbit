@@ -33,7 +33,7 @@
     <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.edit_details') }}</h2>
-            <form method="POST" action="{{ route('role.programs.activities.update', $monthlyActivity) }}" class="row g-3">
+            <form method="POST" action="{{ route('role.programs.activities.update', $monthlyActivity) }}" enctype="multipart/form-data" class="row g-3">
                 @csrf
                 @method('PUT')
                 <div class="col-12 col-md-6">
@@ -217,6 +217,11 @@
                 <div class="col-12 col-md-8"><label class="form-label">سبب المخاطبة</label><input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason', $monthlyActivity->official_correspondence_reason ) }}"></div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_media_coverage" value="1" id="needs_media_coverage" @checked(old('needs_media_coverage', $monthlyActivity->needs_media_coverage))><label class="form-check-label" for="needs_media_coverage">تحتاج تغطية إعلامية</label></div></div>
                 <div class="col-12 col-md-8"><label class="form-label">ملاحظات التغطية الإعلامية</label><input class="form-control" name="media_coverage_notes" value="{{ old('media_coverage_notes', $monthlyActivity->media_coverage_notes ) }}"></div>
+
+                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">Branch Planning</h2></div></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="is_program_related" value="1" id="is_program_related" @checked(old('is_program_related', $monthlyActivity->is_program_related))><label class="form-check-label" for="is_program_related">is_program_related</label></div></div>
+                <div class="col-12 col-md-4"><label class="form-label">participation_status</label><select class="form-select" name="participation_status"><option value="unspecified" @selected(old('participation_status',$monthlyActivity->participation_status ?? 'unspecified')==='unspecified')>unspecified</option><option value="participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='participant')>participant</option><option value="not_participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='not_participant')>not_participant</option></select></div>
+                <div class="col-12 col-md-4"><label class="form-label">branch_plan_file</label><input class="form-control" type="file" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">@if($monthlyActivity->branch_plan_file)<a class="small d-block mt-1" href="{{ asset('storage/'.$monthlyActivity->branch_plan_file) }}" target="_blank">عرض الملف الحالي</a>@endif</div>
 
 
                 <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">Workflow Routing</h2></div></div>

@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use App\Services\ConflictDetectionService;
 use App\Services\NotificationService;
 use App\Services\MonthlyActivityWorkflowService;
+use Illuminate\Support\Facades\Storage;
 
 class MonthlyActivitiesController extends Controller
 {
@@ -219,7 +220,10 @@ class MonthlyActivitiesController extends Controller
                 'title' => $event->event_name,
                 'proposed_date' => optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString(),
                 'is_in_agenda' => true,
+                'is_from_agenda' => true,
                 'agenda_event_id' => $event->id,
+                'participation_status' => $event->event_type === 'optional' ? 'unspecified' : 'participant',
+                'plan_type' => $event->plan_type ?? 'non_unified',
                 'description' => $event->notes,
                 'location_type' => 'inside_center',
                 'location_details' => null,
@@ -274,6 +278,9 @@ class MonthlyActivitiesController extends Controller
             'requires_programs' => ['nullable', 'boolean'],
             'requires_workshops' => ['nullable', 'boolean'],
             'requires_communications' => ['nullable', 'boolean'],
+            'is_program_related' => ['nullable', 'boolean'],
+            'participation_status' => ['nullable', 'in:participant,not_participant,unspecified'],
+            'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
             'has_sponsor' => ['nullable', 'boolean'],
@@ -318,6 +325,15 @@ class MonthlyActivitiesController extends Controller
         $date = Carbon::parse($data['activity_date']);
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
         $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
+        $isFromAgenda = ! empty($data['agenda_event_id']);
+        $requiresBranchPlan = ! $isFromAgenda;
+        $planType = $isFromAgenda ? optional(AgendaEvent::find($data['agenda_event_id']))->plan_type : 'non_unified';
+        if ($planType === 'non_unified') {
+            $requiresBranchPlan = true;
+        }
+        if ($requiresBranchPlan && ! $request->hasFile('branch_plan_file')) {
+            return back()->withErrors(['branch_plan_file' => 'رفع خطة الفرع مطلوب لهذه الفعالية.'])->withInput();
+        }
 
         $monthlyActivity = MonthlyActivity::create([
             'month' => (int) $date->format('m'),
@@ -325,7 +341,11 @@ class MonthlyActivitiesController extends Controller
             'title' => $data['title'],
             'proposed_date' => $data['proposed_date'],
             'is_in_agenda' => !empty($data['agenda_event_id']),
+            'is_from_agenda' => $isFromAgenda,
             'agenda_event_id' => $data['agenda_event_id'] ?? null,
+            'participation_status' => $data['participation_status'] ?? 'unspecified',
+            'plan_type' => $planType ?? 'non_unified',
+            'branch_plan_file' => $request->file('branch_plan_file')?->store('monthly/plans', 'public'),
             'description' => $data['description'] ?? null,
             'location_type' => $data['location_type'],
             'location_details' => $data['location_details'] ?? null,
@@ -378,6 +398,7 @@ class MonthlyActivitiesController extends Controller
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'requires_programs' => (bool) ($data['requires_programs'] ?? false),
+            'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
             'lock_at' => $this->buildLockAt($data['proposed_date']),
@@ -456,6 +477,9 @@ class MonthlyActivitiesController extends Controller
             'requires_programs' => ['nullable', 'boolean'],
             'requires_workshops' => ['nullable', 'boolean'],
             'requires_communications' => ['nullable', 'boolean'],
+            'is_program_related' => ['nullable', 'boolean'],
+            'participation_status' => ['nullable', 'in:participant,not_participant,unspecified'],
+            'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
             'has_sponsor' => ['nullable', 'boolean'],
@@ -500,6 +524,20 @@ class MonthlyActivitiesController extends Controller
         $date = Carbon::parse($data['activity_date']);
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id']);
         $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
+        $isFromAgenda = ! empty($data['agenda_event_id']);
+        $planType = $isFromAgenda ? optional(AgendaEvent::find($data['agenda_event_id']))->plan_type : 'non_unified';
+        $requiresBranchPlan = (! $isFromAgenda) || $planType === 'non_unified';
+        if ($requiresBranchPlan && ! $request->hasFile('branch_plan_file') && empty($monthlyActivity->branch_plan_file)) {
+            return back()->withErrors(['branch_plan_file' => 'رفع خطة الفرع مطلوب لهذه الفعالية.'])->withInput();
+        }
+
+        $branchPlanFile = $monthlyActivity->branch_plan_file;
+        if ($request->hasFile('branch_plan_file')) {
+            if ($branchPlanFile) {
+                Storage::disk('public')->delete($branchPlanFile);
+            }
+            $branchPlanFile = $request->file('branch_plan_file')->store('monthly/plans', 'public');
+        }
 
         $oldValues = $monthlyActivity->only([
             'title',
@@ -547,6 +585,10 @@ class MonthlyActivitiesController extends Controller
             'requires_programs',
             'requires_workshops',
             'requires_communications',
+            'is_program_related',
+            'participation_status',
+            'plan_type',
+            'branch_plan_file',
             'branch_id',
             'center_id',
             'month',
@@ -559,6 +601,10 @@ class MonthlyActivitiesController extends Controller
             'title' => $data['title'],
             'proposed_date' => $data['proposed_date'],
             'agenda_event_id' => $data['agenda_event_id'] ?? null,
+            'is_from_agenda' => $isFromAgenda,
+            'participation_status' => $data['participation_status'] ?? 'unspecified',
+            'plan_type' => $planType ?? 'non_unified',
+            'branch_plan_file' => $branchPlanFile,
             'description' => $data['description'] ?? null,
             'location_type' => $data['location_type'],
             'location_details' => $data['location_details'] ?? null,
@@ -595,6 +641,7 @@ class MonthlyActivitiesController extends Controller
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'requires_programs' => (bool) ($data['requires_programs'] ?? false),
+            'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
             'branch_id' => $data['branch_id'],
@@ -608,6 +655,10 @@ class MonthlyActivitiesController extends Controller
             'proposed_date' => $newValues['proposed_date'],
             'is_in_agenda' => !empty($data['agenda_event_id']),
             'agenda_event_id' => $newValues['agenda_event_id'],
+            'is_from_agenda' => $newValues['is_from_agenda'],
+            'participation_status' => $newValues['participation_status'],
+            'plan_type' => $newValues['plan_type'],
+            'branch_plan_file' => $newValues['branch_plan_file'],
             'description' => $newValues['description'],
             'location_type' => $newValues['location_type'],
             'location_details' => $newValues['location_details'],
@@ -644,6 +695,7 @@ class MonthlyActivitiesController extends Controller
             'needs_media_coverage' => $newValues['needs_media_coverage'],
             'media_coverage_notes' => $newValues['media_coverage_notes'],
             'requires_programs' => $newValues['requires_programs'],
+            'is_program_related' => $newValues['is_program_related'],
             'requires_workshops' => $newValues['requires_workshops'],
             'requires_communications' => $newValues['requires_communications'],
             'branch_id' => $newValues['branch_id'],

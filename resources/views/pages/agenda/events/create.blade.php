@@ -11,7 +11,7 @@
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-4">{{ $subtitle }}</p>
-            <form method="POST" action="{{ route('role.relations.agenda.store') }}" class="row event-form-grid">
+            <form method="POST" action="{{ route('role.relations.agenda.store') }}" enctype="multipart/form-data" class="row event-form-grid">
                 @csrf
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_name') }}</label>
@@ -48,10 +48,14 @@
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</label>
-                    <select class="form-select" name="plan_type" required>
+                    <select class="form-select js-plan-type" name="plan_type" required>
                         <option value="unified" @selected(old('plan_type') === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
                         <option value="non_unified" @selected(old('plan_type') === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
                     </select>
+                </div>
+                <div class="col-12 col-md-4 js-agenda-plan-file">
+                    <label class="form-label">agenda_plan_file</label>
+                    <input class="form-control" type="file" name="agenda_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
                 </div>
 
                 <div class="col-12"><div class="event-form-section">
@@ -85,6 +89,8 @@
         (function () {
             const departmentEl = document.querySelector('select[name="department_id"]');
             const categoryEl = document.getElementById('event_category_id');
+            const planTypeEl = document.querySelector('.js-plan-type');
+            const planFileRows = document.querySelectorAll('.js-agenda-plan-file');
 
             function filterCategories() {
                 const departmentId = departmentEl.value;
@@ -105,6 +111,14 @@
 
             departmentEl.addEventListener('change', filterCategories);
             filterCategories();
+
+            function togglePlanFile() {
+                const isNonUnified = planTypeEl?.value === 'non_unified';
+                planFileRows.forEach((row) => row.style.display = isNonUnified ? 'block' : 'none');
+            }
+
+            planTypeEl?.addEventListener('change', togglePlanFile);
+            togglePlanFile();
         })();
     </script>
 @endsection
