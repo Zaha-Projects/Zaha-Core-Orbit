@@ -9,8 +9,10 @@ use App\Models\Branch;
 use App\Models\Department;
 use App\Models\DepartmentUnit;
 use App\Models\EventCategory;
+use App\Models\MonthlyActivity;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\Center;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -97,6 +99,21 @@ class AgendaEventsController extends Controller
         ];
     }
 
+    protected function branchActor(Request $request): ?User
+    {
+        $user = $request->user();
+        $user->loadMissing('branch');
+
+        $isBranchRole = $user->hasAnyRole(['relations_officer', 'branch_relations_officer']);
+        $isHq = $this->branchCode($user->branch) === 'khalda';
+
+        if ($isBranchRole && ! $isHq) {
+            return $user;
+        }
+
+        return null;
+    }
+
     public function index(Request $request)
     {
         $allowedPerPage = [10, 20, 50, 100];
@@ -112,11 +129,13 @@ class AgendaEventsController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
+        $branchActor = $this->branchActor($request);
+
         $filters = array_merge($request->all(), [
             'per_page' => $perPage,
         ]);
 
-        return view('pages.agenda.events.index', compact('events', 'filters'));
+        return view('pages.agenda.events.index', compact('events', 'filters', 'branchActor'));
     }
 
     public function create()
@@ -380,5 +399,96 @@ class AgendaEventsController extends Controller
         ]);
 
         return back()->with('status', __('app.roles.relations.agenda.unit_participation_updated'));
+    }
+
+    public function updateBranchParticipation(Request $request, AgendaEvent $agendaEvent)
+    {
+        $branchActor = $this->branchActor($request);
+        abort_unless($branchActor !== null, 403);
+        abort_if(empty($branchActor->branch_id), 422, 'Branch is required for branch participation.');
+
+        $data = $request->validate([
+            'will_participate' => ['required', 'in:yes,no'],
+            'proposed_date' => ['nullable', 'date'],
+            'actual_execution_date' => ['nullable', 'date'],
+            'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
+        ]);
+
+        $agendaDate = optional($agendaEvent->event_date)?->toDateString()
+            ?? Carbon::create(now()->year, $agendaEvent->month, $agendaEvent->day)->toDateString();
+        $minDate = Carbon::parse($agendaDate)->subDays(7)->toDateString();
+        $maxDate = Carbon::parse($agendaDate)->addDays(7)->toDateString();
+
+        $status = $agendaEvent->event_type === 'mandatory' ? 'participant' : ($data['will_participate'] === 'yes' ? 'participant' : 'not_participant');
+        $isParticipating = $status === 'participant';
+
+        if ($isParticipating) {
+            abort_if(empty($data['proposed_date']), 422, 'التاريخ المقترح مطلوب عند المشاركة.');
+            abort_if($data['proposed_date'] < $minDate || $data['proposed_date'] > $maxDate, 422, 'التاريخ المقترح يجب أن يكون ضمن ±7 أيام من تاريخ الأجندة.');
+        }
+
+        if ($agendaEvent->plan_type === 'unified' && $request->hasFile('branch_plan_file')) {
+            abort(422, 'لا يمكن رفع خطة فرع لفعالية موحدة.');
+        }
+
+        $existing = $agendaEvent->participations()
+            ->where('entity_type', 'branch')
+            ->where('entity_id', $branchActor->branch_id)
+            ->first();
+
+        $planFile = $existing?->branch_plan_file;
+        if ($request->hasFile('branch_plan_file')) {
+            if ($planFile) {
+                Storage::disk('public')->delete($planFile);
+            }
+            $planFile = $request->file('branch_plan_file')->store('agenda/branch-plans', 'public');
+        }
+
+        if ($agendaEvent->plan_type === 'non_unified' && $isParticipating && empty($planFile)) {
+            abort(422, 'رفع خطة الفرع مطلوب للفعالية غير الموحدة.');
+        }
+
+        $participation = $agendaEvent->participations()->updateOrCreate(
+            [
+                'entity_type' => 'branch',
+                'entity_id' => $branchActor->branch_id,
+            ],
+            [
+                'participation_status' => $status,
+                'proposed_date' => $isParticipating ? $data['proposed_date'] : null,
+                'actual_execution_date' => $data['actual_execution_date'] ?? null,
+                'branch_plan_file' => $planFile,
+                'updated_by' => $branchActor->id,
+            ]
+        );
+
+        if ($isParticipating) {
+            $centerId = $branchActor->center_id ?: Center::where('branch_id', $branchActor->branch_id)->value('id');
+            abort_if(empty($centerId), 422, 'يجب تحديد مركز للفرع قبل إنشاء الخطة الشهرية.');
+
+            $monthlyActivity = MonthlyActivity::firstOrNew([
+                'agenda_event_id' => $agendaEvent->id,
+                'branch_id' => $branchActor->branch_id,
+            ]);
+
+            $monthlyActivity->fill([
+                'month' => (int) Carbon::parse($agendaDate)->format('m'),
+                'day' => (int) Carbon::parse($agendaDate)->format('d'),
+                'title' => $agendaEvent->event_name,
+                'proposed_date' => $data['proposed_date'],
+                'is_in_agenda' => true,
+                'is_from_agenda' => true,
+                'participation_status' => 'participant',
+                'plan_type' => $agendaEvent->plan_type ?? 'non_unified',
+                'description' => $agendaEvent->notes,
+                'location_type' => $monthlyActivity->location_type ?? 'inside_center',
+                'status' => $monthlyActivity->status ?? 'draft',
+                'center_id' => $centerId,
+                'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
+            ]);
+            $monthlyActivity->save();
+        }
+
+        return back()->with('status', 'تم تحديث المشاركة وربط الفعالية بالخطة الشهرية بنجاح.');
     }
 }

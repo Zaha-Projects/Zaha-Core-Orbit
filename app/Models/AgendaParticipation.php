@@ -14,7 +14,15 @@ class AgendaParticipation extends Model
         'entity_type',
         'entity_id',
         'participation_status',
+        'proposed_date',
+        'actual_execution_date',
+        'branch_plan_file',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'proposed_date' => 'date',
+        'actual_execution_date' => 'date',
     ];
 
     public function agendaEvent()

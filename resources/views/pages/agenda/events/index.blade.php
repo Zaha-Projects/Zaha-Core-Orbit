@@ -9,6 +9,7 @@
     $isKhaldaHq = str_contains($branchText, 'khalda') || str_contains($branchText, 'خلدا') || str_contains($branchText, 'عمان') || str_contains($branchText, 'عمّان') || str_contains($branchText, 'amman');
     $canManageAgenda = $authUser?->hasRole('super_admin')
         || ($authUser?->hasRole('relations_manager') && $isKhaldaHq);
+    $canBranchInteract = ($authUser?->hasAnyRole(['relations_officer', 'branch_relations_officer']) ?? false) && ! $isKhaldaHq;
 
     $agendaStatusLabel = function (?string $status): string {
         if (!$status) {
@@ -20,9 +21,13 @@
         return $translated !== 'app.roles.relations.agenda.status_labels.' . $status ? $translated : $status;
     };
 
-    $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel) {
+    $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
+        $branchParticipation = $event->participations
+            ->where('entity_type', 'branch')
+            ->where('entity_id', $authUser?->branch_id)
+            ->first();
 
         return [
             'id' => $event->id,
@@ -36,6 +41,11 @@
             'view_url' => route('role.relations.agenda.index', ['year' => optional($event->event_date)->format('Y') ?? now()->year, 'month' => $event->month]),
             'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
             'participant_count' => $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count(),
+            'plan_type' => $event->plan_type,
+            'event_type' => $event->event_type,
+            'branch_participation_status' => $branchParticipation?->participation_status,
+            'branch_proposed_date' => optional($branchParticipation?->proposed_date)?->format('Y-m-d'),
+            'branch_actual_execution_date' => optional($branchParticipation?->actual_execution_date)?->format('Y-m-d'),
         ];
     })->values();
 @endphp
@@ -65,8 +75,20 @@
                 <div class="col-md-2"><input class="form-control" type="number" name="year" placeholder="{{ __('app.enterprise.year') }}" value="{{ request('year') }}"></div>
                 <div class="col-md-2"><input class="form-control" type="number" min="1" max="12" name="month" placeholder="{{ __('app.roles.programs.monthly_activities.sync.month') }}" value="{{ request('month') }}"></div>
                 <div class="col-md-2"><input class="form-control" name="status" placeholder="{{ __('app.roles.reports.fields.status') }}" value="{{ request('status') }}"></div>
-                <div class="col-md-2"><input class="form-control" name="plan_type" placeholder="{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}" value="{{ request('plan_type') }}"></div>
-                <div class="col-md-2"><input class="form-control" name="event_type" placeholder="{{ __('app.roles.relations.agenda.fields_ext.event_type') }}" value="{{ request('event_type') }}"></div>
+                <div class="col-md-2">
+                    <select class="form-select" name="event_type">
+                        <option value="">{{ __('All') }} - {{ __('app.roles.relations.agenda.fields_ext.event_type') }}</option>
+                        <option value="mandatory" @selected(request('event_type') === 'mandatory')>{{ __('Mandatory') }}</option>
+                        <option value="optional" @selected(request('event_type') === 'optional')>{{ __('Optional') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="plan_type">
+                        <option value="">{{ __('All') }} - {{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</option>
+                        <option value="unified" @selected(request('plan_type') === 'unified')>{{ __('Unified') }}</option>
+                        <option value="non_unified" @selected(request('plan_type') === 'non_unified')>{{ __('Non-Unified') }}</option>
+                    </select>
+                </div>
                 <div class="col-md-2">
                     <select class="form-select" name="per_page">
                         @foreach ([10, 20, 50, 100] as $size)
@@ -84,6 +106,73 @@
                 <div class="event-kpi-value">{{ $events->total() }}</div>
             </div>
         </div>
+
+        @if($canBranchInteract)
+            <div class="card event-card mb-3">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">تفاعل الفرع مع الأجندة</h2>
+                    <div class="row g-3">
+                        @foreach($events as $event)
+                            @php
+                                $branchParticipation = $event->participations->where('entity_type', 'branch')->where('entity_id', $authUser?->branch_id)->first();
+                                $baseDate = optional($event->event_date)->format('Y-m-d') ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
+                                $isParticipating = ($branchParticipation?->participation_status ?? 'unspecified') === 'participant' || $event->event_type === 'mandatory';
+                            @endphp
+                            <div class="col-12 col-xl-6">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <div class="fw-semibold">{{ $event->event_name }}</div>
+                                            <div class="small text-muted">📅 {{ $baseDate }}</div>
+                                        </div>
+                                        <div class="d-flex gap-1 flex-wrap justify-content-end">
+                                            <span class="badge {{ $event->event_type === 'mandatory' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' }}">{{ $event->event_type }}</span>
+                                            <span class="badge {{ $event->plan_type === 'unified' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info' }}">{{ $event->plan_type }}</span>
+                                        </div>
+                                    </div>
+
+                                    <form method="POST" action="{{ route('role.relations.agenda.branch_participation.update', $event) }}" enctype="multipart/form-data" class="row g-2">
+                                        @csrf
+                                        @method('PATCH')
+                                        <div class="col-12">
+                                            @if($event->event_type === 'optional')
+                                                <label class="form-label mb-1">هل ستشارك؟</label>
+                                                <div class="d-flex gap-3">
+                                                    <label><input type="radio" name="will_participate" value="yes" @checked(($branchParticipation?->participation_status ?? null) === 'participant')> نعم</label>
+                                                    <label><input type="radio" name="will_participate" value="no" @checked(($branchParticipation?->participation_status ?? null) === 'not_participant')> لا</label>
+                                                </div>
+                                            @else
+                                                <input type="hidden" name="will_participate" value="yes">
+                                                <div class="alert alert-info py-2 px-3 mb-0">فعالية إجبارية: سيتم اعتبار المشاركة تلقائياً.</div>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label mb-1">📌 التاريخ المقترح</label>
+                                            <input type="date" class="form-control" name="proposed_date" value="{{ optional($branchParticipation?->proposed_date)->format('Y-m-d') }}" @disabled(! $isParticipating)>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label mb-1">✅ تاريخ التنفيذ الفعلي</label>
+                                            <input type="date" class="form-control" name="actual_execution_date" value="{{ optional($branchParticipation?->actual_execution_date)->format('Y-m-d') }}">
+                                        </div>
+                                        @if($event->plan_type === 'unified')
+                                            <div class="col-12"><div class="alert alert-primary py-2 px-3 mb-0">الخطة موحدة من خلدا ويجب الالتزام بها.</div></div>
+                                        @else
+                                            <div class="col-12">
+                                                <label class="form-label mb-1">رفع خطة الفرع</label>
+                                                <input type="file" class="form-control" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx" @disabled(! $isParticipating)>
+                                            </div>
+                                        @endif
+                                        <div class="col-12 d-flex justify-content-end">
+                                            <button class="btn btn-sm btn-primary">حفظ التفاعل</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <div class="agenda-view-switch mb-3" role="tablist" aria-label="{{ __('app.roles.relations.agenda.calendar.view_switcher') }}">
             <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">
