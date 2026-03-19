@@ -98,14 +98,22 @@ class AgendaEventsController extends Controller
 
     public function index(Request $request)
     {
+        $allowedPerPage = [10, 20, 50, 100];
+        $perPage = (int) $request->integer('per_page', 20);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 20;
+        }
+
         $events = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
             ->enterpriseFilter($request->all())
             ->notArchived()
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
-        $filters = $request->all();
+        $filters = array_merge($request->all(), [
+            'per_page' => $perPage,
+        ]);
 
         return view('pages.agenda.events.index', compact('events', 'filters'));
     }

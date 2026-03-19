@@ -63,6 +63,13 @@
                 <div class="col-md-2"><input class="form-control" name="status" placeholder="{{ __('app.roles.reports.fields.status') }}" value="{{ request('status') }}"></div>
                 <div class="col-md-2"><input class="form-control" name="plan_type" placeholder="{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}" value="{{ request('plan_type') }}"></div>
                 <div class="col-md-2"><input class="form-control" name="event_type" placeholder="{{ __('app.roles.relations.agenda.fields_ext.event_type') }}" value="{{ request('event_type') }}"></div>
+                <div class="col-md-2">
+                    <select class="form-select" name="per_page">
+                        @foreach ([10, 20, 50, 100] as $size)
+                            <option value="{{ $size }}" @selected((int) request('per_page', 20) === $size)>{{ __('عرض') }} {{ $size }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="col-md-2"><button class="btn btn-outline-primary w-100">{{ __('app.common.filter') }}</button></div>
             </div>
         </form>
@@ -70,7 +77,7 @@
         <div class="event-kpi-grid">
             <div class="event-kpi-card">
                 <div class="text-muted small">{{ __('app.roles.relations.agenda.title') }}</div>
-                <div class="event-kpi-value">{{ $events->count() }}</div>
+                <div class="event-kpi-value">{{ $events->total() }}</div>
             </div>
         </div>
 
@@ -151,6 +158,13 @@
                             </div>
                         @endforeach
                     </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            {{ __('عرض') }} {{ $events->firstItem() ?? 0 }} - {{ $events->lastItem() ?? 0 }} {{ __('من') }} {{ $events->total() }}
+                        </small>
+                        {{ $events->links() }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -201,8 +215,17 @@
 
             const monthNames = @json(__('app.roles.relations.agenda.calendar.months'));
 
+            const selectedYear = Number(@json((int) request('year', 0)));
+            const selectedMonth = Number(@json((int) request('month', 0)));
             let currentDate = new Date();
-            currentDate.setDate(1);
+            if (selectedYear > 0 && selectedMonth >= 1 && selectedMonth <= 12) {
+                currentDate = new Date(selectedYear, selectedMonth - 1, 1);
+            } else if (events.length > 0) {
+                currentDate = new Date(events[0].date);
+                currentDate.setDate(1);
+            } else {
+                currentDate.setDate(1);
+            }
 
             const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
             const gridContainer = module.querySelector('[data-calendar-grid]');
