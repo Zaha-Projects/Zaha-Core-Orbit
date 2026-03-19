@@ -29,6 +29,9 @@
     @if (session('status'))
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
+    @if (request('mode') === 'post')
+        <div class="alert alert-info">أنت الآن في وضع <strong>إكمال التعبئة بعد التنفيذ</strong>. أكمل الحقول التنفيذية في أسفل الصفحة.</div>
+    @endif
 
     <div class="card event-card mb-4">
         <div class="card-body">
@@ -366,7 +369,7 @@
         </div>
     </div>
 
-    <div class="card event-card mb-4">
+    <div class="card event-card mb-4" id="post-execution-attachments">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.attachments.title') }}</h2>
             <form method="POST" action="{{ route('role.programs.attachments.store', $monthlyActivity) }}" class="row g-3 mb-3">
@@ -376,8 +379,8 @@
                     <input class="form-control" name="file_type" required>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.attachments.fields.file_path') }}</label>
-                    <input class="form-control" name="file_path" required>
+                    <label class="form-label">ملف التغطية (صورة/ملف)</label>
+                    <input class="form-control" type="file" name="file" required>
                 </div>
                 <div class="col-12 col-md-2 d-flex justify-content-end align-items-center">
                     <button class="btn btn-outline-primary btn-sm mt-4" type="submit">
@@ -420,7 +423,7 @@
         </div>
     </div>
 
-    <div class="card event-card">
+    <div class="card event-card" id="post-execution-close">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.close_title') }}</h2>
             <form method="POST" action="{{ route('role.relations.activities.close', $monthlyActivity) }}" class="row g-3">
@@ -466,6 +469,11 @@ document.addEventListener('DOMContentLoaded', function () {
   locType?.addEventListener('change', toggle);
   tg?.addEventListener('change', toggle);
   toggle();
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') === 'post') {
+    document.getElementById('post-execution-close')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 });
 </script>
 @endpush

@@ -10,6 +10,8 @@ use App\Models\MonthlyActivityChangeLog;
 use App\Models\MonthlyActivityPartner;
 use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
+use App\Models\MonthlyActivitySupply;
+use App\Models\MonthlyActivityTeam;
 use App\Models\EvaluationQuestion;
 use App\Models\MonthlyActivityFollowup;
 use App\Models\MonthlyActivityEvaluationResponse;
@@ -313,6 +315,8 @@ class MonthlyActivitiesController extends Controller
             'outside_google_maps_url' => ['nullable', 'url', 'max:500', 'required_if:location_type,outside_center'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
+            'time_from' => ['nullable', 'date_format:H:i'],
+            'time_to' => ['nullable', 'date_format:H:i', 'after:time_from'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
@@ -329,6 +333,8 @@ class MonthlyActivitiesController extends Controller
             'requires_programs' => ['nullable', 'boolean'],
             'requires_workshops' => ['nullable', 'boolean'],
             'requires_communications' => ['nullable', 'boolean'],
+            'responsible_entities' => ['nullable', 'array'],
+            'responsible_entities.*' => ['in:relations,programs'],
             'is_program_related' => ['nullable', 'boolean'],
             'participation_status' => ['nullable', 'in:participant,not_participant,unspecified'],
             'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
@@ -358,6 +364,15 @@ class MonthlyActivitiesController extends Controller
             'partners.*.name' => ['nullable', 'string', 'max:255'],
             'partners.*.role' => ['required_with:partners.*.name', 'string', 'max:255'],
             'partners.*.contact_info' => ['nullable', 'string', 'max:255'],
+            'team_members' => ['nullable', 'array'],
+            'team_members.*.team_name' => ['nullable', 'string', 'max:255'],
+            'team_members.*.member_name' => ['nullable', 'string', 'max:255'],
+            'team_members.*.member_email' => ['nullable', 'email', 'max:255'],
+            'team_members.*.role_desc' => ['nullable', 'string', 'max:255'],
+            'requires_supplies' => ['nullable', 'boolean'],
+            'supplies' => ['nullable', 'array'],
+            'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
+            'supplies.*.available' => ['nullable', 'boolean'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -416,6 +431,8 @@ class MonthlyActivitiesController extends Controller
             'status' => $data['status'],
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
+            'time_from' => $data['time_from'] ?? null,
+            'time_to' => $data['time_to'] ?? null,
             'target_group' => $data['target_group'] ?? null,
             'target_group_id' => $data['target_group_id'] ?? null,
             'target_group_other' => $data['target_group_other'] ?? null,
@@ -453,10 +470,10 @@ class MonthlyActivitiesController extends Controller
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
-            'requires_programs' => (bool) ($data['requires_programs'] ?? false),
+            'requires_programs' => (bool) (($data['requires_programs'] ?? false) || in_array('programs', $data['responsible_entities'] ?? [], true)),
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
-            'requires_communications' => (bool) ($data['requires_communications'] ?? false),
+            'requires_communications' => (bool) (($data['requires_communications'] ?? false) || in_array('relations', $data['responsible_entities'] ?? [], true)),
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
             'branch_id' => $data['branch_id'],
@@ -467,6 +484,32 @@ class MonthlyActivitiesController extends Controller
         $workflowService->initializeDynamicStatuses($monthlyActivity);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
+        foreach (($data['team_members'] ?? []) as $member) {
+            $memberName = trim((string) ($member['member_name'] ?? ''));
+            if ($memberName === '') {
+                continue;
+            }
+            MonthlyActivityTeam::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'team_name' => $member['team_name'] ?? null,
+                'member_name' => $memberName,
+                'member_email' => $member['member_email'] ?? null,
+                'role_desc' => $member['role_desc'] ?? null,
+            ]);
+        }
+        foreach (($data['supplies'] ?? []) as $supply) {
+            $itemName = trim((string) ($supply['item_name'] ?? ''));
+            if ($itemName === '') {
+                continue;
+            }
+            $available = (bool) ($supply['available'] ?? false);
+            MonthlyActivitySupply::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'item_name' => $itemName,
+                'available' => $available,
+                'status' => $available ? 'available' : 'needed',
+            ]);
+        }
         if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
             $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
         }
