@@ -4,6 +4,13 @@
     $title = __('app.roles.programs.monthly_activities.edit_title');
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
     $isPostMode = request('mode') === 'post';
+    $canManageEvaluation = auth()->user()?->hasAnyRole(['followup_officer', 'super_admin', 'relations_manager', 'executive_manager']);
+    $evaluationEnabled = $isPostMode && $canManageEvaluation && (
+        in_array($monthlyActivity->status, ['executed', 'completed', 'closed'], true)
+        || ! empty($monthlyActivity->actual_date)
+        || in_array((string) $monthlyActivity->lifecycle_status, ['Executed', 'Evaluated', 'Closed'], true)
+    );
+    $evaluationByQuestion = $monthlyActivity->evaluationResponses->keyBy('evaluation_question_id');
 @endphp
 
 
@@ -383,6 +390,64 @@
     @endif
 
     @if ($isPostMode)
+    @if ($canManageEvaluation)
+    <div class="card event-card mb-4" id="post-execution-evaluation">
+        <div class="card-body">
+            <h2 class="h6 mb-3">المتابعة والتقييم</h2>
+            @if (! $evaluationEnabled)
+                <div class="alert alert-warning mb-0">يظهر نموذج التقييم بعد تنفيذ الفعالية وإدخال تاريخ التنفيذ أو تحويل الحالة إلى (مكتملة/مغلقة).</div>
+            @else
+                <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" class="row g-3 mb-0">
+                    @csrf
+                    @method('PUT')
+                    @forelse($evaluationQuestions as $question)
+                        @php $response = $evaluationByQuestion->get($question->id); @endphp
+                        <div class="col-12 border rounded-3 p-3">
+                            <div class="fw-semibold mb-2">{{ $question->question }}</div>
+                            <input type="hidden" name="evaluations[{{ $question->id }}][answer_type]" value="{{ $question->answer_type }}">
+                            @if($question->answer_type === 'score_5')
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-12 col-md-3">
+                                        <label class="form-label mb-1">العلامة من 5</label>
+                                        <input class="form-control" type="number" min="0" max="5" step="0.5" name="evaluations[{{ $question->id }}][score]" value="{{ old("evaluations.{$question->id}.score", $response?->score) }}">
+                                    </div>
+                                    <div class="col-12 col-md-9">
+                                        <label class="form-label mb-1">ملاحظة</label>
+                                        <input class="form-control" name="evaluations[{{ $question->id }}][note]" value="{{ old("evaluations.{$question->id}.note", $response?->note) }}">
+                                    </div>
+                                </div>
+                            @else
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-12 col-md-8">
+                                        <label class="form-label mb-1">الإجابة</label>
+                                        <input class="form-control" name="evaluations[{{ $question->id }}][answer_value]" value="{{ old("evaluations.{$question->id}.answer_value", $response?->answer_value) }}">
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label mb-1">ملاحظة</label>
+                                        <input class="form-control" name="evaluations[{{ $question->id }}][note]" value="{{ old("evaluations.{$question->id}.note", $response?->note) }}">
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="col-12">
+                            <div class="alert alert-warning mb-0">لا توجد أسئلة تقييم مفعّلة. يمكن للإدمن إضافتها من شاشة القوائم المرجعية للفعاليات.</div>
+                        </div>
+                    @endforelse
+
+                    <div class="col-12">
+                        <label class="form-label">ملاحظات المتابعة العامة</label>
+                        <textarea class="form-control" name="followup_remarks" rows="3">{{ old('followup_remarks', optional($monthlyActivity->followups->last())->remarks) }}</textarea>
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button class="btn btn-outline-primary" type="submit">حفظ التقييم</button>
+                    </div>
+                </form>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <div class="card event-card mb-4" id="post-execution-attachments">
         <div class="card-body">
             <div class="alert alert-light border mb-3">

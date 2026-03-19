@@ -166,6 +166,13 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+    protected function canSubmitPostEvaluation(MonthlyActivity $monthlyActivity): bool
+    {
+        return in_array($monthlyActivity->status, ['executed', 'completed', 'closed'], true)
+            || ! empty($monthlyActivity->actual_date)
+            || in_array((string) $monthlyActivity->lifecycle_status, ['Executed', 'Evaluated', 'Closed'], true);
+    }
+
     public function index(Request $request)
     {
         $activitiesQuery = MonthlyActivity::with(['branch', 'center', 'agendaEvent', 'creator'])
@@ -560,6 +567,25 @@ class MonthlyActivitiesController extends Controller
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
 
+        if ($request->user()->hasRole('followup_officer') && ! $request->user()->hasRole('super_admin')) {
+            abort_unless($this->canSubmitPostEvaluation($monthlyActivity), 422, 'التقييم متاح فقط بعد تنفيذ الفعالية.');
+
+            $data = $request->validate([
+                'evaluations' => ['nullable', 'array'],
+                'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
+                'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
+                'evaluations.*.note' => ['nullable', 'string'],
+                'followup_remarks' => ['nullable', 'string'],
+            ]);
+
+            $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
+            $this->logWorkflowAction('evaluation_submitted', $monthlyActivity, $request, $monthlyActivity->status);
+
+            return redirect()
+                ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'])
+                ->with('status', 'تم حفظ متابعة وتقييم الفعالية بنجاح.');
+        }
+
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
             return back()->withErrors(['status' => __('app.roles.programs.monthly_activities.errors.locked')]);
         }
@@ -836,7 +862,7 @@ class MonthlyActivitiesController extends Controller
         $workflowService->initializeDynamicStatuses($monthlyActivity);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
-        if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
+        if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($monthlyActivity)) {
             $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
         }
         $this->logChanges($monthlyActivity, $oldValues, $newValues, $request->user()->id);
