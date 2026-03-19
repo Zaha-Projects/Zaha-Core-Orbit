@@ -6,7 +6,7 @@
 @endphp
 
 @section('content')
-    <div class="event-module">
+    <div class="event-module monthly-activities-module" data-calendar-endpoint="{{ route('role.relations.activities.calendar') }}" data-rtl="{{ app()->getLocale() === 'ar' ? '1' : '0' }}">
         <div class="card event-card mb-4">
             <div class="card-body">
                 <h1 class="h4 mb-2">{{ $title }}</h1>
@@ -60,26 +60,132 @@
             </div>
         </div>
 
-        <div class="card event-card">
-            <div class="card-body">
-                <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
-                <div class="event-table-wrap table-responsive">
-                    <table class="table table-sm align-middle event-table">
-                        <thead><tr><th>{{ __('app.roles.programs.monthly_activities.table.title') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.date') }}</th><th>مصدر الفعالية</th><th>{{ __('app.roles.programs.monthly_activities.table.branch') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.status') }}</th><th class="text-end">{{ __('app.roles.programs.monthly_activities.table.actions') }}</th></tr></thead>
-                        <tbody>
-                            @forelse ($activities as $activity)
-                                <tr>
-                                    <td>{{ $activity->title }}</td><td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td><td>@if($activity->is_in_agenda)<span class='badge bg-success-subtle text-success'>من الأجندة</span>@else<span class='badge bg-warning-subtle text-warning'>خارج الأجندة</span>@endif</td><td>{{ $activity->branch?->name ?? '-' }}</td><td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
-                                    <td class="text-end"><div class="event-actions"><a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', $activity) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a><form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button></form></div></td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="6" class="text-muted">{{ __('app.roles.programs.monthly_activities.table.empty') }}</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+        <div class="agenda-view-switch mb-3" role="tablist">
+            <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">جدول</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-view-toggle="calendar" aria-pressed="false">تقويم</button>
+        </div>
+
+        <div class="agenda-view-pane" data-view-pane="table">
+            <div class="card event-card">
+                <div class="card-body">
+                    <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
+                    <div class="event-table-wrap table-responsive">
+                        <table class="table table-sm align-middle event-table">
+                            <thead><tr><th>{{ __('app.roles.programs.monthly_activities.table.title') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.date') }}</th><th>مصدر الفعالية</th><th>{{ __('app.roles.programs.monthly_activities.table.branch') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.status') }}</th><th class="text-end">{{ __('app.roles.programs.monthly_activities.table.actions') }}</th></tr></thead>
+                            <tbody>
+                                @forelse ($activities as $activity)
+                                    <tr>
+                                        <td>{{ $activity->title }}</td><td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td><td>@if($activity->is_in_agenda)<span class='badge bg-success-subtle text-success'>من الأجندة</span>@else<span class='badge bg-warning-subtle text-warning'>خارج الأجندة</span>@endif</td><td>{{ $activity->branch?->name ?? '-' }}</td><td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
+                                        <td class="text-end"><div class="event-actions"><a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', $activity) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a><form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button></form></div></td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="6" class="text-muted">{{ __('app.roles.programs.monthly_activities.table.empty') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">{{ $activities->links() }}</div>
+        </div>
+
+        <div class="agenda-view-pane d-none" data-view-pane="calendar">
+            <div class="card event-card">
+                <div class="card-body">
+                    <div class="agenda-calendar-toolbar mb-3 d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">السابق</button>
+                        <h2 class="h6 mb-0" data-calendar-title></h2>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">التالي</button>
+                    </div>
+                    <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
+                    <div class="agenda-calendar-grid" data-calendar-grid></div>
                 </div>
             </div>
         </div>
-        <div class="mt-3">{{ $activities->links() }}</div>
     </div>
+
+    <script>
+        (function () {
+            const module = document.querySelector('.monthly-activities-module');
+            if (!module) return;
+
+            const toggleButtons = module.querySelectorAll('[data-view-toggle]');
+            const panes = module.querySelectorAll('[data-view-pane]');
+            const isRtl = module.dataset.rtl === '1';
+
+            function switchView(nextView) {
+                panes.forEach((pane) => pane.classList.toggle('d-none', pane.dataset.viewPane !== nextView));
+                toggleButtons.forEach((button) => {
+                    const active = button.dataset.viewToggle === nextView;
+                    button.classList.toggle('btn-primary', active);
+                    button.classList.toggle('btn-outline-primary', !active);
+                    button.classList.toggle('active', active);
+                    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+                });
+            }
+            toggleButtons.forEach((button) => button.addEventListener('click', () => switchView(button.dataset.viewToggle)));
+
+            const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
+            const gridContainer = module.querySelector('[data-calendar-grid]');
+            const titleContainer = module.querySelector('[data-calendar-title]');
+            const endpoint = module.dataset.calendarEndpoint;
+
+            const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            weekdaysContainer.innerHTML = weekdays.map((label) => `<div class="agenda-weekday">${label}</div>`).join('');
+
+            const now = new Date();
+            let currentYear = now.getFullYear();
+            let currentMonth = now.getMonth() + 1;
+
+            function mapPos(day) { return isRtl ? 6 - day : day; }
+
+            async function loadCalendar() {
+                const res = await fetch(`${endpoint}?year=${currentYear}&month=${currentMonth}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const payload = await res.json();
+                const items = payload.items || [];
+
+                const firstDay = new Date(currentYear, currentMonth - 1, 1);
+                const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+                const firstOffset = mapPos(firstDay.getDay());
+
+                titleContainer.textContent = `${firstDay.toLocaleString(undefined, { month: 'long' })} ${currentYear}`;
+
+                gridContainer.innerHTML = '';
+                for (let i = 0; i < firstOffset; i++) {
+                    const pad = document.createElement('div');
+                    pad.className = 'agenda-day is-padding';
+                    gridContainer.appendChild(pad);
+                }
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayItems = items.filter((it) => it.date === dateStr);
+                    const cell = document.createElement('div');
+                    cell.className = 'agenda-day';
+                    cell.innerHTML = `<div class="agenda-day-number">${day}</div>`;
+
+                    dayItems.forEach((item) => {
+                        const a = document.createElement('a');
+                        a.href = item.edit_url;
+                        a.className = `agenda-event-chip status-${item.status}`;
+                        a.innerHTML = `<strong>${item.title}</strong><br><small>${item.branch || ''}</small>${item.requires_workshops ? ' 🛠️' : ''}${item.requires_communications ? ' 📣' : ''}`;
+                        cell.appendChild(a);
+                    });
+
+                    gridContainer.appendChild(cell);
+                }
+            }
+
+            module.querySelectorAll('[data-calendar-nav]').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    currentMonth += button.dataset.calendarNav === 'next' ? 1 : -1;
+                    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+                    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+                    await loadCalendar();
+                });
+            });
+
+            loadCalendar();
+        })();
+    </script>
 @endsection

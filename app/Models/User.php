@@ -47,6 +47,27 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+
+    public function isKheldaUser(): bool
+    {
+        $branchText = mb_strtolower(trim((string) optional($this->branch)->name . ' ' . (string) optional($this->branch)->city));
+
+        return str_contains($branchText, 'khalda')
+            || str_contains($branchText, 'خلدا')
+            || str_contains($branchText, 'amman')
+            || str_contains($branchText, 'عمان')
+            || str_contains($branchText, 'عمّان');
+    }
+
+    public function hasBranchScopedMonthlyVisibility(): bool
+    {
+        if ($this->isKheldaUser()) {
+            return false;
+        }
+
+        return $this->hasRole('branch_relations_officer');
+    }
+
     public function branch()
     {
         return $this->belongsTo(Branch::class);

@@ -27,6 +27,30 @@ use Illuminate\Support\Facades\Storage;
 
 class MonthlyActivitiesController extends Controller
 {
+    protected function shouldScopeToUserBranch(?User $user): bool
+    {
+        return $user !== null
+            && method_exists($user, 'hasBranchScopedMonthlyVisibility')
+            && $user->hasBranchScopedMonthlyVisibility()
+            && ! empty($user->branch_id);
+    }
+
+    protected function applyBranchVisibilityScope($query, ?User $user)
+    {
+        if ($this->shouldScopeToUserBranch($user)) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        return $query;
+    }
+
+    protected function ensureActivityVisibleToUser(MonthlyActivity $monthlyActivity, User $user): void
+    {
+        if ($this->shouldScopeToUserBranch($user) && (int) $monthlyActivity->branch_id !== (int) $user->branch_id) {
+            abort(403);
+        }
+    }
+
     protected function monthlyLockDays(): int
     {
         return max(0, (int) Setting::valueOf('monthly_plan_lock_days', '5'));
@@ -142,15 +166,26 @@ class MonthlyActivitiesController extends Controller
 
     public function index(Request $request)
     {
-        $activities = MonthlyActivity::with(['branch', 'center', 'agendaEvent', 'creator'])
+        $activitiesQuery = MonthlyActivity::with(['branch', 'center', 'agendaEvent', 'creator'])
             ->enterpriseFilter($request->all())
-            ->notArchived()
+            ->notArchived();
+
+        $this->applyBranchVisibilityScope($activitiesQuery, $request->user());
+
+        $activities = $activitiesQuery
             ->orderBy('month')
             ->orderBy('day')
             ->paginate(15)
             ->withQueryString();
-        $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
+
+        $branches = Branch::query()->orderBy('name');
+        $centers = Center::query()->orderBy('name');
+        if ($this->shouldScopeToUserBranch($request->user())) {
+            $branches->where('id', $request->user()->branch_id);
+            $centers->where('branch_id', $request->user()->branch_id);
+        }
+        $branches = $branches->get();
+        $centers = $centers->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
 
         return view('pages.monthly_activities.activities.index', compact('activities', 'branches', 'centers', 'agendaEvents'));
@@ -158,8 +193,15 @@ class MonthlyActivitiesController extends Controller
 
     public function create()
     {
-        $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
+        $user = request()->user();
+        $branches = Branch::query()->orderBy('name');
+        $centers = Center::query()->orderBy('name');
+        if ($this->shouldScopeToUserBranch($user)) {
+            $branches->where('id', $user->branch_id);
+            $centers->where('branch_id', $user->branch_id);
+        }
+        $branches = $branches->get();
+        $centers = $centers->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
@@ -175,6 +217,10 @@ class MonthlyActivitiesController extends Controller
             'month' => ['required', 'integer', 'between:1,12'],
             'year' => ['required', 'integer', 'min:2020', 'max:2100'],
         ]);
+
+        if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
+            abort(403);
+        }
 
         $centerBelongsToBranch = Center::query()
             ->where('id', $data['center_id'])
@@ -320,6 +366,10 @@ class MonthlyActivitiesController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
+        if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
+            abort(403);
+        }
+
         if (($data['location_type'] ?? null) === 'inside_center') {
             $data['outside_place_name'] = null;
             $data['outside_google_maps_url'] = null;
@@ -430,6 +480,8 @@ class MonthlyActivitiesController extends Controller
 
     public function edit(MonthlyActivity $monthlyActivity)
     {
+        $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
+
         $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
@@ -442,6 +494,8 @@ class MonthlyActivitiesController extends Controller
 
     public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
     {
+        $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
             return back()->withErrors(['status' => __('app.roles.programs.monthly_activities.errors.locked')]);
         }
@@ -519,6 +573,10 @@ class MonthlyActivitiesController extends Controller
             'followup_remarks' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
         ]);
+
+        if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
+            abort(403);
+        }
 
         if (($data['location_type'] ?? null) === 'inside_center') {
             $data['outside_place_name'] = null;
@@ -730,6 +788,8 @@ class MonthlyActivitiesController extends Controller
 
     public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications, MonthlyActivityLifecycleService $lifecycle)
     {
+        $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
+
         $monthlyActivity->update([
             'status' => 'submitted',
         ]);
@@ -750,6 +810,8 @@ class MonthlyActivitiesController extends Controller
 
     public function close(Request $request, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle)
     {
+        $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
         $data = $request->validate([
             'actual_date' => ['nullable', 'date'],
             'status' => ['required', 'string', 'max:50'],
@@ -770,5 +832,39 @@ class MonthlyActivitiesController extends Controller
         return redirect()
             ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.closed', ['activity' => $monthlyActivity->title]));
+    }
+
+    public function calendar(Request $request)
+    {
+        $year = (int) $request->input('year', now()->year);
+        $month = (int) $request->input('month', now()->month);
+
+        $query = MonthlyActivity::query()
+            ->with('branch')
+            ->whereYear('proposed_date', $year)
+            ->whereMonth('proposed_date', $month)
+            ->notArchived();
+
+        $this->applyBranchVisibilityScope($query, $request->user());
+
+        $items = $query->orderBy('proposed_date')->orderBy('day')->get()->map(function (MonthlyActivity $activity) {
+            return [
+                'id' => $activity->id,
+                'title' => $activity->title,
+                'date' => optional($activity->proposed_date)->format('Y-m-d')
+                    ?? sprintf('%04d-%02d-%02d', now()->year, $activity->month, $activity->day),
+                'branch' => $activity->branch?->name,
+                'status' => $activity->status,
+                'requires_workshops' => (bool) $activity->requires_workshops,
+                'requires_communications' => (bool) $activity->requires_communications,
+                'edit_url' => route('role.relations.activities.edit', $activity),
+            ];
+        })->values();
+
+        return response()->json([
+            'year' => $year,
+            'month' => $month,
+            'items' => $items,
+        ]);
     }
 }
