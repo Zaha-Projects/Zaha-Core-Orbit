@@ -10,7 +10,7 @@ class WorkshopsRequestsController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->string('status')->toString();
+        $status = (string) $request->input('status', '');
         $requiresWorkshops = $request->input('requires_workshops', '1');
 
         $requests = WorkshopsRequest::query()
