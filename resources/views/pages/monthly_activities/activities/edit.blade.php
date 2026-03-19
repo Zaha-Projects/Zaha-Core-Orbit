@@ -392,21 +392,21 @@
                 </div>
             </div>
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.attachments.title') }}</h2>
-            <form method="POST" action="{{ route('role.programs.attachments.store', $monthlyActivity) }}" class="row g-3 mb-3">
+            <form method="POST" action="{{ route('role.programs.attachments.store', $monthlyActivity) }}" enctype="multipart/form-data" class="row g-3 mb-3">
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.attachments.fields.file_type') }}</label>
                     <select class="form-select" name="file_type" required>
                         <option value="">-- اختر نوع الملف --</option>
-                        <option value="image">صورة</option>
-                        <option value="document">مستند</option>
-                        <option value="report">تقرير</option>
-                        <option value="other">أخرى</option>
+                        <option value="image" @selected(old('file_type') === 'image')>صورة</option>
+                        <option value="document" @selected(old('file_type') === 'document')>مستند</option>
+                        <option value="report" @selected(old('file_type') === 'report')>تقرير</option>
+                        <option value="other" @selected(old('file_type') === 'other')>أخرى</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">ملف التغطية (صورة/ملف)</label>
-                    <input class="form-control" type="file" name="file" required>
+                    <input class="form-control" type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xlsx,.xls" required>
                 </div>
                 <div class="col-12 col-md-2 d-flex justify-content-end align-items-center">
                     <button class="btn btn-outline-primary btn-sm mt-4" type="submit">
