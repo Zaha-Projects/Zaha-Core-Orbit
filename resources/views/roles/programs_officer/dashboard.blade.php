@@ -7,12 +7,12 @@
         [
             'title' => __('app.roles.programs_officer.actions.add_activity.title'),
             'description' => __('app.roles.programs_officer.actions.add_activity.description'),
-            'link' => route('role.programs.activities.index'),
+            'link' => route('role.relations.activities.index'),
         ],
         [
             'title' => __('app.roles.programs_officer.actions.attachments.title'),
             'description' => __('app.roles.programs_officer.actions.attachments.description'),
-            'link' => route('role.programs.activities.index'),
+            'link' => route('role.relations.activities.index'),
         ],
         [
             'title' => __('app.roles.programs_officer.actions.approval_followup.title'),

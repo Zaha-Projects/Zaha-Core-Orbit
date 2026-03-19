@@ -23,7 +23,7 @@ class MonthlyActivitySuppliesController extends Controller
         ]);
 
         return redirect()
-            ->route('role.programs.activities.edit', $monthlyActivity)
+            ->route('role.relations.activities.edit', $monthlyActivity)
             ->with('status', __('app.roles.programs.monthly_activities.supplies.created'));
     }
 
@@ -40,7 +40,7 @@ class MonthlyActivitySuppliesController extends Controller
         ]);
 
         return redirect()
-            ->route('role.programs.activities.edit', $monthlyActivitySupply->monthly_activity_id)
+            ->route('role.relations.activities.edit', $monthlyActivitySupply->monthly_activity_id)
             ->with('status', __('app.roles.programs.monthly_activities.supplies.updated'));
     }
 
@@ -50,7 +50,7 @@ class MonthlyActivitySuppliesController extends Controller
         $monthlyActivitySupply->delete();
 
         return redirect()
-            ->route('role.programs.activities.edit', $activityId)
+            ->route('role.relations.activities.edit', $activityId)
             ->with('status', __('app.roles.programs.monthly_activities.supplies.deleted'));
     }
 }

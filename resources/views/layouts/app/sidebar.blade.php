@@ -21,6 +21,7 @@
                     @include('pages.access.partials.sidebar')
                 @elseif (request()->routeIs('role.relations.*') || request()->routeIs('role.relations_manager.*') || request()->routeIs('role.relations_officer.*'))
                     @include('pages.agenda.partials.sidebar')
+                    @include('pages.monthly_activities.partials.sidebar')
                 @elseif (request()->routeIs('role.programs.*') || request()->routeIs('role.programs_manager.*') || request()->routeIs('role.programs_officer.*'))
                     @include('pages.monthly_activities.partials.sidebar')
                 @elseif (request()->routeIs('role.finance.*') || request()->routeIs('role.finance_officer.*'))

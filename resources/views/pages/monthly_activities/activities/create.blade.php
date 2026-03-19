@@ -22,7 +22,7 @@
                     </ul>
                 </div>
             @endif
-            <form method="POST" action="{{ route('role.programs.activities.store') }}" enctype="multipart/form-data" class="row event-form-grid">
+            <form method="POST" action="{{ route('role.relations.activities.store') }}" enctype="multipart/form-data" class="row event-form-grid">
                 @csrf
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.title') }}</label>

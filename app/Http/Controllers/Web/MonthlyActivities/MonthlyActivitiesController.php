@@ -239,7 +239,7 @@ class MonthlyActivitiesController extends Controller
         }
 
         return redirect()
-            ->route('role.programs.activities.index')
+            ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.sync.done', ['count' => $created]));
     }
 
@@ -417,7 +417,7 @@ class MonthlyActivitiesController extends Controller
         $this->logWorkflowAction('created', $monthlyActivity, $request, $monthlyActivity->status);
 
         return redirect()
-            ->route('role.programs.activities.index')
+            ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.created'))
             ->with('warning', $conflictWarning);
     }
@@ -716,7 +716,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         return redirect()
-            ->route('role.programs.activities.index')
+            ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.updated', ['activity' => $monthlyActivity->title]))
             ->with('warning', $conflictWarning);
     }
@@ -735,7 +735,7 @@ class MonthlyActivitiesController extends Controller
         }
 
         return redirect()
-            ->route('role.programs.activities.index')
+            ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.submitted', ['activity' => $monthlyActivity->title]));
     }
 
@@ -755,7 +755,7 @@ class MonthlyActivitiesController extends Controller
         $this->logWorkflowAction('closed', $monthlyActivity, $request, $data['status']);
 
         return redirect()
-            ->route('role.programs.activities.index')
+            ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.closed', ['activity' => $monthlyActivity->title]));
     }
 }

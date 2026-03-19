@@ -1,5 +1,5 @@
 <li class="nxl-item">
-    <a class="nxl-link {{ request()->routeIs('role.programs.activities.*') ? 'active' : '' }}" href="{{ route('role.programs.activities.index') }}">
+    <a class="nxl-link {{ request()->routeIs('role.relations.activities.*') ? 'active' : '' }}" href="{{ route('role.relations.activities.index') }}">
         <span class="nxl-micon"><i class="feather-layers"></i></span>
         <span class="nxl-mtext">{{ __('app.roles.programs.monthly_activities.title') }}</span>
     </a>

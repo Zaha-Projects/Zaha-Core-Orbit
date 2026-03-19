@@ -24,7 +24,7 @@ class MonthlyActivityAttachmentsController extends Controller
         ]);
 
         return redirect()
-            ->route('role.programs.activities.edit', $monthlyActivity)
+            ->route('role.relations.activities.edit', $monthlyActivity)
             ->with('status', __('app.roles.programs.monthly_activities.attachments.created'));
     }
 
@@ -34,7 +34,7 @@ class MonthlyActivityAttachmentsController extends Controller
         $monthlyActivityAttachment->delete();
 
         return redirect()
-            ->route('role.programs.activities.edit', $activityId)
+            ->route('role.relations.activities.edit', $activityId)
             ->with('status', __('app.roles.programs.monthly_activities.attachments.deleted'));
     }
 }

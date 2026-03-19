@@ -12,7 +12,7 @@
         [
             'title' => __('app.roles.programs_manager.actions.tracking.title'),
             'description' => __('app.roles.programs_manager.actions.tracking.description'),
-            'link' => route('role.programs.activities.index'),
+            'link' => route('role.relations.activities.index'),
         ],
         [
             'title' => __('app.roles.programs_manager.actions.reports.title'),

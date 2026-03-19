@@ -33,7 +33,7 @@
     <div class="card event-card mb-4">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.edit_details') }}</h2>
-            <form method="POST" action="{{ route('role.programs.activities.update', $monthlyActivity) }}" enctype="multipart/form-data" class="row g-3">
+            <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" enctype="multipart/form-data" class="row g-3">
                 @csrf
                 @method('PUT')
                 <div class="col-12 col-md-6">
@@ -423,7 +423,7 @@
     <div class="card event-card">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.close_title') }}</h2>
-            <form method="POST" action="{{ route('role.programs.activities.close', $monthlyActivity) }}" class="row g-3">
+            <form method="POST" action="{{ route('role.relations.activities.close', $monthlyActivity) }}" class="row g-3">
                 @csrf
                 @method('PATCH')
                 <div class="col-12 col-md-4">
