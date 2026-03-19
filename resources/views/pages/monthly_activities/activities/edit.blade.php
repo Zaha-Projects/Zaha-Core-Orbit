@@ -396,7 +396,13 @@
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.attachments.fields.file_type') }}</label>
-                    <input class="form-control" name="file_type" required>
+                    <select class="form-select" name="file_type" required>
+                        <option value="">-- اختر نوع الملف --</option>
+                        <option value="image">صورة</option>
+                        <option value="document">مستند</option>
+                        <option value="report">تقرير</option>
+                        <option value="other">أخرى</option>
+                    </select>
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">ملف التغطية (صورة/ملف)</label>
@@ -452,6 +458,10 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.actual_date') }}</label>
                     <input class="form-control" type="date" name="actual_date" value="{{ optional($monthlyActivity->actual_date)->format('Y-m-d') }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">عدد الحضور الفعلي</label>
+                    <input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance) }}">
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>

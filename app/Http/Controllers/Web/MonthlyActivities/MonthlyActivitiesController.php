@@ -878,11 +878,13 @@ class MonthlyActivitiesController extends Controller
 
         $data = $request->validate([
             'actual_date' => ['nullable', 'date'],
+            'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'status' => ['required', 'string', 'max:50'],
         ]);
 
         $monthlyActivity->update([
             'actual_date' => $data['actual_date'] ?? $monthlyActivity->actual_date,
+            'actual_attendance' => $data['actual_attendance'] ?? $monthlyActivity->actual_attendance,
             'status' => $data['status'],
             'is_official' => true,
         ]);

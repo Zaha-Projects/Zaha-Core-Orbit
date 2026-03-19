@@ -13,7 +13,7 @@ class MonthlyActivityAttachmentsController extends Controller
     public function store(Request $request, MonthlyActivity $monthlyActivity)
     {
         $data = $request->validate([
-            'file_type' => ['required', 'string', 'max:50'],
+            'file_type' => ['required', 'in:image,document,report,other'],
             'file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf,doc,docx,xlsx,xls', 'max:10240'],
         ]);
 
@@ -27,7 +27,7 @@ class MonthlyActivityAttachmentsController extends Controller
         ]);
 
         return redirect()
-            ->route('role.relations.activities.edit', $monthlyActivity)
+            ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'])
             ->with('status', __('app.roles.programs.monthly_activities.attachments.created'));
     }
 
@@ -40,7 +40,7 @@ class MonthlyActivityAttachmentsController extends Controller
         $monthlyActivityAttachment->delete();
 
         return redirect()
-            ->route('role.relations.activities.edit', $activityId)
+            ->route('role.relations.activities.edit', ['monthlyActivity' => $activityId, 'mode' => 'post'])
             ->with('status', __('app.roles.programs.monthly_activities.attachments.deleted'));
     }
 }
