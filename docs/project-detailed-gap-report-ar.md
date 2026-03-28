@@ -300,27 +300,27 @@
 
 ## 6.2 جدول الأدوار والمهام والصلاحيات المرتبطة
 
-| الدور | الموديولات المرتبطة | أهم الصفحات/الباثات | نوع الصلاحية العملية | حساب من Seeder (Email) | Password |
-|---|---|---|---|---|---|
-| super_admin | إدارة النظام كاملة + lookups + حوكمة | `/dashboard/admin/*` + جزء كبير من modules | إدارة/ضبط/رقابة شاملة | `super_admin@zaha.test` | `password` |
-| relations_manager (HQ) | الأجندة + مراحل اعتماد | `/dashboard/relations/agenda*`, approvals | إنشاء/اعتماد/نشر ضمن العلاقات | `relations_manager@khalda.zaha.test` | `password` |
-| relations_manager (Zarqa) | الأجندة/الخطة الشهرية على مستوى الفرع | agenda + monthly routes | مراجعة/اعتماد داخل الفرع | `relations_manager@zarqa.zaha.test` | `password` |
-| relations_manager (Irbid) | الأجندة/الخطة الشهرية على مستوى الفرع | agenda + monthly routes | مراجعة/اعتماد داخل الفرع | `relations_manager@irbid.zaha.test` | `password` |
-| relations_officer (Zarqa) | إدخال الأجندة/الخطة الشهرية | agenda + monthly routes | إدخال/تحديث/إرسال | `relations_officer@zarqa.zaha.test` | `password` |
-| relations_officer (Irbid) | إدخال الأجندة/الخطة الشهرية | agenda + monthly routes | إدخال/تحديث/إرسال | `relations_officer@irbid.zaha.test` | `password` |
-| branch_relations_officer (مستخدم بالكود) | الخطة الشهرية الفرعية ومشاركة الفروع | monthly + branch participation | تشغيل فرعي محدود (يجب توحيد تعريفه رسمياً) | غير موجود Seeded | — |
-| programs_officer | مراجعة متطلبات البرامج في الفعاليات | approvals + supplies/team | مراجعة وتنفيذ برامج | `programs_officer@khalda.zaha.test` | `password` |
-| programs_manager | اعتماد برامج + متابعة التنفيذ | approvals + supplies/team | اعتماد برامجي | `programs_manager@khalda.zaha.test` | `password` |
-| communication_head | ملاحظات التغطية الإعلامية | communications requests + agenda participation | Notes/coordination | `communication_head@khalda.zaha.test` | `password` |
-| workshops_secretary | ملاحظات المشاغل | workshops requests + agenda participation | Notes/coordination | `workshops_secretary@khalda.zaha.test` | `password` |
-| executive_manager | اعتماد نهائي للفعاليات | agenda approvals + monthly approvals | Final approval | `executive_manager@khalda.zaha.test` | `password` |
-| followup_officer | متابعة وتقييم/KPI | reports + kpis + edit/update monthly (حسب routes) | تقييم ومؤشرات | غير موجود Seeded في `UsersSeeder` | — |
-| maintenance_officer | الصيانة | `/dashboard/maintenance/*` | إدارة دورة الصيانة | غير موجود Seeded في `UsersSeeder` | — |
-| transport_officer | النقل/السائقين/المركبات/الرحلات/الحركة | `/dashboard/transport/*` | إدارة تشغيل النقل | غير موجود Seeded في `UsersSeeder` | — |
-| movement_manager/editor/viewer | شاشات الحركة (movements) | `/dashboard/transport/movements*` | إدارة/تعديل/عرض حسب الدور | غير موجود Seeded | — |
-| finance_officer | المالية (إضافة على نطاقك الحالي) | `/dashboard/finance/*` | تحصيل/حجوزات/مدفوعات | غير موجود Seeded في `UsersSeeder` | — |
-| reports_viewer | التقارير | `/dashboard/reports/*`, `/dashboard/enterprise/*` | عرض وتحليل | غير موجود Seeded في `UsersSeeder` | — |
-| staff | عرض فقط | `/dashboard/staff/*` | استعراض | غير موجود Seeded في `UsersSeeder` | — |
+| الدور (Key) | الاسم العربي المقترح | الحالة المقترحة | سبب القرار | الموديولات المرتبطة | أهم الصفحات/الباثات | حساب من Seeder (Email) | Password |
+|---|---|---|---|---|---|---|---|
+| super_admin | مدير النظام العام | **مطلوب (إبقاء)** | دور حاكم للنظام وإدارة الصلاحيات | إدارة النظام كاملة + lookups + حوكمة | `/dashboard/admin/*` + جزء كبير من modules | `super_admin@zaha.test` | `password` |
+| relations_manager (HQ) | مدير وحدة العلاقات (خلدا) | **مطلوب (إبقاء)** | مالك مسار الأجندة والاعتمادات المركزية | الأجندة + مراحل اعتماد | `/dashboard/relations/agenda*`, approvals | `relations_manager@khalda.zaha.test` | `password` |
+| relations_manager (Zarqa/Irbid) | رئيس وحدة العلاقات (فرع) | **مطلوب (إبقاء)** | اعتماد ومراجعة على مستوى الفرع | الأجندة/الخطة الشهرية على مستوى الفرع | agenda + monthly routes | `relations_manager@zarqa.zaha.test` / `relations_manager@irbid.zaha.test` | `password` |
+| relations_officer (Zarqa/Irbid) | ضابط/مسؤول العلاقات (فرع) | **مطلوب (إبقاء)** | الدور التشغيلي الأساسي لإدخال الفعاليات | إدخال الأجندة/الخطة الشهرية | agenda + monthly routes | `relations_officer@zarqa.zaha.test` / `relations_officer@irbid.zaha.test` | `password` |
+| branch_relations_officer | ضابط ارتباط العلاقات (فرع) | **مطلوب (تعديل/توحيد)** | مستخدم في routes/workflow لكنه غير موحّد Seeder؛ يجب توحيده مع relations_officer أو إضافته رسمياً | الخطة الشهرية الفرعية ومشاركة الفروع | monthly + branch participation | غير موجود Seeded | — |
+| programs_officer | ضابط البرامج | **مطلوب (إبقاء)** | مرحلة مراجعة البرامج عند `requires_programs` | مراجعة متطلبات البرامج | approvals + supplies/team | `programs_officer@khalda.zaha.test` | `password` |
+| programs_manager | مدير وحدة البرامج | **مطلوب (إبقاء)** | اعتماد برامج نهائي قبل التنفيذي | اعتماد برامج + متابعة التنفيذ | approvals + supplies/team | `programs_manager@khalda.zaha.test` | `password` |
+| communication_head | رئيس قسم الاتصال | **مطلوب (إبقاء)** | جهة ملاحظات وتغطية إعلامية | communications + agenda participation | communications requests + agenda participation | `communication_head@khalda.zaha.test` | `password` |
+| workshops_secretary | مقرر لجنة المشاغل | **مطلوب (إبقاء)** | جهة ملاحظات تجهيزات/مشاغل | workshops + agenda participation | workshops requests + agenda participation | `workshops_secretary@khalda.zaha.test` | `password` |
+| executive_manager | المدير التنفيذي | **مطلوب (إبقاء)** | اعتماد نهائي للفعاليات | الاعتماد النهائي | agenda approvals + monthly approvals | `executive_manager@khalda.zaha.test` | `password` |
+| followup_officer | ضابط ارتباط المتابعة | **مطلوب (إبقاء + إضافة Seed)** | مهم للتقييم/KPI ويوجد بالمسارات دون حساب seeded هنا | متابعة وتقييم/KPI | reports + kpis + edit/update monthly | غير موجود Seeded في `UsersSeeder` | — |
+| maintenance_officer | ضابط/مسؤول الصيانة | **مطلوب (إبقاء + إضافة Seed)** | يغطي فورم الصيانة كاملاً | الصيانة | `/dashboard/maintenance/*` | غير موجود Seeded في `UsersSeeder` | — |
+| transport_officer | مأمور/ضابط الحركة والنقل | **مطلوب (إبقاء + إضافة Seed)** | يغطي المركبات/السائقين/الحركة | النقل/السائقين/المركبات/الرحلات/الحركة | `/dashboard/transport/*` | غير موجود Seeded في `UsersSeeder` | — |
+| movement_manager | مدير الحركة | **مطلوب (دمج/توحيد)** | يفضل دمجه في transport_officer أو إبقاؤه مع Matrix أوضح | شاشات الحركة | `/dashboard/transport/movements*` | غير موجود Seeded | — |
+| movement_editor | محرر الحركة | **اختياري (تعديل/دمج)** | يفيد بالتفويض الدقيق، لكن يزيد التعقيد إن لم يوجد مستخدمون فعليون | شاشات الحركة | `/dashboard/transport/movements*` | غير موجود Seeded | — |
+| movement_viewer | مستعرض الحركة | **اختياري (إبقاء مشروط)** | مناسب للعرض فقط؛ يبقى إذا في حاجة تشغيلية فعلية | شاشات الحركة | `/dashboard/transport/movements*` | غير موجود Seeded | — |
+| finance_officer | ضابط المالية | **اختياري مرحلياً** | خارج نطاق تركيزك الحالي (إن لم تُفعّل المالية الآن) | المالية | `/dashboard/finance/*` | غير موجود Seeded في `UsersSeeder` | — |
+| reports_viewer | مستعرض التقارير | **مطلوب (إبقاء)** | ضروري للإدارة والمتابعة | التقارير | `/dashboard/reports/*`, `/dashboard/enterprise/*` | غير موجود Seeded في `UsersSeeder` | — |
+| staff | موظف عرض عام | **اختياري (إبقاء مشروط)** | مفيد للعرض العام فقط | عرض فقط | `/dashboard/staff/*` | غير موجود Seeded في `UsersSeeder` | — |
 
 ## 6.3 ملاحظة ضبط مهمة
 - يوجد فرق بين “الأدوار الموجودة في Seeder” و”الأدوار المستخدمة فعلياً داخل route middleware/workflow” (خصوصاً `branch_relations_officer`) ويجب توحيده قبل الإطلاق.
