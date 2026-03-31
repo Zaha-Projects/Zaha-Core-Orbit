@@ -5,14 +5,24 @@
     $title = __('app.roles.super_admin.users.title');
     $subtitle = __('app.roles.super_admin.users.subtitle');
     $permissionsByModule = $permissions->groupBy('module');
+    $translateModule = function (?string $module) {
+        $moduleKey = (string) $module;
+        $translated = __('app.acl.modules.' . $moduleKey);
+
+        return $translated !== 'app.acl.modules.' . $moduleKey
+            ? $translated
+            : Str::headline($moduleKey);
+    };
     $translatePermission = function ($permission) {
         $name = is_string($permission) ? $permission : (string) $permission->name;
         $ar = is_string($permission) ? null : $permission->name_ar;
         $en = is_string($permission) ? null : $permission->name_en;
 
-        return app()->getLocale() === 'ar'
+        $label = app()->getLocale() === 'ar'
             ? ($ar ?: __('app.acl.permissions.' . str_replace('.', '_', $name), [], 'ar'))
             : ($en ?: __('app.acl.permissions.' . str_replace('.', '_', $name), [], 'en'));
+
+        return trim(preg_replace('/[\r\n\t]+/u', ' ', (string) $label));
     };
 @endphp
 
@@ -95,7 +105,7 @@
                                                     <div class="accordion-item">
                                                         <h2 class="accordion-header" id="create-user-overrides-module-heading-{{ $loop->index }}">
                                                             <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#create-user-overrides-module-body-{{ $loop->index }}" aria-expanded="false" aria-controls="create-user-overrides-module-body-{{ $loop->index }}">
-                                                                {{ Str::headline((string) $module) }}
+                                                                {{ $translateModule($module) }}
                                                             </button>
                                                         </h2>
                                                         <div id="create-user-overrides-module-body-{{ $loop->index }}" class="accordion-collapse collapse" aria-labelledby="create-user-overrides-module-heading-{{ $loop->index }}" data-bs-parent="#create-user-overrides-modules">
@@ -128,7 +138,7 @@
                                                     <div class="accordion-item">
                                                         <h2 class="accordion-header" id="create-user-denied-module-heading-{{ $loop->index }}">
                                                             <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#create-user-denied-module-body-{{ $loop->index }}" aria-expanded="false" aria-controls="create-user-denied-module-body-{{ $loop->index }}">
-                                                                {{ Str::headline((string) $module) }}
+                                                                {{ $translateModule($module) }}
                                                             </button>
                                                         </h2>
                                                         <div id="create-user-denied-module-body-{{ $loop->index }}" class="accordion-collapse collapse" aria-labelledby="create-user-denied-module-heading-{{ $loop->index }}" data-bs-parent="#create-user-denied-modules">
@@ -288,7 +298,7 @@
                                                         @foreach ($permissionsByModule as $module => $modulePermissions)
                                                             <div class="col-12 col-lg-6">
                                                                 <div class="border rounded p-2">
-                                                                    <div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
+                                                                    <div class="fw-semibold small mb-1">{{ $translateModule($module) }}</div>
                                                                     @foreach ($modulePermissions as $permission)
                                                                         <div class="form-check form-switch">
                                                                             <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-perm-{{ $permission->id }}" {{ in_array($permission->name, $userAllPermissionNames, true) ? 'checked' : '' }}>
@@ -306,7 +316,7 @@
                                                     <label class="form-label">Denied Permissions (صلاحيات ممنوعة)</label>
                                                     <div class="row g-2">
                                                         @foreach ($permissionsByModule as $module => $modulePermissions)
-                                                            <div class="col-12 col-lg-6"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
+                                                            <div class="col-12 col-lg-6"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ $translateModule($module) }}</div>
                                                                 @foreach ($modulePermissions as $permission)
                                                                     <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="denied_permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-deny-{{ $permission->id }}" {{ in_array($permission->name, $userDeniedPermissionNames, true) ? 'checked' : '' }}><label class="form-check-label small" for="edit-user-{{ $user->id }}-deny-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
                                                                 @endforeach

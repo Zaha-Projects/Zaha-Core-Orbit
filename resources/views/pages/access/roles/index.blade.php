@@ -5,12 +5,22 @@
     $title = __('app.roles.super_admin.roles.title');
     $subtitle = __('app.roles.super_admin.roles.subtitle');
     $permissionsByModule = $permissions;
+    $translateModule = function (?string $module) {
+        $moduleKey = (string) $module;
+        $translated = __('app.acl.modules.' . $moduleKey);
+
+        return $translated !== 'app.acl.modules.' . $moduleKey
+            ? $translated
+            : Str::headline($moduleKey);
+    };
     $translatePermission = function ($permission) {
         $name = is_string($permission) ? $permission : (string) $permission->name;
         $ar = is_string($permission) ? null : $permission->name_ar;
         $en = is_string($permission) ? null : $permission->name_en;
 
-        return app()->getLocale() === 'ar' ? ($ar ?: $name) : ($en ?: $name);
+        $label = app()->getLocale() === 'ar' ? ($ar ?: $name) : ($en ?: $name);
+
+        return trim(preg_replace('/[\r\n\t]+/u', ' ', (string) $label));
     };
 @endphp
 
@@ -34,7 +44,7 @@
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="create-role-module-heading-{{ $loop->index }}">
                                 <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#create-role-module-body-{{ $loop->index }}" aria-expanded="false" aria-controls="create-role-module-body-{{ $loop->index }}">
-                                    {{ Str::headline((string) $module) }}
+                                    {{ $translateModule($module) }}
                                 </button>
                             </h2>
                             <div id="create-role-module-body-{{ $loop->index }}" class="accordion-collapse collapse" aria-labelledby="create-role-module-heading-{{ $loop->index }}" data-bs-parent="#create-role-permissions-modules">
@@ -80,7 +90,7 @@
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="role-{{ $role->id }}-module-heading-{{ $loop->index }}">
                                         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#role-{{ $role->id }}-module-body-{{ $loop->index }}" aria-expanded="false" aria-controls="role-{{ $role->id }}-module-body-{{ $loop->index }}">
-                                            {{ Str::headline((string) $module) }}
+                                            {{ $translateModule($module) }}
                                         </button>
                                     </h2>
                                     <div id="role-{{ $role->id }}-module-body-{{ $loop->index }}" class="accordion-collapse collapse" aria-labelledby="role-{{ $role->id }}-module-heading-{{ $loop->index }}" data-bs-parent="#role-permissions-modules-{{ $role->id }}">
