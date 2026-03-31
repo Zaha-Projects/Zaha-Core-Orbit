@@ -15,7 +15,7 @@ class UsersController extends Controller
 {
     public function index()
     {
-        $users = User::with(['roles', 'permissions', 'branch', 'center'])->orderBy('name')->get();
+        $users = User::with(['roles', 'permissions', 'deniedPermissions', 'branch', 'center'])->orderBy('name')->get();
         $roles = Role::with('permissions')->orderBy('name')->get();
         $permissions = Permission::orderBy('module')->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
@@ -37,6 +37,8 @@ class UsersController extends Controller
             'password' => ['required', 'string', 'min:8'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
+            'denied_permissions' => ['nullable', 'array'],
+            'denied_permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
         $user = User::create([
@@ -56,6 +58,9 @@ class UsersController extends Controller
             $user->givePermissionTo($extraPermissions);
         }
 
+        $denied = Permission::query()->whereIn('name', $data['denied_permissions'] ?? [])->pluck('id');
+        $user->deniedPermissions()->sync($denied);
+
         return redirect()
             ->route('role.super_admin.users')
             ->with('status', __('app.roles.super_admin.users.created'));
@@ -74,6 +79,8 @@ class UsersController extends Controller
             'password' => ['nullable', 'string', 'min:8'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
+            'denied_permissions' => ['nullable', 'array'],
+            'denied_permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
         $user->update([
@@ -95,6 +102,9 @@ class UsersController extends Controller
         if (! empty($toAdd)) {
             $user->givePermissionTo($toAdd);
         }
+
+        $denied = Permission::query()->whereIn('name', $data['denied_permissions'] ?? [])->pluck('id');
+        $user->deniedPermissions()->sync($denied);
 
         return redirect()
             ->route('role.super_admin.users')

@@ -7,9 +7,15 @@
     $translateRole = fn (string $name) => __('app.acl.roles.' . $name) !== 'app.acl.roles.' . $name
         ? __('app.acl.roles.' . $name)
         : Str::headline(str_replace(['_', '.'], ' ', $name));
-    $translatePermission = fn (string $name) => __('app.acl.permissions.' . str_replace('.', '_', $name)) !== 'app.acl.permissions.' . str_replace('.', '_', $name)
-        ? __('app.acl.permissions.' . str_replace('.', '_', $name))
-        : Str::headline(str_replace(['_', '.'], ' ', $name));
+    $translatePermission = function ($permission) {
+        $name = is_string($permission) ? $permission : (string) $permission->name;
+        $ar = is_string($permission) ? null : $permission->name_ar;
+        $en = is_string($permission) ? null : $permission->name_en;
+
+        return app()->getLocale() === 'ar'
+            ? ($ar ?: __('app.acl.permissions.' . str_replace('.', '_', $name), [], 'ar'))
+            : ($en ?: __('app.acl.permissions.' . str_replace('.', '_', $name), [], 'en'));
+    };
 @endphp
 
 
@@ -95,11 +101,25 @@
                                             @foreach ($modulePermissions as $permission)
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="create-perm-{{ $permission->id }}">
-                                                    <label class="form-check-label small" for="create-perm-{{ $permission->id }}">{{ $translatePermission($permission->name) }}</label>
+                                                    <label class="form-check-label small" for="create-perm-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
                                                 </div>
                                             @endforeach
                                         </div>
                                     </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+
+                        <div class="col-12">
+                            <label class="form-label">Denied Permissions (صلاحيات ممنوعة)</label>
+                            <div class="row g-2">
+                                @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
+                                    <div class="col-12 col-lg-6"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
+                                        @foreach ($modulePermissions as $permission)
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="denied_permissions[]" value="{{ $permission->name }}" id="create-deny-{{ $permission->id }}"><label class="form-check-label small" for="create-deny-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
+                                        @endforeach
+                                    </div></div>
                                 @endforeach
                             </div>
                         </div>
@@ -213,14 +233,21 @@
                                                     <div class="small text-muted">Role Permissions (صلاحيات الدور):
                                                         @php($rolePermissions = optional($user->roles->first())->permissions ?? collect())
                                                         @forelse($rolePermissions as $rp)
-                                                            <span class="badge bg-light text-dark">{{ $translatePermission($rp->name) }}</span>
+                                                            <span class="badge bg-light text-dark">{{ $translatePermission($rp) }}</span>
                                                         @empty
                                                             <span>-</span>
                                                         @endforelse
                                                     </div>
                                                     <div class="small text-muted mt-1">Direct Overrides (الإضافات المباشرة):
                                                         @forelse($user->getDirectPermissions() as $dp)
-                                                            <span class="badge bg-warning text-dark">{{ $translatePermission($dp->name) }}</span>
+                                                            <span class="badge bg-warning text-dark">{{ $translatePermission($dp) }}</span>
+                                                        @empty
+                                                            <span>-</span>
+                                                        @endforelse
+                                                    </div>
+                                                    <div class="small text-muted mt-1">Denied (ممنوع):
+                                                        @forelse($user->deniedPermissions as $dp)
+                                                            <span class="badge bg-danger">{{ $translatePermission($dp) }}</span>
                                                         @empty
                                                             <span>-</span>
                                                         @endforelse
@@ -237,11 +264,25 @@
                                                                     @foreach ($modulePermissions as $permission)
                                                                         <div class="form-check">
                                                                             <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-perm-{{ $permission->id }}" @checked($user->permissions->contains('name', $permission->name))>
-                                                                            <label class="form-check-label small" for="edit-user-{{ $user->id }}-perm-{{ $permission->id }}">{{ $translatePermission($permission->name) }}</label>
+                                                                            <label class="form-check-label small" for="edit-user-{{ $user->id }}-perm-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
                                                                         </div>
                                                                     @endforeach
                                                                 </div>
                                                             </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+
+
+                                                <div class="col-12">
+                                                    <label class="form-label">Denied Permissions (صلاحيات ممنوعة)</label>
+                                                    <div class="row g-2">
+                                                        @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
+                                                            <div class="col-12 col-lg-6"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
+                                                                @foreach ($modulePermissions as $permission)
+                                                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="denied_permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-deny-{{ $permission->id }}" @checked($user->deniedPermissions->contains('name', $permission->name))><label class="form-check-label small" for="edit-user-{{ $user->id }}-deny-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
+                                                                @endforeach
+                                                            </div></div>
                                                         @endforeach
                                                     </div>
                                                 </div>

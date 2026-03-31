@@ -5,7 +5,13 @@
     $title = __('app.roles.super_admin.roles.title');
     $subtitle = __('app.roles.super_admin.roles.subtitle');
     $translateRole = fn (string $name) => __('app.acl.roles.' . $name) !== 'app.acl.roles.' . $name ? __('app.acl.roles.' . $name) : Str::headline(str_replace(['_', '.'], ' ', $name));
-    $translatePermission = fn (string $name) => __('app.acl.permissions.' . str_replace('.', '_', $name)) !== 'app.acl.permissions.' . str_replace('.', '_', $name) ? __('app.acl.permissions.' . str_replace('.', '_', $name)) : Str::headline(str_replace(['_', '.'], ' ', $name));
+    $translatePermission = function ($permission) {
+        $name = is_string($permission) ? $permission : (string) $permission->name;
+        $ar = is_string($permission) ? null : $permission->name_ar;
+        $en = is_string($permission) ? null : $permission->name_en;
+
+        return app()->getLocale() === 'ar' ? ($ar ?: $name) : ($en ?: $name);
+    };
 @endphp
 
 @section('content')
@@ -26,7 +32,7 @@
                     @foreach ($permissions as $module => $modulePermissions)
                         <div class="col-md-4"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
                             @foreach ($modulePermissions as $permission)
-                                <div class="form-check"><input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="new-perm-{{ $permission->id }}"><label class="form-check-label small" for="new-perm-{{ $permission->id }}">{{ $translatePermission($permission->name) }}</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="new-perm-{{ $permission->id }}"><label class="form-check-label small" for="new-perm-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
                             @endforeach
                         </div></div>
                     @endforeach
@@ -49,7 +55,7 @@
                     @foreach ($permissions as $module => $modulePermissions)
                         <div class="col-md-4"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
                             @foreach ($modulePermissions as $permission)
-                                <div class="form-check"><input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm-{{ $role->id }}-{{ $permission->id }}" @checked($role->hasPermissionTo($permission))><label class="form-check-label small" for="perm-{{ $role->id }}-{{ $permission->id }}">{{ $translatePermission($permission->name) }}</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm-{{ $role->id }}-{{ $permission->id }}" @checked($role->hasPermissionTo($permission))><label class="form-check-label small" for="perm-{{ $role->id }}-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
                             @endforeach
                         </div></div>
                     @endforeach

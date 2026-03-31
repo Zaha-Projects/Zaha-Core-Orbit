@@ -16,7 +16,7 @@ class RolePermissionSeeder extends Seeder
             // canonical
             ['name' => 'agenda.view', 'module' => 'agenda', 'action' => 'view', 'name_ar' => 'عرض الأجندة', 'name_en' => 'View agenda'],
             ['name' => 'agenda.create', 'module' => 'agenda', 'action' => 'create', 'name_ar' => 'إنشاء الأجندة', 'name_en' => 'Create agenda'],
-            ['name' => 'agenda.edit', 'module' => 'agenda', 'action' => 'edit', 'name_ar' => 'تعديل الأجندة', 'name_en' => 'Edit agenda'],
+            ['name' => 'agenda.update', 'module' => 'agenda', 'action' => 'update', 'name_ar' => 'تعديل الأجندة', 'name_en' => 'Edit agenda'],
             ['name' => 'agenda.delete', 'module' => 'agenda', 'action' => 'delete', 'name_ar' => 'حذف الأجندة', 'name_en' => 'Delete agenda'],
             ['name' => 'agenda.approve', 'module' => 'agenda', 'action' => 'approve', 'name_ar' => 'اعتماد الأجندة', 'name_en' => 'Approve agenda'],
             ['name' => 'agenda.participation.update', 'module' => 'agenda', 'action' => 'update', 'name_ar' => 'تحديث المشاركة', 'name_en' => 'Update participation'],
@@ -26,6 +26,8 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'monthly_activities.edit', 'module' => 'monthly_activities', 'action' => 'edit', 'name_ar' => 'تعديل الخطة الشهرية', 'name_en' => 'Edit monthly activities'],
             ['name' => 'monthly_activities.delete', 'module' => 'monthly_activities', 'action' => 'delete', 'name_ar' => 'حذف الخطة الشهرية', 'name_en' => 'Delete monthly activities'],
             ['name' => 'monthly_activities.approve', 'module' => 'monthly_activities', 'action' => 'approve', 'name_ar' => 'اعتماد الخطة الشهرية', 'name_en' => 'Approve monthly activities'],
+            ['name' => 'monthly_plan.approve_level_1', 'module' => 'monthly_plan', 'action' => 'approve_level_1', 'name_ar' => 'اعتماد شهري مستوى 1', 'name_en' => 'Monthly approve level 1'],
+            ['name' => 'monthly_plan.approve_level_2', 'module' => 'monthly_plan', 'action' => 'approve_level_2', 'name_ar' => 'اعتماد شهري مستوى 2', 'name_en' => 'Monthly approve level 2'],
 
             ['name' => 'evaluation.view', 'module' => 'evaluation', 'action' => 'view', 'name_ar' => 'عرض التقييم', 'name_en' => 'View evaluation'],
             ['name' => 'evaluation.submit', 'module' => 'evaluation', 'action' => 'submit', 'name_ar' => 'إرسال التقييم', 'name_en' => 'Submit evaluation'],
@@ -69,8 +71,8 @@ class RolePermissionSeeder extends Seeder
 
         $roles = [
             'super_admin' => collect($permissions)->pluck('name')->all(),
-            'relations_manager' => ['agenda.view', 'agenda.create', 'agenda.edit', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.approve', 'branches.view.all'],
-            'relations_officer' => ['agenda.view', 'agenda.create', 'agenda.edit', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'branches.view.own'],
+            'relations_manager' => ['agenda.view', 'agenda.create', 'agenda.update', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.approve', 'branches.view.all'],
+            'relations_officer' => ['agenda.view', 'agenda.create', 'agenda.update', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'branches.view.own'],
             'branch_relations_officer' => ['agenda.view', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'monthly_activities.approve', 'communications.upload_media', 'branches.view.own'],
             'programs_manager' => ['monthly_activities.view', 'monthly_activities.approve', 'evaluation.manage', 'branches.view.all'],
             'programs_officer' => ['monthly_activities.view', 'monthly_activities.create', 'evaluation.submit', 'communications.upload_media', 'branches.view.all'],
@@ -88,8 +90,8 @@ class RolePermissionSeeder extends Seeder
         }
 
         $this->seedWorkflow('monthly_activities_approval', 'monthly_activities', [
-            ['step_order' => 1, 'approval_level' => 1, 'step_key' => 'sub_1', 'name_ar' => 'فرعي 1', 'name_en' => 'Sub 1', 'step_type' => 'sub', 'role' => 'branch_relations_officer', 'permission' => 'monthly_activities.approve'],
-            ['step_order' => 2, 'approval_level' => 2, 'step_key' => 'sub_2', 'name_ar' => 'فرعي 2', 'name_en' => 'Sub 2', 'step_type' => 'sub', 'role' => 'relations_manager', 'permission' => 'monthly_activities.approve'],
+            ['step_order' => 1, 'approval_level' => 1, 'step_key' => 'sub_1', 'name_ar' => 'فرعي 1', 'name_en' => 'Sub 1', 'step_type' => 'sub', 'role' => 'branch_relations_officer', 'permission' => 'monthly_plan.approve_level_1'],
+            ['step_order' => 2, 'approval_level' => 2, 'step_key' => 'sub_2', 'name_ar' => 'فرعي 2', 'name_en' => 'Sub 2', 'step_type' => 'sub', 'role' => 'relations_manager', 'permission' => 'monthly_plan.approve_level_2'],
             ['step_order' => 3, 'approval_level' => 2, 'step_key' => 'main_2', 'name_ar' => 'رئيسي 2', 'name_en' => 'Main 2', 'step_type' => 'main', 'role' => 'programs_manager', 'permission' => 'monthly_activities.approve'],
             ['step_order' => 4, 'approval_level' => 1, 'step_key' => 'main_1', 'name_ar' => 'رئيسي 1', 'name_en' => 'Main 1', 'step_type' => 'main', 'role' => 'executive_manager', 'permission' => 'monthly_activities.approve'],
         ]);
