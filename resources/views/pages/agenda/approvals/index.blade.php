@@ -41,18 +41,15 @@
                                         ->filter(fn ($approval) => filled($approval->comment));
 
                                     $canApproveAgenda = $user?->can('agenda.approve') ?? false;
-                                    $isExecutiveReviewer = $user?->hasRole('executive_manager') || $user?->hasRole('super_admin');
-                                    $isRelationsReviewer = $canApproveAgenda && ! $isExecutiveReviewer;
-
-                                    $canRelationsReview = $isRelationsReviewer && in_array($event->status, ['submitted', 'changes_requested'], true);
-                                    $canExecutiveReview = $isExecutiveReviewer
+                                    $canRelationsReview = $canApproveAgenda && in_array($event->status, ['submitted', 'changes_requested'], true);
+                                    $canExecutiveReview = $canApproveAgenda
                                         && $event->relations_approval_status === 'approved'
                                         && $event->status === 'relations_approved';
 
                                     $reviewLockedMessage = null;
-                                    if ($isExecutiveReviewer && ! $canExecutiveReview) {
+                                    if (! $canRelationsReview && ! $canExecutiveReview && $event->status === 'relations_approved') {
                                         $reviewLockedMessage = __('app.roles.relations.approvals.workflow.awaiting_relations_approval');
-                                    } elseif ($isRelationsReviewer && ! $canRelationsReview) {
+                                    } elseif (! $canRelationsReview && ! $canExecutiveReview) {
                                         $reviewLockedMessage = __('app.roles.relations.approvals.workflow.not_available_for_current_state');
                                     }
                                 @endphp

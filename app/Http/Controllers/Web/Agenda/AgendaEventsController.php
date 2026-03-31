@@ -68,14 +68,7 @@ class AgendaEventsController extends Controller
             return;
         }
 
-        $user->loadMissing('branch');
-        $isKhaldaHq = $this->branchCode($user->branch) === 'khalda';
-
-        abort_unless(
-            $isKhaldaHq
-            && $user->can('agenda.create'),
-            403
-        );
+        abort_unless($user->can('agenda.create'), 403);
     }
 
     protected function assertEventManageAccess(Request $request, AgendaEvent $agendaEvent): void
@@ -86,10 +79,7 @@ class AgendaEventsController extends Controller
             return;
         }
 
-        $user->loadMissing('branch');
-        $isKhaldaHq = $this->branchCode($user->branch) === 'khalda';
-
-        if ($isKhaldaHq && $user->can('agenda.update')) {
+        if ($user->can('agenda.update')) {
             return;
         }
 
