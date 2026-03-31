@@ -7,6 +7,9 @@
     $translateRole = fn (string $name) => __('app.acl.roles.' . $name) !== 'app.acl.roles.' . $name
         ? __('app.acl.roles.' . $name)
         : Str::headline(str_replace(['_', '.'], ' ', $name));
+    $translatePermission = fn (string $name) => __('app.acl.permissions.' . str_replace('.', '_', $name)) !== 'app.acl.permissions.' . str_replace('.', '_', $name)
+        ? __('app.acl.permissions.' . str_replace('.', '_', $name))
+        : Str::headline(str_replace(['_', '.'], ' ', $name));
 @endphp
 
 
@@ -80,6 +83,26 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Permissions Override (صلاحيات إضافية)</label>
+                            <div class="row g-2">
+                                @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
+                                    <div class="col-12 col-lg-6">
+                                        <div class="border rounded p-2">
+                                            <div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
+                                            @foreach ($modulePermissions as $permission)
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="create-perm-{{ $permission->id }}">
+                                                    <label class="form-check-label small" for="create-perm-{{ $permission->id }}">{{ $translatePermission($permission->name) }}</label>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
                         <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.status') }}</label>
                             <select class="form-select" name="status" required>
@@ -183,6 +206,26 @@
                                                         @endforeach
                                                     </select>
                                                 </div>
+
+                                                <div class="col-12">
+                                                    <label class="form-label">Permissions Override (صلاحيات إضافية)</label>
+                                                    <div class="row g-2">
+                                                        @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
+                                                            <div class="col-12 col-lg-6">
+                                                                <div class="border rounded p-2">
+                                                                    <div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
+                                                                    @foreach ($modulePermissions as $permission)
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-perm-{{ $permission->id }}" @checked($user->permissions->contains('name', $permission->name))>
+                                                                            <label class="form-check-label small" for="edit-user-{{ $user->id }}-perm-{{ $permission->id }}">{{ $translatePermission($permission->name) }}</label>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">{{ __('app.roles.super_admin.users.fields.status') }}</label>
                                                     <select class="form-select" name="status" required>

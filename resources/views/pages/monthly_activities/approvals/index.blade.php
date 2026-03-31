@@ -32,6 +32,7 @@
                             <th>Branch / HQ</th>
                             <th>Dynamic Flags</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.status') }}</th>
+                            <th>Workflow / سير الاعتماد</th>
                             <th>{{ __('app.roles.programs.monthly_activities.approvals.table.last_decision') }}</th>
                             <th class="text-end">{{ __('app.roles.programs.monthly_activities.approvals.table.actions') }}</th>
                         </tr>
@@ -65,6 +66,22 @@
                                 </td>
                                 <td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
                                 <td>
+                                    @php($wf = $activity->workflowInstance)
+                                    @if($wf)
+                                        <div class="small">
+                                            <strong>Current Stage / المرحلة الحالية:</strong> {{ $wf->currentStep?->name_ar ?? $wf->currentStep?->name_en ?? '-' }}
+                                        </div>
+                                        <div class="small">
+                                            <strong>Status / الحالة:</strong> {{ $wf->status }}
+                                        </div>
+                                        <div class="small text-warning">
+                                            <strong>Edit Requests / عدد طلبات التعديل:</strong> {{ $wf->edit_request_count }}
+                                        </div>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
                                     {{ $latestApproval?->decision ?? __('app.roles.programs.monthly_activities.approvals.table.none') }}
                                     @if($changeRequests->isNotEmpty())
                                         <div class="small text-warning">طلبات تعديل: {{ $changeRequests->count() }}</div>
@@ -77,7 +94,7 @@
                                 </td>
                             </tr>
                             <tr class="collapse" id="approval-{{ $activity->id }}">
-                                <td colspan="7">
+                                <td colspan="8">
                                     @if($changeRequests->isNotEmpty())
                                         <div class="alert alert-warning py-2">
                                             <div class="fw-semibold mb-1">سجل طلبات التعديل</div>
@@ -181,7 +198,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-muted">{{ __('app.roles.programs.monthly_activities.approvals.table.empty') }}</td>
+                                <td colspan="8" class="text-muted">{{ __('app.roles.programs.monthly_activities.approvals.table.empty') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

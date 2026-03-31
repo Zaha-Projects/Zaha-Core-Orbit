@@ -8,18 +8,20 @@ use App\Models\Center;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
 {
     public function index()
     {
-        $users = User::with(['roles', 'branch', 'center'])->orderBy('name')->get();
+        $users = User::with(['roles', 'permissions', 'branch', 'center'])->orderBy('name')->get();
         $roles = Role::orderBy('name')->get();
+        $permissions = Permission::orderBy('module')->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
-        return view('pages.access.users.index', compact('users', 'roles', 'branches', 'centers'));
+        return view('pages.access.users.index', compact('users', 'roles', 'permissions', 'branches', 'centers'));
     }
 
     public function store(Request $request)
@@ -33,6 +35,8 @@ class UsersController extends Controller
             'status' => ['required', 'string', 'max:50'],
             'role' => ['required', 'exists:roles,name'],
             'password' => ['required', 'string', 'min:8'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
         $user = User::create([
@@ -46,6 +50,7 @@ class UsersController extends Controller
         ]);
 
         $user->assignRole($data['role']);
+        $user->syncPermissions($data['permissions'] ?? []);
 
         return redirect()
             ->route('role.super_admin.users')
@@ -63,6 +68,8 @@ class UsersController extends Controller
             'status' => ['required', 'string', 'max:50'],
             'role' => ['required', 'exists:roles,name'],
             'password' => ['nullable', 'string', 'min:8'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
         $user->update([
@@ -76,6 +83,7 @@ class UsersController extends Controller
         ]);
 
         $user->syncRoles([$data['role']]);
+        $user->syncPermissions($data['permissions'] ?? []);
 
         return redirect()
             ->route('role.super_admin.users')

@@ -61,12 +61,25 @@ class User extends Authenticatable
 
     public function hasBranchScopedMonthlyVisibility(): bool
     {
-        if ($this->isKheldaUser()) {
+        if ($this->can('branches.view.all') || $this->isKheldaUser()) {
             return false;
+        }
+
+        if ($this->can('branches.view.own')) {
+            return true;
         }
 
         return $this->hasRole('branch_relations_officer')
             || $this->hasRole('relations_officer');
+    }
+
+    public function hasBranchScopedAgendaVisibility(): bool
+    {
+        if ($this->can('branches.view.all') || $this->isKheldaUser()) {
+            return false;
+        }
+
+        return $this->can('branches.view.own') || $this->hasRole('branch_relations_officer');
     }
 
     public function branch()

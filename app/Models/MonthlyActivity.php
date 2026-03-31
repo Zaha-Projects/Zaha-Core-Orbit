@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\WorkflowInstance;
 
 class MonthlyActivity extends Model
 {
@@ -288,6 +289,11 @@ class MonthlyActivity extends Model
         return $this->belongsTo(EventType::class);
     }
 
+
+    public function workflowInstance()
+    {
+        return $this->morphOne(WorkflowInstance::class, 'entity');
+    }
     public function targetGroups()
     {
         return $this->belongsToMany(TargetGroup::class, 'event_target_group')

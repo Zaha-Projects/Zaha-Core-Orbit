@@ -114,6 +114,20 @@ class AgendaEventsController extends Controller
         return null;
     }
 
+
+    protected function applyBranchVisibilityScope($query, User $user)
+    {
+        if (! method_exists($user, 'hasBranchScopedAgendaVisibility') || ! $user->hasBranchScopedAgendaVisibility() || empty($user->branch_id)) {
+            return $query;
+        }
+
+        return $query->where(function ($scoped) use ($user) {
+            $scoped->where('created_by', $user->id)
+                ->orWhereHas('participations', function ($participation) use ($user) {
+                    $participation->where('entity_type', 'branch')->where('entity_id', $user->branch_id);
+                });
+        });
+    }
     public function index(Request $request)
     {
         $allowedPerPage = [10, 20, 50, 100];
@@ -122,9 +136,13 @@ class AgendaEventsController extends Controller
             $perPage = 20;
         }
 
-        $events = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
+        $eventsQuery = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
             ->enterpriseFilter($request->all())
-            ->notArchived()
+            ->notArchived();
+
+        $this->applyBranchVisibilityScope($eventsQuery, $request->user());
+
+        $events = $eventsQuery
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
             ->paginate($perPage)
             ->withQueryString();

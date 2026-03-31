@@ -1,3 +1,4 @@
+@can('reports.view')
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.reports.index') ? 'active' : '' }}" href="{{ route('role.reports.index') }}">
         <span class="nxl-micon"><i class="feather-grid"></i></span>
@@ -34,12 +35,16 @@
         <span class="nxl-mtext">{{ __('app.roles.reports.transport.title') }}</span>
     </a>
 </li>
+@endcan
+@can('kpi.view')
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.reports.kpis.*') ? 'active' : '' }}" href="{{ route('role.reports.kpis.index') }}">
         <span class="nxl-micon"><i class="feather-bar-chart-2"></i></span>
         <span class="nxl-mtext">{{ __('app.roles.reports.kpis.title') }}</span>
     </a>
 </li>
+@endcan
+@can('reports.view')
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.enterprise.*') ? 'active' : '' }}" href="{{ route('role.enterprise.dashboard') }}">
         <span class="nxl-micon"><i class="feather-activity"></i></span>
@@ -52,3 +57,4 @@
         <span class="nxl-mtext">{{ __('app.enterprise.branch_performance.report_title') }}</span>
     </a>
 </li>
+@endcan
