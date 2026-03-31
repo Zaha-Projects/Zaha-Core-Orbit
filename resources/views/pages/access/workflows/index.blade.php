@@ -1,83 +1,151 @@
 @extends('layouts.app')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
+@endpush
+
 @section('content')
-<div class="row g-4">
-    <div class="col-12">
-        <div class="card shadow-sm mb-4"><div class="card-body">
-            <h1 class="h4 mb-2">{{ __('app.roles.super_admin.workflows.builder_title') }}</h1>
-            <p class="text-muted mb-0">{{ __('app.roles.super_admin.workflows.builder_subtitle') }}</p>
-        </div></div>
-
-        @if (session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
-
-        <div class="card shadow-sm mb-4"><div class="card-body">
-            <h2 class="h6 mb-3">{{ __('app.roles.super_admin.workflows.create_title') }}</h2>
-            <form method="POST" action="{{ route('role.super_admin.workflows.store') }}" class="row g-3">@csrf
-                <div class="col-md-3"><label class="form-label">Module</label><input class="form-control" name="module" placeholder="monthly_activities" required></div>
-                <div class="col-md-2"><label class="form-label">Code</label><input class="form-control" name="code" placeholder="monthly_activities_approval" required></div>
-                <div class="col-md-3"><label class="form-label">Arabic Name</label><input class="form-control" name="name_ar" placeholder="الاسم بالعربية"></div>
-                <div class="col-md-3"><label class="form-label">English Name</label><input class="form-control" name="name_en" placeholder="Name in English"></div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="is_active" value="1" checked id="create-is-active">
-                        <label class="form-check-label small" for="create-is-active">Active</label>
-                    </div>
-                </div>
-                <div class="col-12 d-flex justify-content-end"><button class="btn btn-primary">Create</button></div>
-            </form>
-        </div></div>
-
-        @foreach($workflows as $workflow)
-        <div class="card shadow-sm mb-3"><div class="card-body">
-            <form method="POST" action="{{ route('role.super_admin.workflows.update', $workflow) }}" class="row g-2 mb-3">@csrf @method('PUT')
-                <div class="col-md-2"><label class="form-label small">Module</label><input class="form-control form-control-sm" name="module" value="{{ $workflow->module }}" required></div>
-                <div class="col-md-2"><label class="form-label small">Code</label><input class="form-control form-control-sm" name="code" value="{{ $workflow->code }}" required></div>
-                <div class="col-md-3"><label class="form-label small">Arabic Name</label><input class="form-control form-control-sm" name="name_ar" value="{{ $workflow->name_ar }}"></div>
-                <div class="col-md-2"><label class="form-label small">English Name</label><input class="form-control form-control-sm" name="name_en" value="{{ $workflow->name_en }}"></div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" name="is_active" value="1" @checked($workflow->is_active) id="workflow-active-{{ $workflow->id }}">
-                        <label class="form-check-label" for="workflow-active-{{ $workflow->id }}">Active</label>
-                    </div>
-                </div>
-                <div class="col-md-1 d-flex align-items-end"><button class="btn btn-outline-primary btn-sm w-100">Save</button></div>
-            </form>
-            <form method="POST" action="{{ route('role.super_admin.workflows.destroy', $workflow) }}" class="text-end mb-3" onsubmit="return confirm('{{ __('app.roles.super_admin.workflows.confirm_delete_workflow') }}')">@csrf @method('DELETE')<button class="btn btn-outline-danger btn-sm">Delete Workflow</button></form>
-
-            <h3 class="h6">Steps / المراحل</h3>
-            <div class="small text-muted mb-2">Order = execution sequence, Approval level = parallel priority in same order.</div>
-            @foreach($workflow->steps as $step)
-                <div class="border rounded p-2 mb-2">
-                    <form method="POST" action="{{ route('role.super_admin.workflow_steps.update', $step) }}" class="row g-2">@csrf @method('PUT')
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="step_key" value="{{ $step->step_key }}" required></div>
-                        <div class="col-md-1"><input class="form-control form-control-sm" name="step_order" type="number" min="1" value="{{ $step->step_order }}" required></div>
-                        <div class="col-md-1"><input class="form-control form-control-sm" name="approval_level" type="number" min="1" value="{{ $step->approval_level }}" required></div>
-                        <div class="col-md-1"><select class="form-select form-select-sm" name="step_type"><option value="sub" @selected($step->step_type==='sub')>sub</option><option value="main" @selected($step->step_type==='main')>main</option></select></div>
-                        <div class="col-md-2"><select class="form-select form-select-sm" name="role_id"><option value="">-role-</option>@foreach($roles as $role)<option value="{{ $role->id }}" @selected($step->role_id===$role->id)>{{ $role->name }}</option>@endforeach</select></div>
-                        <div class="col-md-2"><select class="form-select form-select-sm" name="permission_id"><option value="">-permission-</option>@foreach($permissions as $permission)<option value="{{ $permission->id }}" @selected($step->permission_id===$permission->id)>{{ $permission->name }}</option>@endforeach</select></div>
-                        <div class="col-md-1"><input class="form-control form-control-sm" name="name_ar" value="{{ $step->name_ar }}"></div>
-                        <div class="col-md-1"><input class="form-control form-control-sm" name="name_en" value="{{ $step->name_en }}"></div>
-                        <div class="col-md-1 d-flex align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_editable" value="1" @checked($step->is_editable) id="editable-{{ $step->id }}"><label class="form-check-label small" for="editable-{{ $step->id }}">Editable</label></div></div>
-                        <div class="col-12 d-flex justify-content-end"><button class="btn btn-outline-primary btn-sm">Save Step</button></div>
-                    </form>
-                    <form method="POST" action="{{ route('role.super_admin.workflow_steps.destroy', $step) }}" class="text-end mt-2" onsubmit="return confirm('{{ __('app.roles.super_admin.workflows.confirm_delete_step') }}')">@csrf @method('DELETE')<button class="btn btn-outline-danger btn-sm">Delete Step</button></form>
-                </div>
-            @endforeach
-
-            <form method="POST" action="{{ route('role.super_admin.workflow_steps.store', $workflow) }}" class="row g-2 mt-2">@csrf
-                <div class="col-md-2"><input class="form-control form-control-sm" name="step_key" placeholder="step_key" required></div>
-                <div class="col-md-2"><input class="form-control form-control-sm" name="step_order" type="number" min="1" placeholder="step order" required></div>
-                <div class="col-md-2"><input class="form-control form-control-sm" name="approval_level" type="number" min="1" placeholder="approval level" required></div>
-                <div class="col-md-1"><select class="form-select form-select-sm" name="step_type"><option value="sub">sub</option><option value="main">main</option></select></div>
-                <div class="col-md-2"><select class="form-select form-select-sm" name="role_id"><option value="">-role-</option>@foreach($roles as $role)<option value="{{ $role->id }}">{{ $role->name }}</option>@endforeach</select></div>
-                <div class="col-md-2"><select class="form-select form-select-sm" name="permission_id"><option value="">-permission-</option>@foreach($permissions as $permission)<option value="{{ $permission->id }}">{{ $permission->name }}</option>@endforeach</select></div>
-                <div class="col-md-1 d-flex align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_editable" value="1" id="new-editable-{{ $workflow->id }}" checked><label class="form-check-label small" for="new-editable-{{ $workflow->id }}">Editable</label></div></div>
-                <div class="col-md-2"><input class="form-control form-control-sm" name="name_ar" placeholder="AR"></div>
-                <div class="col-md-2"><input class="form-control form-control-sm" name="name_en" placeholder="EN"></div>
-                <div class="col-12 d-flex justify-content-end"><button class="btn btn-success btn-sm">+ Add Step</button></div>
-            </form>
-        </div></div>
-        @endforeach
+<div class="workflow-ui">
+    <div class="wf-card card mb-4">
+        <div class="card-body">
+            <h1 class="wf-page-title mb-1">{{ __('workflow_ui.builder.title') }}</h1>
+            <p class="wf-muted mb-0">{{ __('workflow_ui.builder.subtitle') }}</p>
+        </div>
     </div>
+
+    @if (session('status'))
+        <div class="alert alert-success">{{ session('status') }}</div>
+    @endif
+
+    <div class="wf-card card mb-4">
+        <div class="card-body">
+            <h2 class="h6 mb-3">{{ __('workflow_ui.builder.create_workflow') }}</h2>
+            <form method="POST" action="{{ route('role.super_admin.workflows.store') }}" class="wf-grid">@csrf
+                <div class="wf-col-3">
+                    <label class="form-label">{{ __('workflow_ui.common.module') }}</label>
+                    <input class="form-control" name="module" required>
+                </div>
+                <div class="wf-col-3">
+                    <label class="form-label">{{ __('workflow_ui.common.code') }}</label>
+                    <input class="form-control" name="code" required>
+                </div>
+                <div class="wf-col-3">
+                    <label class="form-label">{{ __('workflow_ui.common.name_ar') }}</label>
+                    <input class="form-control" name="name_ar">
+                </div>
+                <div class="wf-col-3">
+                    <label class="form-label">{{ __('workflow_ui.common.name_en') }}</label>
+                    <input class="form-control" name="name_en">
+                </div>
+                <div class="wf-col-12 d-flex justify-content-between align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_active" value="1" checked id="create-active">
+                        <label class="form-check-label" for="create-active">{{ __('workflow_ui.common.active') }}</label>
+                    </div>
+                    <button class="btn btn-primary">{{ __('workflow_ui.common.create') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @foreach($workflows as $workflow)
+    <div class="wf-card card mb-4">
+        <div class="card-body">
+            <form method="POST" action="{{ route('role.super_admin.workflows.update', $workflow) }}" class="wf-grid mb-3">@csrf @method('PUT')
+                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.module') }}</label><input class="form-control" name="module" value="{{ $workflow->module }}" required></div>
+                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.code') }}</label><input class="form-control" name="code" value="{{ $workflow->code }}" required></div>
+                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.name_ar') }}</label><input class="form-control" name="name_ar" value="{{ $workflow->name_ar }}"></div>
+                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.name_en') }}</label><input class="form-control" name="name_en" value="{{ $workflow->name_en }}"></div>
+                <div class="wf-col-12 d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is-active-{{ $workflow->id }}" @checked($workflow->is_active)>
+                            <label class="form-check-label" for="is-active-{{ $workflow->id }}">{{ __('workflow_ui.common.active') }}</label>
+                        </div>
+                    </div>
+                    <div class="wf-actions">
+                        <button class="btn btn-outline-primary">{{ __('workflow_ui.common.save') }}</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <h3 class="h6 mb-3">{{ __('workflow_ui.builder.steps') }}</h3>
+                    @foreach($workflow->steps as $step)
+                        <div class="border rounded-3 p-3 mb-2">
+                            <form method="POST" action="{{ route('role.super_admin.workflow_steps.update', $step) }}" class="wf-grid">@csrf @method('PUT')
+                                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.step_key') }}</label><input class="form-control" name="step_key" value="{{ $step->step_key }}" required></div>
+                                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.step_order') }} <i class="feather-help-circle" data-bs-toggle="tooltip" title="{{ __('workflow_ui.builder.step_order_help') }}"></i></label><input class="form-control" name="step_order" type="number" min="1" value="{{ $step->step_order }}" required></div>
+                                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.approval_level') }} <i class="feather-help-circle" data-bs-toggle="tooltip" title="{{ __('workflow_ui.builder.approval_level_help') }}"></i></label><input class="form-control" name="approval_level" type="number" min="1" value="{{ $step->approval_level }}" required></div>
+                                <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.type') }}</label><select class="form-select" name="step_type"><option value="sub" @selected($step->step_type==='sub')>sub</option><option value="main" @selected($step->step_type==='main')>main</option></select></div>
+                                <div class="wf-col-4"><label class="form-label">{{ __('workflow_ui.common.role') }}</label><select class="form-select" name="role_id"><option value="">-</option>@foreach($roles as $role)<option value="{{ $role->id }}" @selected($step->role_id===$role->id)>{{ $role->name }}</option>@endforeach</select></div>
+                                <div class="wf-col-4"><label class="form-label">{{ __('workflow_ui.common.permission') }}</label><select class="form-select" name="permission_id"><option value="">-</option>@foreach($permissions as $permission)<option value="{{ $permission->id }}" @selected($step->permission_id===$permission->id)>{{ $permission->name }}</option>@endforeach</select></div>
+                                <div class="wf-col-2"><label class="form-label">AR</label><input class="form-control" name="name_ar" value="{{ $step->name_ar }}"></div>
+                                <div class="wf-col-2"><label class="form-label">EN</label><input class="form-control" name="name_en" value="{{ $step->name_en }}"></div>
+                                <div class="wf-col-12 d-flex justify-content-between align-items-center">
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" name="is_editable" value="1" id="editable-{{ $step->id }}" @checked($step->is_editable)><label class="form-check-label" for="editable-{{ $step->id }}">{{ __('workflow_ui.common.editable') }}</label></div>
+                                    <div class="wf-actions">
+                                        <button class="btn btn-outline-primary btn-sm">{{ __('workflow_ui.common.save') }}</button>
+                                    </div>
+                                </div>
+                            </form>
+                            <form method="POST" action="{{ route('role.super_admin.workflow_steps.destroy', $step) }}" class="mt-2" onsubmit="return confirm('{{ __('workflow_ui.builder.delete_step_confirm') }}')">@csrf @method('DELETE')<button class="btn btn-outline-danger btn-sm">{{ __('workflow_ui.common.delete') }}</button></form>
+                        </div>
+                    @endforeach
+
+                    <div class="border rounded-3 p-3 mt-3">
+                        <h4 class="h6 mb-3">{{ __('workflow_ui.builder.add_step') }}</h4>
+                        <form method="POST" action="{{ route('role.super_admin.workflow_steps.store', $workflow) }}" class="wf-grid">@csrf
+                            <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.step_key') }}</label><input class="form-control" name="step_key" required></div>
+                            <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.step_order') }}</label><input class="form-control" type="number" min="1" name="step_order" required></div>
+                            <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.approval_level') }}</label><input class="form-control" type="number" min="1" name="approval_level" required></div>
+                            <div class="wf-col-3"><label class="form-label">{{ __('workflow_ui.common.type') }}</label><select class="form-select" name="step_type"><option value="sub">sub</option><option value="main">main</option></select></div>
+                            <div class="wf-col-4"><label class="form-label">{{ __('workflow_ui.common.role') }}</label><select class="form-select" name="role_id"><option value="">-</option>@foreach($roles as $role)<option value="{{ $role->id }}">{{ $role->name }}</option>@endforeach</select></div>
+                            <div class="wf-col-4"><label class="form-label">{{ __('workflow_ui.common.permission') }}</label><select class="form-select" name="permission_id"><option value="">-</option>@foreach($permissions as $permission)<option value="{{ $permission->id }}">{{ $permission->name }}</option>@endforeach</select></div>
+                            <div class="wf-col-2"><label class="form-label">AR</label><input class="form-control" name="name_ar"></div>
+                            <div class="wf-col-2"><label class="form-label">EN</label><input class="form-control" name="name_en"></div>
+                            <div class="wf-col-12 d-flex justify-content-between align-items-center">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" name="is_editable" value="1" id="new-edit-{{ $workflow->id }}" checked><label class="form-check-label" for="new-edit-{{ $workflow->id }}">{{ __('workflow_ui.common.editable') }}</label></div>
+                                <button class="btn btn-success">{{ __('workflow_ui.builder.add_step') }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="border rounded-3 p-3 mb-3">
+                        <h3 class="h6">{{ __('workflow_ui.builder.preview') }}</h3>
+                        @if($workflow->steps->isEmpty())
+                            <p class="wf-muted mb-0">{{ __('workflow_ui.builder.preview_empty') }}</p>
+                        @else
+                            <ol class="wf-stepper mt-3">
+                                @foreach($workflow->steps as $previewStep)
+                                    <li class="wf-step">
+                                        <span class="wf-step-dot"><i class="feather-check"></i></span>
+                                        <div class="fw-semibold">{{ $previewStep->name_ar ?? $previewStep->name_en ?? $previewStep->step_key }}</div>
+                                        <div class="wf-kv">#{{ $previewStep->step_order }} · L{{ $previewStep->approval_level }}</div>
+                                        <div class="wf-kv">{{ $previewStep->role?->name ?? $previewStep->permission?->name ?? '-' }}</div>
+                                    </li>
+                                @endforeach
+                            </ol>
+                        @endif
+                    </div>
+                    <form method="POST" action="{{ route('role.super_admin.workflows.destroy', $workflow) }}" onsubmit="return confirm('{{ __('workflow_ui.builder.delete_workflow_confirm') }}')">@csrf @method('DELETE')<button class="btn btn-outline-danger w-100">{{ __('workflow_ui.common.delete') }}</button></form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endforeach
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (item) {
+            new bootstrap.Tooltip(item);
+        });
+    });
+</script>
+@endpush
