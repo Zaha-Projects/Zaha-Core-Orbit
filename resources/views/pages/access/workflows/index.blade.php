@@ -149,11 +149,11 @@
                                             <label class="form-label form-label-sm">{{ $t['approval_type'] }}</label>
                                             <div class="d-flex flex-wrap gap-3">
                                                 <div class="form-check">
-                                                    <input class="form-check-input js-step-type" type="radio" name="step_type" value="sub" id="step-type-sub-{{ $step->id }}" @checked($step->step_type==='sub')>
+                                                    <input class="form-check-input js-step-type" type="radio" name="step_type" value="sub" id="step-type-sub-{{ $step->id }}" {{ $step->step_type === "sub" ? "checked" : "" }}>
                                                     <label class="form-check-label" for="step-type-sub-{{ $step->id }}">{{ $t['preliminary_approval'] }}</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input class="form-check-input js-step-type" type="radio" name="step_type" value="main" id="step-type-main-{{ $step->id }}" @checked($step->step_type==='main')>
+                                                    <input class="form-check-input js-step-type" type="radio" name="step_type" value="main" id="step-type-main-{{ $step->id }}" {{ $step->step_type === "main" ? "checked" : "" }}>
                                                     <label class="form-check-label" for="step-type-main-{{ $step->id }}">{{ $t['final_approval'] }}</label>
                                                 </div>
                                             </div>
@@ -163,7 +163,7 @@
                                             <select class="form-select form-select-sm" name="role_id" required>
                                                 <option value="">{{ $t['choose_role'] }}</option>
                                                 @foreach($roles as $role)
-                                                    <option value="{{ $role->id }}" @selected($step->role_id===$role->id)>{{ $translateRole($role) ?: $role->name }}</option>
+                                                    <option value="{{ $role->id }}" {{ $step->role_id === $role->id ? "selected" : "" }}>{{ $translateRole($role) ?: $role->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
