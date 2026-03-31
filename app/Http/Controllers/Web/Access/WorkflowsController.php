@@ -8,12 +8,13 @@ use App\Models\WorkflowStep;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class WorkflowsController extends Controller
 {
     public function index()
     {
-        $workflows = Workflow::with(['steps.role', 'steps.permission'])->orderBy('module')->orderBy('id')->get();
+        $workflows = Workflow::with(['steps' => fn ($query) => $query->orderBy('step_order'), 'steps.role', 'steps.permission'])->orderBy('module')->orderBy('id')->get();
         $roles = Role::query()->where('guard_name', 'web')->orderBy('name')->get();
         $permissions = Permission::query()->where('guard_name', 'web')->orderBy('module')->orderBy('name')->get();
 
@@ -129,6 +130,39 @@ class WorkflowsController extends Controller
         ]);
 
         return back()->with('status', __('app.roles.super_admin.workflows.step_updated'));
+    }
+
+
+
+    public function reorderSteps(Request $request, Workflow $workflow)
+    {
+        $data = $request->validate([
+            'ordered_ids' => ['required', 'string'],
+        ]);
+
+        $orderedIds = collect(explode(',', (string) $data['ordered_ids']))
+            ->map(static fn ($id) => (int) trim($id))
+            ->filter()
+            ->values();
+
+        $existingStepIds = $workflow->steps()->pluck('id')->sort()->values();
+
+        abort_if(
+            $orderedIds->count() !== $existingStepIds->count()
+            || $orderedIds->sort()->values()->all() !== $existingStepIds->all(),
+            422,
+            app()->getLocale() === 'ar' ? 'ترتيب المراحل غير صالح.' : 'Invalid steps order.'
+        );
+
+        DB::transaction(function () use ($orderedIds, $workflow) {
+            foreach ($orderedIds as $index => $stepId) {
+                $workflow->steps()->whereKey($stepId)->update([
+                    'step_order' => $index + 1,
+                ]);
+            }
+        });
+
+        return back()->with('status', app()->getLocale() === 'ar' ? 'تم تحديث ترتيب المراحل بنجاح.' : 'Workflow steps order updated successfully.');
     }
 
     public function destroyStep(WorkflowStep $step)
