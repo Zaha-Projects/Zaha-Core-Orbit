@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
 use App\Models\Role;
 use Illuminate\Support\Facades\DB;
 
@@ -14,11 +13,9 @@ class WorkflowsController extends Controller
 {
     public function index()
     {
-        $workflows = Workflow::with(['steps' => fn ($query) => $query->orderBy('step_order'), 'steps.role', 'steps.permission'])->orderBy('module')->orderBy('id')->get();
+        $workflows = Workflow::with(['steps' => fn ($query) => $query->orderBy('step_order'), 'steps.role'])->orderBy('module')->orderBy('id')->get();
         $roles = Role::query()->where('guard_name', 'web')->orderBy('name')->get();
-        $permissions = Permission::query()->where('guard_name', 'web')->orderBy('module')->orderBy('name')->get();
-
-        return view('pages.access.workflows.index', compact('workflows', 'roles', 'permissions'));
+        return view('pages.access.workflows.index', compact('workflows', 'roles'));
     }
 
     public function store(Request $request)
@@ -79,12 +76,9 @@ class WorkflowsController extends Controller
             'step_type' => ['required', 'in:sub,main'],
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
-            'role_id' => ['nullable', 'exists:roles,id'],
-            'permission_id' => ['nullable', 'exists:permissions,id'],
+            'role_id' => ['required', 'exists:roles,id'],
             'is_editable' => ['nullable', 'boolean'],
         ]);
-
-        abort_if(empty($data['role_id']) && empty($data['permission_id']), 422, __('Select role or permission'));
 
         $workflow->steps()->create([
             'step_key' => $data['step_key'],
@@ -93,8 +87,8 @@ class WorkflowsController extends Controller
             'step_type' => $data['step_type'],
             'name_ar' => $data['name_ar'] ?? null,
             'name_en' => $data['name_en'] ?? null,
-            'role_id' => $data['role_id'] ?? null,
-            'permission_id' => $data['permission_id'] ?? null,
+            'role_id' => $data['role_id'],
+            'permission_id' => null,
             'is_editable' => (bool) ($data['is_editable'] ?? true),
         ]);
 
@@ -110,12 +104,9 @@ class WorkflowsController extends Controller
             'step_type' => ['required', 'in:sub,main'],
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
-            'role_id' => ['nullable', 'exists:roles,id'],
-            'permission_id' => ['nullable', 'exists:permissions,id'],
+            'role_id' => ['required', 'exists:roles,id'],
             'is_editable' => ['nullable', 'boolean'],
         ]);
-
-        abort_if(empty($data['role_id']) && empty($data['permission_id']), 422, __('Select role or permission'));
 
         $step->update([
             'step_key' => $data['step_key'],
@@ -124,8 +115,8 @@ class WorkflowsController extends Controller
             'step_type' => $data['step_type'],
             'name_ar' => $data['name_ar'] ?? null,
             'name_en' => $data['name_en'] ?? null,
-            'role_id' => $data['role_id'] ?? null,
-            'permission_id' => $data['permission_id'] ?? null,
+            'role_id' => $data['role_id'],
+            'permission_id' => null,
             'is_editable' => (bool) ($data['is_editable'] ?? false),
         ]);
 

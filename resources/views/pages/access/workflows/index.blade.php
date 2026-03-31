@@ -25,9 +25,7 @@
         'preliminary_approval' => $isArabic ? 'موافقة مبدئية' : 'Preliminary Approval',
         'final_approval' => $isArabic ? 'موافقة نهائية' : 'Final Approval',
         'role' => $isArabic ? 'المسؤول' : 'Responsible Role',
-        'permission' => $isArabic ? 'الصلاحية' : 'Permission',
         'choose_role' => $isArabic ? 'اختر الدور' : 'Select role',
-        'choose_permission' => $isArabic ? 'اختر الصلاحية' : 'Select permission',
         'drag_hint' => $isArabic ? 'اسحب وأفلت المرحلة لتغيير ترتيبها.' : 'Drag and drop a step to change its order.',
         'delete_step' => $isArabic ? 'حذف المرحلة' : 'Delete Step',
         'timeline_title' => $isArabic ? 'تسلسل الاعتماد' : 'Approval Timeline',
@@ -39,24 +37,13 @@
             return null;
         }
 
-        $key = 'app.acl.roles.' . $role->name;
-
-        return $isArabic
-            ? __($key, [], 'ar')
-            : __($key, [], 'en');
-    };
-
-    $translatePermission = static function ($permission) use ($isArabic) {
-        if (!$permission) {
-            return null;
+        if ($isArabic) {
+            return $role->name_ar ?: ($role->name_en ?: $role->name);
         }
 
-        $key = 'app.acl.permissions.' . str_replace('.', '_', $permission->name);
-
-        return $isArabic
-            ? ($permission->name_ar ?: __($key, [], 'ar'))
-            : ($permission->name_en ?: __($key, [], 'en'));
+        return $role->name_en ?: ($role->name_ar ?: $role->name);
     };
+
 @endphp
 
 @section('content')
@@ -140,7 +127,6 @@
                                 @php
                                     $stageLabel = $step->step_type === 'main' ? $t['final_approval'] : $t['preliminary_approval'];
                                     $roleLabel = $translateRole($step->role) ?: ($step->role?->name ?? '-');
-                                    $permissionLabel = $translatePermission($step->permission) ?: ($step->permission?->name ?? '-');
                                 @endphp
                                 <div class="workflow-step-card border rounded p-3 mb-2" data-step-id="{{ $step->id }}" data-workflow-id="{{ $workflow->id }}">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -151,7 +137,6 @@
                                     <div class="small lh-lg mb-3">
                                         <div>📌 {{ $t['approval_type'] }}: <strong class="js-stage-label">{{ $stageLabel }}</strong></div>
                                         <div>👤 {{ $t['role'] }}: <strong>{{ $roleLabel }}</strong></div>
-                                        <div>🔑 {{ $t['permission'] }}: <strong>{{ $permissionLabel }}</strong></div>
                                     </div>
 
                                     <form method="POST" action="{{ route('role.super_admin.workflow_steps.update', $step) }}" class="row g-2 js-step-form" data-workflow-id="{{ $workflow->id }}">
@@ -175,19 +160,10 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label form-label-sm">{{ $t['role'] }}</label>
-                                            <select class="form-select form-select-sm" name="role_id">
+                                            <select class="form-select form-select-sm" name="role_id" required>
                                                 <option value="">{{ $t['choose_role'] }}</option>
                                                 @foreach($roles as $role)
                                                     <option value="{{ $role->id }}" @selected($step->role_id===$role->id)>{{ $translateRole($role) ?: $role->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label form-label-sm">{{ $t['permission'] }}</label>
-                                            <select class="form-select form-select-sm" name="permission_id">
-                                                <option value="">{{ $t['choose_permission'] }}</option>
-                                                @foreach($permissions as $permission)
-                                                    <option value="{{ $permission->id }}" @selected($step->permission_id===$permission->id)>{{ $translatePermission($permission) ?: $permission->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -253,19 +229,10 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label form-label-sm">{{ $t['role'] }}</label>
-                            <select class="form-select form-select-sm" name="role_id">
+                            <select class="form-select form-select-sm" name="role_id" required>
                                 <option value="">{{ $t['choose_role'] }}</option>
                                 @foreach($roles as $role)
                                     <option value="{{ $role->id }}">{{ $translateRole($role) ?: $role->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label form-label-sm">{{ $t['permission'] }}</label>
-                            <select class="form-select form-select-sm" name="permission_id">
-                                <option value="">{{ $t['choose_permission'] }}</option>
-                                @foreach($permissions as $permission)
-                                    <option value="{{ $permission->id }}">{{ $translatePermission($permission) ?: $permission->name }}</option>
                                 @endforeach
                             </select>
                         </div>
