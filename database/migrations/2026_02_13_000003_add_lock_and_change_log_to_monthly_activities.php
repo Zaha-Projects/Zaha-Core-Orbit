@@ -7,11 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('monthly_activities', function (Blueprint $table) {
-            $table->timestamp('lock_at')->nullable()->after('status');
-            $table->boolean('is_official')->default(false)->after('lock_at');
-        });
-
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
@@ -35,10 +30,5 @@ return new class extends Migration {
     {
         Schema::dropIfExists('monthly_activity_change_logs');
         Schema::dropIfExists('settings');
-
-        Schema::table('monthly_activities', function (Blueprint $table) {
-            $table->dropColumn(['lock_at', 'is_official']);
-        });
     }
 };
-

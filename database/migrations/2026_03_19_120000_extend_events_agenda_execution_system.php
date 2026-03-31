@@ -15,20 +15,6 @@ return new class extends Migration {
             $table->timestamps();
         });
 
-        Schema::table('monthly_activities', function (Blueprint $table) {
-            $table->foreignId('event_type_id')->nullable()->after('target_group')->constrained('event_types')->nullOnDelete();
-            $table->boolean('volunteers_required')->default(false)->after('needs_volunteers');
-            $table->unsignedInteger('volunteers_count')->nullable()->after('volunteers_required');
-            $table->decimal('attendance_rate', 8, 4)->nullable()->after('actual_attendance');
-            $table->integer('attendance_gap')->nullable()->after('attendance_rate');
-            $table->decimal('attendance_percentage', 5, 2)->nullable()->after('attendance_gap');
-            $table->foreignId('correspondence_reason_id')->nullable()->after('needs_official_correspondence')->constrained('event_types')->nullOnDelete();
-            $table->string('correspondence_status')->default('pending')->after('correspondence_reason_id');
-            $table->string('building')->nullable()->after('internal_location');
-            $table->string('room')->nullable()->after('building');
-            $table->string('lifecycle_status')->default('Draft')->after('status');
-        });
-
         Schema::create('workshops_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained('monthly_activities')->cascadeOnDelete();
@@ -66,54 +52,14 @@ return new class extends Migration {
             $table->timestamps();
             $table->unique(['monthly_activity_id', 'target_group_id']);
         });
-
-        Schema::table('monthly_activity_partners', function (Blueprint $table) {
-            $table->string('contact_info')->nullable()->after('role');
-            $table->unique(['monthly_activity_id', 'name']);
-        });
-
-        Schema::table('monthly_activity_team', function (Blueprint $table) {
-            $table->unique(['monthly_activity_id', 'member_email']);
-        });
-
-        Schema::table('monthly_activity_supplies', function (Blueprint $table) {
-            $table->string('status')->default('available')->after('item_name');
-        });
     }
 
     public function down(): void
     {
-        Schema::table('monthly_activity_supplies', function (Blueprint $table) {
-            $table->dropColumn('status');
-        });
-        Schema::table('monthly_activity_team', function (Blueprint $table) {
-            $table->dropUnique(['monthly_activity_id', 'member_email']);
-        });
-        Schema::table('monthly_activity_partners', function (Blueprint $table) {
-            $table->dropUnique(['monthly_activity_id', 'name']);
-            $table->dropColumn('contact_info');
-        });
         Schema::dropIfExists('event_target_group');
         Schema::dropIfExists('correspondence_logs');
         Schema::dropIfExists('communications_requests');
         Schema::dropIfExists('workshops_requests');
-
-        Schema::table('monthly_activities', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('event_type_id');
-            $table->dropConstrainedForeignId('correspondence_reason_id');
-            $table->dropColumn([
-                'volunteers_required',
-                'volunteers_count',
-                'attendance_rate',
-                'attendance_gap',
-                'attendance_percentage',
-                'correspondence_status',
-                'building',
-                'room',
-                'lifecycle_status',
-            ]);
-        });
-
         Schema::dropIfExists('event_types');
     }
 };

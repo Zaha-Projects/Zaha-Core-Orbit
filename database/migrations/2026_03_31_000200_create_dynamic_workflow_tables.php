@@ -14,8 +14,11 @@ class CreateDynamicWorkflowTables extends Migration
             $table->string('name_ar')->nullable();
             $table->string('name_en')->nullable();
             $table->string('module')->nullable()->index();
+            $table->string('active_module')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->unique('active_module', 'workflows_unique_active_module');
         });
 
         Schema::create('workflow_steps', function (Blueprint $table) {

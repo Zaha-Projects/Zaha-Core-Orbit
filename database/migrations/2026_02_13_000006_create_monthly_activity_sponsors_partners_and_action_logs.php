@@ -21,8 +21,11 @@ return new class extends Migration {
             $table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('role')->nullable();
+            $table->string('contact_info')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
+
+            $table->unique(['monthly_activity_id', 'name']);
         });
 
         Schema::create('workflow_action_logs', function (Blueprint $table) {
@@ -49,4 +52,3 @@ return new class extends Migration {
         Schema::dropIfExists('monthly_activity_sponsors');
     }
 };
-

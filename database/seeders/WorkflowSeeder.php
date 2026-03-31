@@ -54,7 +54,7 @@ class WorkflowSeeder extends Seeder
 
         $this->seedWorkflow(
             code: 'monthly_activity_approval',
-            module: 'monthly_activity',
+            module: 'monthly_activities',
             nameAr: 'سير اعتماد الأنشطة الشهرية',
             nameEn: 'Monthly Activities Approval Workflow',
             steps: [

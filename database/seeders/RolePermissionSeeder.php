@@ -22,8 +22,6 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'monthly_activities.edit', 'module' => 'monthly_activities', 'action' => 'edit', 'name_ar' => 'تعديل الخطة الشهرية', 'name_en' => 'Edit monthly activities'],
             ['name' => 'monthly_activities.delete', 'module' => 'monthly_activities', 'action' => 'delete', 'name_ar' => 'حذف الخطة الشهرية', 'name_en' => 'Delete monthly activities'],
             ['name' => 'monthly_activities.approve', 'module' => 'monthly_activities', 'action' => 'approve', 'name_ar' => 'اعتماد الخطة الشهرية', 'name_en' => 'Approve monthly activities'],
-            ['name' => 'monthly_plan.approve_level_1', 'module' => 'monthly_plan', 'action' => 'approve_level_1', 'name_ar' => 'اعتماد شهري مستوى 1', 'name_en' => 'Monthly approve level 1'],
-            ['name' => 'monthly_plan.approve_level_2', 'module' => 'monthly_plan', 'action' => 'approve_level_2', 'name_ar' => 'اعتماد شهري مستوى 2', 'name_en' => 'Monthly approve level 2'],
 
             ['name' => 'evaluation.view', 'module' => 'evaluation', 'action' => 'view', 'name_ar' => 'عرض التقييم', 'name_en' => 'View evaluation'],
             ['name' => 'evaluation.submit', 'module' => 'evaluation', 'action' => 'submit', 'name_ar' => 'إرسال التقييم', 'name_en' => 'Submit evaluation'],
@@ -46,10 +44,6 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'branches.view.all', 'module' => 'branch_scope', 'action' => 'view_all', 'name_ar' => 'عرض كل الفروع', 'name_en' => 'View all branches'],
             ['name' => 'branches.view.own', 'module' => 'branch_scope', 'action' => 'view_own', 'name_ar' => 'عرض الفرع الخاص', 'name_en' => 'View own branch'],
 
-            ['name' => 'monthly_plan.view', 'module' => 'legacy', 'action' => 'alias', 'name_ar' => 'مرادف عرض الخطة', 'name_en' => 'Legacy monthly view'],
-            ['name' => 'monthly_plan.create', 'module' => 'legacy', 'action' => 'alias', 'name_ar' => 'مرادف إنشاء الخطة', 'name_en' => 'Legacy monthly create'],
-            ['name' => 'monthly_plan.edit', 'module' => 'legacy', 'action' => 'alias', 'name_ar' => 'مرادف تعديل الخطة', 'name_en' => 'Legacy monthly edit'],
-            ['name' => 'monthly_plan.approve', 'module' => 'legacy', 'action' => 'alias', 'name_ar' => 'مرادف اعتماد الخطة', 'name_en' => 'Legacy monthly approve'],
         ];
 
         foreach ($permissions as $permission) {

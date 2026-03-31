@@ -128,7 +128,7 @@ class MonthlyActivitiesController extends Controller
     protected function logWorkflowAction(string $actionType, MonthlyActivity $monthlyActivity, Request $request, ?string $status = null, ?array $meta = null): void
     {
         WorkflowActionLog::create([
-            'module' => 'monthly_activity',
+            'module' => 'monthly_activities',
             'entity_type' => MonthlyActivity::class,
             'entity_id' => $monthlyActivity->id,
             'action_type' => $actionType,

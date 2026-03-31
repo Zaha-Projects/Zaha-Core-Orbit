@@ -151,7 +151,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         );
 
         WorkflowActionLog::create([
-            'module' => 'monthly_activity',
+            'module' => 'monthly_activities',
             'entity_type' => MonthlyActivity::class,
             'entity_id' => $monthlyActivity->id,
             'action_type' => 'approval_decision',
