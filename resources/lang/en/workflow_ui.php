@@ -32,6 +32,10 @@ return [
         'coverage_completed' => 'Completed',
         'step_order' => 'Step order',
         'approval_level' => 'Approval level',
+        'ar_short' => 'AR',
+        'en_short' => 'EN',
+        'none_option' => 'None',
+
     ],
     'builder' => [
         'title' => 'Workflow Builder',
@@ -45,6 +49,11 @@ return [
         'preview_empty' => 'Add steps to display preview.',
         'delete_workflow_confirm' => 'Are you sure you want to delete this workflow?',
         'delete_step_confirm' => 'Are you sure you want to delete this step?',
+        'step_types' => [
+            'sub' => 'Sub-step',
+            'main' => 'Main step',
+        ],
+
     ],
     'approvals' => [
         'title' => 'Activity approvals',

@@ -32,6 +32,10 @@ return [
         'coverage_completed' => 'مكتمل',
         'step_order' => 'ترتيب المرحلة',
         'approval_level' => 'مستوى الاعتماد',
+        'ar_short' => 'ع',
+        'en_short' => 'EN',
+        'none_option' => 'بدون',
+
     ],
     'builder' => [
         'title' => 'منشئ سير العمل',
@@ -45,6 +49,11 @@ return [
         'preview_empty' => 'أضف مراحل لعرض المعاينة.',
         'delete_workflow_confirm' => 'هل أنت متأكد من حذف سير العمل؟',
         'delete_step_confirm' => 'هل أنت متأكد من حذف هذه المرحلة؟',
+        'step_types' => [
+            'sub' => 'مرحلة فرعية',
+            'main' => 'مرحلة رئيسية',
+        ],
+
     ],
     'approvals' => [
         'title' => 'اعتمادات الأنشطة',

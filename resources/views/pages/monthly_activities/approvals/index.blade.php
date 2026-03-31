@@ -36,7 +36,7 @@
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.common.status') }}</label><input class="form-control" name="status" value="{{ $filters['status'] ?? '' }}"></div>
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.common.current_step') }}</label><input class="form-control" name="current_step" value="{{ $filters['current_step'] ?? '' }}"></div>
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.common.assignee') }}</label><input class="form-control" name="assignee" value="{{ $filters['assignee'] ?? '' }}"></div>
-                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.branch') }}</label><select class="form-select" name="branch_id"><option value="">-</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(($filters['branch_id'] ?? null)==$branch->id)>{{ $branch->name }}</option>@endforeach</select></div>
+                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.branch') }}</label><select class="form-select" name="branch_id"><option value="">{{ __('workflow_ui.common.none_option') }}</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" {{ (string) ($filters['branch_id'] ?? '') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>@endforeach</select></div>
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.from') }}</label><input class="form-control" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.to') }}</label><input class="form-control" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
                 <div class="col-12 d-flex justify-content-end"><button class="btn btn-outline-primary btn-sm">{{ __('workflow_ui.approvals.filters.apply') }}</button></div>
@@ -58,7 +58,7 @@
                     <div class="wf-summary mb-3">
                         <div>
                             <h3 class="h6 mb-1">{{ $activity->title }}</h3>
-                            <div class="wf-kv">{{ optional($activity->branch)->name ?? '-' }} · {{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</div>
+                            <div class="wf-kv">{{ optional($activity->branch)->name ?? '-' }} — {{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</div>
                             <div class="wf-kv mt-1">{{ __('workflow_ui.common.current_step') }}: {{ $wf?->currentStep?->name_ar ?? $wf?->currentStep?->name_en ?? '-' }}</div>
                         </div>
                         <div class="text-end">
