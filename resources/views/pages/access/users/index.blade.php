@@ -4,6 +4,7 @@
     use Illuminate\Support\Str;
     $title = __('app.roles.super_admin.users.title');
     $subtitle = __('app.roles.super_admin.users.subtitle');
+    $permissionsByModule = $permissions->groupBy('module');
     $translatePermission = function ($permission) {
         $name = is_string($permission) ? $permission : (string) $permission->name;
         $ar = is_string($permission) ? null : $permission->name_ar;
@@ -78,37 +79,74 @@
                             </select>
                         </div>
 
-                        <div class="col-12"><div class="small text-muted mb-1">Role permissions are inherited automatically. Select only additional permissions here. / صلاحيات الدور تورث تلقائياً، اختر هنا الإضافات فقط.</div></div>
                         <div class="col-12">
-                            <label class="form-label">Permissions Override (صلاحيات إضافية)</label>
-                            <div class="row g-2">
-                                @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
-                                    <div class="col-12 col-lg-6">
-                                        <div class="border rounded p-2">
-                                            <div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
-                                            @foreach ($modulePermissions as $permission)
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="create-perm-{{ $permission->id }}">
-                                                    <label class="form-check-label small" for="create-perm-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
-                                                </div>
-                                            @endforeach
+                            <div class="small text-muted mb-2">Role permissions are inherited automatically. Select only additional permissions here. / صلاحيات الدور تورث تلقائياً، اختر هنا الإضافات فقط.</div>
+                            <div class="accordion" id="create-user-permissions-accordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="create-user-overrides-heading">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#create-user-overrides-body" aria-expanded="true" aria-controls="create-user-overrides-body">
+                                            Permissions Override (صلاحيات إضافية)
+                                        </button>
+                                    </h2>
+                                    <div id="create-user-overrides-body" class="accordion-collapse collapse show" aria-labelledby="create-user-overrides-heading" data-bs-parent="#create-user-permissions-accordion">
+                                        <div class="accordion-body">
+                                            <div class="accordion" id="create-user-overrides-modules">
+                                                @foreach ($permissionsByModule as $module => $modulePermissions)
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="create-user-overrides-module-heading-{{ $loop->index }}">
+                                                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#create-user-overrides-module-body-{{ $loop->index }}" aria-expanded="false" aria-controls="create-user-overrides-module-body-{{ $loop->index }}">
+                                                                {{ Str::headline((string) $module) }}
+                                                            </button>
+                                                        </h2>
+                                                        <div id="create-user-overrides-module-body-{{ $loop->index }}" class="accordion-collapse collapse" aria-labelledby="create-user-overrides-module-heading-{{ $loop->index }}" data-bs-parent="#create-user-overrides-modules">
+                                                            <div class="accordion-body pt-2">
+                                                                @foreach ($modulePermissions as $permission)
+                                                                    <div class="form-check form-switch mb-1">
+                                                                        <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="create-perm-{{ $permission->id }}">
+                                                                        <label class="form-check-label small" for="create-perm-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
-                                @endforeach
-                            </div>
-                        </div>
+                                </div>
 
-
-                        <div class="col-12">
-                            <label class="form-label">Denied Permissions (صلاحيات ممنوعة)</label>
-                            <div class="row g-2">
-                                @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
-                                    <div class="col-12 col-lg-6"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
-                                        @foreach ($modulePermissions as $permission)
-                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="denied_permissions[]" value="{{ $permission->name }}" id="create-deny-{{ $permission->id }}"><label class="form-check-label small" for="create-deny-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
-                                        @endforeach
-                                    </div></div>
-                                @endforeach
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="create-user-denied-heading">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#create-user-denied-body" aria-expanded="false" aria-controls="create-user-denied-body">
+                                            Denied Permissions (صلاحيات ممنوعة)
+                                        </button>
+                                    </h2>
+                                    <div id="create-user-denied-body" class="accordion-collapse collapse" aria-labelledby="create-user-denied-heading" data-bs-parent="#create-user-permissions-accordion">
+                                        <div class="accordion-body">
+                                            <div class="accordion" id="create-user-denied-modules">
+                                                @foreach ($permissionsByModule as $module => $modulePermissions)
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="create-user-denied-module-heading-{{ $loop->index }}">
+                                                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#create-user-denied-module-body-{{ $loop->index }}" aria-expanded="false" aria-controls="create-user-denied-module-body-{{ $loop->index }}">
+                                                                {{ Str::headline((string) $module) }}
+                                                            </button>
+                                                        </h2>
+                                                        <div id="create-user-denied-module-body-{{ $loop->index }}" class="accordion-collapse collapse" aria-labelledby="create-user-denied-module-heading-{{ $loop->index }}" data-bs-parent="#create-user-denied-modules">
+                                                            <div class="accordion-body pt-2">
+                                                                @foreach ($modulePermissions as $permission)
+                                                                    <div class="form-check form-switch mb-1">
+                                                                        <input class="form-check-input" type="checkbox" name="denied_permissions[]" value="{{ $permission->name }}" id="create-deny-{{ $permission->id }}">
+                                                                        <label class="form-check-label small" for="create-deny-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -247,7 +285,7 @@
                                                 <div class="col-12">
                                                     <label class="form-label">Permissions Override (صلاحيات إضافية)</label>
                                                     <div class="row g-2">
-                                                        @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
+                                                        @foreach ($permissionsByModule as $module => $modulePermissions)
                                                             <div class="col-12 col-lg-6">
                                                                 <div class="border rounded p-2">
                                                                     <div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
@@ -267,7 +305,7 @@
                                                 <div class="col-12">
                                                     <label class="form-label">Denied Permissions (صلاحيات ممنوعة)</label>
                                                     <div class="row g-2">
-                                                        @foreach ($permissions->groupBy('module') as $module => $modulePermissions)
+                                                        @foreach ($permissionsByModule as $module => $modulePermissions)
                                                             <div class="col-12 col-lg-6"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
                                                                 @foreach ($modulePermissions as $permission)
                                                                     <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="denied_permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-deny-{{ $permission->id }}" {{ in_array($permission->name, $userDeniedPermissionNames, true) ? 'checked' : '' }}><label class="form-check-label small" for="edit-user-{{ $user->id }}-deny-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
