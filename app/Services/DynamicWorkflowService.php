@@ -67,9 +67,8 @@ class DynamicWorkflowService
         }
 
         $matchesRole = $step->role && $user->hasRole($step->role->name);
-        $matchesPermission = $step->permission && $user->can($step->permission->name);
 
-        return ($matchesRole || $matchesPermission) ? $step : null;
+        return $matchesRole ? $step : null;
     }
 
     public function assertPrerequisites(WorkflowInstance $instance, WorkflowStep $step): void
@@ -208,10 +207,6 @@ class DynamicWorkflowService
 
         if ($step->role) {
             return $step->role->name;
-        }
-
-        if ($step->permission) {
-            return $step->permission->name;
         }
 
         return __('app.common.na');

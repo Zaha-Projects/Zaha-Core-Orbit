@@ -9,7 +9,6 @@ use App\Models\WorkflowStep;
 use App\Services\WorkflowGovernanceService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
 
 class WorkflowsController extends Controller
 {
@@ -17,9 +16,8 @@ class WorkflowsController extends Controller
     {
         $workflows = Workflow::with(['steps.role', 'steps.permission'])->orderBy('module')->orderBy('id')->get();
         $roles = Role::query()->where('guard_name', 'web')->orderBy('name')->get();
-        $permissions = Permission::query()->where('guard_name', 'web')->orderBy('module')->orderBy('name')->get();
 
-        return view('pages.access.workflows.index', compact('workflows', 'roles', 'permissions'));
+        return view('pages.access.workflows.index', compact('workflows', 'roles'));
     }
 
     public function store(Request $request, WorkflowGovernanceService $governance)
@@ -72,11 +70,12 @@ class WorkflowsController extends Controller
     public function storeStep(Request $request, Workflow $workflow, WorkflowGovernanceService $governance)
     {
         $data = $this->validateStepRequest($request);
-        abort_if(empty($data['role_id']) && empty($data['permission_id']), 422, __('app.roles.super_admin.workflows.errors.role_or_permission_required'));
+        abort_if(empty($data['role_id']), 422, __('app.roles.super_admin.workflows.errors.role_required'));
         $governance->validateStepUniqueness($workflow, $data);
 
         $workflow->steps()->create([
             ...$data,
+            'permission_id' => null,
             'is_editable' => (bool) ($data['is_editable'] ?? true),
         ]);
 
@@ -86,11 +85,12 @@ class WorkflowsController extends Controller
     public function updateStep(Request $request, WorkflowStep $step, WorkflowGovernanceService $governance)
     {
         $data = $this->validateStepRequest($request);
-        abort_if(empty($data['role_id']) && empty($data['permission_id']), 422, __('app.roles.super_admin.workflows.errors.role_or_permission_required'));
+        abort_if(empty($data['role_id']), 422, __('app.roles.super_admin.workflows.errors.role_required'));
         $governance->validateStepUniqueness($step->workflow, $data, $step->id);
 
         $step->update([
             ...$data,
+            'permission_id' => null,
             'is_editable' => (bool) ($data['is_editable'] ?? false),
         ]);
 
@@ -114,7 +114,6 @@ class WorkflowsController extends Controller
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
             'role_id' => ['nullable', 'exists:roles,id'],
-            'permission_id' => ['nullable', 'exists:permissions,id'],
             'is_editable' => ['nullable', 'boolean'],
         ]);
     }

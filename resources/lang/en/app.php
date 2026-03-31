@@ -73,6 +73,7 @@ return [
                 'confirm_delete_step' => 'Are you sure you want to delete this step?',
                 'errors' => [
                     'single_active_per_module' => 'Only one active workflow is allowed per module.',
+                    'role_required' => 'Select a role for this workflow step.',
                     'role_or_permission_required' => 'Select at least one role or permission for this step.',
                     'step_key_duplicate' => 'Step key must be unique inside the workflow.',
                     'step_order_level_duplicate' => 'Step order + approval level must be unique inside the workflow.',

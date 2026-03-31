@@ -21,7 +21,7 @@ return [
         'actions' => 'Actions',
         'no_data' => 'No records available.',
         'coverage_status' => 'Coverage status',
-        'step_key' => 'Step key',
+        'step_key' => 'Step identifier',
         'step_type' => 'Step type',
         'role' => 'Role',
         'permission' => 'Permission',
@@ -35,6 +35,8 @@ return [
         'ar_short' => 'AR',
         'en_short' => 'EN',
         'none_option' => 'None',
+        'unknown_step' => 'Undefined step',
+
 
     ],
     'builder' => [

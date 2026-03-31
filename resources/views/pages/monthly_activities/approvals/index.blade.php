@@ -59,7 +59,7 @@
                         <div>
                             <h3 class="h6 mb-1">{{ $activity->title }}</h3>
                             <div class="wf-kv">{{ optional($activity->branch)->name ?? '-' }} — {{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</div>
-                            <div class="wf-kv mt-1">{{ __('workflow_ui.common.current_step') }}: {{ $wf?->currentStep?->name_ar ?? $wf?->currentStep?->name_en ?? '-' }}</div>
+                            <div class="wf-kv mt-1">{{ __('workflow_ui.common.current_step') }}: {{ $wf?->currentStep?->name_ar ?? $wf?->currentStep?->name_en ?? __('workflow_ui.common.unknown_step') }}</div>
                         </div>
                         <div class="text-end">
                             <span class="wf-status-badge {{ in_array($status, ['approved','rejected','changes_requested','in_progress','pending']) ? $statusClass : 'wf-status-default' }}">
@@ -100,7 +100,7 @@
                                                             </span>
                                                             <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                                 <div>
-                                                                    <div class="fw-semibold">{{ $wfLog->step?->name_ar ?? $wfLog->step?->name_en ?? $wfLog->step?->step_key ?? '-' }}</div>
+                                                                    <div class="fw-semibold">{{ $wfLog->step?->name_ar ?? $wfLog->step?->name_en ?? __('workflow_ui.common.unknown_step') }}</div>
                                                                     <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.actor') }}: {{ $wfLog->actor?->name ?? '-' }}</div>
                                                                     <div class="wf-kv">{{ __('workflow_ui.common.time') }}: {{ $wfLog->acted_at?->format('Y-m-d H:i') ?? '-' }}</div>
                                                                     <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.comment') }}: {{ $wfLog->comment ?: '-' }}</div>
@@ -118,8 +118,8 @@
                                         <div class="col-lg-5">
                                             <div class="border rounded-3 p-3 mb-3">
                                                 <h4 class="h6 mb-2">{{ __('workflow_ui.common.status') }}</h4>
-                                                <div class="wf-kv">{{ __('workflow_ui.common.assignee') }}: {{ $wf?->currentStep?->role?->name ?? $wf?->currentStep?->permission?->name ?? '-' }}</div>
-                                                <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.decision') }}: {{ $latestApproval?->decision ?? '-' }}</div>
+                                                <div class="wf-kv">{{ __('workflow_ui.common.assignee') }}: {{ $wf?->currentStep?->role?->display_name ?? __('workflow_ui.common.none_option') }}</div>
+                                                <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.decision') }}: {{ $latestApproval?->decision ? __('workflow_ui.approvals.status_labels.' . $latestApproval->decision) : __('workflow_ui.common.none_option') }}</div>
                                             </div>
 
                                             <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" class="decision-form" data-confirm-title="{{ __('workflow_ui.approvals.confirm_action') }}" data-confirm-body="{{ __('workflow_ui.approvals.confirm_action_body') }}" data-comment-required="{{ __('workflow_ui.approvals.comment_required') }}">

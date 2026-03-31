@@ -21,7 +21,7 @@ return [
         'actions' => 'الإجراءات',
         'no_data' => 'لا توجد سجلات.',
         'coverage_status' => 'حالة التغطية',
-        'step_key' => 'مفتاح المرحلة',
+        'step_key' => 'معرّف المرحلة',
         'step_type' => 'نوع المرحلة',
         'role' => 'الدور',
         'permission' => 'الصلاحية',
@@ -35,6 +35,8 @@ return [
         'ar_short' => 'ع',
         'en_short' => 'EN',
         'none_option' => 'بدون',
+        'unknown_step' => 'مرحلة غير معرفة',
+
 
     ],
     'builder' => [
