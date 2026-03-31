@@ -8,7 +8,7 @@
     $branchText = mb_strtolower(trim((string) optional($authUser?->branch)->name . ' ' . (string) optional($authUser?->branch)->city));
     $isKhaldaHq = str_contains($branchText, 'khalda') || str_contains($branchText, 'خلدا') || str_contains($branchText, 'عمان') || str_contains($branchText, 'عمّان') || str_contains($branchText, 'amman');
     $canManageAgenda = $authUser?->can('agenda.create') ?? false;
-    $canBranchInteract = ($authUser?->hasAnyRole(['relations_officer', 'branch_relations_officer']) ?? false) && ! $isKhaldaHq;
+    $canBranchInteract = ($authUser?->can('agenda.participation.update') ?? false) && ! $isKhaldaHq;
 
     $agendaStatusLabel = function (?string $status): string {
         if (!$status) {

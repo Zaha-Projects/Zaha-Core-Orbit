@@ -34,6 +34,8 @@ class AgendaApprovalsController extends Controller
 
     public function index()
     {
+        abort_unless(request()->user()->can('agenda.approve'), 403);
+
         $events = AgendaEvent::with(['approvals' => function ($query) {
                 $query->orderBy('approved_at');
             }, 'creator'])

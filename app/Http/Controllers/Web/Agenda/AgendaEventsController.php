@@ -101,10 +101,10 @@ class AgendaEventsController extends Controller
         $user = $request->user();
         $user->loadMissing('branch');
 
-        $isBranchRole = $user->hasAnyRole(['relations_officer', 'branch_relations_officer']);
+        $canUpdateParticipation = $user->can('agenda.participation.update');
         $isHq = $this->branchCode($user->branch) === 'khalda';
 
-        if ($isBranchRole && ! $isHq) {
+        if ($canUpdateParticipation && ! $isHq) {
             return $user;
         }
 
@@ -370,6 +370,8 @@ class AgendaEventsController extends Controller
 
     public function updateUnitParticipation(Request $request, AgendaEvent $agendaEvent)
     {
+        abort_unless($request->user()->can('agenda.participation.update'), 403);
+
         $data = $request->validate([
             'unit_key' => ['required', 'string'],
             'status' => ['required', 'in:participant,not_participant,unspecified'],
