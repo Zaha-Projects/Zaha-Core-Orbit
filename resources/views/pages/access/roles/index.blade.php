@@ -41,6 +41,7 @@
     </div></div>
 
     @foreach ($roles as $role)
+        @php($rolePermissionNames = $role->permissions->pluck('name')->toArray())
         <div class="card shadow-sm mb-3"><div class="card-body">
             <form method="POST" action="{{ route('role.super_admin.roles.update', $role) }}">@csrf @method('PUT')
                 <div class="row g-2 mb-2">
@@ -54,7 +55,7 @@
                     @foreach ($permissions as $module => $modulePermissions)
                         <div class="col-md-4"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
                             @foreach ($modulePermissions as $permission)
-                                <div class="form-check"><input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm-{{ $role->id }}-{{ $permission->id }}" @checked($role->hasPermissionTo($permission))><label class="form-check-label small" for="perm-{{ $role->id }}-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm-{{ $role->id }}-{{ $permission->id }}" @checked(in_array($permission->name, $rolePermissionNames, true))><label class="form-check-label small" for="perm-{{ $role->id }}-{{ $permission->id }}">{{ $translatePermission($permission) }}</label></div>
                             @endforeach
                         </div></div>
                     @endforeach

@@ -17,6 +17,8 @@ class UsersController extends Controller
 {
     public function index()
     {
+        $this->authorize('users.view');
+
         $users = User::with(['roles', 'permissions', 'deniedPermissions', 'branch', 'center'])->orderBy('name')->get();
         $roles = Role::query()->where('guard_name', 'web')->with('permissions')->orderBy('name')->get();
         $permissions = Permission::query()->where('guard_name', 'web')->orderBy('module')->orderBy('name')->get();
@@ -28,6 +30,8 @@ class UsersController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('users.manage');
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -53,10 +57,18 @@ class UsersController extends Controller
 
         $user->assignRole($data['role']);
 
-        $extraPermissions = collect($data['permissions'] ?? [])->unique()->values()->all();
-        if (! empty($extraPermissions)) {
-            $user->givePermissionTo($extraPermissions);
-        }
+        $role = Role::query()
+            ->where('guard_name', 'web')
+            ->where('name', $data['role'])
+            ->with('permissions:id,name')
+            ->first();
+        $rolePermissionNames = $role?->permissions->pluck('name') ?? collect();
+        $extraPermissions = collect($data['permissions'] ?? [])
+            ->unique()
+            ->diff($rolePermissionNames)
+            ->values()
+            ->all();
+        $user->syncPermissions($extraPermissions);
 
         $denied = Permission::query()->whereIn('name', $data['denied_permissions'] ?? [])->pluck('id');
         $user->deniedPermissions()->sync($denied);
@@ -69,6 +81,8 @@ class UsersController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $this->authorize('users.manage');
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
@@ -96,13 +110,18 @@ class UsersController extends Controller
 
         $user->syncRoles([$data['role']]);
 
-        $requestedExtras = collect($data['permissions'] ?? [])->unique();
-        $currentDirect = $user->getDirectPermissions()->pluck('name');
-        $toAdd = $requestedExtras->diff($currentDirect)->values()->all();
-
-        if (! empty($toAdd)) {
-            $user->givePermissionTo($toAdd);
-        }
+        $role = Role::query()
+            ->where('guard_name', 'web')
+            ->where('name', $data['role'])
+            ->with('permissions:id,name')
+            ->first();
+        $rolePermissionNames = $role?->permissions->pluck('name') ?? collect();
+        $directOverrides = collect($data['permissions'] ?? [])
+            ->unique()
+            ->diff($rolePermissionNames)
+            ->values()
+            ->all();
+        $user->syncPermissions($directOverrides);
 
         $denied = Permission::query()->whereIn('name', $data['denied_permissions'] ?? [])->pluck('id');
         $user->deniedPermissions()->sync($denied);
@@ -115,6 +134,8 @@ class UsersController extends Controller
 
     public function destroy(User $user)
     {
+        $this->authorize('users.manage');
+
         $user->delete();
 
         return redirect()

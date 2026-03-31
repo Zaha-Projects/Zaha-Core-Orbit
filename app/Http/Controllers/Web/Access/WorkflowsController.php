@@ -7,15 +7,15 @@ use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 
 class WorkflowsController extends Controller
 {
     public function index()
     {
         $workflows = Workflow::with(['steps.role', 'steps.permission'])->orderBy('module')->orderBy('id')->get();
-        $roles = Role::orderBy('name')->get();
-        $permissions = Permission::orderBy('module')->orderBy('name')->get();
+        $roles = Role::query()->where('guard_name', 'web')->orderBy('name')->get();
+        $permissions = Permission::query()->where('guard_name', 'web')->orderBy('module')->orderBy('name')->get();
 
         return view('pages.access.workflows.index', compact('workflows', 'roles', 'permissions'));
     }

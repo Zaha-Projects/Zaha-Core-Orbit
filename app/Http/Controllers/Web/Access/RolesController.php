@@ -13,6 +13,8 @@ class RolesController extends Controller
 {
     public function index()
     {
+        $this->authorize('roles.view');
+
         $roles = Role::query()
             ->where('guard_name', 'web')
             ->with('permissions')
@@ -30,6 +32,8 @@ class RolesController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('roles.manage');
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where('guard_name', 'web')],
             'name_ar' => ['nullable', 'string', 'max:255'],
@@ -53,6 +57,8 @@ class RolesController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        $this->authorize('roles.manage');
+
         $data = $request->validate([
             'name' => [
                 'required',
@@ -79,6 +85,8 @@ class RolesController extends Controller
 
     public function destroy(Role $role)
     {
+        $this->authorize('roles.manage');
+
         abort_if($role->name === 'super_admin', 422, __('Cannot delete super_admin role'));
 
         $role->delete();

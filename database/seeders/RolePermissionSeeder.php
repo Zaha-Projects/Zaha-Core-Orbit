@@ -6,7 +6,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -123,8 +123,8 @@ class RolePermissionSeeder extends Seeder
                     'name_ar' => $stepData['name_ar'],
                     'name_en' => $stepData['name_en'],
                     'step_type' => $stepData['step_type'],
-                    'role_id' => optional(Role::query()->where('name', $stepData['role'])->first())->id,
-                    'permission_id' => optional(Permission::query()->where('name', $stepData['permission'])->first())->id,
+                    'role_id' => optional(Role::query()->where('guard_name', 'web')->where('name', $stepData['role'])->first())->id,
+                    'permission_id' => optional(Permission::query()->where('guard_name', 'web')->where('name', $stepData['permission'])->first())->id,
                     'is_editable' => true,
                 ]
             );

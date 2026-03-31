@@ -146,6 +146,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($users as $user)
+                                    @php($userAllPermissionNames = $user->getAllPermissions()->pluck('name')->toArray())
                                     <tr>
                                         <td>{{ $user->name }}</td>
                                         <td>{{ $user->email }}</td>
@@ -251,7 +252,7 @@
                                                                     <div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>
                                                                     @foreach ($modulePermissions as $permission)
                                                                         <div class="form-check">
-                                                                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-perm-{{ $permission->id }}" @checked($user->permissions->contains('name', $permission->name))>
+                                                                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="edit-user-{{ $user->id }}-perm-{{ $permission->id }}" @checked(in_array($permission->name, $userAllPermissionNames, true))>
                                                                             <label class="form-check-label small" for="edit-user-{{ $user->id }}-perm-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
                                                                         </div>
                                                                     @endforeach
