@@ -23,7 +23,7 @@ class Workflow extends Model
 
     public function steps()
     {
-        return $this->hasMany(WorkflowStep::class)->orderBy('step_order');
+        return $this->hasMany(WorkflowStep::class)->orderBy('step_order')->orderBy('approval_level');
     }
 
     public function instances()

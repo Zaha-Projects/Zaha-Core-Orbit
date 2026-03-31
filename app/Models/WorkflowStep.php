@@ -16,6 +16,7 @@ class WorkflowStep extends Model
         'name_ar',
         'name_en',
         'step_type',
+        'approval_level',
         'role_id',
         'permission_id',
         'is_editable',

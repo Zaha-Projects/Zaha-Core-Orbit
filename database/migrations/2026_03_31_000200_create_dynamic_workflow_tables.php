@@ -13,7 +13,7 @@ class CreateDynamicWorkflowTables extends Migration
             $table->string('code')->unique();
             $table->string('name_ar')->nullable();
             $table->string('name_en')->nullable();
-            $table->string('module')->nullable();
+            $table->string('module')->nullable()->index();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -26,12 +26,13 @@ class CreateDynamicWorkflowTables extends Migration
             $table->string('name_ar')->nullable();
             $table->string('name_en')->nullable();
             $table->enum('step_type', ['sub', 'main'])->default('sub');
+            $table->unsignedInteger('approval_level')->default(1);
             $table->foreignId('role_id')->nullable()->constrained('roles')->nullOnDelete();
             $table->foreignId('permission_id')->nullable()->constrained('permissions')->nullOnDelete();
             $table->boolean('is_editable')->default(true);
             $table->timestamps();
 
-            $table->unique(['workflow_id', 'step_order']);
+            $table->unique(['workflow_id', 'step_order', 'approval_level']);
             $table->unique(['workflow_id', 'step_key']);
         });
 

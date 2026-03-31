@@ -72,7 +72,10 @@
                                             <strong>Current Stage / المرحلة الحالية:</strong> {{ $wf->currentStep?->name_ar ?? $wf->currentStep?->name_en ?? '-' }}
                                         </div>
                                         <div class="small">
-                                            <strong>Status / الحالة:</strong> {{ $wf->status }}
+                                            <strong>Status / الحالة:</strong> {{ $wf->status === 'in_progress' ? 'قيد المراجعة / In Review' : ($wf->status === 'approved' ? 'تم الاعتماد / Approved' : ($wf->status === 'changes_requested' ? 'مطلوب تعديل / Changes Requested' : $wf->status)) }}
+                                        </div>
+                                        <div class="small">
+                                            <strong>Current Responsible / المسؤول الحالي:</strong> {{ $wf->currentStep?->role?->name ?? $wf->currentStep?->permission?->name ?? '-' }}
                                         </div>
                                         <div class="small text-warning">
                                             <strong>Edit Requests / عدد طلبات التعديل:</strong> {{ $wf->edit_request_count }}
@@ -99,9 +102,7 @@
                                         <div class="alert alert-warning py-2">
                                             <div class="fw-semibold mb-1">سجل طلبات التعديل</div>
                                             <div class="small mb-2">
-                                                @foreach($stepLabels as $stepKey => $stepLabel)
-                                                    <span class="me-2">{{ $stepLabel }}: {{ $changeRequestCounts->get($stepKey, 0) }}</span>
-                                                @endforeach
+                                                <span class="me-2">إجمالي طلبات التعديل: {{ $changeRequests->count() }}</span>
                                             </div>
                                             <div class="small">
                                                 @foreach($changeRequestByUser as $requester)
@@ -121,7 +122,7 @@
                                                     <tbody>
                                                         @foreach($changeRequests as $changeRequest)
                                                             <tr>
-                                                                <td>{{ $stepLabels[$changeRequest->step] ?? $changeRequest->step }}</td>
+                                                                <td>{{ $changeRequest->step }}</td>
                                                                 <td>{{ optional($changeRequest->approver)->name ?? '-' }}</td>
                                                                 <td>{{ $changeRequest->comment ?: '-' }}</td>
                                                                 <td>{{ $changeRequest->approved_at?->format('Y-m-d H:i') ?: '-' }}</td>
@@ -146,6 +147,29 @@
                                         @empty
                                             <div class="text-muted small">لا توجد ملاحظات حتى الآن.</div>
                                         @endforelse
+                                    </div>
+
+
+                                    <div class="mb-3"> 
+                                        <div class="fw-semibold mb-2">Workflow Timeline / تسلسل الاعتماد</div>
+                                        <div class="table-responsive"> 
+                                            <table class="table table-sm mb-0"> 
+                                                <thead><tr><th>الخطوة / Step</th><th>القرار / Decision</th><th>المسؤول / Actor</th><th>الوقت / Time</th><th>ملاحظة / Comment</th></tr></thead>
+                                                <tbody>
+                                                    @forelse(($activity->workflowInstance?->logs ?? collect()) as $wfLog)
+                                                        <tr>
+                                                            <td>{{ $wfLog->step?->name_ar ?? $wfLog->step?->name_en ?? $wfLog->step?->step_key ?? '-' }}</td>
+                                                            <td>{{ $wfLog->action }}</td>
+                                                            <td>{{ $wfLog->actor?->name ?? '-' }}</td>
+                                                            <td>{{ $wfLog->acted_at?->format('Y-m-d H:i') ?? '-' }}</td>
+                                                            <td>{{ $wfLog->comment ?? '-' }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr><td colspan="5" class="text-muted">لا توجد حركات Workflow بعد.</td></tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
 
                                     <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" class="row g-3">

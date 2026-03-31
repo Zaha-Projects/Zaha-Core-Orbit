@@ -16,7 +16,7 @@ class UsersController extends Controller
     public function index()
     {
         $users = User::with(['roles', 'permissions', 'branch', 'center'])->orderBy('name')->get();
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::with('permissions')->orderBy('name')->get();
         $permissions = Permission::orderBy('module')->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
@@ -50,7 +50,11 @@ class UsersController extends Controller
         ]);
 
         $user->assignRole($data['role']);
-        $user->syncPermissions($data['permissions'] ?? []);
+
+        $extraPermissions = collect($data['permissions'] ?? [])->unique()->values()->all();
+        if (! empty($extraPermissions)) {
+            $user->givePermissionTo($extraPermissions);
+        }
 
         return redirect()
             ->route('role.super_admin.users')
@@ -83,7 +87,14 @@ class UsersController extends Controller
         ]);
 
         $user->syncRoles([$data['role']]);
-        $user->syncPermissions($data['permissions'] ?? []);
+
+        $requestedExtras = collect($data['permissions'] ?? [])->unique();
+        $currentDirect = $user->getDirectPermissions()->pluck('name');
+        $toAdd = $requestedExtras->diff($currentDirect)->values()->all();
+
+        if (! empty($toAdd)) {
+            $user->givePermissionTo($toAdd);
+        }
 
         return redirect()
             ->route('role.super_admin.users')

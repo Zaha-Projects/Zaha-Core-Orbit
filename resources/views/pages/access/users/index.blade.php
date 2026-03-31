@@ -84,6 +84,7 @@
                             </select>
                         </div>
 
+                        <div class="col-12"><div class="small text-muted mb-1">Role permissions are inherited automatically. Select only additional permissions here. / صلاحيات الدور تورث تلقائياً، اختر هنا الإضافات فقط.</div></div>
                         <div class="col-12">
                             <label class="form-label">Permissions Override (صلاحيات إضافية)</label>
                             <div class="row g-2">
@@ -205,6 +206,25 @@
                                                             </option>
                                                         @endforeach
                                                     </select>
+                                                </div>
+
+
+                                                <div class="col-12">
+                                                    <div class="small text-muted">Role Permissions (صلاحيات الدور):
+                                                        @php($rolePermissions = optional($user->roles->first())->permissions ?? collect())
+                                                        @forelse($rolePermissions as $rp)
+                                                            <span class="badge bg-light text-dark">{{ $translatePermission($rp->name) }}</span>
+                                                        @empty
+                                                            <span>-</span>
+                                                        @endforelse
+                                                    </div>
+                                                    <div class="small text-muted mt-1">Direct Overrides (الإضافات المباشرة):
+                                                        @forelse($user->getDirectPermissions() as $dp)
+                                                            <span class="badge bg-warning text-dark">{{ $translatePermission($dp->name) }}</span>
+                                                        @empty
+                                                            <span>-</span>
+                                                        @endforelse
+                                                    </div>
                                                 </div>
 
                                                 <div class="col-12">
