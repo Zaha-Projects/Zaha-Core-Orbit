@@ -73,7 +73,7 @@ class AgendaEventsController extends Controller
 
         abort_unless(
             $isKhaldaHq
-            && $user->hasAnyRole(['super_admin', 'relations_manager']),
+            && $user->can('agenda.create'),
             403
         );
     }
@@ -82,7 +82,14 @@ class AgendaEventsController extends Controller
     {
         $user = $request->user();
 
-        if ($user->hasRole('relations_manager') || $user->hasRole('super_admin')) {
+        if ($user->hasRole('super_admin')) {
+            return;
+        }
+
+        $user->loadMissing('branch');
+        $isKhaldaHq = $this->branchCode($user->branch) === 'khalda';
+
+        if ($isKhaldaHq && $user->can('agenda.update')) {
             return;
         }
 

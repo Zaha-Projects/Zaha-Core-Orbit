@@ -40,8 +40,9 @@
                                         ->where('decision', 'changes_requested')
                                         ->filter(fn ($approval) => filled($approval->comment));
 
-                                    $isRelationsReviewer = $user?->hasRole('relations_manager');
+                                    $canApproveAgenda = $user?->can('agenda.approve') ?? false;
                                     $isExecutiveReviewer = $user?->hasRole('executive_manager') || $user?->hasRole('super_admin');
+                                    $isRelationsReviewer = $canApproveAgenda && ! $isExecutiveReviewer;
 
                                     $canRelationsReview = $isRelationsReviewer && in_array($event->status, ['submitted', 'changes_requested'], true);
                                     $canExecutiveReview = $isExecutiveReviewer

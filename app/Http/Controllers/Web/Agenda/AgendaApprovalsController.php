@@ -67,15 +67,9 @@ class AgendaApprovalsController extends Controller
         ]);
 
         $user = $request->user();
+        abort_unless($user->can('agenda.approve'), 403);
+
         $step = ($user->hasRole('executive_manager') || $user->hasRole('super_admin')) ? 'executive_review' : 'relations_review';
-
-        if ($step === 'relations_review' && ! $user->hasRole('relations_manager') && ! $user->hasRole('super_admin')) {
-            abort(403);
-        }
-
-        if ($step === 'executive_review' && ! $user->hasRole('executive_manager') && ! $user->hasRole('super_admin')) {
-            abort(403);
-        }
 
         if ((int) $agendaEvent->created_by === (int) $user->id) {
             return back()->withErrors(['decision' => __('app.roles.relations.approvals.errors.self_approval_forbidden')]);
