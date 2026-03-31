@@ -10,30 +10,20 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        $roleRoutes = [
-            'super_admin' => 'role.super_admin.dashboard',
-            'relations_manager' => 'role.relations_manager.dashboard',
-            'executive_manager' => 'role.relations.approvals.index',
-            'relations_officer' => 'role.relations_officer.dashboard',
-            'branch_relations_officer' => 'role.relations.activities.index',
-            'programs_manager' => 'role.programs_manager.dashboard',
-            'programs_officer' => 'role.programs_officer.dashboard',
-            'workshops_secretary' => 'role.programs.workshops_requests.index',
-            'communication_head' => 'role.programs.communications_requests.index',
-            'finance_officer' => 'role.finance_officer.dashboard',
-            'maintenance_officer' => 'role.maintenance_officer.dashboard',
-            'transport_officer' => 'role.transport_officer.dashboard',
-            'reports_viewer' => 'role.reports_viewer.dashboard',
-            'followup_officer' => 'role.reports.index',
-            'staff' => 'role.staff.dashboard',
-        ];
+        $cards = collect([
+            ['permission' => 'agenda.view', 'title' => __('app.roles.relations.agenda.title'), 'description' => __('app.roles.relations.agenda.subtitle'), 'route' => 'role.relations.agenda.index', 'icon' => 'feather-calendar'],
+            ['permission' => 'monthly_activities.view', 'title' => __('app.roles.programs.monthly_activities.title'), 'description' => __('app.roles.programs.monthly_activities.subtitle'), 'route' => 'role.relations.activities.index', 'icon' => 'feather-layers'],
+            ['permission' => 'monthly_activities.approve', 'title' => __('app.roles.programs.monthly_activities.approvals.title'), 'description' => __('app.roles.programs.monthly_activities.approvals.subtitle'), 'route' => 'role.programs.approvals.index', 'icon' => 'feather-check-square'],
+            ['permission' => 'reports.view', 'title' => __('app.roles.reports.title'), 'description' => __('app.roles.reports.subtitle'), 'route' => 'role.reports.index', 'icon' => 'feather-bar-chart-2'],
+            ['permission' => 'users.view', 'title' => __('app.roles.super_admin.users.title'), 'description' => __('app.roles.super_admin.users.subtitle'), 'route' => 'role.super_admin.users', 'icon' => 'feather-users'],
+        ])->filter(fn (array $card) => $user->can($card['permission']) || $user->hasRole('super_admin'))
+            ->map(function (array $card) {
+                $card['url'] = route($card['route']);
 
-        foreach ($roleRoutes as $role => $route) {
-            if ($user->hasRole($role)) {
-                return redirect()->route($route);
-            }
-        }
+                return $card;
+            })
+            ->values();
 
-        return view('dashboard');
+        return view('dashboard', compact('cards'));
     }
 }

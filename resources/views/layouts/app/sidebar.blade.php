@@ -19,19 +19,18 @@
 
                 @if (request()->routeIs('role.super_admin.*'))
                     @include('pages.access.partials.sidebar')
-                @elseif (request()->routeIs('role.relations.*') || request()->routeIs('role.relations_manager.*') || request()->routeIs('role.relations_officer.*'))
-                    @include('pages.agenda.partials.sidebar')
-                    @include('pages.monthly_activities.partials.sidebar')
-                @elseif (request()->routeIs('role.programs.*') || request()->routeIs('role.programs_manager.*') || request()->routeIs('role.programs_officer.*'))
-                    @include('pages.monthly_activities.partials.sidebar')
-                @elseif (request()->routeIs('role.finance.*') || request()->routeIs('role.finance_officer.*'))
+                @endif
+
+                @include('pages.agenda.partials.sidebar')
+                @include('pages.monthly_activities.partials.sidebar')
+                @include('pages.reports.partials.sidebar')
+
+                @if (request()->routeIs('role.finance.*') || request()->routeIs('role.finance_officer.*'))
                     @include('pages.finance.partials.sidebar')
                 @elseif (request()->routeIs('role.maintenance.*') || request()->routeIs('role.maintenance_officer.*'))
                     @include('pages.maintenance.partials.sidebar')
                 @elseif (request()->routeIs('role.transport.*') || request()->routeIs('role.transport_officer.*'))
                     @include('pages.transport.partials.sidebar')
-                @elseif (request()->routeIs('role.reports.*') || request()->routeIs('role.reports_viewer.*'))
-                    @include('pages.reports.partials.sidebar')
                 @endif
             </ul>
         </div>
