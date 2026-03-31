@@ -7,129 +7,114 @@ use App\Models\Center;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use InvalidArgumentException;
 
 class UsersSeeder extends Seeder
 {
-    /**
-     * @var array<string, string>
-     */
-    protected array $branchAliases = [
-        'khalda' => 'khalda',
-        'خلدا' => 'khalda',
-        'amman' => 'khalda',
-        'عمّان' => 'khalda',
-        'عمان' => 'khalda',
-        'zarqa' => 'zarqa',
-        'زرقاء' => 'zarqa',
-        'الزرقاء' => 'zarqa',
-        'irbid' => 'irbid',
-        'اربد' => 'irbid',
-        'إربد' => 'irbid',
-    ];
-
     public function run(): void
     {
-        $branchesByCode = $this->resolveBranchesByCode();
+        $branches = $this->resolveBranches();
 
-        $hqUsers = [
+        $users = [
             [
-                'name' => 'Khalda Relations Manager',
-                'email' => 'relations_manager@khalda.zaha.test',
-                'role' => 'relations_manager',
-                'branch' => 'khalda',
+                'name' => 'مروان الخطيب - Marwan Al-Khatib',
+                'email' => 'm.al-khatib@zaha.test',
+                'role' => 'super_admin',
+                'branch' => 'amman',
+                'phone' => '0790001001',
             ],
             [
-                'name' => 'Khalda Programs Officer',
-                'email' => 'programs_officer@khalda.zaha.test',
-                'role' => 'programs_officer',
-                'branch' => 'khalda',
-            ],
-            [
-                'name' => 'Khalda Programs Manager',
-                'email' => 'programs_manager@khalda.zaha.test',
-                'role' => 'programs_manager',
-                'branch' => 'khalda',
-            ],
-            [
-                'name' => 'Executive Manager',
-                'email' => 'executive_manager@khalda.zaha.test',
+                'name' => 'رنا المجالي - Rana Al-Majali',
+                'email' => 'r.almajali@zaha.test',
                 'role' => 'executive_manager',
-                'branch' => 'khalda',
+                'branch' => 'amman',
+                'phone' => '0790001002',
             ],
             [
-                'name' => 'Workshops Secretary',
-                'email' => 'workshops_secretary@khalda.zaha.test',
+                'name' => 'ليث الحمود - Laith Al-Hmoud',
+                'email' => 'l.alhmoud@zaha.test',
+                'role' => 'programs_manager',
+                'branch' => 'amman',
+                'phone' => '0790001003',
+            ],
+            [
+                'name' => 'ديمة السالم - Deema Al-Salem',
+                'email' => 'd.alsalem@zaha.test',
+                'role' => 'relations_manager',
+                'branch' => 'amman',
+                'phone' => '0790001004',
+            ],
+            [
+                'name' => 'عمر الشوابكة - Omar Al-Shawabkeh',
+                'email' => 'o.shawabkeh@zaha.test',
+                'role' => 'relations_officer',
+                'branch' => 'amman',
+                'phone' => '0790001005',
+            ],
+            [
+                'name' => 'نهى الزعبي - Noha Al-Zoubi',
+                'email' => 'n.alzoubi@zaha.test',
+                'role' => 'branch_relations_officer',
+                'branch' => 'irbid',
+                'phone' => '0790001006',
+            ],
+            [
+                'name' => 'سالم العبداللات - Salem Al-Abdallat',
+                'email' => 's.abdallat@zaha.test',
+                'role' => 'branch_relations_officer',
+                'branch' => 'zarqa',
+                'phone' => '0790001007',
+            ],
+            [
+                'name' => 'هاجر الرواشدة - Hajar Al-Rawashdeh',
+                'email' => 'h.rawashdeh@zaha.test',
+                'role' => 'followup_officer',
+                'branch' => 'amman',
+                'phone' => '0790001008',
+            ],
+            [
+                'name' => 'ندى الخصاونة - Nada Al-Khasawneh',
+                'email' => 'n.khasawneh@zaha.test',
                 'role' => 'workshops_secretary',
-                'branch' => 'khalda',
+                'branch' => 'amman',
+                'phone' => '0790001009',
             ],
             [
-                'name' => 'Communication Head',
-                'email' => 'communication_head@khalda.zaha.test',
-                'role' => 'communication_head',
-                'branch' => 'khalda',
+                'name' => 'إسراء السرحان - Esraa Al-Sarhan',
+                'email' => 'e.sarhan@zaha.test',
+                'role' => 'relations_officer',
+                'branch' => 'zarqa',
+                'phone' => '0790001010',
+            ],
+            [
+                'name' => 'محمد عبابنة - Mohammad Ababneh',
+                'email' => 'm.ababneh@zaha.test',
+                'role' => 'relations_officer',
+                'branch' => 'irbid',
+                'phone' => '0790001011',
             ],
         ];
 
-        $branchCodes = ['zarqa', 'irbid'];
-        $branchUsers = collect($branchCodes)
-            ->flatMap(function (string $branchCode) {
-                $label = ucfirst($branchCode);
-
-                return [
-                    [
-                        'name' => "{$label} Relations Officer",
-                        'email' => "relations_officer@{$branchCode}.zaha.test",
-                        'role' => 'relations_officer',
-                        'branch' => $branchCode,
-                    ],
-                    [
-                        'name' => "{$label} Relations Manager",
-                        'email' => "relations_manager@{$branchCode}.zaha.test",
-                        'role' => 'relations_manager',
-                        'branch' => $branchCode,
-                    ],
-                ];
-            })
-            ->all();
-
-        $users = array_merge($hqUsers, $branchUsers, [
-            [
-                'name' => 'Super Admin',
-                'email' => 'super_admin@zaha.test',
-                'role' => 'super_admin',
-                'branch' => 'khalda',
-            ],
-        ]);
-
         foreach ($users as $userData) {
-            $branch = $branchesByCode[$userData['branch']] ?? null;
+            $branch = $branches[$userData['branch']] ?? null;
+
             if (! $branch) {
-                continue;
+                throw new InvalidArgumentException('Unknown branch key [' . $userData['branch'] . '] in UsersSeeder.');
             }
 
-            $centerId = Center::query()
-                ->where('branch_id', $branch->id)
-                ->orderBy('id')
-                ->value('id');
+            $centerId = Center::query()->where('branch_id', $branch->id)->orderBy('id')->value('id');
 
-            $user = User::firstOrCreate(
+            $user = User::query()->updateOrCreate(
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
-                    'phone' => null,
+                    'phone' => $userData['phone'],
                     'status' => 'active',
                     'branch_id' => $branch->id,
                     'center_id' => $centerId,
                     'password' => Hash::make('password'),
                 ]
             );
-
-            $user->update([
-                'name' => $userData['name'],
-                'branch_id' => $branch->id,
-                'center_id' => $centerId,
-                'status' => 'active',
-            ]);
 
             $user->syncRoles([$userData['role']]);
         }
@@ -138,25 +123,14 @@ class UsersSeeder extends Seeder
     /**
      * @return array<string, Branch>
      */
-    protected function resolveBranchesByCode(): array
+    private function resolveBranches(): array
     {
-        $mapped = [];
+        $branches = Branch::query()->get();
 
-        foreach (Branch::query()->get() as $branch) {
-            $tokens = [
-                mb_strtolower((string) $branch->name),
-                mb_strtolower((string) $branch->city),
-            ];
-
-            foreach ($tokens as $token) {
-                foreach ($this->branchAliases as $needle => $code) {
-                    if ($token !== '' && str_contains($token, mb_strtolower($needle))) {
-                        $mapped[$code] = $branch;
-                    }
-                }
-            }
-        }
-
-        return $mapped;
+        return [
+            'amman' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'عمّان') || str_contains((string) $branch->city, 'عمان')),
+            'zarqa' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'الزرقاء') || str_contains((string) $branch->city, 'زرقاء')),
+            'irbid' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'إربد') || str_contains((string) $branch->city, 'اربد')),
+        ];
     }
 }
