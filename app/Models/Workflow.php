@@ -14,12 +14,21 @@ class Workflow extends Model
         'name_ar',
         'name_en',
         'module',
+        'active_module',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $workflow): void {
+            $workflow->active_module = $workflow->is_active ? $workflow->module : null;
+        });
+    }
 
     public function steps()
     {

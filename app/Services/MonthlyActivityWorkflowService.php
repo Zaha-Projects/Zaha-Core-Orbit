@@ -6,6 +6,10 @@ use App\Models\MonthlyActivity;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
+/**
+ * @deprecated This service only mirrors legacy status fields for backward compatibility.
+ * Approval decisions must be executed through DynamicWorkflowService.
+ */
 class MonthlyActivityWorkflowService
 {
     /**

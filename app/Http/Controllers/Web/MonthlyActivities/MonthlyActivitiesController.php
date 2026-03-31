@@ -25,6 +25,7 @@ use App\Services\ConflictDetectionService;
 use App\Services\NotificationService;
 use App\Services\MonthlyActivityWorkflowService;
 use App\Services\MonthlyActivityLifecycleService;
+use App\Services\DynamicWorkflowService;
 use Illuminate\Support\Facades\Storage;
 
 class MonthlyActivitiesController extends Controller
@@ -876,17 +877,26 @@ class MonthlyActivitiesController extends Controller
             ->with('warning', $conflictWarning);
     }
 
-    public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications, MonthlyActivityLifecycleService $lifecycle)
+    public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications, MonthlyActivityLifecycleService $lifecycle, DynamicWorkflowService $dynamicWorkflowService)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
+
+        $instance = $dynamicWorkflowService->forModel('monthly_activities', $monthlyActivity);
+        abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
+
+        if ($instance->status === 'changes_requested') {
+            $dynamicWorkflowService->markResubmitted($instance);
+        }
 
         $monthlyActivity->update([
             'status' => 'submitted',
         ]);
 
-        $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
+        if (($monthlyActivity->lifecycle_status ?: 'Draft') !== 'Submitted') {
+            $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
+        }
 
-        $notifications->notifyUsers(User::role('relations_officer')->get(), 'approval_requested', 'Monthly activity approval requested', $monthlyActivity->title, route('role.programs.approvals.index'));
+        $notifications->notifyUsers(User::role('relations_officer')->get(), 'approval_requested', __('app.roles.programs.monthly_activities.approvals.notifications.submit_title'), __('app.roles.programs.monthly_activities.approvals.notifications.submit_body', ['activity' => $monthlyActivity->title]), route('role.programs.approvals.index'));
 
         $request = request();
         if ($request && $request->user()) {

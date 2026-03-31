@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class DynamicWorkflowService
 {
+    public const DECISION_APPROVED = 'approved';
+    public const DECISION_CHANGES_REQUESTED = 'changes_requested';
+    public const DECISION_REJECTED = 'rejected';
+
     public function findActiveWorkflow(string $module): ?Workflow
     {
         return Workflow::query()
@@ -79,7 +83,7 @@ class DynamicWorkflowService
             );
 
         $approvedStepIds = $instance->logs()
-            ->where('action', 'approved')
+            ->where('action', self::DECISION_APPROVED)
             ->pluck('workflow_step_id')
             ->filter()
             ->all();
@@ -89,8 +93,18 @@ class DynamicWorkflowService
         }
     }
 
+    public function canDecide(WorkflowInstance $instance): bool
+    {
+        return in_array($instance->status, ['pending', 'in_progress', 'changes_requested'], true);
+    }
+
     public function recordDecision(WorkflowInstance $instance, WorkflowStep $step, User $actor, string $decision, ?string $comment = null): WorkflowLog
     {
+        abort_unless(in_array($decision, [self::DECISION_APPROVED, self::DECISION_CHANGES_REQUESTED, self::DECISION_REJECTED], true), 422, __('app.roles.programs.monthly_activities.approvals.errors.invalid_decision'));
+        if (in_array($decision, [self::DECISION_CHANGES_REQUESTED, self::DECISION_REJECTED], true)) {
+            abort_if(blank(trim((string) $comment)), 422, __('app.roles.programs.monthly_activities.approvals.errors.comment_required'));
+        }
+
         $log = WorkflowLog::query()->create([
             'workflow_instance_id' => $instance->id,
             'workflow_step_id' => $step->id,
@@ -101,18 +115,51 @@ class DynamicWorkflowService
             'acted_at' => now(),
         ]);
 
-        if ($decision === 'changes_requested') {
+        if ($decision === self::DECISION_CHANGES_REQUESTED) {
             $instance->increment('edit_request_count');
-            $instance->update(['status' => 'changes_requested']);
+            $this->rollbackForChanges($instance->fresh());
 
             return $log;
         }
 
-        if ($decision === 'approved') {
-            $this->advanceToNextStep($instance->fresh());
+        if ($decision === self::DECISION_REJECTED) {
+            $instance->update([
+                'status' => self::DECISION_REJECTED,
+                'current_step_id' => null,
+                'completed_at' => now(),
+            ]);
+
+            return $log;
         }
 
+        $this->advanceToNextStep($instance->fresh());
+
         return $log;
+    }
+
+    public function markResubmitted(WorkflowInstance $instance): void
+    {
+        abort_unless($instance->status === self::DECISION_CHANGES_REQUESTED, 422, __('app.roles.programs.monthly_activities.approvals.errors.resubmit_only_after_changes_requested'));
+
+        $instance->update([
+            'status' => 'in_progress',
+            'completed_at' => null,
+        ]);
+    }
+
+    public function rollbackForChanges(WorkflowInstance $instance): void
+    {
+        $instance->loadMissing('workflow.steps');
+
+        $returnStep = $instance->workflow->steps
+            ->first(fn (WorkflowStep $workflowStep) => (bool) $workflowStep->is_editable)
+            ?? $instance->workflow->steps->first();
+
+        $instance->update([
+            'status' => self::DECISION_CHANGES_REQUESTED,
+            'current_step_id' => $returnStep?->id,
+            'completed_at' => null,
+        ]);
     }
 
     public function advanceToNextStep(WorkflowInstance $instance): void
@@ -126,6 +173,7 @@ class DynamicWorkflowService
             $instance->update([
                 'current_step_id' => optional($steps->first())->id,
                 'status' => 'in_progress',
+                'completed_at' => null,
             ]);
 
             return;
@@ -136,7 +184,7 @@ class DynamicWorkflowService
         if (! $nextStep) {
             $instance->update([
                 'current_step_id' => null,
-                'status' => 'approved',
+                'status' => self::DECISION_APPROVED,
                 'completed_at' => now(),
             ]);
 
@@ -146,6 +194,7 @@ class DynamicWorkflowService
         $instance->update([
             'current_step_id' => $nextStep->id,
             'status' => 'in_progress',
+            'completed_at' => null,
         ]);
     }
 

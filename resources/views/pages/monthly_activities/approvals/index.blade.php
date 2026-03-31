@@ -21,6 +21,22 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
+
+    <div class="card event-card mb-3">
+        <div class="card-body">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-2"><label class="form-label">Status</label><input class="form-control" name="status" value="{{ $filters['status'] ?? '' }}" placeholder="in_progress"></div>
+                <div class="col-md-2"><label class="form-label">Current step</label><input class="form-control" name="current_step" value="{{ $filters['current_step'] ?? '' }}"></div>
+                <div class="col-md-2"><label class="form-label">Assignee</label><input class="form-control" name="assignee" value="{{ $filters['assignee'] ?? '' }}"></div>
+                <div class="col-md-2"><label class="form-label">Branch</label><select class="form-select" name="branch_id"><option value="">All</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(($filters['branch_id'] ?? null)==$branch->id)>{{ $branch->name }}</option>@endforeach</select></div>
+                <div class="col-md-2"><label class="form-label">From</label><input type="date" class="form-control" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
+                <div class="col-md-2"><label class="form-label">To</label><input type="date" class="form-control" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
+                <div class="col-md-3"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="my_pending" value="1" @checked(!empty($filters['my_pending'])) id="my-pending"><label class="form-check-label" for="my-pending">My Pending</label></div></div>
+                <div class="col-md-9 text-end"><button class="btn btn-outline-primary btn-sm">Filter</button></div>
+            </form>
+        </div>
+    </div>
+
     <div class="card event-card">
         <div class="card-body">
             <div class="event-table-wrap table-responsive">
@@ -198,11 +214,12 @@
                                                 <select class="form-select" name="decision" required>
                                                     <option value="approved">{{ __('app.roles.programs.monthly_activities.approvals.decisions.approved') }}</option>
                                                     <option value="changes_requested">{{ __('app.roles.programs.monthly_activities.approvals.decisions.changes_requested') }}</option>
+                                                    <option value="rejected">{{ __('app.roles.programs.monthly_activities.approvals.decisions.rejected') }}</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 col-md-6">
                                                 <label class="form-label">{{ __('app.roles.programs.monthly_activities.approvals.fields.comment') }}</label>
-                                                <input class="form-control" name="comment">
+                                                <input class="form-control" name="comment" placeholder="Required when requesting changes/rejecting">
                                             </div>
                                             <div class="col-12 col-md-2 d-flex align-items-center">
                                                 <div class="form-check mt-4">
@@ -230,5 +247,6 @@
             </div>
         </div>
     </div>
+    <div class="mt-3">{{ $activities->links() }}</div>
     </div>
 @endsection
