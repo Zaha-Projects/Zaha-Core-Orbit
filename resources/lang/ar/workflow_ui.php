@@ -51,6 +51,9 @@ return [
         'preview_empty' => 'أضف مراحل لعرض المعاينة.',
         'delete_workflow_confirm' => 'هل أنت متأكد من حذف سير العمل؟',
         'delete_step_confirm' => 'هل أنت متأكد من حذف هذه المرحلة؟',
+        'preview_order' => 'الترتيب',
+        'preview_level' => 'مستوى الاعتماد',
+        'preview_role' => 'الدور',
         'step_types' => [
             'sub' => 'مرحلة فرعية',
             'main' => 'مرحلة رئيسية',

@@ -51,6 +51,9 @@ return [
         'preview_empty' => 'Add steps to display preview.',
         'delete_workflow_confirm' => 'Are you sure you want to delete this workflow?',
         'delete_step_confirm' => 'Are you sure you want to delete this step?',
+        'preview_order' => 'Order',
+        'preview_level' => 'Approval level',
+        'preview_role' => 'Role',
         'step_types' => [
             'sub' => 'Sub-step',
             'main' => 'Main step',

@@ -19,10 +19,30 @@ class Role extends SpatieRole
 
     public function getDisplayNameAttribute(): string
     {
-        if (app()->getLocale() === 'ar') {
-            return $this->name_ar ?: ($this->name_en ?: $this->name);
+        $locale = app()->getLocale();
+
+        if ($locale === 'ar') {
+            if (! empty($this->name_ar)) {
+                return $this->name_ar;
+            }
+
+            $localized = __('app.acl.roles.' . $this->name);
+            if ($localized !== 'app.acl.roles.' . $this->name) {
+                return $localized;
+            }
+
+            return $this->name_en ?: $this->name;
         }
 
-        return $this->name_en ?: ($this->name_ar ?: $this->name);
+        if (! empty($this->name_en)) {
+            return $this->name_en;
+        }
+
+        $localized = __('app.acl.roles.' . $this->name);
+        if ($localized !== 'app.acl.roles.' . $this->name) {
+            return $localized;
+        }
+
+        return $this->name_ar ?: $this->name;
     }
 }

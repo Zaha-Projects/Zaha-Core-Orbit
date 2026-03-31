@@ -122,8 +122,9 @@
                                     <li class="wf-step">
                                         <span class="wf-step-dot"><i class="feather-check"></i></span>
                                         <div class="fw-semibold">{{ $previewStep->name_ar ?? $previewStep->name_en ?? __('workflow_ui.common.unknown_step') }}</div>
-                                        <div class="wf-kv">#{{ $previewStep->step_order }} · L{{ $previewStep->approval_level }}</div>
-                                        <div class="wf-kv">{{ $previewStep->role?->display_name ?? __('workflow_ui.common.none_option') }}</div>
+                                        <div class="wf-kv">{{ __('workflow_ui.builder.preview_order') }}: {{ $previewStep->step_order }}</div>
+                                        <div class="wf-kv">{{ __('workflow_ui.builder.preview_level') }}: {{ $previewStep->approval_level }}</div>
+                                        <div class="wf-kv">{{ __('workflow_ui.builder.preview_role') }}: {{ $previewStep->role?->display_name ?? __('workflow_ui.common.none_option') }}</div>
                                     </li>
                                 @endforeach
                             </ol>
