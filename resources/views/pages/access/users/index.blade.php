@@ -4,9 +4,6 @@
     use Illuminate\Support\Str;
     $title = __('app.roles.super_admin.users.title');
     $subtitle = __('app.roles.super_admin.users.subtitle');
-    $translateRole = fn (string $name) => __('app.acl.roles.' . $name) !== 'app.acl.roles.' . $name
-        ? __('app.acl.roles.' . $name)
-        : Str::headline(str_replace(['_', '.'], ' ', $name));
     $translatePermission = function ($permission) {
         $name = is_string($permission) ? $permission : (string) $permission->name;
         $ar = is_string($permission) ? null : $permission->name_ar;
@@ -73,19 +70,10 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label">{{ __('app.roles.super_admin.users.fields.center') }}</label>
-                            <select class="form-select" name="center_id">
-                                <option value="">{{ __('app.roles.super_admin.users.fields.center_placeholder') }}</option>
-                                @foreach ($centers as $center)
-                                    <option value="{{ $center->id }}">{{ $center->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.role') }}</label>
                             <select class="form-select" name="role" required>
                                 @foreach ($roles as $role)
-                                    <option value="{{ $role->name }}">{{ $translateRole($role->name) }}</option>
+                                    <option value="{{ $role->name }}">{{ $role->display_name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -222,7 +210,7 @@
                                                     <select class="form-select" name="role" required>
                                                         @foreach ($roles as $role)
                                                             <option value="{{ $role->name }}" @selected($user->roles->contains('name', $role->name))>
-                                                                {{ $translateRole($role->name) }}
+                                                                {{ $role->display_name }}
                                                             </option>
                                                         @endforeach
                                                     </select>

@@ -5,19 +5,21 @@ namespace App\Http\Controllers\Web\Access;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Center;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
 {
     public function index()
     {
         $users = User::with(['roles', 'permissions', 'deniedPermissions', 'branch', 'center'])->orderBy('name')->get();
-        $roles = Role::with('permissions')->orderBy('name')->get();
-        $permissions = Permission::orderBy('module')->orderBy('name')->get();
+        $roles = Role::query()->where('guard_name', 'web')->with('permissions')->orderBy('name')->get();
+        $permissions = Permission::query()->where('guard_name', 'web')->orderBy('module')->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
         $centers = Center::orderBy('name')->get();
 
@@ -31,14 +33,13 @@ class UsersController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:50'],
             'branch_id' => ['nullable', 'exists:branches,id'],
-            'center_id' => ['nullable', 'exists:centers,id'],
             'status' => ['required', 'string', 'max:50'],
-            'role' => ['required', 'exists:roles,name'],
+            'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'password' => ['required', 'string', 'min:8'],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
             'denied_permissions' => ['nullable', 'array'],
-            'denied_permissions.*' => ['string', 'exists:permissions,name'],
+            'denied_permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
         ]);
 
         $user = User::create([
@@ -46,7 +47,6 @@ class UsersController extends Controller
             'email' => $data['email'],
             'phone' => $data['phone'],
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
             'status' => $data['status'],
             'password' => Hash::make($data['password']),
         ]);
@@ -60,6 +60,7 @@ class UsersController extends Controller
 
         $denied = Permission::query()->whereIn('name', $data['denied_permissions'] ?? [])->pluck('id');
         $user->deniedPermissions()->sync($denied);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return redirect()
             ->route('role.super_admin.users')
@@ -75,12 +76,12 @@ class UsersController extends Controller
             'branch_id' => ['nullable', 'exists:branches,id'],
             'center_id' => ['nullable', 'exists:centers,id'],
             'status' => ['required', 'string', 'max:50'],
-            'role' => ['required', 'exists:roles,name'],
+            'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'password' => ['nullable', 'string', 'min:8'],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
             'denied_permissions' => ['nullable', 'array'],
-            'denied_permissions.*' => ['string', 'exists:permissions,name'],
+            'denied_permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
         ]);
 
         $user->update([
@@ -105,6 +106,7 @@ class UsersController extends Controller
 
         $denied = Permission::query()->whereIn('name', $data['denied_permissions'] ?? [])->pluck('id');
         $user->deniedPermissions()->sync($denied);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return redirect()
             ->route('role.super_admin.users')

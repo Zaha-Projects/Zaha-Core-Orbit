@@ -4,7 +4,6 @@
     use Illuminate\Support\Str;
     $title = __('app.roles.super_admin.roles.title');
     $subtitle = __('app.roles.super_admin.roles.subtitle');
-    $translateRole = fn (string $name) => __('app.acl.roles.' . $name) !== 'app.acl.roles.' . $name ? __('app.acl.roles.' . $name) : Str::headline(str_replace(['_', '.'], ' ', $name));
     $translatePermission = function ($permission) {
         $name = is_string($permission) ? $permission : (string) $permission->name;
         $ar = is_string($permission) ? null : $permission->name_ar;
@@ -50,7 +49,7 @@
                     <div class="col-md-3"><input class="form-control" name="name_en" value="{{ $role->name_en }}"></div>
                     <div class="col-md-3 text-end"><button class="btn btn-outline-primary btn-sm">{{ __('Save') }}</button></div>
                 </div>
-                <div class="text-muted small mb-2">{{ $translateRole($role->name) }}</div>
+                <div class="text-muted small mb-2">{{ $role->display_name }}</div>
                 <div class="row g-2">
                     @foreach ($permissions as $module => $modulePermissions)
                         <div class="col-md-4"><div class="border rounded p-2"><div class="fw-semibold small mb-1">{{ Str::headline((string) $module) }}</div>

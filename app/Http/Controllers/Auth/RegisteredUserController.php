@@ -8,7 +8,8 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+use App\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -32,8 +33,12 @@ class RegisteredUserController extends Controller
             'status' => 'active',
         ]);
 
-        $defaultRole = Role::firstOrCreate(['name' => 'staff']);
+        $defaultRole = Role::firstOrCreate([
+            'name' => 'staff',
+            'guard_name' => 'web',
+        ]);
         $user->assignRole($defaultRole);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         event(new Registered($user));
         Auth::login($user);
