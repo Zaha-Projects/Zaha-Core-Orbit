@@ -17,6 +17,19 @@
 
         return $monthlyLabel !== 'app.roles.programs.monthly_activities.statuses.' . $status ? $monthlyLabel : $status;
     };
+
+    $roleLabel = function (?string $roleKey): ?string {
+        if (! $roleKey) {
+            return null;
+        }
+
+        $translated = __('app.acl.roles.' . $roleKey);
+        if ($translated !== 'app.acl.roles.' . $roleKey) {
+            return $translated;
+        }
+
+        return \Illuminate\Support\Str::of($roleKey)->replace('_', ' ')->title()->toString();
+    };
 @endphp
 
 @section('content')
@@ -101,7 +114,8 @@
                                                         @php
                                                             $latestStepLog = $latestLogsByStep->get($step->id)?->first();
                                                             $stepStatus = $latestStepLog?->action ?? 'pending';
-                                                            $stepRole = $step->role?->display_name;
+                                                            $stepRole = $roleLabel($step->role?->name)
+                                                                ?? $step->role?->display_name;
                                                         @endphp
                                                         <div class="approval-sequence-item">
                                                             <div class="approval-sequence-role">{{ $stepRole ?: ($step->name_ar ?? $step->name_en ?? '-') }}</div>

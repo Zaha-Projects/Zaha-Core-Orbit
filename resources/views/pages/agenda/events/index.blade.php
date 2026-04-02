@@ -20,9 +20,22 @@
         return $translated !== 'app.roles.relations.agenda.status_labels.' . $status ? $translated : $status;
     };
 
+    $roleLabel = function (?string $roleKey): string {
+        if (! $roleKey) {
+            return '-';
+        }
+
+        $translated = __('app.acl.roles.' . $roleKey);
+        if ($translated !== 'app.acl.roles.' . $roleKey) {
+            return $translated;
+        }
+
+        return \Illuminate\Support\Str::of($roleKey)->replace('_', ' ')->title()->toString();
+    };
+
     $agendaApprovalSteps = [
-        ['role_label' => __('app.acl.roles.relations_manager'), 'status_field' => 'relations_approval_status'],
-        ['role_label' => __('app.acl.roles.executive_manager'), 'status_field' => 'executive_approval_status'],
+        ['role_label' => $roleLabel('relations_manager'), 'status_field' => 'relations_approval_status'],
+        ['role_label' => $roleLabel('executive_manager'), 'status_field' => 'executive_approval_status'],
     ];
 
     $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser) {
