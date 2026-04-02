@@ -11,11 +11,11 @@ use Spatie\Permission\Models\Permission;
 
 class RolesController extends Controller
 {
-    private function normalizePermissions(array $permissions): array
+    private function normalizePermissionIds(array $permissions): array
     {
         return collect($permissions)
-            ->map(fn ($permission) => trim((string) $permission))
-            ->filter()
+            ->map(fn ($permission) => (int) $permission)
+            ->filter(fn (int $permissionId) => $permissionId > 0)
             ->unique()
             ->values()
             ->all();
@@ -49,7 +49,7 @@ class RolesController extends Controller
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
+            'permissions.*' => ['integer', Rule::exists('permissions', 'id')->where('guard_name', 'web')],
         ]);
 
         $role = Role::create([
@@ -59,7 +59,7 @@ class RolesController extends Controller
             'guard_name' => 'web',
         ]);
 
-        $role->syncPermissions($this->normalizePermissions($data['permissions'] ?? []));
+        $role->syncPermissions($this->normalizePermissionIds($data['permissions'] ?? []));
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return redirect()->route('role.super_admin.roles')->with('status', __('app.roles.super_admin.roles.created'));
@@ -78,8 +78,8 @@ class RolesController extends Controller
             ],
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
-            'permissions' => ['array'],
-            'permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['integer', Rule::exists('permissions', 'id')->where('guard_name', 'web')],
         ]);
 
         $role->update([
@@ -87,7 +87,7 @@ class RolesController extends Controller
             'name_ar' => $data['name_ar'] ?? null,
             'name_en' => $data['name_en'] ?? null,
         ]);
-        $role->syncPermissions($this->normalizePermissions($data['permissions'] ?? []));
+        $role->syncPermissions($this->normalizePermissionIds($data['permissions'] ?? []));
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return redirect()->route('role.super_admin.roles')->with('status', __('app.roles.super_admin.roles.updated', ['role' => $role->name]));
