@@ -17,7 +17,14 @@
                     </a>
                 </li>
 
-                @if (request()->routeIs('role.super_admin.*'))
+                @php
+                    $canAccessAdminSidebar = auth()->check() && (
+                        auth()->user()->hasRole('super_admin')
+                        || auth()->user()->canAny(['users.view', 'roles.view', 'workflows.manage'])
+                    );
+                @endphp
+
+                @if ($canAccessAdminSidebar)
                     @include('pages.access.partials.sidebar')
                 @endif
 
