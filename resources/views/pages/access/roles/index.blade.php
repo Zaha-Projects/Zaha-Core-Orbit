@@ -18,9 +18,20 @@
         $ar = is_string($permission) ? null : $permission->name_ar;
         $en = is_string($permission) ? null : $permission->name_en;
 
-        $label = app()->getLocale() === 'ar' ? ($ar ?: $name) : ($en ?: $name);
+        $translated = __('app.acl.permissions.' . $name);
+        if ($translated !== 'app.acl.permissions.' . $name) {
+            return $translated;
+        }
 
-        return trim(preg_replace('/[\r\n\t]+/u', ' ', (string) $label));
+        $label = app()->getLocale() === 'ar' ? ($ar ?: $name) : ($en ?: $name);
+        $label = trim(preg_replace('/[\r\n\t]+/u', ' ', (string) $label));
+        $label = preg_replace('/@checked\(.*?\)>\s*/u', '', $label);
+
+        if (str_contains($label, '>')) {
+            $label = trim((string) Str::of($label)->afterLast('>'));
+        }
+
+        return $label !== '' ? $label : Str::headline(str_replace(['.', '_'], ' ', $name));
     };
 @endphp
 
@@ -51,8 +62,11 @@
                                 <div class="accordion-body pt-2">
                                     @foreach ($modulePermissions as $permission)
                                         <div class="form-check form-switch mb-1">
-                                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="new-perm-{{ $permission->id }}">
-                                            <label class="form-check-label small" for="new-perm-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
+                                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="new-perm-{{ $permission->id }}" @checked(in_array($permission->name, old('permissions', []), true))>
+                                            <label class="form-check-label small d-flex flex-column gap-1" for="new-perm-{{ $permission->id }}">
+                                                <span>{{ $translatePermission($permission) }}</span>
+                                                <span class="text-muted" style="font-size: .7rem;">{{ $permission->name }}</span>
+                                            </label>
                                         </div>
                                     @endforeach
                                 </div>
@@ -98,7 +112,10 @@
                                             @foreach ($modulePermissions as $permission)
                                                 <div class="form-check form-switch mb-1">
                                                     <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm-{{ $role->id }}-{{ $permission->id }}" @checked(in_array($permission->name, $rolePermissionNames, true))>
-                                                    <label class="form-check-label small" for="perm-{{ $role->id }}-{{ $permission->id }}">{{ $translatePermission($permission) }}</label>
+                                                    <label class="form-check-label small d-flex flex-column gap-1" for="perm-{{ $role->id }}-{{ $permission->id }}">
+                                                        <span>{{ $translatePermission($permission) }}</span>
+                                                        <span class="text-muted" style="font-size: .7rem;">{{ $permission->name }}</span>
+                                                    </label>
                                                 </div>
                                             @endforeach
                                         </div>
