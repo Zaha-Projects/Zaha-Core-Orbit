@@ -101,18 +101,16 @@ class UsersSeeder extends Seeder
                 throw new InvalidArgumentException('Unknown branch key [' . $userData['branch'] . '] in UsersSeeder.');
             }
 
-            $user = User::query()->updateOrCreate(
-                ['email' => $userData['email']],
-                [
-                    'name' => $userData['name'],
-                    'phone' => $userData['phone'],
-                    'status' => 'active',
-                    'branch_id' => $branch->id,
-                    'center_id' => null,
-                    'password' => Hash::make('password'),
-                ]
-            );
-
+$user = User::query()->updateOrCreate(
+    ['email' => $userData['email']],
+    [
+        'name' => $userData['name'],
+        'phone' => $userData['phone'],
+        'status' => 'active',
+        'branch_id' => $branch->id,
+        'password' => Hash::make('password'),
+    ]
+);
             $user->syncRoles([$userData['role']]);
         }
     }
