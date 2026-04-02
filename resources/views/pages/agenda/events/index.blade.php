@@ -20,9 +20,19 @@
         return $translated !== 'app.roles.relations.agenda.status_labels.' . $status ? $translated : $status;
     };
 
-    $roleLabel = function (?string $roleKey): string {
+    $roleDisplayNames = \App\Models\Role::query()
+        ->whereIn('name', ['relations_manager', 'executive_manager'])
+        ->get()
+        ->mapWithKeys(fn ($role) => [$role->name => $role->display_name])
+        ->all();
+
+    $roleLabel = function (?string $roleKey) use ($roleDisplayNames): string {
         if (! $roleKey) {
             return '-';
+        }
+
+        if (! empty($roleDisplayNames[$roleKey])) {
+            return $roleDisplayNames[$roleKey];
         }
 
         $translated = __('app.acl.roles.' . $roleKey);

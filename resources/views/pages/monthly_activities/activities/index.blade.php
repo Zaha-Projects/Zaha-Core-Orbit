@@ -114,8 +114,8 @@
                                                         @php
                                                             $latestStepLog = $latestLogsByStep->get($step->id)?->first();
                                                             $stepStatus = $latestStepLog?->action ?? 'pending';
-                                                            $stepRole = $roleLabel($step->role?->name)
-                                                                ?? $step->role?->display_name;
+                                                            $stepRole = $step->role?->display_name
+                                                                ?? $roleLabel($step->role?->name);
                                                         @endphp
                                                         <div class="approval-sequence-item">
                                                             <div class="approval-sequence-role">{{ $stepRole ?: ($step->name_ar ?? $step->name_en ?? '-') }}</div>

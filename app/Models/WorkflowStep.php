@@ -33,7 +33,7 @@ class WorkflowStep extends Model
 
     public function role()
     {
-        return $this->belongsTo(\Spatie\Permission\Models\Role::class, 'role_id');
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     public function permission()
