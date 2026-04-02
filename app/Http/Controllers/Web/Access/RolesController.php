@@ -11,6 +11,16 @@ use Spatie\Permission\Models\Permission;
 
 class RolesController extends Controller
 {
+    private function normalizePermissions(array $permissions): array
+    {
+        return collect($permissions)
+            ->map(fn ($permission) => trim((string) $permission))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     public function index()
     {
         $this->authorize('roles.view');
@@ -49,7 +59,7 @@ class RolesController extends Controller
             'guard_name' => 'web',
         ]);
 
-        $role->syncPermissions($data['permissions'] ?? []);
+        $role->syncPermissions($this->normalizePermissions($data['permissions'] ?? []));
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return redirect()->route('role.super_admin.roles')->with('status', __('app.roles.super_admin.roles.created'));
@@ -77,7 +87,7 @@ class RolesController extends Controller
             'name_ar' => $data['name_ar'] ?? null,
             'name_en' => $data['name_en'] ?? null,
         ]);
-        $role->syncPermissions($data['permissions'] ?? []);
+        $role->syncPermissions($this->normalizePermissions($data['permissions'] ?? []));
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return redirect()->route('role.super_admin.roles')->with('status', __('app.roles.super_admin.roles.updated', ['role' => $role->name]));

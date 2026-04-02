@@ -17,14 +17,16 @@
         $name = is_string($permission) ? $permission : (string) $permission->name;
         $ar = is_string($permission) ? null : $permission->name_ar;
         $en = is_string($permission) ? null : $permission->name_en;
+        $normalizedForTranslation = str_replace('.', '_', $name);
 
-        $translated = __('app.acl.permissions.' . $name);
-        if ($translated !== 'app.acl.permissions.' . $name) {
+        $translated = __('app.acl.permissions.' . $normalizedForTranslation);
+        if ($translated !== 'app.acl.permissions.' . $normalizedForTranslation) {
             return $translated;
         }
 
         $label = app()->getLocale() === 'ar' ? ($ar ?: $name) : ($en ?: $name);
         $label = trim(preg_replace('/[\r\n\t]+/u', ' ', (string) $label));
+        $label = preg_replace('/^.*\)\)>\s*/u', '', $label);
         $label = preg_replace('/@checked\(.*?\)>\s*/u', '', $label);
 
         if (str_contains($label, '>')) {
@@ -33,6 +35,7 @@
 
         return $label !== '' ? $label : Str::headline(str_replace(['.', '_'], ' ', $name));
     };
+    $normalizePermissionName = fn (?string $value) => trim((string) $value);
 @endphp
 
 @section('content')
@@ -79,7 +82,7 @@
     </div></div>
 
     @foreach ($roles as $role)
-        @php($rolePermissionNames = $role->permissions->pluck('name')->toArray())
+        @php($rolePermissionNames = $role->permissions->pluck('name')->map(fn ($name) => $normalizePermissionName($name))->toArray())
         <div class="card shadow-sm mb-3">
             <div class="card-header bg-transparent">
                 <button class="btn w-100 text-start d-flex justify-content-between align-items-center p-0" type="button" data-bs-toggle="collapse" data-bs-target="#role-card-{{ $role->id }}" aria-expanded="false" aria-controls="role-card-{{ $role->id }}">
@@ -111,7 +114,7 @@
                                         <div class="accordion-body pt-2">
                                             @foreach ($modulePermissions as $permission)
                                                 <div class="form-check form-switch mb-1">
-                                                    <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm-{{ $role->id }}-{{ $permission->id }}" @checked(in_array($permission->name, $rolePermissionNames, true))>
+                                                    <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm-{{ $role->id }}-{{ $permission->id }}" @checked(in_array($normalizePermissionName($permission->name), $rolePermissionNames, true))>
                                                     <label class="form-check-label small d-flex flex-column gap-1" for="perm-{{ $role->id }}-{{ $permission->id }}">
                                                         <span>{{ $translatePermission($permission) }}</span>
                                                         <span class="text-muted" style="font-size: .7rem;">{{ $permission->name }}</span>
