@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\MonthlyKpi;
 use Illuminate\Http\Request;
 
@@ -13,13 +12,12 @@ class MonthlyKpisController extends Controller
     public function index()
     {
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-        $kpis = MonthlyKpi::with(['branch', 'center', 'creator'])
+        $kpis = MonthlyKpi::with(['branch', 'creator'])
             ->orderByDesc('year')
             ->orderByDesc('month')
             ->get();
 
-        return view('pages.reports.kpis', compact('kpis', 'branches', 'centers'));
+        return view('pages.reports.kpis', compact('kpis', 'branches'));
     }
 
     public function store(Request $request)
@@ -30,7 +28,7 @@ class MonthlyKpisController extends Controller
             'year' => ['required', 'integer', 'min:2020', 'max:2100'],
             'month' => ['required', 'integer', 'between:1,12'],
             'branch_id' => ['nullable', 'exists:branches,id'],
-            'center_id' => ['nullable', 'exists:centers,id'],
+            'center_id' => ['nullable'],
             'planned_activities_count' => ['required', 'integer', 'min:0'],
             'unplanned_activities_count' => ['required', 'integer', 'min:0'],
             'modification_rate_percent' => ['nullable', 'integer', 'between:0,100'],
@@ -46,7 +44,7 @@ class MonthlyKpisController extends Controller
                 'year' => $data['year'],
                 'month' => $data['month'],
                 'branch_id' => $data['branch_id'] ?? null,
-                'center_id' => $data['center_id'] ?? null,
+                'center_id' => null,
             ],
             array_merge($data, ['created_by' => $request->user()->id])
         );

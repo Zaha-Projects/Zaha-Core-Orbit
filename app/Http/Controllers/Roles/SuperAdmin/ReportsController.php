@@ -7,7 +7,6 @@ use App\Models\AgendaApproval;
 use App\Models\AgendaEvent;
 use App\Models\Booking;
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\DonationCash;
 use App\Models\MaintenanceRequest;
 use App\Models\MonthlyActivity;
@@ -24,7 +23,7 @@ class ReportsController extends Controller
     {
         $overview = [
             'branches' => Branch::count(),
-            'centers' => Center::count(),
+            'centers' => 0,
             'users' => User::count(),
             'vehicles' => Vehicle::count(),
         ];

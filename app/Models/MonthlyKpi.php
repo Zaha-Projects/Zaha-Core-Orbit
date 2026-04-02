@@ -13,7 +13,6 @@ class MonthlyKpi extends Model
         'year',
         'month',
         'branch_id',
-        'center_id',
         'planned_activities_count',
         'unplanned_activities_count',
         'modification_rate_percent',
@@ -30,10 +29,6 @@ class MonthlyKpi extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function center()
-    {
-        return $this->belongsTo(Center::class);
-    }
 
     public function creator()
     {

@@ -32,7 +32,6 @@ class MaintenanceRequest extends Model
         'root_cause_it',
         'closure_summary',
         'branch_id',
-        'center_id',
         'created_by',
         'closed_at',
     ];
@@ -50,10 +49,6 @@ class MaintenanceRequest extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function center()
-    {
-        return $this->belongsTo(Center::class);
-    }
 
     public function creator()
     {

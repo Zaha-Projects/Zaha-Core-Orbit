@@ -48,14 +48,14 @@
                         @csrf
                         <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.name') }}</label>
-                            <input class="form-control" name="name" value="{{ old('name') }}" required>
+                            <input class="form-control" name="name" value="{{ old('name') }}" >
                             @error('name')
                                 <div class="text-danger small">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.email') }}</label>
-                            <input class="form-control" type="email" name="email" value="{{ old('email') }}" required>
+                            <input class="form-control" type="email" name="email" value="{{ old('email') }}" >
                             @error('email')
                                 <div class="text-danger small">{{ $message }}</div>
                             @enderror
@@ -66,7 +66,7 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.password') }}</label>
-                            <input class="form-control" type="password" name="password" required>
+                            <input class="form-control" type="password" name="password" >
                             @error('password')
                                 <div class="text-danger small">{{ $message }}</div>
                             @enderror
@@ -82,7 +82,7 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.role') }}</label>
-                            <select class="form-select" name="role" required>
+                            <select class="form-select" name="role" >
                                 @foreach ($roles as $role)
                                     <option value="{{ $role->name }}">{{ $role->display_name }}</option>
                                 @endforeach
@@ -162,7 +162,7 @@
 
                         <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.status') }}</label>
-                            <select class="form-select" name="status" required>
+                            <select class="form-select" name="status" >
                                 <option value="active">{{ __('app.roles.super_admin.users.status.active') }}</option>
                                 <option value="inactive">{{ __('app.roles.super_admin.users.status.inactive') }}</option>
                             </select>
@@ -200,7 +200,7 @@
                                         <td>{{ $user->name }}</td>
                                         <td>{{ $user->email }}</td>
                                         <td>{{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }}</td>
-                                        <td>{{ $user->center?->name ?? __('app.roles.super_admin.users.table.unassigned') }}</td>
+                                        <td>{{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }}</td>
                                         <td>{{ $user->roles->pluck('name')->join(', ') }}</td>
                                         <td>{{ $user->status }}</td>
                                         <td class="text-end">
@@ -223,11 +223,11 @@
                                                 @method('PUT')
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">{{ __('app.roles.super_admin.users.fields.name') }}</label>
-                                                    <input class="form-control" name="name" value="{{ $user->name }}" required>
+                                                    <input class="form-control" name="name" value="{{ $user->name }}" >
                                                 </div>
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">{{ __('app.roles.super_admin.users.fields.email') }}</label>
-                                                    <input class="form-control" type="email" name="email" value="{{ $user->email }}" required>
+                                                    <input class="form-control" type="email" name="email" value="{{ $user->email }}" >
                                                 </div>
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">{{ __('app.roles.super_admin.users.fields.phone') }}</label>
@@ -245,19 +245,11 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-12 col-md-4">
-                                                    <label class="form-label">{{ __('app.roles.super_admin.users.fields.center') }}</label>
-                                                    <select class="form-select" name="center_id">
-                                                        <option value="">{{ __('app.roles.super_admin.users.fields.center_placeholder') }}</option>
-                                                        @foreach ($centers as $center)
-                                                            <option value="{{ $center->id }}" @selected($user->center_id === $center->id)>
-                                                                {{ $center->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
+                                                    
+</div>
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">{{ __('app.roles.super_admin.users.fields.role') }}</label>
-                                                    <select class="form-select" name="role" required>
+                                                    <select class="form-select" name="role" >
                                                         @foreach ($roles as $role)
                                                             <option value="{{ $role->name }}" @selected($user->roles->contains('name', $role->name))>
                                                                 {{ $role->display_name }}
@@ -327,7 +319,7 @@
 
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">{{ __('app.roles.super_admin.users.fields.status') }}</label>
-                                                    <select class="form-select" name="status" required>
+                                                    <select class="form-select" name="status" >
                                                         <option value="active" @selected($user->status === 'active')>
                                                             {{ __('app.roles.super_admin.users.status.active') }}
                                                         </option>

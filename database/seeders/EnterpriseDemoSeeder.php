@@ -82,7 +82,7 @@ class EnterpriseDemoSeeder extends Seeder
                         'location_type' => 'onsite',
                         'status' => collect(['draft', 'submitted', 'in_review', 'approved', 'changes_requested'])->random(),
                         'branch_id' => $branches->random()->id,
-                        'center_id' => $branches->random()->centers()->inRandomOrder()->value('id') ?? 1,
+                        'center_id' => null,
                         'created_by' => $creator->id,
                         'executive_approval_status' => collect(['pending', 'approved', 'changes_requested'])->random(),
                         'programs_manager_approval_status' => collect(['pending', 'approved', 'changes_requested'])->random(),

@@ -20,7 +20,6 @@ class User extends Authenticatable
         'email',
         'phone',
         'branch_id',
-        'center_id',
         'status',
         'password',
     ];
@@ -88,10 +87,6 @@ class User extends Authenticatable
         return $this->belongsTo(Branch::class);
     }
 
-    public function center()
-    {
-        return $this->belongsTo(Center::class);
-    }
 
     public function monthlyActivities()
     {

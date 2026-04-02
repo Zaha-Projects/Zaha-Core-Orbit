@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Branch;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class BranchSeeder extends Seeder
 {
@@ -40,7 +41,7 @@ class BranchSeeder extends Seeder
         $branches = collect($branchNames)
             ->map(fn (string $name): array => [
                 'name' => $name,
-                'city' => trim((string) str($name)->afterLast('-')),
+                'city' => trim((string) Str::of($name)->afterLast('-')),
                 'address' => null,
             ])
             ->all();

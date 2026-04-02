@@ -26,26 +26,26 @@
                 @method('PUT')
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.logged_at') }}</label>
-                    <input class="form-control" type="datetime-local" name="logged_at" value="{{ $maintenanceRequest->logged_at?->format('Y-m-d\\TH:i') }}" required>
+                    <input class="form-control" type="datetime-local" name="logged_at" value="{{ $maintenanceRequest->logged_at?->format('Y-m-d\\TH:i') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.type') }}</label>
-                    <select class="form-select" name="type" required>
+                    <select class="form-select" name="type" >
                         <option value="preventive" @selected($maintenanceRequest->type === 'preventive')>{{ __('app.roles.maintenance.requests.types.preventive') }}</option>
                         <option value="emergency" @selected($maintenanceRequest->type === 'emergency')>{{ __('app.roles.maintenance.requests.types.emergency') }}</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.category') }}</label>
-                    <input class="form-control" name="category" value="{{ $maintenanceRequest->category }}" required>
+                    <input class="form-control" name="category" value="{{ $maintenanceRequest->category }}" >
                 </div>
                 <div class="col-12">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.description') }}</label>
-                    <textarea class="form-control" name="description" rows="3" required>{{ $maintenanceRequest->description }}</textarea>
+                    <textarea class="form-control" name="description" rows="3" >{{ $maintenanceRequest->description }}</textarea>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.priority') }}</label>
-                    <select class="form-select" name="priority" required>
+                    <select class="form-select" name="priority" >
                         <option value="low" @selected($maintenanceRequest->priority === 'low')>{{ __('app.roles.maintenance.requests.priorities.low') }}</option>
                         <option value="medium" @selected($maintenanceRequest->priority === 'medium')>{{ __('app.roles.maintenance.requests.priorities.medium') }}</option>
                         <option value="high" @selected($maintenanceRequest->priority === 'high')>{{ __('app.roles.maintenance.requests.priorities.high') }}</option>
@@ -53,7 +53,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.status') }}</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="logged" @selected($maintenanceRequest->status === 'logged')>{{ __('app.roles.maintenance.requests.statuses.logged') }}</option>
                         <option value="assigned" @selected($maintenanceRequest->status === 'assigned')>{{ __('app.roles.maintenance.requests.statuses.assigned') }}</option>
                         <option value="in_progress" @selected($maintenanceRequest->status === 'in_progress')>{{ __('app.roles.maintenance.requests.statuses.in_progress') }}</option>
@@ -62,7 +62,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.branch') }}</label>
-                    <select class="form-select" name="branch_id" required>
+                    <select class="form-select" name="branch_id" >
                         <option value="">{{ __('app.roles.maintenance.requests.fields.branch_placeholder') }}</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}" @selected($maintenanceRequest->branch_id === $branch->id)>
@@ -72,16 +72,8 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.maintenance.requests.fields.center') }}</label>
-                    <select class="form-select" name="center_id" required>
-                        <option value="">{{ __('app.roles.maintenance.requests.fields.center_placeholder') }}</option>
-                        @foreach ($centers as $center)
-                            <option value="{{ $center->id }}" @selected($maintenanceRequest->center_id === $center->id)>
-                                {{ $center->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    
+</div>
                 <div class="col-12">
                     <h3 class="h6 mt-2">{{ __('app.roles.maintenance.requests.fields_ext.processing_tracks') }}</h3>
                 </div>
@@ -225,11 +217,11 @@
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.attachments.fields.file_type') }}</label>
-                    <input class="form-control" name="file_type" required>
+                    <input class="form-control" name="file_type" >
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.maintenance.attachments.fields.file_path') }}</label>
-                    <input class="form-control" name="file_path" required>
+                    <input class="form-control" name="file_path" >
                 </div>
                 <div class="col-12 col-md-2 d-flex justify-content-end align-items-center">
                     <button class="btn btn-outline-primary btn-sm mt-4" type="submit">
@@ -284,7 +276,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.maintenance.requests.fields.status') }}</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="closed">{{ __('app.roles.maintenance.requests.statuses.closed') }}</option>
                         <option value="completed">{{ __('app.roles.maintenance.requests.statuses.completed') }}</option>
                     </select>

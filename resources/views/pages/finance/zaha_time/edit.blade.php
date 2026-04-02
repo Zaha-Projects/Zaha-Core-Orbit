@@ -16,31 +16,31 @@
                 @method('PUT')
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.received_at') }}</label>
-                    <input class="form-control" type="datetime-local" name="received_at" value="{{ $zahaTimeBooking->received_at?->format('Y-m-d\\TH:i') }}" required>
+                    <input class="form-control" type="datetime-local" name="received_at" value="{{ $zahaTimeBooking->received_at?->format('Y-m-d\\TH:i') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.booking_date') }}</label>
-                    <input class="form-control" type="date" name="booking_date" value="{{ optional($zahaTimeBooking->booking_date)->format('Y-m-d') }}" required>
+                    <input class="form-control" type="date" name="booking_date" value="{{ optional($zahaTimeBooking->booking_date)->format('Y-m-d') }}" >
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.time_from') }}</label>
-                    <input class="form-control" type="time" name="time_from" value="{{ $zahaTimeBooking->time_from?->format('H:i') }}" required>
+                    <input class="form-control" type="time" name="time_from" value="{{ $zahaTimeBooking->time_from?->format('H:i') }}" >
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.time_to') }}</label>
-                    <input class="form-control" type="time" name="time_to" value="{{ $zahaTimeBooking->time_to?->format('H:i') }}" required>
+                    <input class="form-control" type="time" name="time_to" value="{{ $zahaTimeBooking->time_to?->format('H:i') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.entity_type') }}</label>
-                    <input class="form-control" name="entity_type" value="{{ $zahaTimeBooking->entity_type }}" required>
+                    <input class="form-control" name="entity_type" value="{{ $zahaTimeBooking->entity_type }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.contact_person') }}</label>
-                    <input class="form-control" name="contact_person" value="{{ $zahaTimeBooking->contact_person }}" required>
+                    <input class="form-control" name="contact_person" value="{{ $zahaTimeBooking->contact_person }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.phone') }}</label>
-                    <input class="form-control" name="phone" value="{{ $zahaTimeBooking->phone }}" required>
+                    <input class="form-control" name="phone" value="{{ $zahaTimeBooking->phone }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.children_count') }}</label>
@@ -64,7 +64,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.status') }}</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="pending" @selected($zahaTimeBooking->status === 'pending')>{{ __('app.roles.finance.zaha_time.statuses.pending') }}</option>
                         <option value="confirmed" @selected($zahaTimeBooking->status === 'confirmed')>{{ __('app.roles.finance.zaha_time.statuses.confirmed') }}</option>
                         <option value="paid" @selected($zahaTimeBooking->status === 'paid')>{{ __('app.roles.finance.zaha_time.statuses.paid') }}</option>
@@ -74,7 +74,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.branch') }}</label>
-                    <select class="form-select" name="branch_id" required>
+                    <select class="form-select" name="branch_id" >
                         <option value="">{{ __('app.roles.finance.zaha_time.fields.branch_placeholder') }}</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}" @selected($zahaTimeBooking->branch_id === $branch->id)>
@@ -84,16 +84,8 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.center') }}</label>
-                    <select class="form-select" name="center_id" required>
-                        <option value="">{{ __('app.roles.finance.zaha_time.fields.center_placeholder') }}</option>
-                        @foreach ($centers as $center)
-                            <option value="{{ $center->id }}" @selected($zahaTimeBooking->center_id === $center->id)>
-                                {{ $center->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    
+</div>
                 <div class="col-12 d-flex justify-content-end">
                     <button class="btn btn-outline-primary" type="submit">
                         {{ __('app.roles.finance.zaha_time.actions.save') }}

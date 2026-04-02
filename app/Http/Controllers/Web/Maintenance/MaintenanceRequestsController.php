@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web\Maintenance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\MaintenanceRequest;
 use Illuminate\Http\Request;
 
@@ -12,19 +11,15 @@ class MaintenanceRequestsController extends Controller
 {
     public function index()
     {
-        $requests = MaintenanceRequest::with(['branch', 'center', 'creator'])->orderByDesc('logged_at')->get();
+        $requests = MaintenanceRequest::with(['branch', 'creator'])->orderByDesc('logged_at')->get();
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.maintenance.requests.index', compact('requests', 'branches', 'centers'));
+        return view('pages.maintenance.requests.index', compact('requests', 'branches'));
     }
 
     public function create()
     {
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.maintenance.requests.create', compact('branches', 'centers'));
+        return view('pages.maintenance.requests.create', compact('branches'));
     }
 
     public function store(Request $request)
@@ -49,7 +44,7 @@ class MaintenanceRequestsController extends Controller
             'root_cause_it' => ['nullable', 'string'],
             'closure_summary' => ['nullable', 'string'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
         ]);
 
         MaintenanceRequest::create([
@@ -75,7 +70,7 @@ class MaintenanceRequestsController extends Controller
             'root_cause_it' => $data['root_cause_it'] ?? null,
             'closure_summary' => $data['closure_summary'] ?? null,
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
             'created_by' => $request->user()->id,
         ]);
 
@@ -88,9 +83,7 @@ class MaintenanceRequestsController extends Controller
     {
         $maintenanceRequest->load(['workDetails', 'attachments', 'approvals']);
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.maintenance.requests.edit', compact('maintenanceRequest', 'branches', 'centers'));
+        return view('pages.maintenance.requests.edit', compact('maintenanceRequest', 'branches'));
     }
 
     public function update(Request $request, MaintenanceRequest $maintenanceRequest)
@@ -115,7 +108,7 @@ class MaintenanceRequestsController extends Controller
             'root_cause_it' => ['nullable', 'string'],
             'closure_summary' => ['nullable', 'string'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
         ]);
 
         $maintenanceRequest->update(array_merge($data, [

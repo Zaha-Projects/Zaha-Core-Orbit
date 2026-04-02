@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Web\MonthlyActivities;
 use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\MonthlyActivityChangeLog;
 use App\Models\MonthlyActivityPartner;
 use App\Models\MonthlyActivitySponsor;
@@ -178,8 +177,7 @@ class MonthlyActivitiesController extends Controller
     {
         $activitiesQuery = MonthlyActivity::with([
             'branch',
-            'center',
-            'agendaEvent',
+                        'agendaEvent',
             'creator',
             'workflowInstance.workflow.steps.role',
             'workflowInstance.logs.step',
@@ -196,56 +194,41 @@ class MonthlyActivitiesController extends Controller
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
-        $centers = Center::query()->orderBy('name');
-        if ($this->shouldScopeToUserBranch($request->user())) {
+                if ($this->shouldScopeToUserBranch($request->user())) {
             $branches->where('id', $request->user()->branch_id);
-            $centers->where('branch_id', $request->user()->branch_id);
         }
         $branches = $branches->get();
-        $centers = $centers->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
 
-        return view('pages.monthly_activities.activities.index', compact('activities', 'branches', 'centers', 'agendaEvents'));
+        return view('pages.monthly_activities.activities.index', compact('activities', 'branches', 'agendaEvents'));
     }
 
     public function create()
     {
         $user = request()->user();
         $branches = Branch::query()->orderBy('name');
-        $centers = Center::query()->orderBy('name');
-        if ($this->shouldScopeToUserBranch($user)) {
+                if ($this->shouldScopeToUserBranch($user)) {
             $branches->where('id', $user->branch_id);
-            $centers->where('branch_id', $user->branch_id);
         }
         $branches = $branches->get();
-        $centers = $centers->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('pages.monthly_activities.activities.create', compact('branches', 'centers', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
+        return view('pages.monthly_activities.activities.create', compact('branches', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
     }
 
     public function syncFromAgenda(Request $request)
     {
         $data = $request->validate([
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
             'month' => ['required', 'integer', 'between:1,12'],
             'year' => ['required', 'integer', 'min:2020', 'max:2100'],
         ]);
 
         if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
             abort(403);
-        }
-
-        $centerBelongsToBranch = Center::query()
-            ->where('id', $data['center_id'])
-            ->where('branch_id', $data['branch_id'])
-            ->exists();
-
-        if (! $centerBelongsToBranch) {
-            return back()->withErrors(['center_id' => __('app.roles.programs.monthly_activities.errors.center_branch_mismatch')]);
         }
 
         $events = AgendaEvent::query()
@@ -299,7 +282,7 @@ class MonthlyActivitiesController extends Controller
                 'lock_at' => $this->buildLockAt(optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString()),
                 'is_official' => false,
                 'branch_id' => (int) $data['branch_id'],
-                'center_id' => (int) $data['center_id'],
+                'center_id' => null,
                 'created_by' => $request->user()->id,
             ]);
 
@@ -318,7 +301,7 @@ class MonthlyActivitiesController extends Controller
             'activity_date' => ['required', 'date'],
             'proposed_date' => ['required', 'date'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'status' => ['required', 'string', 'max:50'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
@@ -497,7 +480,7 @@ class MonthlyActivitiesController extends Controller
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
             'created_by' => $request->user()->id,
         ]);
 
@@ -563,12 +546,11 @@ class MonthlyActivitiesController extends Controller
 
         $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'centers', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
+        return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
     }
 
     public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
@@ -607,7 +589,7 @@ class MonthlyActivitiesController extends Controller
             'activity_date' => ['required', 'date'],
             'proposed_date' => ['required', 'date'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'status' => ['required', 'string', 'max:50'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
@@ -753,7 +735,6 @@ class MonthlyActivitiesController extends Controller
             'plan_type',
             'branch_plan_file',
             'branch_id',
-            'center_id',
             'month',
             'day',
         ]);
@@ -808,7 +789,7 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
         ];
 
         $monthlyActivity->update([
@@ -862,7 +843,7 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops' => $newValues['requires_workshops'],
             'requires_communications' => $newValues['requires_communications'],
             'branch_id' => $newValues['branch_id'],
-            'center_id' => $newValues['center_id'],
+            'center_id' => null,
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
         ]);

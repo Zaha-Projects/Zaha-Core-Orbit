@@ -14,14 +14,6 @@
     </a>
 </li>
 @endcan
-@can('branches.manage')
-<li class="nxl-item">
-    <a class="nxl-link {{ request()->routeIs('role.super_admin.centers*') ? 'active' : '' }}" href="{{ route('role.super_admin.centers') }}">
-        <span class="nxl-micon"><i class="feather-home"></i></span>
-        <span class="nxl-mtext">{{ __('app.roles.super_admin.sidebar.centers') }}</span>
-    </a>
-</li>
-@endcan
 @can('roles.view')
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.super_admin.roles*') ? 'active' : '' }}" href="{{ route('role.super_admin.roles') }}">

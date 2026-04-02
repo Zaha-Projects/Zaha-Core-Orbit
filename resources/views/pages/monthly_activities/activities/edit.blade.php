@@ -56,20 +56,20 @@
                 @method('PUT')
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.title') }}</label>
-                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title', $monthlyActivity->title) }}" required>
+                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title', $monthlyActivity->title) }}" >
                     @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.activity_date') }}</label>
-                    <input class="form-control" type="date" name="activity_date" value="{{ sprintf('%04d-%02d-%02d', now()->year, $monthlyActivity->month, $monthlyActivity->day) }}" required>
+                    <input class="form-control" type="date" name="activity_date" value="{{ sprintf('%04d-%02d-%02d', now()->year, $monthlyActivity->month, $monthlyActivity->day) }}" >
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.proposed_date') }}</label>
-                    <input class="form-control" type="date" name="proposed_date" value="{{ optional($monthlyActivity->proposed_date)->format('Y-m-d') }}" required>
+                    <input class="form-control" type="date" name="proposed_date" value="{{ optional($monthlyActivity->proposed_date)->format('Y-m-d') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.branch') }}</label>
-                    <select class="form-select" name="branch_id" required>
+                    <select class="form-select" name="branch_id" >
                         <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}" @selected($monthlyActivity->branch_id === $branch->id)>
@@ -79,16 +79,8 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.center') }}</label>
-                    <select class="form-select" name="center_id" required>
-                        <option value="">{{ __('app.roles.programs.monthly_activities.fields.center_placeholder') }}</option>
-                        @foreach ($centers as $center)
-                            <option value="{{ $center->id }}" @selected($monthlyActivity->center_id === $center->id)>
-                                {{ $center->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    
+</div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.agenda_event') }}</label>
                     <select class="form-select" name="agenda_event_id">
@@ -102,7 +94,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="draft" @selected($monthlyActivity->status === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
                         <option value="submitted" @selected($monthlyActivity->status === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
                         <option value="changes_requested" @selected($monthlyActivity->status === 'changes_requested')>{{ __('app.roles.programs.monthly_activities.statuses.changes_requested') }}</option>
@@ -111,7 +103,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">نوع المكان</label>
-                    <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type" required>
+                    <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type" >
                         <option value="inside_center" @selected(old('location_type', $monthlyActivity->location_type) === 'inside_center')>داخل المركز</option>
                         <option value="outside_center" @selected(old('location_type', $monthlyActivity->location_type) === 'outside_center')>خارج المركز</option>
                     </select>
@@ -269,7 +261,7 @@
                 @csrf
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.supplies.fields.item_name') }}</label>
-                    <input class="form-control" name="item_name" required>
+                    <input class="form-control" name="item_name" >
                 </div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
@@ -333,7 +325,7 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.team.fields.member_name') }}</label>
-                    <input class="form-control" name="member_name" required>
+                    <input class="form-control" name="member_name" >
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">البريد الإلكتروني</label>
@@ -461,7 +453,7 @@
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.attachments.fields.file_type') }}</label>
-                    <select class="form-select" name="file_type" required>
+                    <select class="form-select" name="file_type" >
                         <option value="">-- اختر نوع الملف --</option>
                         <option value="image" @selected(old('file_type') === 'image')>صورة</option>
                         <option value="document" @selected(old('file_type') === 'document')>مستند</option>
@@ -471,7 +463,7 @@
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">ملف التغطية (صورة/ملف)</label>
-                    <input class="form-control" type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xlsx,.xls" required>
+                    <input class="form-control" type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xlsx,.xls" >
                 </div>
                 <div class="col-12 col-md-2 d-flex justify-content-end align-items-center">
                     <button class="btn btn-outline-primary btn-sm mt-4" type="submit">
@@ -530,7 +522,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="closed">{{ __('app.roles.programs.monthly_activities.statuses.closed') }}</option>
                         <option value="completed">{{ __('app.roles.programs.monthly_activities.statuses.completed') }}</option>
                     </select>

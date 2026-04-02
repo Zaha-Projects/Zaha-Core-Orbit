@@ -15,10 +15,6 @@ class Branch extends Model
         'address',
     ];
 
-    public function centers()
-    {
-        return $this->hasMany(Center::class);
-    }
 
     public function users()
     {

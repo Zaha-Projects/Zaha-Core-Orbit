@@ -33,23 +33,23 @@
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">عنوان النشاط</label>
-                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title') }}" required>
+                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title') }}" >
                     @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12 col-md-3">
                     <label class="form-label">التاريخ المتوقع للنشاط</label>
-                    <input class="form-control" type="date" name="proposed_date" value="{{ old('proposed_date') }}" required>
+                    <input class="form-control" type="date" name="proposed_date" value="{{ old('proposed_date') }}" >
                 </div>
 
                 <div class="col-12 col-md-3">
                     <label class="form-label">تاريخ الخطة</label>
-                    <input class="form-control" type="date" name="activity_date" value="{{ old('activity_date') }}" required>
+                    <input class="form-control" type="date" name="activity_date" value="{{ old('activity_date') }}" >
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">الحالة</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="draft" @selected(old('status', 'draft') === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
                         <option value="submitted" @selected(old('status') === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
                     </select>
@@ -57,7 +57,7 @@
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">الفرع</label>
-                    <select class="form-select" name="branch_id" required>
+                    <select class="form-select" name="branch_id" >
                         <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}" @selected((string) old('branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
@@ -67,13 +67,7 @@
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">المركز</label>
-                    <select class="form-select" name="center_id" required>
-                        <option value="">{{ __('app.roles.programs.monthly_activities.fields.center_placeholder') }}</option>
-                        @foreach ($centers as $center)
-                            <option value="{{ $center->id }}" @selected((string) old('center_id') === (string) $center->id)>{{ $center->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+</div>
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">رفع خطة الفرع</label>
@@ -83,7 +77,7 @@
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">نوع المكان</label>
-                    <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type" required>
+                    <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type" >
                         <option value="inside_center" @selected(old('location_type', 'inside_center') === 'inside_center')>داخل المركز</option>
                         <option value="outside_center" @selected(old('location_type') === 'outside_center')>خارج المركز</option>
                     </select>

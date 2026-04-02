@@ -68,10 +68,11 @@
                 <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.sync.title') }}</h2>
                 <form method="POST" action="{{ route('role.relations.activities.sync_from_agenda') }}" class="row event-form-grid">
                     @csrf
-                    <div class="col-12 col-md-6 col-xl-3"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.branch') }}</label><select class="form-select" name="branch_id" required><option value="">--</option>@foreach ($branches as $branch)<option value="{{ $branch->id }}">{{ $branch->name }}</option>@endforeach</select></div>
-                    <div class="col-12 col-md-6 col-xl-3"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.center') }}</label><select class="form-select" name="center_id" required><option value="">--</option>@foreach ($centers as $center)<option value="{{ $center->id }}">{{ $center->name }}</option>@endforeach</select></div>
-                    <div class="col-6 col-xl-2"><label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.month') }}</label><input type="number" min="1" max="12" class="form-control" name="month" value="{{ now()->month }}" required></div>
-                    <div class="col-6 col-xl-2"><label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.year') }}</label><input type="number" min="2020" max="2100" class="form-control" name="year" value="{{ now()->year }}" required></div>
+                    <div class="col-12 col-md-6 col-xl-3"><label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.branch') }}</label><select class="form-select" name="branch_id" ><option value="">--</option>@foreach ($branches as $branch)<option value="{{ $branch->id }}">{{ $branch->name }}</option>@endforeach</select></div>
+                    <div class="col-12 col-md-6 col-xl-3">
+</div>
+                    <div class="col-6 col-xl-2"><label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.month') }}</label><input type="number" min="1" max="12" class="form-control" name="month" value="{{ now()->month }}" ></div>
+                    <div class="col-6 col-xl-2"><label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.year') }}</label><input type="number" min="2020" max="2100" class="form-control" name="year" value="{{ now()->year }}" ></div>
                     <div class="col-12 col-xl-2 event-actions"><button class="btn btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.sync.run') }}</button></div>
                 </form>
             </div>

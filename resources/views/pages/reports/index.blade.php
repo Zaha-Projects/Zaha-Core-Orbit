@@ -49,14 +49,8 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">{{ __('app.roles.reports.fields.center') }}</label>
-                    <select class="form-select" name="center_id">
-                        <option value="">{{ __('app.roles.reports.fields.center_placeholder') }}</option>
-                        @foreach ($centers as $center)
-                            <option value="{{ $center->id }}">{{ $center->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                    
+</div>
                 <div class="col-12 d-flex justify-content-end">
                     <button class="btn btn-outline-primary" type="submit">
                         {{ __('app.roles.reports.actions.export') }}

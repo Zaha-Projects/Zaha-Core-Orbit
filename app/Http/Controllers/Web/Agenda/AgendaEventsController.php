@@ -12,7 +12,6 @@ use App\Models\EventCategory;
 use App\Models\MonthlyActivity;
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Models\Center;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -480,9 +479,6 @@ class AgendaEventsController extends Controller
         );
 
         if ($isParticipating) {
-            $centerId = $branchActor->center_id ?: Center::where('branch_id', $branchActor->branch_id)->value('id');
-            abort_if(empty($centerId), 422, 'يجب تحديد مركز للفرع قبل إنشاء الخطة الشهرية.');
-
             $monthlyActivity = MonthlyActivity::firstOrNew([
                 'agenda_event_id' => $agendaEvent->id,
                 'branch_id' => $branchActor->branch_id,
@@ -500,7 +496,7 @@ class AgendaEventsController extends Controller
                 'description' => $agendaEvent->notes,
                 'location_type' => $monthlyActivity->location_type ?? 'inside_center',
                 'status' => $monthlyActivity->status ?? 'draft',
-                'center_id' => $centerId,
+                'center_id' => null,
                 'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
             ]);
             $monthlyActivity->save();

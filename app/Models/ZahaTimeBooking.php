@@ -24,7 +24,6 @@ class ZahaTimeBooking extends Model
         'discount_reason',
         'status',
         'branch_id',
-        'center_id',
     ];
 
     protected $casts = [
@@ -40,10 +39,6 @@ class ZahaTimeBooking extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function center()
-    {
-        return $this->belongsTo(Center::class);
-    }
 
     public function payments()
     {

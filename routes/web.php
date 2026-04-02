@@ -19,7 +19,6 @@ use App\Http\Controllers\Web\Access\ApprovalsController as SuperAdminApprovalsCo
 use App\Http\Controllers\Web\Access\WorkflowsController as SuperAdminWorkflowsController;
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
-use App\Http\Controllers\Web\Access\CentersController as SuperAdminCentersManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 use App\Http\Controllers\Web\Agenda\AgendaEventsController as RelationsAgendaEventsController;
 use App\Http\Controllers\Web\Agenda\AgendaApprovalsController as RelationsAgendaApprovalsController;
@@ -123,10 +122,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/admin/branches', [SuperAdminBranchesManagementController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.branches.store');
     Route::put('/dashboard/admin/branches/{branch}', [SuperAdminBranchesManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.branches.update');
     Route::delete('/dashboard/admin/branches/{branch}', [SuperAdminBranchesManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.branches.destroy');
-    Route::get('/dashboard/admin/centers', [SuperAdminCentersManagementController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.centers');
-    Route::post('/dashboard/admin/centers', [SuperAdminCentersManagementController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.centers.store');
-    Route::put('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.centers.update');
-    Route::delete('/dashboard/admin/centers/{center}', [SuperAdminCentersManagementController::class, 'destroy'])->middleware('role:super_admin')->name('role.super_admin.centers.destroy');
     Route::get('/dashboard/admin/approvals', [SuperAdminApprovalsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.approvals');
 
     Route::get('/dashboard/admin/events-lookups', [EventLookupsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.index');

@@ -25,35 +25,35 @@
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.received_at') }}</label>
-                    <input class="form-control" type="datetime-local" name="received_at" value="{{ old('received_at') }}" required>
+                    <input class="form-control" type="datetime-local" name="received_at" value="{{ old('received_at') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.booking_date') }}</label>
-                    <input class="form-control" type="date" name="booking_date" value="{{ old('booking_date') }}" required>
+                    <input class="form-control" type="date" name="booking_date" value="{{ old('booking_date') }}" >
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.time_from') }}</label>
-                    <input class="form-control" type="time" name="time_from" value="{{ old('time_from') }}" required>
+                    <input class="form-control" type="time" name="time_from" value="{{ old('time_from') }}" >
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.time_to') }}</label>
-                    <input class="form-control" type="time" name="time_to" value="{{ old('time_to') }}" required>
+                    <input class="form-control" type="time" name="time_to" value="{{ old('time_to') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.received_by') }}</label>
-                    <input class="form-control" name="received_by" value="{{ old('received_by') }}" required>
+                    <input class="form-control" name="received_by" value="{{ old('received_by') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.customer_name') }}</label>
-                    <input class="form-control" name="customer_name" value="{{ old('customer_name') }}" required>
+                    <input class="form-control" name="customer_name" value="{{ old('customer_name') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.facility_name') }}</label>
-                    <input class="form-control" name="facility_name" value="{{ old('facility_name') }}" required>
+                    <input class="form-control" name="facility_name" value="{{ old('facility_name') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.payment_type') }}</label>
-                    <input class="form-control" name="payment_type" value="{{ old('payment_type') }}" required>
+                    <input class="form-control" name="payment_type" value="{{ old('payment_type') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.receipt_ref') }}</label>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.status') }}</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="pending">{{ __('app.roles.finance.bookings.statuses.pending') }}</option>
                         <option value="confirmed">{{ __('app.roles.finance.bookings.statuses.confirmed') }}</option>
                         <option value="paid">{{ __('app.roles.finance.bookings.statuses.paid') }}</option>
@@ -83,7 +83,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.bookings.fields.branch') }}</label>
-                    <select class="form-select" name="branch_id" required>
+                    <select class="form-select" name="branch_id" >
                         <option value="">{{ __('app.roles.finance.bookings.fields.branch_placeholder') }}</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -91,14 +91,8 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.finance.bookings.fields.center') }}</label>
-                    <select class="form-select" name="center_id" required>
-                        <option value="">{{ __('app.roles.finance.bookings.fields.center_placeholder') }}</option>
-                        @foreach ($centers as $center)
-                            <option value="{{ $center->id }}">{{ $center->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                    
+</div>
                 <div class="col-12 d-flex justify-content-end">
                     <button class="btn btn-primary" type="submit">
                         {{ __('app.roles.finance.bookings.actions.create') }}

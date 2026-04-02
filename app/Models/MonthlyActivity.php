@@ -97,7 +97,6 @@ class MonthlyActivity extends Model
         'lock_at',
         'is_official',
         'branch_id',
-        'center_id',
         'created_by',
     ];
 
@@ -194,10 +193,6 @@ class MonthlyActivity extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function center()
-    {
-        return $this->belongsTo(Center::class);
-    }
 
     public function creator()
     {

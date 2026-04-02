@@ -2,13 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Center;
 use Illuminate\Database\Seeder;
 
 class CenterSeeder extends Seeder
 {
     public function run(): void
     {
-        Center::query()->delete();
+        // Deprecated: centers were removed in favor of branch-only structure.
     }
 }

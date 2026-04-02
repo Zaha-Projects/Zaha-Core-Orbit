@@ -5,26 +5,21 @@ namespace App\Http\Controllers\Web\Finance;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Branch;
-use App\Models\Center;
 use Illuminate\Http\Request;
 
 class BookingsController extends Controller
 {
     public function index()
     {
-        $bookings = Booking::with(['branch', 'center'])->orderByDesc('booking_date')->get();
+        $bookings = Booking::with(['branch'])->orderByDesc('booking_date')->get();
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.finance.bookings.index', compact('bookings', 'branches', 'centers'));
+        return view('pages.finance.bookings.index', compact('bookings', 'branches'));
     }
 
     public function create()
     {
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.finance.bookings.create', compact('branches', 'centers'));
+        return view('pages.finance.bookings.create', compact('branches'));
     }
 
     public function store(Request $request)
@@ -44,7 +39,7 @@ class BookingsController extends Controller
             'discount_reason' => ['nullable', 'string'],
             'status' => ['required', 'string', 'max:50'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
         ]);
 
         Booking::create([
@@ -62,7 +57,7 @@ class BookingsController extends Controller
             'discount_reason' => $data['discount_reason'] ?? null,
             'status' => $data['status'],
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
         ]);
 
         return redirect()
@@ -73,9 +68,7 @@ class BookingsController extends Controller
     public function edit(Booking $booking)
     {
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.finance.bookings.edit', compact('booking', 'branches', 'centers'));
+        return view('pages.finance.bookings.edit', compact('booking', 'branches'));
     }
 
     public function update(Request $request, Booking $booking)
@@ -95,7 +88,7 @@ class BookingsController extends Controller
             'discount_reason' => ['nullable', 'string'],
             'status' => ['required', 'string', 'max:50'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
         ]);
 
         $booking->update([
@@ -113,7 +106,7 @@ class BookingsController extends Controller
             'discount_reason' => $data['discount_reason'] ?? null,
             'status' => $data['status'],
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
         ]);
 
         return redirect()

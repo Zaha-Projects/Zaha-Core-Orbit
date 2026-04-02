@@ -25,31 +25,31 @@
                 @csrf
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.received_at') }}</label>
-                    <input class="form-control" type="datetime-local" name="received_at" value="{{ old('received_at') }}" required>
+                    <input class="form-control" type="datetime-local" name="received_at" value="{{ old('received_at') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.booking_date') }}</label>
-                    <input class="form-control" type="date" name="booking_date" value="{{ old('booking_date') }}" required>
+                    <input class="form-control" type="date" name="booking_date" value="{{ old('booking_date') }}" >
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.time_from') }}</label>
-                    <input class="form-control" type="time" name="time_from" value="{{ old('time_from') }}" required>
+                    <input class="form-control" type="time" name="time_from" value="{{ old('time_from') }}" >
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.time_to') }}</label>
-                    <input class="form-control" type="time" name="time_to" value="{{ old('time_to') }}" required>
+                    <input class="form-control" type="time" name="time_to" value="{{ old('time_to') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.entity_type') }}</label>
-                    <input class="form-control" name="entity_type" value="{{ old('entity_type') }}" required>
+                    <input class="form-control" name="entity_type" value="{{ old('entity_type') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.contact_person') }}</label>
-                    <input class="form-control" name="contact_person" value="{{ old('contact_person') }}" required>
+                    <input class="form-control" name="contact_person" value="{{ old('contact_person') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.phone') }}</label>
-                    <input class="form-control" name="phone" value="{{ old('phone') }}" required>
+                    <input class="form-control" name="phone" value="{{ old('phone') }}" >
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.children_count') }}</label>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.status') }}</label>
-                    <select class="form-select" name="status" required>
+                    <select class="form-select" name="status" >
                         <option value="pending">{{ __('app.roles.finance.zaha_time.statuses.pending') }}</option>
                         <option value="confirmed">{{ __('app.roles.finance.zaha_time.statuses.confirmed') }}</option>
                         <option value="paid">{{ __('app.roles.finance.zaha_time.statuses.paid') }}</option>
@@ -83,7 +83,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.branch') }}</label>
-                    <select class="form-select" name="branch_id" required>
+                    <select class="form-select" name="branch_id" >
                         <option value="">{{ __('app.roles.finance.zaha_time.fields.branch_placeholder') }}</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -91,14 +91,8 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.finance.zaha_time.fields.center') }}</label>
-                    <select class="form-select" name="center_id" required>
-                        <option value="">{{ __('app.roles.finance.zaha_time.fields.center_placeholder') }}</option>
-                        @foreach ($centers as $center)
-                            <option value="{{ $center->id }}">{{ $center->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                    
+</div>
                 <div class="col-12 d-flex justify-content-end">
                     <button class="btn btn-primary" type="submit">
                         {{ __('app.roles.finance.zaha_time.actions.create') }}

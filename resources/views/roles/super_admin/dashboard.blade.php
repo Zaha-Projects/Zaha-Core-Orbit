@@ -15,11 +15,6 @@
             'link' => route('role.super_admin.branches'),
         ],
         [
-            'title' => __('app.roles.super_admin.actions.centers.title'),
-            'description' => __('app.roles.super_admin.actions.centers.description'),
-            'link' => route('role.super_admin.centers'),
-        ],
-        [
             'title' => __('app.roles.super_admin.actions.approvals.title'),
             'description' => __('app.roles.super_admin.actions.approvals.description'),
             'link' => route('role.super_admin.approvals'),

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web\Finance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\ZahaTimeBooking;
 use Illuminate\Http\Request;
 
@@ -12,19 +11,15 @@ class ZahaTimeController extends Controller
 {
     public function index()
     {
-        $bookings = ZahaTimeBooking::with(['branch', 'center'])->orderByDesc('booking_date')->get();
+        $bookings = ZahaTimeBooking::with(['branch'])->orderByDesc('booking_date')->get();
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.finance.zaha_time.index', compact('bookings', 'branches', 'centers'));
+        return view('pages.finance.zaha_time.index', compact('bookings', 'branches'));
     }
 
     public function create()
     {
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.finance.zaha_time.create', compact('branches', 'centers'));
+        return view('pages.finance.zaha_time.create', compact('branches'));
     }
 
     public function store(Request $request)
@@ -44,7 +39,7 @@ class ZahaTimeController extends Controller
             'discount_reason' => ['nullable', 'string'],
             'status' => ['required', 'string', 'max:50'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
         ]);
 
         ZahaTimeBooking::create([
@@ -62,7 +57,7 @@ class ZahaTimeController extends Controller
             'discount_reason' => $data['discount_reason'] ?? null,
             'status' => $data['status'],
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
         ]);
 
         return redirect()
@@ -73,9 +68,7 @@ class ZahaTimeController extends Controller
     public function edit(ZahaTimeBooking $zahaTimeBooking)
     {
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.finance.zaha_time.edit', compact('zahaTimeBooking', 'branches', 'centers'));
+        return view('pages.finance.zaha_time.edit', compact('zahaTimeBooking', 'branches'));
     }
 
     public function update(Request $request, ZahaTimeBooking $zahaTimeBooking)
@@ -95,7 +88,7 @@ class ZahaTimeController extends Controller
             'discount_reason' => ['nullable', 'string'],
             'status' => ['required', 'string', 'max:50'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['required', 'exists:centers,id'],
+            'center_id' => ['nullable'],
         ]);
 
         $zahaTimeBooking->update([
@@ -113,7 +106,7 @@ class ZahaTimeController extends Controller
             'discount_reason' => $data['discount_reason'] ?? null,
             'status' => $data['status'],
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
         ]);
 
         return redirect()

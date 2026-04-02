@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -19,13 +18,11 @@ class UsersController extends Controller
     {
         $this->authorize('users.view');
 
-        $users = User::with(['roles', 'permissions', 'deniedPermissions', 'branch', 'center'])->orderBy('name')->get();
+        $users = User::with(['roles', 'permissions', 'deniedPermissions', 'branch'])->orderBy('name')->get();
         $roles = Role::query()->where('guard_name', 'web')->with('permissions')->orderBy('name')->get();
         $permissions = Permission::query()->where('guard_name', 'web')->orderBy('module')->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
-        $centers = Center::orderBy('name')->get();
-
-        return view('pages.access.users.index', compact('users', 'roles', 'permissions', 'branches', 'centers'));
+        return view('pages.access.users.index', compact('users', 'roles', 'permissions', 'branches'));
     }
 
     public function store(Request $request)
@@ -88,7 +85,7 @@ class UsersController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'phone' => ['nullable', 'string', 'max:50'],
             'branch_id' => ['nullable', 'exists:branches,id'],
-            'center_id' => ['nullable', 'exists:centers,id'],
+            'center_id' => ['nullable'],
             'status' => ['required', 'string', 'max:50'],
             'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'password' => ['nullable', 'string', 'min:8'],
@@ -103,7 +100,7 @@ class UsersController extends Controller
             'email' => $data['email'],
             'phone' => $data['phone'],
             'branch_id' => $data['branch_id'],
-            'center_id' => $data['center_id'],
+            'center_id' => null,
             'status' => $data['status'],
             'password' => $data['password'] ? Hash::make($data['password']) : $user->password,
         ]);
