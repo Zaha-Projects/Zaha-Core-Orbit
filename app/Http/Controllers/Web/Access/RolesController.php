@@ -11,16 +11,6 @@ use Spatie\Permission\Models\Permission;
 
 class RolesController extends Controller
 {
-    private function normalizePermissionIds(array $permissions): array
-    {
-        return collect($permissions)
-            ->map(fn ($permission) => (int) $permission)
-            ->filter(fn (int $permissionId) => $permissionId > 0)
-            ->unique()
-            ->values()
-            ->all();
-    }
-
     public function index()
     {
         $this->authorize('roles.view');
@@ -30,6 +20,7 @@ class RolesController extends Controller
             ->with('permissions')
             ->orderBy('name')
             ->get();
+
         $permissions = Permission::query()
             ->where('guard_name', 'web')
             ->orderBy('module')
@@ -45,11 +36,21 @@ class RolesController extends Controller
         $this->authorize('roles.manage');
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where('guard_name', 'web')],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('roles', 'name')->where('guard_name', 'web')
+            ],
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
+
+            // ✅ أهم تعديل
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['integer', Rule::exists('permissions', 'id')->where('guard_name', 'web')],
+            'permissions.*' => [
+                'string',
+                Rule::exists('permissions', 'name')->where('guard_name', 'web')
+            ],
         ]);
 
         $role = Role::create([
@@ -59,10 +60,14 @@ class RolesController extends Controller
             'guard_name' => 'web',
         ]);
 
-        $role->syncPermissions($this->normalizePermissionIds($data['permissions'] ?? []));
+        // 🔥 أهم سطر
+        $role->syncPermissions($data['permissions'] ?? []);
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return redirect()->route('role.super_admin.roles')->with('status', __('app.roles.super_admin.roles.created'));
+        return redirect()
+            ->route('role.super_admin.roles')
+            ->with('status', __('app.roles.super_admin.roles.created'));
     }
 
     public function update(Request $request, Role $role)
@@ -74,12 +79,19 @@ class RolesController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($role->id),
+                Rule::unique('roles', 'name')
+                    ->where('guard_name', 'web')
+                    ->ignore($role->id),
             ],
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
+
+            // ✅ نفس التعديل هون
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['integer', Rule::exists('permissions', 'id')->where('guard_name', 'web')],
+            'permissions.*' => [
+                'string',
+                Rule::exists('permissions', 'name')->where('guard_name', 'web')
+            ],
         ]);
 
         $role->update([
@@ -87,10 +99,17 @@ class RolesController extends Controller
             'name_ar' => $data['name_ar'] ?? null,
             'name_en' => $data['name_en'] ?? null,
         ]);
-        $role->syncPermissions($this->normalizePermissionIds($data['permissions'] ?? []));
+
+        // 🔥 الحل النهائي للمشكلة
+        $role->syncPermissions($data['permissions'] ?? []);
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return redirect()->route('role.super_admin.roles')->with('status', __('app.roles.super_admin.roles.updated', ['role' => $role->name]));
+        return redirect()
+            ->route('role.super_admin.roles')
+            ->with('status', __('app.roles.super_admin.roles.updated', [
+                'role' => $role->name
+            ]));
     }
 
     public function destroy(Role $role)
@@ -100,8 +119,13 @@ class RolesController extends Controller
         abort_if($role->name === 'super_admin', 422, __('Cannot delete super_admin role'));
 
         $role->delete();
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return redirect()->route('role.super_admin.roles')->with('status', __('app.roles.super_admin.roles.deleted', ['role' => $role->name]));
+        return redirect()
+            ->route('role.super_admin.roles')
+            ->with('status', __('app.roles.super_admin.roles.deleted', [
+                'role' => $role->name
+            ]));
     }
 }
