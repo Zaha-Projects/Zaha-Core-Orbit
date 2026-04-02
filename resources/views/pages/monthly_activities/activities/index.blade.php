@@ -28,7 +28,7 @@
             return $translated;
         }
 
-        return \Illuminate\Support\Str::of($roleKey)->replace('_', ' ')->title()->toString();
+        return (string) \Illuminate\Support\Str::of($roleKey)->replace('_', ' ')->title();
     };
 @endphp
 
