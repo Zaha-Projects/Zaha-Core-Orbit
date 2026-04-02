@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -102,8 +101,6 @@ class UsersSeeder extends Seeder
                 throw new InvalidArgumentException('Unknown branch key [' . $userData['branch'] . '] in UsersSeeder.');
             }
 
-            $centerId = Center::query()->where('branch_id', $branch->id)->orderBy('id')->value('id');
-
             $user = User::query()->updateOrCreate(
                 ['email' => $userData['email']],
                 [
@@ -111,7 +108,7 @@ class UsersSeeder extends Seeder
                     'phone' => $userData['phone'],
                     'status' => 'active',
                     'branch_id' => $branch->id,
-                    'center_id' => $centerId,
+                    'center_id' => null,
                     'password' => Hash::make('password'),
                 ]
             );
@@ -127,10 +124,13 @@ class UsersSeeder extends Seeder
     {
         $branches = Branch::query()->get();
 
+        $fallback = $branches->first();
+
         return [
-            'amman' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'عمّان') || str_contains((string) $branch->city, 'عمان')),
-            'zarqa' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'الزرقاء') || str_contains((string) $branch->city, 'زرقاء')),
-            'irbid' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'إربد') || str_contains((string) $branch->city, 'اربد')),
+            'amman' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'عمّان') || str_contains((string) $branch->city, 'عمان') || str_contains((string) $branch->name, 'خلدا') || str_contains((string) $branch->name, 'طبربور') || str_contains((string) $branch->name, 'أبو علندا')) ?? $fallback,
+            'zarqa' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'الزرقاء') || str_contains((string) $branch->city, 'زرقاء') || str_contains((string) $branch->name, 'الزرقاء') || str_contains((string) $branch->name, 'الرصيفة')) ?? $fallback,
+            'irbid' => $branches->first(fn (Branch $branch): bool => str_contains((string) $branch->city, 'إربد') || str_contains((string) $branch->city, 'اربد') || str_contains((string) $branch->name, 'إربد') || str_contains((string) $branch->name, 'المشارع')) ?? $fallback,
         ];
     }
+
 }
