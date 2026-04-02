@@ -176,7 +176,14 @@ class MonthlyActivitiesController extends Controller
 
     public function index(Request $request)
     {
-        $activitiesQuery = MonthlyActivity::with(['branch', 'center', 'agendaEvent', 'creator'])
+        $activitiesQuery = MonthlyActivity::with([
+            'branch',
+            'center',
+            'agendaEvent',
+            'creator',
+            'workflowInstance.workflow.steps.role',
+            'workflowInstance.logs.step',
+        ])
             ->enterpriseFilter($request->all())
             ->notArchived();
 

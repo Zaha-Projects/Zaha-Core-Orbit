@@ -3,6 +3,20 @@
 @php
     $title = __('app.roles.programs.monthly_activities.title');
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
+    $workflowStatusLabel = function (?string $status): string {
+        if (! $status) {
+            return '-';
+        }
+
+        $workflowLabel = __('workflow_ui.approvals.status_labels.' . $status);
+        if ($workflowLabel !== 'workflow_ui.approvals.status_labels.' . $status) {
+            return $workflowLabel;
+        }
+
+        $monthlyLabel = __('app.roles.programs.monthly_activities.statuses.' . $status);
+
+        return $monthlyLabel !== 'app.roles.programs.monthly_activities.statuses.' . $status ? $monthlyLabel : $status;
+    };
 @endphp
 
 @section('content')
@@ -75,7 +89,30 @@
                             <tbody>
                                 @forelse ($activities as $activity)
                                     <tr>
-                                        <td>{{ $activity->title }}</td><td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td><td>@if($activity->is_in_agenda)<span class='badge bg-success-subtle text-success'>من الأجندة</span>@else<span class='badge bg-warning-subtle text-warning'>خارج الأجندة</span>@endif</td><td>{{ $activity->branch?->name ?? '-' }}</td><td><span class="event-status status-{{ $activity->status }}">{{ $activity->status }}</span></td>
+                                        <td>{{ $activity->title }}</td><td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td><td>@if($activity->is_in_agenda)<span class='badge bg-success-subtle text-success'>من الأجندة</span>@else<span class='badge bg-warning-subtle text-warning'>خارج الأجندة</span>@endif</td><td>{{ $activity->branch?->name ?? '-' }}</td><td>
+                                            @php
+                                                $wf = $activity->workflowInstance;
+                                                $steps = $wf?->workflow?->steps?->sortBy([['step_order', 'asc'], ['approval_level', 'asc']]) ?? collect();
+                                                $latestLogsByStep = $wf?->logs?->sortByDesc('acted_at')->groupBy('workflow_step_id') ?? collect();
+                                            @endphp
+                                            @if($steps->isNotEmpty())
+                                                <div class="approval-sequence-list">
+                                                    @foreach($steps as $step)
+                                                        @php
+                                                            $latestStepLog = $latestLogsByStep->get($step->id)?->first();
+                                                            $stepStatus = $latestStepLog?->action ?? 'pending';
+                                                            $stepRole = $step->role?->display_name;
+                                                        @endphp
+                                                        <div class="approval-sequence-item">
+                                                            <div class="approval-sequence-role">{{ $stepRole ?: ($step->name_ar ?? $step->name_en ?? '-') }}</div>
+                                                            <span class="event-status status-{{ $stepStatus }}">{{ $workflowStatusLabel($stepStatus) }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="event-status status-{{ $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
+                                            @endif
+                                        </td>
                                         <td class="text-end"><div class="event-actions"><a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', $activity) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a><a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a><form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button></form></div></td>
                                     </tr>
                                 @empty
@@ -105,6 +142,9 @@
     </div>
 
     <style>
+        .approval-sequence-list { display: flex; flex-direction: column; gap: .35rem; }
+        .approval-sequence-item { display: flex; flex-direction: column; gap: .15rem; }
+        .approval-sequence-role { font-size: .75rem; color: #64748b; font-weight: 600; line-height: 1.2; }
         .monthly-calendar-badge { border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; width: fit-content; }
         .monthly-calendar-badge--draft { background: #e5e7eb; color: #374151; }
         .monthly-calendar-badge--in-review { background: #fff4e5; color: #a16207; }

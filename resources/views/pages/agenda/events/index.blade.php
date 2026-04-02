@@ -20,6 +20,11 @@
         return $translated !== 'app.roles.relations.agenda.status_labels.' . $status ? $translated : $status;
     };
 
+    $agendaApprovalSteps = [
+        ['role_label' => __('app.acl.roles.relations_manager'), 'status_field' => 'relations_approval_status'],
+        ['role_label' => __('app.acl.roles.executive_manager'), 'status_field' => 'executive_approval_status'],
+    ];
+
     $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
@@ -208,8 +213,15 @@
                                         <td>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</td>
                                         <td>{{ __('app.roles.relations.agenda.types.' . $event->event_type) }} / {{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</td>
                                         <td>
-                                            <span class="event-status status-{{ $event->relations_approval_status }}">{{ $agendaStatusLabel($event->relations_approval_status) }}</span>
-                                            <span class="event-status status-{{ $event->executive_approval_status }}">{{ $agendaStatusLabel($event->executive_approval_status) }}</span>
+                                            <div class="approval-sequence-list">
+                                                @foreach($agendaApprovalSteps as $approvalStep)
+                                                    @php($stepStatus = data_get($event, $approvalStep['status_field']) ?? 'pending')
+                                                    <div class="approval-sequence-item">
+                                                        <div class="approval-sequence-role">{{ $approvalStep['role_label'] }}</div>
+                                                        <span class="event-status status-{{ $stepStatus }}">{{ $agendaStatusLabel($stepStatus) }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </td>
                                         <td>{{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</td>
                                         <td class="text-end">
@@ -241,7 +253,18 @@
                             <div class="event-mobile-card">
                                 <div class="fw-semibold mb-2">{{ $event->event_name }}</div>
                                 <div class="event-mobile-row"><span class="text-muted">{{ __('app.roles.relations.agenda.table.event_date') }}</span><span>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span></div>
-                                <div class="event-mobile-row"><span class="text-muted">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span><span class="event-status status-{{ $event->relations_approval_status }}">{{ $agendaStatusLabel($event->relations_approval_status) }}</span></div>
+                                <div class="event-mobile-row align-items-start">
+                                    <span class="text-muted">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span>
+                                    <span class="approval-sequence-list">
+                                        @foreach($agendaApprovalSteps as $approvalStep)
+                                            @php($stepStatus = data_get($event, $approvalStep['status_field']) ?? 'pending')
+                                            <span class="approval-sequence-item">
+                                                <span class="approval-sequence-role">{{ $approvalStep['role_label'] }}</span>
+                                                <span class="event-status status-{{ $stepStatus }}">{{ $agendaStatusLabel($stepStatus) }}</span>
+                                            </span>
+                                        @endforeach
+                                    </span>
+                                </div>
                                 @if($canManageAgenda)
                                     <div class="event-actions mt-2">
                                         <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
@@ -276,6 +299,12 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .approval-sequence-list { display: flex; flex-direction: column; gap: .35rem; }
+        .approval-sequence-item { display: flex; flex-direction: column; gap: .15rem; }
+        .approval-sequence-role { font-size: .75rem; color: #64748b; font-weight: 600; line-height: 1.2; }
+    </style>
 
     <script type="application/json" id="agenda-events-json">{!! $agendaEvents->toJson(JSON_UNESCAPED_UNICODE) !!}</script>
     <script>
