@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     public function up(): void
@@ -26,7 +27,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        // إعادة إنشاء جدول المراكز (fallback)
         Schema::create('centers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
@@ -34,40 +34,35 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
         });
-
-        // ملاحظة: ما رح نرجع center_id للجداول لتجنب تعقيد rollback
     }
 
-private function dropCenterColumn(string $tableName): void
-{
-    if (!Schema::hasColumn($tableName, 'center_id')) {
-        return;
-    }
+    private function dropCenterColumn(string $tableName): void
+    {
+        // 🔥 أولاً: تأكد من وجود العمود من database مباشرة (مش cache)
+        $columnExists = DB::select("
+            SHOW COLUMNS FROM `$tableName` LIKE 'center_id'
+        ");
 
-    Schema::table($tableName, function (Blueprint $table) use ($tableName) {
+        if (empty($columnExists)) {
+            return;
+        }
 
-        // حاول حذف foreign key بالاسم المتوقع
+        // 🔥 حذف foreign key إذا موجود
         try {
-            $table->dropForeign($tableName . '_center_id_foreign');
+            DB::statement("ALTER TABLE `$tableName` DROP FOREIGN KEY `{$tableName}_center_id_foreign`");
         } catch (\Throwable $e) {
             try {
-                $table->dropForeign(['center_id']);
+                DB::statement("ALTER TABLE `$tableName` DROP FOREIGN KEY `{$tableName}_center_id_foreign_1`");
             } catch (\Throwable $e) {
                 // ignore
             }
         }
 
-        // حذف العمود
+        // 🔥 حذف العمود (حتى لو حاول ينحذف مرتين ما بكسر)
         try {
-            $table->dropColumn('center_id');
+            DB::statement("ALTER TABLE `$tableName` DROP COLUMN `center_id`");
         } catch (\Throwable $e) {
             // ignore
         }
-    });
-}
-
-    private function getForeignKeyName(string $table): string
-    {
-        return $table . '_center_id_foreign';
     }
 };
