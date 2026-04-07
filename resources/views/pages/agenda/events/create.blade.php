@@ -22,11 +22,20 @@
                     <input class="form-control" type="date" name="event_date" value="{{ old('event_date') }}" required>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.department') }}</label>
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.primary_department') }}</label>
                     <select class="form-select" name="department_id">
                         <option value="">--</option>
                         @foreach ($departments as $department)
                             <option value="{{ $department->id }}" @selected(old('department_id') == $department->id)>{{ $department->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</label>
+                    <select class="form-select" name="partner_department_ids[]" multiple size="5">
+                        <option value="">--</option>
+                        @foreach ($departments as $department)
+                            <option value="{{ $department->id }}" @selected(in_array((string) $department->id, array_map('strval', old('partner_department_ids', [])), true))>{{ $department->name }}</option>
                         @endforeach
                     </select>
                 </div>

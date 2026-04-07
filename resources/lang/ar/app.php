@@ -494,7 +494,9 @@ return [
                     'update' => 'تحديث',
                 ],
                 'fields_ext' => [
-                    'department' => 'القسم',
+                    'department' => 'الوحدة/القسم',
+                    'primary_department' => 'الوحدة/القسم الرئيسي',
+                    'partner_department' => 'وحدات/أقسام شركاء',
                     'event_type' => 'نوع الفعالية',
                     'plan_type' => 'خطة الفعالية',
                     'branch_participation' => 'مشاركة الفروع',
@@ -520,6 +522,9 @@ return [
                 'updated' => 'تم تحديث فعالية الأجندة :event.',
                 'submitted' => 'تم إرسال الفعالية :event للاعتماد.',
                 'unit_participation_updated' => 'تم تحديث مشاركة الجهة بنجاح.',
+                'errors' => [
+                    'partner_department_conflict' => 'لا يمكن اختيار نفس الوحدة/القسم كجهة رئيسية وشريكة.',
+                ],
                 'status_labels' => [
                     'approved' => 'معتمد',
                     'changes_requested' => 'مطلوب تعديل',

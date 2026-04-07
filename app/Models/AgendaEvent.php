@@ -76,6 +76,13 @@ class AgendaEvent extends Model
         return $this->belongsTo(Department::class);
     }
 
+
+    public function partnerDepartments()
+    {
+        return $this->belongsToMany(Department::class, 'agenda_event_partner_departments')
+            ->withTimestamps();
+    }
+
     public function eventCategory()
     {
         return $this->belongsTo(EventCategory::class, 'event_category_id');

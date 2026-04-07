@@ -475,7 +475,7 @@ return [
                 'target_types' => [
                     'branch' => 'Branch',
                     'center' => 'Center',
-                    'department' => 'Department',
+                    'department' => 'Unit/Department',
                     'committee' => 'Committee',
                 ],
                 'table' => [
@@ -494,7 +494,9 @@ return [
                     'update' => 'Update',
                 ],
                 'fields_ext' => [
-                    'department' => 'Department',
+                    'department' => 'Unit/Department',
+                    'primary_department' => 'Primary unit/department',
+                    'partner_department' => 'Partner units/departments',
                     'event_type' => 'Event type',
                     'plan_type' => 'Plan type',
                     'branch_participation' => 'Branch participation',
@@ -520,6 +522,9 @@ return [
                 'updated' => 'Agenda event updated: :event.',
                 'submitted' => 'Agenda event submitted: :event.',
                 'unit_participation_updated' => 'Unit participation was updated successfully.',
+                'errors' => [
+                    'partner_department_conflict' => 'The primary unit/department cannot also be selected as a partner.',
+                ],
                 'status_labels' => [
                     'approved' => 'Approved',
                     'changes_requested' => 'Changes requested',
