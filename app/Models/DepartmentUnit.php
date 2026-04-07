@@ -13,6 +13,7 @@ class DepartmentUnit extends Model
         'unit_key',
         'name',
         'role_name',
+        'color_hex',
+        'icon',
     ];
 }
-

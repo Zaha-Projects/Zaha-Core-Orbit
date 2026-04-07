@@ -179,14 +179,20 @@ class AgendaEventsController extends Controller
             ])
             ->firstOrFail();
 
-        $branchesById = Branch::query()->pluck('name', 'id');
-        $unitsById = DepartmentUnit::query()->pluck('name', 'id');
+        $branchesById = Branch::query()
+            ->get()
+            ->mapWithKeys(fn ($branch) => [$branch->id => ['name' => $branch->name, 'color_hex' => $branch->color_hex, 'icon' => $branch->icon]]);
+        $unitsById = DepartmentUnit::query()
+            ->get()
+            ->mapWithKeys(fn ($unit) => [$unit->id => ['name' => $unit->name, 'color_hex' => $unit->color_hex, 'icon' => $unit->icon]]);
 
         $branchParticipations = $agendaEvent->participations
             ->where('entity_type', 'branch')
             ->map(function ($participation) use ($branchesById) {
                 return [
-                    'name' => $branchesById[$participation->entity_id] ?? ('#'.$participation->entity_id),
+                    'name' => $branchesById[$participation->entity_id]['name'] ?? ('#'.$participation->entity_id),
+                    'color_hex' => $branchesById[$participation->entity_id]['color_hex'] ?? null,
+                    'icon' => $branchesById[$participation->entity_id]['icon'] ?? null,
                     'status' => $participation->participation_status,
                     'proposed_date' => $participation->proposed_date,
                     'actual_execution_date' => $participation->actual_execution_date,
@@ -198,7 +204,9 @@ class AgendaEventsController extends Controller
             ->where('entity_type', 'department_unit')
             ->map(function ($participation) use ($unitsById) {
                 return [
-                    'name' => $unitsById[$participation->entity_id] ?? ('#'.$participation->entity_id),
+                    'name' => $unitsById[$participation->entity_id]['name'] ?? ('#'.$participation->entity_id),
+                    'color_hex' => $unitsById[$participation->entity_id]['color_hex'] ?? null,
+                    'icon' => $unitsById[$participation->entity_id]['icon'] ?? null,
                     'status' => $participation->participation_status,
                 ];
             })

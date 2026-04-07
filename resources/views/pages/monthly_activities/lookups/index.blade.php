@@ -26,5 +26,49 @@
         </form>
         <ul class="mb-0">@foreach($evaluationQuestions as $q)<li>{{ $q->question }} ({{ $q->answer_type }})</li>@endforeach</ul>
     </div></div>
+
+    <div class="card event-card mt-4"><div class="card-body">
+        <h2 class="h6">ألوان وأيقونات الأقسام</h2>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>القسم</th><th>اللون</th><th>الأيقونة</th><th></th></tr></thead>
+                <tbody>
+                @foreach($departments as $department)
+                    <tr>
+                        <form method="POST" action="{{ route('role.super_admin.events_lookups.departments.visual.update', $department) }}">
+                            @csrf @method('PUT')
+                            <td>{{ $department->name }}</td>
+                            <td><input type="color" class="form-control form-control-color" name="color_hex" value="{{ $department->color_hex ?? '#2563EB' }}"></td>
+                            <td><input class="form-control" name="icon" value="{{ $department->icon ?? '🏢' }}" maxlength="32"></td>
+                            <td><button class="btn btn-sm btn-outline-primary">حفظ</button></td>
+                        </form>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div></div>
+
+    <div class="card event-card mt-4"><div class="card-body">
+        <h2 class="h6">ألوان وأيقونات الوحدات</h2>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>الوحدة</th><th>اللون</th><th>الأيقونة</th><th></th></tr></thead>
+                <tbody>
+                @foreach($departmentUnits as $unit)
+                    <tr>
+                        <form method="POST" action="{{ route('role.super_admin.events_lookups.department_units.visual.update', $unit) }}">
+                            @csrf @method('PUT')
+                            <td>{{ $unit->name }}</td>
+                            <td><input type="color" class="form-control form-control-color" name="color_hex" value="{{ $unit->color_hex ?? '#2563EB' }}"></td>
+                            <td><input class="form-control" name="icon" value="{{ $unit->icon ?? '🏢' }}" maxlength="32"></td>
+                            <td><button class="btn btn-sm btn-outline-primary">حفظ</button></td>
+                        </form>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div></div>
 </div>
 @endsection

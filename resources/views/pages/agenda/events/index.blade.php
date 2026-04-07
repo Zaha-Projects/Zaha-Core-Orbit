@@ -48,9 +48,26 @@
         ['role_label' => $roleLabel('executive_manager'), 'status_field' => 'executive_approval_status'],
     ];
 
-    $branchesById = \App\Models\Branch::query()->pluck('name', 'id');
+    $branchesById = \App\Models\Branch::query()
+        ->get()
+        ->mapWithKeys(fn ($branch) => [
+            $branch->id => [
+                'name' => $branch->name,
+                'color_hex' => $branch->color_hex,
+                'icon' => $branch->icon,
+            ],
+        ]);
+    $unitsById = \App\Models\DepartmentUnit::query()
+        ->get()
+        ->mapWithKeys(fn ($unit) => [
+            $unit->id => [
+                'name' => $unit->name,
+                'color_hex' => $unit->color_hex,
+                'icon' => $unit->icon,
+            ],
+        ]);
 
-    $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser) {
+    $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser, $unitsById) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
         $branchParticipation = $event->participations
@@ -63,13 +80,33 @@
             ->map(function ($participation) use ($branchesById) {
                 return [
                     'id' => (int) $participation->entity_id,
-                    'name' => $branchesById[$participation->entity_id] ?? ('#'.$participation->entity_id),
+                    'name' => $branchesById[$participation->entity_id]['name'] ?? ('#'.$participation->entity_id),
+                    'color_hex' => $branchesById[$participation->entity_id]['color_hex'] ?? null,
+                    'icon' => $branchesById[$participation->entity_id]['icon'] ?? null,
                 ];
             })
             ->values()
             ->all();
         $partnerDepartments = $event->partnerDepartments
-            ->map(fn ($department) => ['id' => (int) $department->id, 'name' => $department->name])
+            ->map(fn ($department) => [
+                'id' => (int) $department->id,
+                'name' => $department->name,
+                'color_hex' => $department->color_hex,
+                'icon' => $department->icon,
+            ])
+            ->values()
+            ->all();
+        $participantUnits = $event->participations
+            ->where('entity_type', 'department_unit')
+            ->where('participation_status', 'participant')
+            ->map(function ($participation) use ($unitsById) {
+                return [
+                    'id' => (int) $participation->entity_id,
+                    'name' => $unitsById[$participation->entity_id]['name'] ?? ('#'.$participation->entity_id),
+                    'color_hex' => $unitsById[$participation->entity_id]['color_hex'] ?? null,
+                    'icon' => $unitsById[$participation->entity_id]['icon'] ?? null,
+                ];
+            })
             ->values()
             ->all();
 
@@ -79,7 +116,10 @@
             'date' => $resolvedDate,
             'department_id' => (int) ($event->department_id ?? 0),
             'department' => $event->department?->name ?? '-',
+            'department_color_hex' => $event->department?->color_hex,
+            'department_icon' => $event->department?->icon,
             'partner_departments' => $partnerDepartments,
+            'participant_units' => $participantUnits,
             'category' => $event->eventCategory?->name ?? $event->event_category ?? '-',
             'status' => $event->relations_approval_status ?? $event->status,
             'status_label' => $agendaStatusLabel($event->relations_approval_status ?? $event->status),
@@ -418,13 +458,15 @@
                 return isRtl ? 6 - jsDayIndex : jsDayIndex;
             }
 
-            function colorForId(id) {
-                const key = Math.abs(Number(id || 0));
+            function colorForEntity(entity, id = null) {
+                if (entity?.color_hex) return entity.color_hex;
+                const key = Math.abs(Number(id || entity?.id || 0));
                 return palette[key % palette.length];
             }
 
-            function iconForId(id) {
-                const key = Math.abs(Number(id || 0));
+            function iconForEntity(entity, id = null) {
+                if (entity?.icon) return entity.icon;
+                const key = Math.abs(Number(id || entity?.id || 0));
                 return icons[key % icons.length];
             }
 
@@ -451,21 +493,29 @@
                 if (!legendContainer) return;
                 const branches = new Map();
                 const departments = new Map();
+                const units = new Map();
 
                 monthEvents.forEach((event) => {
-                    (event.participant_branches ?? []).forEach((branch) => branches.set(branch.id, branch.name));
+                    (event.participant_branches ?? []).forEach((branch) => branches.set(branch.id, branch));
                     if (event.department_id && event.department && event.department !== '-') {
-                        departments.set(event.department_id, event.department);
+                        departments.set(event.department_id, {
+                            id: event.department_id,
+                            name: event.department,
+                            color_hex: event.department_color_hex,
+                            icon: event.department_icon,
+                        });
                     }
-                    (event.partner_departments ?? []).forEach((department) => departments.set(department.id, department.name));
+                    (event.partner_departments ?? []).forEach((department) => departments.set(department.id, department));
+                    (event.participant_units ?? []).forEach((unit) => units.set(unit.id, unit));
                 });
 
-                const renderItems = (entries, prefix) => Array.from(entries.entries()).map(([id, name]) => {
+                const renderItems = (entries, prefix) => Array.from(entries.entries()).map(([id, value]) => {
+                    const entity = typeof value === 'object' ? value : { name: value };
                     return `
                         <span class="legend-item">
-                            <span>${iconForId(id)}</span>
-                            <span class="legend-badge" style="background:${colorForId(id)}"></span>
-                            <span>${prefix}${name}</span>
+                            <span>${iconForEntity(entity, id)}</span>
+                            <span class="legend-badge" style="background:${colorForEntity(entity, id)}"></span>
+                            <span>${prefix}${entity.name}</span>
                         </span>
                     `;
                 }).join('');
@@ -473,6 +523,7 @@
                 legendContainer.innerHTML = `
                     ${renderItems(branches, '🏳️ ')}
                     ${renderItems(departments, '🏢 ')}
+                    ${renderItems(units, '🧩 ')}
                 `;
             }
 
@@ -537,7 +588,7 @@
                         }
                         eventLink.className = `agenda-event-chip status-${event.status}`;
                         const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => {
-                            return `<span class="agenda-event-chip-dot" style="background:${colorForId(branch.id)}" title="${branch.name}"></span>`;
+                            return `<span class="agenda-event-chip-dot" style="background:${colorForEntity(branch)}" title="${branch.name}"></span>`;
                         }).join('');
                         eventLink.innerHTML = `
                             <span class="agenda-event-chip-title">${event.name}</span>
@@ -548,10 +599,13 @@
                         eventLink.addEventListener('mouseenter', (evt) => {
                             const tooltip = ensureTooltip();
                             const branchPills = (event.participant_branches ?? []).map((branch) => (
-                                `<span class="tooltip-pill"><span>${iconForId(branch.id)}</span><span class="legend-badge" style="background:${colorForId(branch.id)}"></span><span>${branch.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge" style="background:${colorForEntity(branch)}"></span><span>${branch.name}</span></span>`
                             )).join('');
                             const partnerDepartmentPills = (event.partner_departments ?? []).map((department) => (
-                                `<span class="tooltip-pill"><span>${iconForId(department.id)}</span><span class="legend-badge" style="background:${colorForId(department.id)}"></span><span>${department.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(department)}</span><span class="legend-badge" style="background:${colorForEntity(department)}"></span><span>${department.name}</span></span>`
+                            )).join('');
+                            const unitPills = (event.participant_units ?? []).map((unit) => (
+                                `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge" style="background:${colorForEntity(unit)}"></span><span>${unit.name}</span></span>`
                             )).join('');
 
                             tooltip.innerHTML = `
@@ -565,6 +619,8 @@
                                 <div class="tooltip-list">${branchPills || '<span class="text-muted">-</span>'}</div>
                                 <div class="tooltip-row mt-1"><strong>الوحدات/الأقسام الشريكة:</strong></div>
                                 <div class="tooltip-list">${partnerDepartmentPills || '<span class="text-muted">-</span>'}</div>
+                                <div class="tooltip-row mt-1"><strong>الوحدات المشاركة:</strong></div>
+                                <div class="tooltip-list">${unitPills || '<span class="text-muted">-</span>'}</div>
                             `;
                             tooltip.classList.remove('d-none');
                             setTooltipPosition(evt);

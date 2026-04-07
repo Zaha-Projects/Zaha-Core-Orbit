@@ -26,7 +26,7 @@
                 <div class="row g-3">
                     <div class="col-md-6"><strong>{{ __('app.roles.relations.agenda.fields.event_name') }}:</strong> {{ $agendaEvent->event_name }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields.event_date') }}:</strong> {{ optional($agendaEvent->event_date)->format('Y-m-d') ?? '-' }}</div>
-                    <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.department') }}:</strong> {{ $agendaEvent->department?->name ?? '-' }}</div>
+                    <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.department') }}:</strong> {{ $agendaEvent->department?->icon }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $agendaEvent->department?->color_hex ?? '#94a3b8' }}"></span> {{ $agendaEvent->department?->name ?? '-' }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields.event_category') }}:</strong> {{ $agendaEvent->eventCategory?->name ?? $agendaEvent->event_category ?? '-' }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.event_type') }}:</strong> {{ __('app.roles.relations.agenda.types.' . $agendaEvent->event_type) }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}:</strong> {{ __('app.roles.relations.agenda.plans.' . $agendaEvent->plan_type) }}</div>
@@ -43,7 +43,7 @@
                         <h2 class="h6 mb-3">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</h2>
                         <ul class="mb-0 ps-3">
                             @forelse($agendaEvent->partnerDepartments as $partnerDepartment)
-                                <li>{{ $partnerDepartment->name }}</li>
+                                <li>{{ $partnerDepartment->icon }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $partnerDepartment->color_hex ?? '#94a3b8' }}"></span> {{ $partnerDepartment->name }}</li>
                             @empty
                                 <li class="text-muted">-</li>
                             @endforelse
@@ -57,7 +57,7 @@
                         <h2 class="h6 mb-3">{{ __('app.roles.relations.agenda.fields_ext.unit_participation') }}</h2>
                         <ul class="mb-0 ps-3">
                             @forelse($unitParticipations as $unit)
-                                <li>{{ $unit['name'] }} - {{ __('app.roles.relations.agenda.participation.' . ($unit['status'] ?? 'unspecified')) }}</li>
+                                <li>{{ $unit['icon'] ?? '' }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $unit['color_hex'] ?? '#94a3b8' }}"></span> {{ $unit['name'] }} - {{ __('app.roles.relations.agenda.participation.' . ($unit['status'] ?? 'unspecified')) }}</li>
                             @empty
                                 <li class="text-muted">-</li>
                             @endforelse
@@ -82,7 +82,7 @@
                                 <tbody>
                                     @forelse($branchParticipations as $branch)
                                         <tr>
-                                            <td>{{ $branch['name'] }}</td>
+                                            <td>{{ $branch['icon'] ?? '' }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $branch['color_hex'] ?? '#94a3b8' }}"></span> {{ $branch['name'] }}</td>
                                             <td>{{ __('app.roles.relations.agenda.participation.' . ($branch['status'] ?? 'unspecified')) }}</td>
                                             <td>{{ optional($branch['proposed_date'])->format('Y-m-d') ?? '-' }}</td>
                                             <td>{{ optional($branch['actual_execution_date'])->format('Y-m-d') ?? '-' }}</td>

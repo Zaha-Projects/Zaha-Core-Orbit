@@ -13,6 +13,8 @@ class Branch extends Model
         'name',
         'city',
         'address',
+        'color_hex',
+        'icon',
     ];
 
 
