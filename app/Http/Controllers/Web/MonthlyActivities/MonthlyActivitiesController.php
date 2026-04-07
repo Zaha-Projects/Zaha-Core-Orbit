@@ -29,6 +29,18 @@ use Illuminate\Support\Facades\Storage;
 
 class MonthlyActivitiesController extends Controller
 {
+    protected function syncTargetGroups(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        $ids = collect($data['target_group_ids'] ?? [])
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $monthlyActivity->targetGroups()->sync(collect($ids)->mapWithKeys(fn ($id) => [$id => ['custom_text' => null]])->all());
+    }
+
     protected function shouldScopeToUserBranch(?User $user): bool
     {
         return $user !== null
@@ -311,12 +323,15 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => ['nullable', 'url', 'max:500', 'required_if:location_type,outside_center'],
+            'outside_contact_number' => ['nullable', 'string', 'max:50'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
             'time_to' => ['nullable', 'date_format:H:i', 'after:time_from'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
+            'target_group_ids' => ['nullable', 'array'],
+            'target_group_ids.*' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
             'short_description' => ['nullable', 'string'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
@@ -338,6 +353,7 @@ class MonthlyActivitiesController extends Controller
             'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
+            'official_correspondence_target' => ['nullable', 'string', 'max:255'],
             'has_sponsor' => ['nullable', 'boolean'],
             'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
@@ -376,6 +392,8 @@ class MonthlyActivitiesController extends Controller
             'supplies' => ['nullable', 'array'],
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.available' => ['nullable', 'boolean'],
+            'supplies.*.provider_type' => ['nullable', 'string', 'max:255'],
+            'supplies.*.provider_name' => ['nullable', 'string', 'max:255'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -400,14 +418,7 @@ class MonthlyActivitiesController extends Controller
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id'], null, $data['execution_time'] ?? null);
         $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
         $isFromAgenda = ! empty($data['agenda_event_id']);
-        $requiresBranchPlan = ! $isFromAgenda;
         $planType = $isFromAgenda ? optional(AgendaEvent::find($data['agenda_event_id']))->plan_type : 'non_unified';
-        if ($planType === 'non_unified') {
-            $requiresBranchPlan = true;
-        }
-        if ($requiresBranchPlan && ! $request->hasFile('branch_plan_file')) {
-            return back()->withErrors(['branch_plan_file' => 'رفع خطة الفرع مطلوب لهذه الفعالية.'])->withInput();
-        }
 
         $monthlyActivity = MonthlyActivity::create([
             'month' => (int) $date->format('m'),
@@ -426,6 +437,7 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => $data['internal_location'] ?? null,
             'outside_place_name' => $data['outside_place_name'] ?? null,
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
+            'outside_contact_number' => $data['outside_contact_number'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
             'internal_location' => $data['internal_location'] ?? null,
             'outside_place_name' => $data['outside_place_name'] ?? null,
@@ -437,7 +449,7 @@ class MonthlyActivitiesController extends Controller
             'time_from' => $data['time_from'] ?? null,
             'time_to' => $data['time_to'] ?? null,
             'target_group' => $data['target_group'] ?? null,
-            'target_group_id' => $data['target_group_id'] ?? null,
+            'target_group_id' => $data['target_group_id'] ?? ($data['target_group_ids'][0] ?? null),
             'target_group_other' => $data['target_group_other'] ?? null,
             'target_group_id' => $data['target_group_id'] ?? null,
             'target_group_other' => $data['target_group_other'] ?? null,
@@ -461,6 +473,7 @@ class MonthlyActivitiesController extends Controller
             'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
+            'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'letter_purpose' => $data['letter_purpose'] ?? null,
@@ -485,6 +498,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $workflowService->initializeDynamicStatuses($monthlyActivity);
+        $this->syncTargetGroups($monthlyActivity, $data);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
         foreach (($data['team_groups'] ?? []) as $groupIndex => $group) {
@@ -527,6 +541,8 @@ class MonthlyActivitiesController extends Controller
                 'item_name' => $itemName,
                 'available' => $available,
                 'status' => $available ? 'available' : 'needed',
+                'provider_type' => $available ? null : ($supply['provider_type'] ?? null),
+                'provider_name' => $available ? null : ($supply['provider_name'] ?? null),
             ]);
         }
         if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
@@ -671,11 +687,6 @@ class MonthlyActivitiesController extends Controller
         $conflictWarning = empty($conflictNames) ? null : __('Potential overlap with: :activities', ['activities' => implode(', ', $conflictNames)]);
         $isFromAgenda = ! empty($data['agenda_event_id']);
         $planType = $isFromAgenda ? optional(AgendaEvent::find($data['agenda_event_id']))->plan_type : 'non_unified';
-        $requiresBranchPlan = (! $isFromAgenda) || $planType === 'non_unified';
-        if ($requiresBranchPlan && ! $request->hasFile('branch_plan_file') && empty($monthlyActivity->branch_plan_file)) {
-            return back()->withErrors(['branch_plan_file' => 'رفع خطة الفرع مطلوب لهذه الفعالية.'])->withInput();
-        }
-
         $branchPlanFile = $monthlyActivity->branch_plan_file;
         if ($request->hasFile('branch_plan_file')) {
             if ($branchPlanFile) {

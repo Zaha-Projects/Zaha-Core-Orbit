@@ -41,6 +41,7 @@ class MonthlyActivity extends Model
         'correspondence_reason_id',
         'correspondence_status',
         'official_correspondence_reason',
+        'official_correspondence_target',
         'letter_purpose',
         'location_type',
         'location_details',
@@ -50,6 +51,7 @@ class MonthlyActivity extends Model
         'room',
         'outside_place_name',
         'outside_google_maps_url',
+        'outside_contact_number',
         'outside_address',
         'time_from',
         'time_to',
@@ -254,6 +256,13 @@ class MonthlyActivity extends Model
         return $this->belongsTo(TargetGroup::class);
     }
 
+    public function targetGroups()
+    {
+        return $this->belongsToMany(TargetGroup::class, 'event_target_group')
+            ->withPivot('custom_text')
+            ->withTimestamps();
+    }
+
     public function evaluationResponses()
     {
         return $this->hasMany(MonthlyActivityEvaluationResponse::class);
@@ -288,12 +297,6 @@ class MonthlyActivity extends Model
     public function workflowInstance()
     {
         return $this->morphOne(WorkflowInstance::class, 'entity');
-    }
-    public function targetGroups()
-    {
-        return $this->belongsToMany(TargetGroup::class, 'event_target_group')
-            ->withPivot('custom_text')
-            ->withTimestamps();
     }
 
 }
