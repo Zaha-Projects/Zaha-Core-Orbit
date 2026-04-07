@@ -48,6 +48,8 @@
         ['role_label' => $roleLabel('executive_manager'), 'status_field' => 'executive_approval_status'],
     ];
 
+    $branchesById = \App\Models\Branch::query()->pluck('name', 'id');
+
     $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
@@ -55,12 +57,29 @@
             ->where('entity_type', 'branch')
             ->where('entity_id', $authUser?->branch_id)
             ->first();
+        $participantBranches = $event->participations
+            ->where('entity_type', 'branch')
+            ->where('participation_status', 'participant')
+            ->map(function ($participation) use ($branchesById) {
+                return [
+                    'id' => (int) $participation->entity_id,
+                    'name' => $branchesById[$participation->entity_id] ?? ('#'.$participation->entity_id),
+                ];
+            })
+            ->values()
+            ->all();
+        $partnerDepartments = $event->partnerDepartments
+            ->map(fn ($department) => ['id' => (int) $department->id, 'name' => $department->name])
+            ->values()
+            ->all();
 
         return [
             'id' => $event->id,
             'name' => $event->event_name,
             'date' => $resolvedDate,
+            'department_id' => (int) ($event->department_id ?? 0),
             'department' => $event->department?->name ?? '-',
+            'partner_departments' => $partnerDepartments,
             'category' => $event->eventCategory?->name ?? $event->event_category ?? '-',
             'status' => $event->relations_approval_status ?? $event->status,
             'status_label' => $agendaStatusLabel($event->relations_approval_status ?? $event->status),
@@ -68,6 +87,7 @@
             'view_url' => route('role.relations.agenda.show', $event),
             'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
             'participant_count' => $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count(),
+            'participant_branches' => $participantBranches,
             'plan_type' => $event->plan_type,
             'event_type' => $event->event_type,
             'branch_participation_status' => $branchParticipation?->participation_status,
@@ -315,6 +335,7 @@
                         <h2 class="h6 mb-0" data-calendar-title></h2>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">{{ __('app.roles.relations.agenda.calendar.next_month') }}</button>
                     </div>
+                    <div class="agenda-calendar-legend" data-calendar-legend></div>
 
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
                     <div class="agenda-calendar-grid" data-calendar-grid></div>
@@ -327,6 +348,20 @@
         .approval-sequence-list { display: flex; flex-direction: column; gap: .35rem; }
         .approval-sequence-item { display: flex; flex-direction: column; gap: .15rem; }
         .approval-sequence-role { font-size: .75rem; color: #64748b; font-weight: 600; line-height: 1.2; }
+        .agenda-calendar-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: .75rem 0 1rem; }
+        .legend-item { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: #334155; }
+        .legend-badge { width: .8rem; height: .8rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(0,0,0,.12); }
+        .agenda-event-chip-branches { display: flex; align-items: center; gap: .2rem; margin-top: .25rem; }
+        .agenda-event-chip-dot { width: .5rem; height: .5rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
+        .agenda-event-tooltip {
+            position: fixed; z-index: 1080; pointer-events: none; min-width: 230px; max-width: 320px;
+            background: #0f172a; color: #f8fafc; border-radius: .5rem; padding: .65rem .7rem;
+            box-shadow: 0 10px 30px rgba(2, 6, 23, .35); font-size: .8rem; line-height: 1.35;
+        }
+        .agenda-event-tooltip .tooltip-title { font-weight: 700; margin-bottom: .35rem; }
+        .agenda-event-tooltip .tooltip-row { margin-bottom: .25rem; }
+        .agenda-event-tooltip .tooltip-list { display: flex; flex-wrap: wrap; gap: .25rem .4rem; }
+        .agenda-event-tooltip .tooltip-pill { display: inline-flex; align-items: center; gap: .3rem; background: rgba(255,255,255,.12); border-radius: 999px; padding: .15rem .45rem; }
     </style>
 
     <script type="application/json" id="agenda-events-json">{!! $agendaEvents->toJson(JSON_UNESCAPED_UNICODE) !!}</script>
@@ -374,9 +409,71 @@
             const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
             const gridContainer = module.querySelector('[data-calendar-grid]');
             const titleContainer = module.querySelector('[data-calendar-title]');
+            const legendContainer = module.querySelector('[data-calendar-legend]');
+            const palette = ['#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#db2777', '#0891b2', '#65a30d', '#dc2626', '#0d9488', '#4f46e5'];
+            const icons = ['🏢', '📍', '⭐', '🧭', '🎯', '🛰️', '🪄', '🛡️', '🔷', '🔶'];
+            let tooltipEl = null;
 
             function mapDayPosition(jsDayIndex) {
                 return isRtl ? 6 - jsDayIndex : jsDayIndex;
+            }
+
+            function colorForId(id) {
+                const key = Math.abs(Number(id || 0));
+                return palette[key % palette.length];
+            }
+
+            function iconForId(id) {
+                const key = Math.abs(Number(id || 0));
+                return icons[key % icons.length];
+            }
+
+            function ensureTooltip() {
+                if (tooltipEl) return tooltipEl;
+                tooltipEl = document.createElement('div');
+                tooltipEl.className = 'agenda-event-tooltip d-none';
+                document.body.appendChild(tooltipEl);
+                return tooltipEl;
+            }
+
+            function setTooltipPosition(evt) {
+                if (!tooltipEl) return;
+                const offset = 16;
+                const maxX = window.innerWidth - tooltipEl.offsetWidth - 12;
+                const maxY = window.innerHeight - tooltipEl.offsetHeight - 12;
+                const left = Math.min(maxX, Math.max(12, evt.clientX + offset));
+                const top = Math.min(maxY, Math.max(12, evt.clientY + offset));
+                tooltipEl.style.left = `${left}px`;
+                tooltipEl.style.top = `${top}px`;
+            }
+
+            function renderLegend(monthEvents) {
+                if (!legendContainer) return;
+                const branches = new Map();
+                const departments = new Map();
+
+                monthEvents.forEach((event) => {
+                    (event.participant_branches ?? []).forEach((branch) => branches.set(branch.id, branch.name));
+                    if (event.department_id && event.department && event.department !== '-') {
+                        departments.set(event.department_id, event.department);
+                    }
+                    (event.partner_departments ?? []).forEach((department) => departments.set(department.id, department.name));
+                });
+
+                const renderItems = (entries, prefix) => Array.from(entries.entries()).map(([id, name]) => {
+                    return `
+                        <span class="legend-item">
+                            <span>${iconForId(id)}</span>
+                            <span class="legend-badge" style="background:${colorForId(id)}"></span>
+                            <span>${prefix}${name}</span>
+                        </span>
+                    `;
+                }).join('');
+
+                legendContainer.innerHTML = `
+                    ${renderItems(branches, '🏳️ ')}
+                    ${renderItems(departments, '🏢 ')}
+                `;
             }
 
             function renderWeekdays() {
@@ -400,6 +497,7 @@
                     const dateObj = new Date(event.date);
                     return dateObj.getFullYear() === year && dateObj.getMonth() === month;
                 });
+                renderLegend(monthEvents);
 
                 const eventsByDay = new Map();
                 monthEvents.forEach((event) => {
@@ -438,10 +536,43 @@
                             eventLink.href = event.view_url;
                         }
                         eventLink.className = `agenda-event-chip status-${event.status}`;
+                        const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => {
+                            return `<span class="agenda-event-chip-dot" style="background:${colorForId(branch.id)}" title="${branch.name}"></span>`;
+                        }).join('');
                         eventLink.innerHTML = `
                             <span class="agenda-event-chip-title">${event.name}</span>
                             <span class="event-status status-${event.status}">${event.status_label ?? event.status}</span>
+                            <span class="agenda-event-chip-branches">${branchDots}</span>
                         `;
+
+                        eventLink.addEventListener('mouseenter', (evt) => {
+                            const tooltip = ensureTooltip();
+                            const branchPills = (event.participant_branches ?? []).map((branch) => (
+                                `<span class="tooltip-pill"><span>${iconForId(branch.id)}</span><span class="legend-badge" style="background:${colorForId(branch.id)}"></span><span>${branch.name}</span></span>`
+                            )).join('');
+                            const partnerDepartmentPills = (event.partner_departments ?? []).map((department) => (
+                                `<span class="tooltip-pill"><span>${iconForId(department.id)}</span><span class="legend-badge" style="background:${colorForId(department.id)}"></span><span>${department.name}</span></span>`
+                            )).join('');
+
+                            tooltip.innerHTML = `
+                                <div class="tooltip-title">${event.name}</div>
+                                <div class="tooltip-row">📅 ${event.date}</div>
+                                <div class="tooltip-row">🏢 ${event.department ?? '-'}</div>
+                                <div class="tooltip-row">🏷️ ${event.category ?? '-'}</div>
+                                <div class="tooltip-row">📝 ${(event.event_type ?? '-') + ' / ' + (event.plan_type ?? '-')}</div>
+                                <div class="tooltip-row">✅ ${event.status_label ?? event.status}</div>
+                                <div class="tooltip-row"><strong>الفروع المشاركة:</strong></div>
+                                <div class="tooltip-list">${branchPills || '<span class="text-muted">-</span>'}</div>
+                                <div class="tooltip-row mt-1"><strong>الوحدات/الأقسام الشريكة:</strong></div>
+                                <div class="tooltip-list">${partnerDepartmentPills || '<span class="text-muted">-</span>'}</div>
+                            `;
+                            tooltip.classList.remove('d-none');
+                            setTooltipPosition(evt);
+                        });
+                        eventLink.addEventListener('mousemove', setTooltipPosition);
+                        eventLink.addEventListener('mouseleave', () => {
+                            if (tooltipEl) tooltipEl.classList.add('d-none');
+                        });
                         dayCell.appendChild(eventLink);
                     });
 

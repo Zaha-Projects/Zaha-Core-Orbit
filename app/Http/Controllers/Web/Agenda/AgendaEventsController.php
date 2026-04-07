@@ -143,7 +143,7 @@ class AgendaEventsController extends Controller
             $perPage = 20;
         }
 
-        $eventsQuery = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
+        $eventsQuery = AgendaEvent::with(['creator', 'department', 'partnerDepartments', 'eventCategory', 'participations'])
             ->enterpriseFilter($request->all())
             ->notArchived();
 
