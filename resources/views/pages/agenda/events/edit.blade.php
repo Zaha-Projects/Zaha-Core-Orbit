@@ -33,15 +33,23 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</label>
-                    <select class="form-select" name="partner_department_ids[]" multiple size="5">
-                        <option value="">--</option>
-                        @php
-                            $selectedPartnerDepartmentIds = array_map('strval', old('partner_department_ids', $agendaEvent->partnerDepartments->pluck('id')->all()));
-                        @endphp
+                    @php
+                        $selectedPartnerDepartmentIds = array_map('strval', old('partner_department_ids', $agendaEvent->partnerDepartments->pluck('id')->all()));
+                    @endphp
+                    <div class="border rounded p-2" style="max-height: 180px; overflow-y: auto;">
                         @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" @selected(in_array((string) $department->id, $selectedPartnerDepartmentIds, true))>{{ $department->name }}</option>
+                            <label class="form-check d-flex align-items-center gap-2 mb-2">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    name="partner_department_ids[]"
+                                    value="{{ $department->id }}"
+                                    @checked(in_array((string) $department->id, $selectedPartnerDepartmentIds, true))
+                                >
+                                <span class="form-check-label">{{ $department->name }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_category') }}</label>
