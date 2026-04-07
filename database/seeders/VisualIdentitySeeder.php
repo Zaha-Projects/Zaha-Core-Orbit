@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
 
 class VisualIdentitySeeder extends Seeder
 {
-    protected array $colors = ['#2563EB', '#16A34A', '#EA580C', '#7C3AED', '#DB2777', '#0891B2', '#65A30D', '#DC2626', '#0D9488', '#4F46E5'];
+    protected array $colors = ['#E11D48', '#0EA5E9', '#22C55E', '#F59E0B', '#8B5CF6', '#14B8A6', '#F97316', '#3B82F6', '#84CC16', '#EC4899', '#06B6D4', '#A855F7'];
     protected array $icons = ['🏢', '📍', '⭐', '🧭', '🎯', '🛰️', '🪄', '🛡️', '🔷', '🔶'];
 
     public function run(): void

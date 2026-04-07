@@ -375,10 +375,11 @@
                         <h2 class="h6 mb-0" data-calendar-title></h2>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">{{ __('app.roles.relations.agenda.calendar.next_month') }}</button>
                     </div>
-                    <div class="agenda-calendar-legend" data-calendar-legend></div>
+                    <div class="agenda-calendar-legend agenda-calendar-legend--top" data-calendar-legend-top></div>
 
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
                     <div class="agenda-calendar-grid" data-calendar-grid></div>
+                    <div class="agenda-calendar-legend agenda-calendar-legend--bottom" data-calendar-legend-bottom></div>
                 </div>
             </div>
         </div>
@@ -388,11 +389,17 @@
         .approval-sequence-list { display: flex; flex-direction: column; gap: .35rem; }
         .approval-sequence-item { display: flex; flex-direction: column; gap: .15rem; }
         .approval-sequence-role { font-size: .75rem; color: #64748b; font-weight: 600; line-height: 1.2; }
-        .agenda-calendar-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: .75rem 0 1rem; }
+        .agenda-calendar-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: .75rem 0 1rem; padding: .5rem; border: 1px solid #e2e8f0; border-radius: .5rem; }
+        .agenda-calendar-legend--top { background: #f8fafc; }
+        .agenda-calendar-legend--bottom { background: #fff7ed; margin-top: 1rem; }
         .legend-item { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: #334155; }
-        .legend-badge { width: .8rem; height: .8rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(0,0,0,.12); }
+        .legend-badge { width: .8rem; height: .8rem; display: inline-block; border: 1px solid rgba(0,0,0,.12); }
+        .legend-badge--square { border-radius: .2rem; }
+        .legend-badge--circle { border-radius: 999px; }
         .agenda-event-chip-branches { display: flex; align-items: center; gap: .2rem; margin-top: .25rem; }
+        .agenda-event-chip-units { display: flex; align-items: center; gap: .2rem; margin-top: .2rem; }
         .agenda-event-chip-dot { width: .5rem; height: .5rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
+        .agenda-event-chip-square { width: .52rem; height: .52rem; border-radius: .12rem; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
         .agenda-event-tooltip {
             position: fixed; z-index: 1080; pointer-events: none; min-width: 230px; max-width: 320px;
             background: #0f172a; color: #f8fafc; border-radius: .5rem; padding: .65rem .7rem;
@@ -449,8 +456,9 @@
             const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
             const gridContainer = module.querySelector('[data-calendar-grid]');
             const titleContainer = module.querySelector('[data-calendar-title]');
-            const legendContainer = module.querySelector('[data-calendar-legend]');
-            const palette = ['#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#db2777', '#0891b2', '#65a30d', '#dc2626', '#0d9488', '#4f46e5'];
+            const legendTopContainer = module.querySelector('[data-calendar-legend-top]');
+            const legendBottomContainer = module.querySelector('[data-calendar-legend-bottom]');
+            const palette = ['#E11D48', '#0EA5E9', '#22C55E', '#F59E0B', '#8B5CF6', '#14B8A6', '#F97316', '#3B82F6', '#84CC16', '#EC4899', '#06B6D4', '#A855F7'];
             const icons = ['🏢', '📍', '⭐', '🧭', '🎯', '🛰️', '🪄', '🛡️', '🔷', '🔶'];
             let tooltipEl = null;
 
@@ -490,7 +498,7 @@
             }
 
             function renderLegend(monthEvents) {
-                if (!legendContainer) return;
+                if (!legendTopContainer || !legendBottomContainer) return;
                 const branches = new Map();
                 const departments = new Map();
                 const units = new Map();
@@ -509,22 +517,22 @@
                     (event.participant_units ?? []).forEach((unit) => units.set(unit.id, unit));
                 });
 
-                const renderItems = (entries, prefix) => Array.from(entries.entries()).map(([id, value]) => {
+                const renderItems = (entries, prefix, shapeClass) => Array.from(entries.entries()).map(([id, value]) => {
                     const entity = typeof value === 'object' ? value : { name: value };
                     return `
                         <span class="legend-item">
                             <span>${iconForEntity(entity, id)}</span>
-                            <span class="legend-badge" style="background:${colorForEntity(entity, id)}"></span>
+                            <span class="legend-badge ${shapeClass}" style="background:${colorForEntity(entity, id)}"></span>
                             <span>${prefix}${entity.name}</span>
                         </span>
                     `;
                 }).join('');
 
-                legendContainer.innerHTML = `
-                    ${renderItems(branches, '🏳️ ')}
-                    ${renderItems(departments, '🏢 ')}
-                    ${renderItems(units, '🧩 ')}
+                legendTopContainer.innerHTML = `
+                    ${renderItems(departments, '🏢 ', 'legend-badge--square')}
+                    ${renderItems(units, '🧩 ', 'legend-badge--square')}
                 `;
+                legendBottomContainer.innerHTML = `${renderItems(branches, '🏳️ ', 'legend-badge--circle')}`;
             }
 
             function renderWeekdays() {
@@ -590,22 +598,35 @@
                         const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => {
                             return `<span class="agenda-event-chip-dot" style="background:${colorForEntity(branch)}" title="${branch.name}"></span>`;
                         }).join('');
+                        const unitSquares = [
+                            ...(event.department && event.department !== '-' ? [{
+                                id: event.department_id,
+                                name: event.department,
+                                color_hex: event.department_color_hex,
+                                icon: event.department_icon,
+                            }] : []),
+                            ...(event.partner_departments ?? []),
+                            ...(event.participant_units ?? []),
+                        ].slice(0, 5).map((entity) => (
+                            `<span class="agenda-event-chip-square" style="background:${colorForEntity(entity)}" title="${entity.name}"></span>`
+                        )).join('');
                         eventLink.innerHTML = `
                             <span class="agenda-event-chip-title">${event.name}</span>
                             <span class="event-status status-${event.status}">${event.status_label ?? event.status}</span>
+                            <span class="agenda-event-chip-units">${unitSquares}</span>
                             <span class="agenda-event-chip-branches">${branchDots}</span>
                         `;
 
                         eventLink.addEventListener('mouseenter', (evt) => {
                             const tooltip = ensureTooltip();
                             const branchPills = (event.participant_branches ?? []).map((branch) => (
-                                `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge" style="background:${colorForEntity(branch)}"></span><span>${branch.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge legend-badge--circle" style="background:${colorForEntity(branch)}"></span><span>${branch.name}</span></span>`
                             )).join('');
                             const partnerDepartmentPills = (event.partner_departments ?? []).map((department) => (
-                                `<span class="tooltip-pill"><span>${iconForEntity(department)}</span><span class="legend-badge" style="background:${colorForEntity(department)}"></span><span>${department.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(department)}</span><span class="legend-badge legend-badge--square" style="background:${colorForEntity(department)}"></span><span>${department.name}</span></span>`
                             )).join('');
                             const unitPills = (event.participant_units ?? []).map((unit) => (
-                                `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge" style="background:${colorForEntity(unit)}"></span><span>${unit.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge legend-badge--square" style="background:${colorForEntity(unit)}"></span><span>${unit.name}</span></span>`
                             )).join('');
 
                             tooltip.innerHTML = `
