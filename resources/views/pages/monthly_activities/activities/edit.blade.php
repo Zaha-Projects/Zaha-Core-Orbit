@@ -474,13 +474,23 @@
                         <option value="document" @selected(old('file_type') === 'document')>مستند</option>
                         <option value="report" @selected(old('file_type') === 'report')>تقرير</option>
                         <option value="other" @selected(old('file_type') === 'other')>أخرى</option>
+                        <option value="link" @selected(old('file_type') === 'link')>رابط</option>
                     </select>
                 </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">ملف التغطية (صورة/ملف)</label>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">عنوان المرفق / الرابط</label>
+                    <input class="form-control" name="title" value="{{ old('title') }}" placeholder="مثال: صور الفعالية على درايف">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">ملف التغطية (اختياري)</label>
                     <input class="form-control" type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xlsx,.xls" >
                 </div>
-                <div class="col-12 col-md-2 d-flex justify-content-end align-items-center">
+                <div class="col-12 col-md-8">
+                    <label class="form-label">رابط خارجي (اختياري)</label>
+                    <input class="form-control" type="url" name="external_url" value="{{ old('external_url') }}" placeholder="https://drive.google.com/...">
+                    <small class="text-muted">يمكنك رفع ملف أو إضافة رابط خارجي، ويكفي أحدهما.</small>
+                </div>
+                <div class="col-12 col-md-4 d-flex justify-content-end align-items-center">
                     <button class="btn btn-outline-primary btn-sm mt-4" type="submit">
                         {{ __('app.roles.programs.monthly_activities.attachments.actions.add') }}
                     </button>
@@ -491,6 +501,7 @@
                     <thead>
                         <tr>
                             <th>{{ __('app.roles.programs.monthly_activities.attachments.table.file_type') }}</th>
+                            <th>العنوان</th>
                             <th>{{ __('app.roles.programs.monthly_activities.attachments.table.file_path') }}</th>
                             <th class="text-end">{{ __('app.roles.programs.monthly_activities.attachments.table.actions') }}</th>
                         </tr>
@@ -499,7 +510,13 @@
                         @forelse ($monthlyActivity->attachments as $attachment)
                             <tr>
                                 <td>{{ $attachment->file_type }}</td>
-                                <td>{{ $attachment->file_path }}</td>
+                                <td>{{ $attachment->title ?: '--' }}</td>
+                                <td>
+                                    @php $isExternalUrl = filter_var($attachment->file_path, FILTER_VALIDATE_URL); @endphp
+                                    <a href="{{ $isExternalUrl ? $attachment->file_path : asset('storage/'.$attachment->file_path) }}" target="_blank" rel="noopener">
+                                        {{ $isExternalUrl ? $attachment->file_path : 'عرض المرفق' }}
+                                    </a>
+                                </td>
                                 <td class="text-end">
                                     <form class="d-inline" method="POST" action="{{ route('role.programs.attachments.destroy', $attachment) }}">
                                         @csrf

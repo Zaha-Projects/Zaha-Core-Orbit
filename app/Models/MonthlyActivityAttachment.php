@@ -12,6 +12,7 @@ class MonthlyActivityAttachment extends Model
     protected $fillable = [
         'monthly_activity_id',
         'file_type',
+        'title',
         'file_path',
         'uploaded_by',
     ];
