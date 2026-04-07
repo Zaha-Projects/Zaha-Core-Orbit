@@ -27,7 +27,7 @@
                     <select class="form-select" name="department_id">
                         <option value="">--</option>
                         @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" @selected(old('department_id', $agendaEvent->department_id) == $department->id)>{{ $department->name }}</option>
+                            <option value="{{ $department->id }}" {{ old('department_id', $agendaEvent->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -50,22 +50,22 @@
                     <select class="form-select" name="event_category_id" id="event_category_id">
                         <option value="">--</option>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" @selected(old('event_category_id', $agendaEvent->event_category_id) == $category->id)>{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" {{ old('event_category_id', $agendaEvent->event_category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.event_type') }}</label>
                     <select class="form-select" name="event_type" required>
-                        <option value="mandatory" @selected(old('event_type', $agendaEvent->event_type) === 'mandatory')>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
-                        <option value="optional" @selected(old('event_type', $agendaEvent->event_type) === 'optional')>{{ __('app.roles.relations.agenda.types.optional') }}</option>
+                        <option value="mandatory" {{ old('event_type', $agendaEvent->event_type) === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
+                        <option value="optional" {{ old('event_type', $agendaEvent->event_type) === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</label>
                     <select class="form-select js-plan-type" name="plan_type" required>
-                        <option value="unified" @selected(old('plan_type', $agendaEvent->plan_type) === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
-                        <option value="non_unified" @selected(old('plan_type', $agendaEvent->plan_type) === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
+                        <option value="unified" {{ old('plan_type', $agendaEvent->plan_type) === 'unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
+                        <option value="non_unified" {{ old('plan_type', $agendaEvent->plan_type) === 'non_unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-4 js-agenda-plan-file">
@@ -83,44 +83,10 @@
                             <div class="col-12 col-md-4">
                                 <label class="form-label small mb-1">{{ $branch->name }}</label>
                                 <select class="form-select form-select-sm" name="branch_participation[{{ $branch->id }}]">
-                                    <option value="unspecified" @selected(($branchParticipations[$branch->id] ?? 'unspecified') === 'unspecified')>{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
-                                    <option value="participant" @selected(($branchParticipations[$branch->id] ?? 'unspecified') === 'participant')>{{ __('app.roles.relations.agenda.participation.participant') }}</option>
-                                    <option value="not_participant" @selected(($branchParticipations[$branch->id] ?? 'unspecified') === 'not_participant')>{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
+                                    <option value="unspecified" {{ ($branchParticipations[$branch->id] ?? 'unspecified') === 'unspecified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
+                                    <option value="participant" {{ ($branchParticipations[$branch->id] ?? 'unspecified') === 'participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.participant') }}</option>
+                                    <option value="not_participant" {{ ($branchParticipations[$branch->id] ?? 'unspecified') === 'not_participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
                                 </select>
-                            </div>
-                        @endforeach
-                    </div>
-                </div></div>
-
-                <div class="col-12"><div class="event-form-section">
-                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields_ext.unit_participation') }}</h2>
-                    <div class="row g-2">
-                        @foreach ($departmentUnits as $unit)
-                            @php
-                                $canEditUnit = auth()->user()->hasRole('relations_manager') || auth()->user()->hasRole($unit->role_name);
-                            @endphp
-                            <div class="col-12 col-md-6">
-                                <form method="POST" action="{{ route('role.relations.agenda.unit_participation.update', $agendaEvent) }}" class="event-approval-panel">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="unit_key" value="{{ $unit->unit_key }}">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="small fw-semibold">{{ $unit->name }}</span>
-                                        @if (!$canEditUnit)
-                                            <span class="badge text-bg-light">{{ __('app.roles.relations.agenda.participation.view_only') }}</span>
-                                        @endif
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm" name="status" @disabled(!$canEditUnit)>
-                                            <option value="unspecified" @selected(($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'unspecified')>{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
-                                            <option value="participant" @selected(($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'participant')>{{ __('app.roles.relations.agenda.participation.participant') }}</option>
-                                            <option value="not_participant" @selected(($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'not_participant')>{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
-                                        </select>
-                                        @if ($canEditUnit)
-                                            <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.save') }}</button>
-                                        @endif
-                                    </div>
-                                </form>
                             </div>
                         @endforeach
                     </div>
@@ -136,6 +102,44 @@
             </form>
         </div>
     </div></div>
+
+    <div class="event-module mt-3">
+        <div class="card event-card">
+            <div class="card-body">
+                <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields_ext.unit_participation') }}</h2>
+                <div class="row g-2">
+                    @foreach ($departmentUnits as $unit)
+                        @php
+                            $canEditUnit = auth()->user()->hasRole('relations_manager') || auth()->user()->hasRole($unit->role_name);
+                        @endphp
+                        <div class="col-12 col-md-6">
+                            <form method="POST" action="{{ route('role.relations.agenda.unit_participation.update', $agendaEvent) }}" class="event-approval-panel">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="unit_key" value="{{ $unit->unit_key }}">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small fw-semibold">{{ $unit->name }}</span>
+                                    @if (!$canEditUnit)
+                                        <span class="badge text-bg-light">{{ __('app.roles.relations.agenda.participation.view_only') }}</span>
+                                    @endif
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select form-select-sm" name="status" {{ $canEditUnit ? '' : 'disabled' }}>
+                                        <option value="unspecified" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'unspecified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
+                                        <option value="participant" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.participant') }}</option>
+                                        <option value="not_participant" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'not_participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
+                                    </select>
+                                    @if ($canEditUnit)
+                                        <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.save') }}</button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         (function () {
