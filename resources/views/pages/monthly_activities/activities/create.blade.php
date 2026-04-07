@@ -118,7 +118,7 @@
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label d-block mb-2">الجهة المسؤولة (توجيه القبول)</label>
+                    <label class="form-label d-block mb-2">الجهة المسؤولة</label>
                     <div class="d-flex flex-wrap gap-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="responsible_entities[]" value="relations" id="entity-relations" @checked(collect(old('responsible_entities', []))->contains('relations'))>

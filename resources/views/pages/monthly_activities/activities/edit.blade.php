@@ -124,14 +124,21 @@
                     <input class="form-control @error('outside_google_maps_url') is-invalid @enderror" name="outside_google_maps_url" value="{{ old('outside_google_maps_url', $monthlyActivity->outside_google_maps_url) }}">
                     @error('outside_google_maps_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
+                <hr class="my-2">
+                <div class="col-12"><h2 class="h6 mb-1">بيانات التنفيذ الأساسية</h2></div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.responsible_entity') }}</label>
+                    <label class="form-label">الجهة المسؤولة</label>
                     <input class="form-control" name="responsible_party" value="{{ $monthlyActivity->responsible_party }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.execution_time') }}</label>
+                    <label class="form-label">وقت التنفيذ</label>
                     <input class="form-control" name="execution_time" value="{{ $monthlyActivity->execution_time }}">
                 </div>
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">رقم تواصل المكان الخارجي</label>
+                    <input class="form-control" name="outside_contact_number" value="{{ old('outside_contact_number', $monthlyActivity->outside_contact_number) }}">
+                </div>
+
                 <div class="col-12 col-md-4">
                     <label class="form-label">الفئة المستهدفة</label>
                     <select class="form-select js-target-group" name="target_group_id">
@@ -145,99 +152,107 @@
                     <label class="form-label">أخرى (توضيح)</label>
                     <input class="form-control" name="target_group_other" value="{{ old('target_group_other', $monthlyActivity->target_group_other ) }}">
                 </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.short_description') }}</label>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">وصف مختصر</label>
                     <input class="form-control" name="short_description" value="{{ $monthlyActivity->short_description }}">
                 </div>
+
+                <hr class="my-2">
+                <div class="col-12"><h2 class="h6 mb-1">الداعمين والشركاء</h2></div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.need_volunteers') }}</label>
+                    <label class="form-label">الاحتياج للمتطوعين</label>
                     <input class="form-control" name="volunteer_need" value="{{ $monthlyActivity->volunteer_need }}">
                 </div>
                 <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.sponsors_open') }}</label>
+                    <label class="form-label">الرعاة (عدد مفتوح)</label>
                     <div class="row g-2">
                         @for ($i = 0; $i < 5; $i++)
                             @php $sponsor = $monthlyActivity->sponsors[$i] ?? null; @endphp
-                            <div class="col-12 col-md-4">
-                                <input class="form-control" name="sponsors[{{ $i }}][name]" value="{{ old("sponsors.$i.name", $sponsor->name ?? null) }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.sponsor_name') }}">
+                            <div class="col-12 col-md-5">
+                                <input class="form-control" name="sponsors[{{ $i }}][name]" value="{{ old("sponsors.$i.name", $sponsor->name ?? null) }}" placeholder="اسم الراعي">
                             </div>
-                            <div class="col-12 col-md-4">
-                                <input class="form-control" name="sponsors[{{ $i }}][title]" value="{{ old("sponsors.$i.title", $sponsor->title ?? null) }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.sponsor_title') }}">
+                            <div class="col-12 col-md-5">
+                                <input class="form-control" name="sponsors[{{ $i }}][title]" value="{{ old("sponsors.$i.title", $sponsor->title ?? null) }}" placeholder="الصفة/المسمى">
                             </div>
-                            <div class="col-12 col-md-4 d-flex align-items-center">
+                            <div class="col-12 col-md-2 d-flex align-items-center">
                                 <div class="form-check mt-2">
                                     <input class="form-check-input" type="checkbox" name="sponsors[{{ $i }}][is_official]" value="1" id="sponsor-edit-official-{{ $i }}" @checked(old("sponsors.$i.is_official", $sponsor?->is_official ?? true))>
-                                    <label class="form-check-label" for="sponsor-edit-official-{{ $i }}">{{ __('app.roles.programs.monthly_activities.fields_ext.official_sponsor') }}</label>
+                                    <label class="form-check-label" for="sponsor-edit-official-{{ $i }}">راعي رسمي</label>
                                 </div>
                             </div>
                         @endfor
                     </div>
                 </div>
                 <div class="col-12">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.partners_open') }}</label>
+                    <label class="form-label">الشركاء (عدد مفتوح)</label>
                     <div class="row g-2">
                         @for ($i = 0; $i < 7; $i++)
                             @php $partner = $monthlyActivity->partners[$i] ?? null; @endphp
                             <div class="col-12 col-md-6">
-                                <input class="form-control" name="partners[{{ $i }}][name]" value="{{ old("partners.$i.name", $partner->name ?? null) }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.partner_name') }}">
+                                <input class="form-control" name="partners[{{ $i }}][name]" value="{{ old("partners.$i.name", $partner->name ?? null) }}" placeholder="اسم الشريك">
                             </div>
                             <div class="col-12 col-md-6">
-                                <input class="form-control" name="partners[{{ $i }}][role]" value="{{ old("partners.$i.role", $partner->role ?? null) }}" placeholder="{{ __('app.roles.programs.monthly_activities.fields_ext.partner_role') }}">
+                                <input class="form-control" name="partners[{{ $i }}][role]" value="{{ old("partners.$i.role", $partner->role ?? null) }}" placeholder="الدور">
                             </div>
                         @endfor
                     </div>
                 </div>
+
+                <hr class="my-2">
+                <div class="col-12"><h2 class="h6 mb-1">المراسلات والتواريخ</h2></div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" name="needs_official_letters" value="1" id="needs_letters_edit" @checked($monthlyActivity->needs_official_letters)>
-                        <label class="form-check-label" for="needs_letters_edit">{{ __('app.roles.programs.monthly_activities.fields_ext.needs_letters') }}</label>
+                        <label class="form-check-label" for="needs_letters_edit">بحاجة إلى خطابات</label>
                     </div>
                 </div>
                 <div class="col-12 col-md-9">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.letter_reason') }}</label>
+                    <label class="form-label">سبب الخطابات</label>
                     <input class="form-control" name="letter_purpose" value="{{ $monthlyActivity->letter_purpose }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.proposed_date') }}</label>
+                    <label class="form-label">التاريخ المقترح الجديد</label>
                     <input class="form-control" type="date" name="rescheduled_date" value="{{ optional($monthlyActivity->rescheduled_date)->format('Y-m-d') }}">
                 </div>
                 <div class="col-12 col-md-8">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.reschedule_reason') }}</label>
+                    <label class="form-label">سبب التعديل</label>
                     <input class="form-control" name="reschedule_reason" value="{{ $monthlyActivity->reschedule_reason }}">
                 </div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" name="relations_approval_on_reschedule" value="1" id="relations_reschedule_approve_edit" @checked($monthlyActivity->relations_approval_on_reschedule)>
-                        <label class="form-check-label" for="relations_reschedule_approve_edit">{{ __('app.roles.programs.monthly_activities.fields_ext.relations_reschedule_approve') }}</label>
+                        <label class="form-check-label" for="relations_reschedule_approve_edit">اعتماد العلاقات على التعديل</label>
                     </div>
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields_ext.audience_satisfaction') }}</label>
+                    <label class="form-label">رضا الجمهور %</label>
                     <input class="form-control" type="number" min="0" max="100" step="0.01" name="audience_satisfaction_percent" value="{{ $monthlyActivity->audience_satisfaction_percent }}">
                 </div>
-                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">الحضور والمتطوعين</h2></div></div>
+
+                <hr class="my-2">
+                <div class="col-12"><h2 class="h6 mb-1">الحضور والمتطوعون</h2></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور المتوقع</label><input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance', $monthlyActivity->expected_attendance ) }}"></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور الفعلي</label><input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance ) }}"></div>
-                <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers', $monthlyActivity->needs_volunteers))><label class="form-check-label" for="needs_volunteers">تحتاج متطوعين</label></div></div>
+                <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers', $monthlyActivity->needs_volunteers))><label class="form-check-label" for="needs_volunteers">نحتاج متطوعين</label></div></div>
                 <div class="col-12 col-md-3"><label class="form-label">عدد المتطوعين المطلوب</label><input class="form-control" type="number" min="0" name="required_volunteers" value="{{ old('required_volunteers', $monthlyActivity->required_volunteers ) }}"></div>
                 <div class="col-12"><label class="form-label">ملاحظات الحضور</label><textarea class="form-control" name="attendance_notes" rows="2">{{ old('attendance_notes', $monthlyActivity->attendance_notes ) }}</textarea></div>
 
-                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">المخاطبات والتغطية الإعلامية</h2></div></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence', $monthlyActivity->needs_official_correspondence))><label class="form-check-label" for="needs_official_correspondence">تحتاج مخاطبات رسمية</label></div></div>
-                <div class="col-12 col-md-8"><label class="form-label">سبب المخاطبة</label><input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason', $monthlyActivity->official_correspondence_reason ) }}"></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_media_coverage" value="1" id="needs_media_coverage" @checked(old('needs_media_coverage', $monthlyActivity->needs_media_coverage))><label class="form-check-label" for="needs_media_coverage">تحتاج تغطية إعلامية</label></div></div>
+                <hr class="my-2">
+                <div class="col-12"><h2 class="h6 mb-1">المخاطبات والتغطية الإعلامية</h2></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence', $monthlyActivity->needs_official_correspondence))><label class="form-check-label" for="needs_official_correspondence">بحاجة إلى مخاطبات رسمية</label></div></div>
+                <div class="col-12 col-md-4"><label class="form-label">سبب المخاطبة</label><input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason', $monthlyActivity->official_correspondence_reason ) }}"></div>
+                <div class="col-12 col-md-4"><label class="form-label">الجهة المطلوب مخاطبتها</label><input class="form-control" name="official_correspondence_target" value="{{ old('official_correspondence_target', $monthlyActivity->official_correspondence_target ) }}"></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_media_coverage" value="1" id="needs_media_coverage" @checked(old('needs_media_coverage', $monthlyActivity->needs_media_coverage))><label class="form-check-label" for="needs_media_coverage">بحاجة إلى تغطية إعلامية</label></div></div>
                 <div class="col-12 col-md-8"><label class="form-label">ملاحظات التغطية الإعلامية</label><input class="form-control" name="media_coverage_notes" value="{{ old('media_coverage_notes', $monthlyActivity->media_coverage_notes ) }}"></div>
 
-                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">Branch Planning</h2></div></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="is_program_related" value="1" id="is_program_related" @checked(old('is_program_related', $monthlyActivity->is_program_related))><label class="form-check-label" for="is_program_related">is_program_related</label></div></div>
-                <div class="col-12 col-md-4"><label class="form-label">participation_status</label><select class="form-select" name="participation_status"><option value="unspecified" @selected(old('participation_status',$monthlyActivity->participation_status ?? 'unspecified')==='unspecified')>unspecified</option><option value="participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='participant')>participant</option><option value="not_participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='not_participant')>not_participant</option></select></div>
-                <div class="col-12 col-md-4"><label class="form-label">branch_plan_file</label><input class="form-control" type="file" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">@if($monthlyActivity->branch_plan_file)<a class="small d-block mt-1" href="{{ asset('storage/'.$monthlyActivity->branch_plan_file) }}" target="_blank">عرض الملف الحالي</a>@endif</div>
-
-
-                <div class="col-12"><div class="event-form-section"><h2 class="event-section-title">Workflow Routing</h2></div></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_programs" value="1" id="requires_programs" @checked(old('requires_programs', $monthlyActivity->requires_programs))><label class="form-check-label" for="requires_programs">requires_programs</label></div></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_workshops" value="1" id="requires_workshops" @checked(old('requires_workshops', $monthlyActivity->requires_workshops))><label class="form-check-label" for="requires_workshops">requires_workshops</label></div></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_communications" value="1" id="requires_communications" @checked(old('requires_communications', $monthlyActivity->requires_communications))><label class="form-check-label" for="requires_communications">requires_communications</label></div></div>
+                <hr class="my-2">
+                <div class="col-12"><h2 class="h6 mb-1">خطة الفرع ومسارات التحويل</h2></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="is_program_related" value="1" id="is_program_related" @checked(old('is_program_related', $monthlyActivity->is_program_related))><label class="form-check-label" for="is_program_related">نشاط مرتبط بالبرامج</label></div></div>
+                <div class="col-12 col-md-4"><label class="form-label">حالة المشاركة</label><select class="form-select" name="participation_status"><option value="unspecified" @selected(old('participation_status',$monthlyActivity->participation_status ?? 'unspecified')==='unspecified')>غير محدد</option><option value="participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='participant')>مشارك</option><option value="not_participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='not_participant')>غير مشارك</option></select></div>
+                <div class="col-12 col-md-4"><label class="form-label">مرفق خطة الفرع (اختياري)</label><input class="form-control" type="file" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">@if($monthlyActivity->branch_plan_file)<a class="small d-block mt-1" href="{{ asset('storage/'.$monthlyActivity->branch_plan_file) }}" target="_blank">عرض الملف الحالي</a>@endif</div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_programs" value="1" id="requires_programs" @checked(old('requires_programs', $monthlyActivity->requires_programs))><label class="form-check-label" for="requires_programs">تحويل للبرامج</label></div></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_workshops" value="1" id="requires_workshops" @checked(old('requires_workshops', $monthlyActivity->requires_workshops))><label class="form-check-label" for="requires_workshops">تحويل للمشاغل</label></div></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_communications" value="1" id="requires_communications" @checked(old('requires_communications', $monthlyActivity->requires_communications))><label class="form-check-label" for="requires_communications">تحويل للعلاقات</label></div></div>
 
                 <div class="col-12">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.description') }}</label>
