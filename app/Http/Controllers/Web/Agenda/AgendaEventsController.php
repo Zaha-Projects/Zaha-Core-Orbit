@@ -21,6 +21,17 @@ use Illuminate\Support\Facades\Storage;
 
 class AgendaEventsController extends Controller
 {
+    protected function syncPartnerDepartments(AgendaEvent $event, array $data): void
+    {
+        $partnerDepartmentIds = collect($data['partner_department_ids'] ?? [])
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $event->partnerDepartments()->sync($partnerDepartmentIds);
+    }
 
     protected function branchCode(?Branch $branch): ?string
     {
@@ -132,7 +143,7 @@ class AgendaEventsController extends Controller
             $perPage = 20;
         }
 
-        $eventsQuery = AgendaEvent::with(['creator', 'department', 'eventCategory', 'participations'])
+        $eventsQuery = AgendaEvent::with(['creator', 'department', 'partnerDepartments', 'eventCategory', 'participations'])
             ->enterpriseFilter($request->all())
             ->notArchived();
 
@@ -150,6 +161,58 @@ class AgendaEventsController extends Controller
         ]);
 
         return view('pages.agenda.events.index', compact('events', 'filters', 'branchActor'));
+    }
+
+    public function show(Request $request, AgendaEvent $agendaEvent)
+    {
+        $scopedEventQuery = AgendaEvent::query()->whereKey($agendaEvent->id);
+        $this->applyBranchVisibilityScope($scopedEventQuery, $request->user());
+
+        $agendaEvent = $scopedEventQuery
+            ->with([
+                'creator',
+                'department',
+                'partnerDepartments',
+                'eventCategory',
+                'monthlyActivities',
+                'participations',
+            ])
+            ->firstOrFail();
+
+        $branchesById = Branch::query()
+            ->get()
+            ->mapWithKeys(fn ($branch) => [$branch->id => ['name' => $branch->name, 'color_hex' => $branch->color_hex, 'icon' => $branch->icon]]);
+        $unitsById = DepartmentUnit::query()
+            ->get()
+            ->mapWithKeys(fn ($unit) => [$unit->id => ['name' => $unit->name, 'color_hex' => $unit->color_hex, 'icon' => $unit->icon]]);
+
+        $branchParticipations = $agendaEvent->participations
+            ->where('entity_type', 'branch')
+            ->map(function ($participation) use ($branchesById) {
+                return [
+                    'name' => $branchesById[$participation->entity_id]['name'] ?? ('#'.$participation->entity_id),
+                    'color_hex' => $branchesById[$participation->entity_id]['color_hex'] ?? null,
+                    'icon' => $branchesById[$participation->entity_id]['icon'] ?? null,
+                    'status' => $participation->participation_status,
+                    'proposed_date' => $participation->proposed_date,
+                    'actual_execution_date' => $participation->actual_execution_date,
+                ];
+            })
+            ->values();
+
+        $unitParticipations = $agendaEvent->participations
+            ->where('entity_type', 'department_unit')
+            ->map(function ($participation) use ($unitsById) {
+                return [
+                    'name' => $unitsById[$participation->entity_id]['name'] ?? ('#'.$participation->entity_id),
+                    'color_hex' => $unitsById[$participation->entity_id]['color_hex'] ?? null,
+                    'icon' => $unitsById[$participation->entity_id]['icon'] ?? null,
+                    'status' => $participation->participation_status,
+                ];
+            })
+            ->values();
+
+        return view('pages.agenda.events.show', compact('agendaEvent', 'branchParticipations', 'unitParticipations'));
     }
 
     public function create()
@@ -171,6 +234,8 @@ class AgendaEventsController extends Controller
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
             'department_id' => ['nullable', 'exists:departments,id'],
+            'partner_department_ids' => ['array'],
+            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
@@ -191,6 +256,10 @@ class AgendaEventsController extends Controller
 
         if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file')) {
             return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        }
+
+        if (! empty($data['department_id']) && in_array((int) $data['department_id'], array_map('intval', $data['partner_department_ids'] ?? []), true)) {
+            return back()->withErrors(['partner_department_ids' => __('app.roles.relations.agenda.errors.partner_department_conflict')])->withInput();
         }
 
         $date = Carbon::parse($data['event_date']);
@@ -219,6 +288,8 @@ class AgendaEventsController extends Controller
             'agenda_plan_file' => $request->file('agenda_plan_file')?->store('agenda/plans', 'public'),
         ]);
 
+        $this->syncPartnerDepartments($event, $data);
+
         foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
             AgendaParticipation::create([
                 'agenda_event_id' => $event->id,
@@ -240,7 +311,7 @@ class AgendaEventsController extends Controller
         $this->assertKhaldaHqAgendaAuthority(request());
         $this->assertEventManageAccess(request(), $agendaEvent);
 
-        $agendaEvent->load('participations');
+        $agendaEvent->load(['participations', 'partnerDepartments']);
         $departments = Department::orderBy('name')->get();
         $categories = EventCategory::where('active', true)->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
@@ -272,6 +343,8 @@ class AgendaEventsController extends Controller
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
             'department_id' => ['nullable', 'exists:departments,id'],
+            'partner_department_ids' => ['array'],
+            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
@@ -292,6 +365,10 @@ class AgendaEventsController extends Controller
 
         if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
             return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        }
+
+        if (! empty($data['department_id']) && in_array((int) $data['department_id'], array_map('intval', $data['partner_department_ids'] ?? []), true)) {
+            return back()->withErrors(['partner_department_ids' => __('app.roles.relations.agenda.errors.partner_department_conflict')])->withInput();
         }
 
         $date = Carbon::parse($data['event_date']);
@@ -323,6 +400,8 @@ class AgendaEventsController extends Controller
             'notes' => $data['notes'] ?? null,
             'agenda_plan_file' => $agendaPlanFile,
         ]);
+
+        $this->syncPartnerDepartments($agendaEvent, $data);
 
         $agendaEvent->participations()->where('entity_type', 'branch')->delete();
         foreach (($data['branch_participation'] ?? []) as $branchId => $status) {

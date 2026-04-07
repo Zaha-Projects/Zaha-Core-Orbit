@@ -43,7 +43,7 @@
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <label class="form-label">تاريخ الخطة</label>
+                    <label class="form-label">تاريخ التنفيذ</label>
                     <input class="form-control" type="date" name="activity_date" value="{{ old('activity_date') }}" >
                 </div>
 
@@ -70,7 +70,7 @@
 </div>
 
                 <div class="col-12 col-md-4">
-                    <label class="form-label">رفع خطة الفرع</label>
+                    <label class="form-label">رفع أجندة/مرفقات (اختياري)</label>
                     <input class="form-control @error('branch_plan_file') is-invalid @enderror" type="file" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
                     @error('branch_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -97,6 +97,10 @@
                     <label class="form-label">رابط Google Maps</label>
                     <input class="form-control" name="outside_google_maps_url" value="{{ old('outside_google_maps_url') }}">
                 </div>
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">رقم تواصل المكان الخارجي</label>
+                    <input class="form-control" name="outside_contact_number" value="{{ old('outside_contact_number') }}">
+                </div>
 
                 <div class="col-12 col-md-3">
                     <label class="form-label">وقت التنفيذ من</label>
@@ -110,11 +114,11 @@
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">وصف مختصر للفعالية</label>
-                    <textarea class="form-control" name="short_description" rows="2">{{ old('short_description') }}</textarea>
+                    <textarea class="form-control" name="short_description" rows="2" placeholder="ملخص سريع عن الفعالية وأهدافها">{{ old('short_description') }}</textarea>
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label d-block mb-2">الجهة المسؤولة (توجيه القبول)</label>
+                    <label class="form-label d-block mb-2">الجهة المسؤولة</label>
                     <div class="d-flex flex-wrap gap-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="responsible_entities[]" value="relations" id="entity-relations" @checked(collect(old('responsible_entities', []))->contains('relations'))>
@@ -127,14 +131,17 @@
                     </div>
                 </div>
 
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-12">
                     <label class="form-label">الفئة المستهدفة</label>
-                    <select class="form-select js-target-group" name="target_group_id">
-                        <option value="">-- اختر --</option>
+                    @php $selectedTargetGroupIds = array_map('intval', old('target_group_ids', old('target_group_id') ? [old('target_group_id')] : [])); @endphp
+                    <div class="partner-departments-box">
                         @foreach($targetGroups as $group)
-                            <option value="{{ $group->id }}" data-is-other="{{ $group->is_other ? 1 : 0 }}" @selected((string) old('target_group_id') === (string) $group->id)>{{ $group->name }}</option>
+                            <label class="partner-department-item">
+                                <input class="form-check-input m-0 js-target-group-checkbox" type="checkbox" name="target_group_ids[]" value="{{ $group->id }}" data-is-other="{{ $group->is_other ? 1 : 0 }}" {{ in_array((int) $group->id, $selectedTargetGroupIds, true) ? 'checked' : '' }}>
+                                <span>{{ $group->name }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
 
                 <div class="col-12 col-md-8 js-target-group-other">
@@ -147,9 +154,9 @@
                     <input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance') }}">
                 </div>
 
-                <div class="col-12 col-md-9">
+                <div class="col-12 col-md-6">
                     <label class="form-label">الوصف التفصيلي</label>
-                    <textarea class="form-control" name="description" rows="2">{{ old('description') }}</textarea>
+                    <textarea class="form-control" name="description" rows="2" placeholder="تفاصيل النشاط (فقرات أو أجندة الفعالية)">{{ old('description') }}</textarea>
                 </div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center mt-2">
@@ -197,6 +204,10 @@
                     <label class="form-label">سبب المخاطبة</label>
                     <input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason') }}">
                 </div>
+                <div class="col-12 col-md-6 js-letters-reason">
+                    <label class="form-label">الجهة المطلوب مخاطبتها</label>
+                    <input class="form-control" name="official_correspondence_target" value="{{ old('official_correspondence_target') }}">
+                </div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center">
                     <div class="form-check mt-4">
@@ -242,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const locType = document.querySelector('.js-location-type');
   const inside = document.querySelectorAll('.js-inside-location');
   const outside = document.querySelectorAll('.js-outside-location');
-  const tg = document.querySelector('.js-target-group');
+  const tgChecks = Array.from(document.querySelectorAll('.js-target-group-checkbox'));
   const tgOther = document.querySelectorAll('.js-target-group-other');
   const hasSponsor = document.querySelector('.js-has-sponsor');
   const sponsorWrap = document.querySelectorAll('.js-sponsor-wrapper');
@@ -335,11 +346,33 @@ document.addEventListener('DOMContentLoaded', function () {
     const count = Math.max(1, Math.min(20, parseInt(suppliesCount?.value || '1', 10)));
     suppliesContainer.innerHTML = '';
     for (let i = 0; i < count; i++) {
+      const available = !!oldSupplies?.[i]?.available;
       suppliesContainer.insertAdjacentHTML('beforeend', `
         <div class="col-12 col-md-6"><input class="form-control" name="supplies[${i}][item_name]" placeholder="اسم المستلزم ${i + 1}" value="${esc(oldSupplies?.[i]?.item_name)}"></div>
-        <div class="col-12 col-md-6 d-flex align-items-center"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="supplies[${i}][available]" value="1" id="supply-${i}" ${oldSupplies?.[i]?.available ? 'checked' : ''}><label class="form-check-label" for="supply-${i}">متوفر</label></div></div>
+        <div class="col-12 col-md-3">
+          <select class="form-select js-supply-available" data-index="${i}" name="supplies[${i}][available]">
+            <option value="1" ${available ? 'selected' : ''}>متوفر</option>
+            <option value="0" ${!available ? 'selected' : ''}>غير متوفر</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3 js-supply-provider" data-index="${i}" style="${available ? 'display:none' : ''}">
+          <select class="form-select mb-2" name="supplies[${i}][provider_type]">
+            <option value="">نوع المسؤول</option>
+            <option value="volunteer" ${(oldSupplies?.[i]?.provider_type === 'volunteer') ? 'selected' : ''}>متطوع</option>
+            <option value="person" ${(oldSupplies?.[i]?.provider_type === 'person') ? 'selected' : ''}>شخص</option>
+            <option value="partner" ${(oldSupplies?.[i]?.provider_type === 'partner') ? 'selected' : ''}>شريك</option>
+          </select>
+          <input class="form-control" name="supplies[${i}][provider_name]" placeholder="اسم المسؤول عن التوفير" value="${esc(oldSupplies?.[i]?.provider_name)}">
+        </div>
       `);
     }
+    suppliesContainer.querySelectorAll('.js-supply-available').forEach((select) => {
+      select.addEventListener('change', () => {
+        const index = select.dataset.index;
+        const provider = suppliesContainer.querySelector(`.js-supply-provider[data-index="${index}"]`);
+        if (provider) provider.style.display = select.value === '1' ? 'none' : 'block';
+      });
+    });
   }
 
   const toggle = () => {
@@ -347,8 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
     inside.forEach(el => el.style.display = outsideSelected ? 'none' : 'block');
     outside.forEach(el => el.style.display = outsideSelected ? 'block' : 'none');
 
-    const selected = tg?.selectedOptions?.[0];
-    const isOther = selected && selected.dataset.isOther === '1';
+    const isOther = tgChecks.some((input) => input.checked && input.dataset.isOther === '1');
     tgOther.forEach(el => el.style.display = isOther ? 'block' : 'none');
 
     sponsorWrap.forEach(el => el.style.display = hasSponsor?.checked ? 'block' : 'none');
@@ -358,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   locType?.addEventListener('change', toggle);
-  tg?.addEventListener('change', toggle);
+  tgChecks.forEach((check) => check.addEventListener('change', toggle));
   hasSponsor?.addEventListener('change', toggle);
   hasPartners?.addEventListener('change', toggle);
   needsLetters?.addEventListener('change', toggle);
@@ -373,6 +405,10 @@ document.addEventListener('DOMContentLoaded', function () {
   toggle();
 });
 </script>
+<style>
+  .partner-departments-box { border: 1px solid #dee2e6; border-radius: .5rem; padding: .5rem; max-height: 180px; overflow-y: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+  .partner-department-item { display: flex; align-items: center; gap: .5rem; padding: .25rem .4rem; border-radius: .35rem; background: #f8f9fa; margin: 0; font-size: .9rem; }
+</style>
 @endpush
 
 @endsection

@@ -21,6 +21,8 @@ class BranchesController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
+            'color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icon' => ['nullable', 'string', 'max:32'],
         ]);
 
         Branch::create($data);
@@ -36,6 +38,8 @@ class BranchesController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
+            'color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icon' => ['nullable', 'string', 'max:32'],
         ]);
 
         $branch->update($data);

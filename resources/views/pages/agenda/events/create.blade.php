@@ -22,35 +22,49 @@
                     <input class="form-control" type="date" name="event_date" value="{{ old('event_date') }}" required>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.department') }}</label>
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.primary_department') }}</label>
                     <select class="form-select" name="department_id">
                         <option value="">--</option>
                         @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" @selected(old('department_id') == $department->id)>{{ $department->name }}</option>
+                            <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</label>
+                    @php
+                        $selectedPartnerDepartmentIds = array_map('strval', old('partner_department_ids', []));
+                    @endphp
+                    <div class="partner-departments-box">
+                        @foreach ($departments as $department)
+                            <label class="partner-department-item">
+                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
+                                <span>{{ $department->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_category') }}</label>
                     <select class="form-select" name="event_category_id" id="event_category_id">
                         <option value="">--</option>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" @selected(old('event_category_id') == $category->id)>{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" {{ old('event_category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.event_type') }}</label>
                     <select class="form-select" name="event_type" required>
-                        <option value="mandatory" @selected(old('event_type') === 'mandatory')>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
-                        <option value="optional" @selected(old('event_type') === 'optional')>{{ __('app.roles.relations.agenda.types.optional') }}</option>
+                        <option value="mandatory" {{ old('event_type') === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
+                        <option value="optional" {{ old('event_type') === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</label>
                     <select class="form-select js-plan-type" name="plan_type" required>
-                        <option value="unified" @selected(old('plan_type') === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
-                        <option value="non_unified" @selected(old('plan_type') === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
+                        <option value="unified" {{ old('plan_type') === 'unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
+                        <option value="non_unified" {{ old('plan_type') === 'non_unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-4 js-agenda-plan-file">
@@ -121,4 +135,26 @@
             togglePlanFile();
         })();
     </script>
+    <style>
+        .partner-departments-box {
+            border: 1px solid #dee2e6;
+            border-radius: .5rem;
+            padding: .5rem;
+            max-height: 180px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .5rem;
+        }
+        .partner-department-item {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .25rem .4rem;
+            border-radius: .35rem;
+            background: #f8f9fa;
+            margin: 0;
+            font-size: .9rem;
+        }
+    </style>
 @endsection

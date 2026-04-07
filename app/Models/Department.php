@@ -11,5 +11,7 @@ class Department extends Model
 
     protected $fillable = [
         'name',
+        'color_hex',
+        'icon',
     ];
 }

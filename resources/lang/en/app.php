@@ -14,6 +14,7 @@ return [
         'static_filter' => 'Static filter',
         'database_unavailable' => 'Database service is currently unavailable. Please try again in a moment.',
         'home' => 'Home',
+        'back' => 'Back',
         'mark_as_read' => 'Mark as read',
         'no_new_notifications' => 'No new notifications',
     ],
@@ -461,6 +462,7 @@ return [
                 'subtitle' => 'Create and update annual agenda events.',
                 'create_title' => 'Add agenda event',
                 'edit_title' => 'Edit agenda event',
+                'show_title' => 'View agenda event details',
                 'list_title' => 'Agenda events',
                 'fields' => [
                     'event_name' => 'Event title',
@@ -475,7 +477,7 @@ return [
                 'target_types' => [
                     'branch' => 'Branch',
                     'center' => 'Center',
-                    'department' => 'Department',
+                    'department' => 'Unit/Department',
                     'committee' => 'Committee',
                 ],
                 'table' => [
@@ -488,13 +490,16 @@ return [
                 ],
                 'actions' => [
                     'create' => 'Create event',
+                    'view' => 'View',
                     'edit' => 'Edit',
                     'save' => 'Save changes',
                     'submit' => 'Submit for approval',
                     'update' => 'Update',
                 ],
                 'fields_ext' => [
-                    'department' => 'Department',
+                    'department' => 'Unit/Department',
+                    'primary_department' => 'Primary unit/department',
+                    'partner_department' => 'Partner units/departments',
                     'event_type' => 'Event type',
                     'plan_type' => 'Plan type',
                     'branch_participation' => 'Branch participation',
@@ -520,6 +525,9 @@ return [
                 'updated' => 'Agenda event updated: :event.',
                 'submitted' => 'Agenda event submitted: :event.',
                 'unit_participation_updated' => 'Unit participation was updated successfully.',
+                'errors' => [
+                    'partner_department_conflict' => 'The primary unit/department cannot also be selected as a partner.',
+                ],
                 'status_labels' => [
                     'approved' => 'Approved',
                     'changes_requested' => 'Changes requested',

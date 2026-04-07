@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Web\MonthlyActivities;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
+use App\Models\DepartmentUnit;
 use App\Models\EvaluationQuestion;
 use App\Models\TargetGroup;
 use Illuminate\Http\Request;
@@ -13,8 +15,10 @@ class EventLookupsController extends Controller
     {
         $targetGroups = TargetGroup::orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::orderBy('sort_order')->get();
+        $departments = Department::orderBy('name')->get();
+        $departmentUnits = DepartmentUnit::orderBy('name')->get();
 
-        return view('pages.monthly_activities.lookups.index', compact('targetGroups', 'evaluationQuestions'));
+        return view('pages.monthly_activities.lookups.index', compact('targetGroups', 'evaluationQuestions', 'departments', 'departmentUnits'));
     }
 
     public function storeTargetGroup(Request $request)
@@ -52,5 +56,29 @@ class EventLookupsController extends Controller
         ]);
 
         return back()->with('status', 'تم إضافة سؤال تقييم.');
+    }
+
+    public function updateDepartmentVisual(Request $request, Department $department)
+    {
+        $data = $request->validate([
+            'color_hex' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icon' => ['required', 'string', 'max:32'],
+        ]);
+
+        $department->update($data);
+
+        return back()->with('status', 'تم تحديث لون/أيقونة القسم.');
+    }
+
+    public function updateUnitVisual(Request $request, DepartmentUnit $departmentUnit)
+    {
+        $data = $request->validate([
+            'color_hex' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icon' => ['required', 'string', 'max:32'],
+        ]);
+
+        $departmentUnit->update($data);
+
+        return back()->with('status', 'تم تحديث لون/أيقونة الوحدة.');
     }
 }
