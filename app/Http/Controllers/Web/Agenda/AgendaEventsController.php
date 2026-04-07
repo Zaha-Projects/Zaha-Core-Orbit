@@ -163,6 +163,50 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.index', compact('events', 'filters', 'branchActor'));
     }
 
+    public function show(Request $request, AgendaEvent $agendaEvent)
+    {
+        $scopedEventQuery = AgendaEvent::query()->whereKey($agendaEvent->id);
+        $this->applyBranchVisibilityScope($scopedEventQuery, $request->user());
+
+        $agendaEvent = $scopedEventQuery
+            ->with([
+                'creator',
+                'department',
+                'partnerDepartments',
+                'eventCategory',
+                'monthlyActivities',
+                'participations',
+            ])
+            ->firstOrFail();
+
+        $branchesById = Branch::query()->pluck('name', 'id');
+        $unitsById = DepartmentUnit::query()->pluck('name', 'id');
+
+        $branchParticipations = $agendaEvent->participations
+            ->where('entity_type', 'branch')
+            ->map(function ($participation) use ($branchesById) {
+                return [
+                    'name' => $branchesById[$participation->entity_id] ?? ('#'.$participation->entity_id),
+                    'status' => $participation->participation_status,
+                    'proposed_date' => $participation->proposed_date,
+                    'actual_execution_date' => $participation->actual_execution_date,
+                ];
+            })
+            ->values();
+
+        $unitParticipations = $agendaEvent->participations
+            ->where('entity_type', 'department_unit')
+            ->map(function ($participation) use ($unitsById) {
+                return [
+                    'name' => $unitsById[$participation->entity_id] ?? ('#'.$participation->entity_id),
+                    'status' => $participation->participation_status,
+                ];
+            })
+            ->values();
+
+        return view('pages.agenda.events.show', compact('agendaEvent', 'branchParticipations', 'unitParticipations'));
+    }
+
     public function create()
     {
         $this->assertKhaldaHqAgendaAuthority(request());

@@ -65,7 +65,7 @@
             'status' => $event->relations_approval_status ?? $event->status,
             'status_label' => $agendaStatusLabel($event->relations_approval_status ?? $event->status),
             'edit_url' => $canManageAgenda ? route('role.relations.agenda.edit', $event) : null,
-            'view_url' => route('role.relations.agenda.index', ['year' => optional($event->event_date)->format('Y') ?? now()->year, 'month' => $event->month]),
+            'view_url' => route('role.relations.agenda.show', $event),
             'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
             'participant_count' => $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count(),
             'plan_type' => $event->plan_type,
@@ -248,18 +248,17 @@
                                         </td>
                                         <td>{{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</td>
                                         <td class="text-end">
-                                            @if($canManageAgenda)
-                                                <div class="event-actions">
+                                            <div class="event-actions">
+                                                <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.agenda.show', $event) }}">{{ __('app.roles.relations.agenda.actions.view') }}</a>
+                                                @if($canManageAgenda)
                                                     <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
                                                     <form method="POST" action="{{ route('role.relations.agenda.submit', $event) }}">
                                                         @csrf
                                                         @method('PATCH')
                                                         <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
                                                     </form>
-                                                </div>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -288,11 +287,12 @@
                                         @endforeach
                                     </span>
                                 </div>
-                                @if($canManageAgenda)
-                                    <div class="event-actions mt-2">
+                                <div class="event-actions mt-2">
+                                    <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.agenda.show', $event) }}">{{ __('app.roles.relations.agenda.actions.view') }}</a>
+                                    @if($canManageAgenda)
                                         <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
-                                    </div>
-                                @endif
+                                    @endif
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -433,9 +433,9 @@
 
                     const dayEvents = eventsByDay.get(day) ?? [];
                     dayEvents.forEach((event) => {
-                        const eventLink = document.createElement(event.edit_url ? 'a' : 'div');
-                        if (event.edit_url) {
-                            eventLink.href = event.edit_url;
+                        const eventLink = document.createElement(event.view_url ? 'a' : 'div');
+                        if (event.view_url) {
+                            eventLink.href = event.view_url;
                         }
                         eventLink.className = `agenda-event-chip status-${event.status}`;
                         eventLink.innerHTML = `
