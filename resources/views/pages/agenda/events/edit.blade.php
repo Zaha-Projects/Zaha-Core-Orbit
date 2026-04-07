@@ -36,17 +36,11 @@
                     @php
                         $selectedPartnerDepartmentIds = array_map('strval', old('partner_department_ids', $agendaEvent->partnerDepartments->pluck('id')->all()));
                     @endphp
-                    <div class="border rounded p-2" style="max-height: 180px; overflow-y: auto;">
+                    <div class="partner-departments-box">
                         @foreach ($departments as $department)
-                            <label class="form-check d-flex align-items-center gap-2 mb-2">
-                                <input
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    name="partner_department_ids[]"
-                                    value="{{ $department->id }}"
-                                    @checked(in_array((string) $department->id, $selectedPartnerDepartmentIds, true))
-                                >
-                                <span class="form-check-label">{{ $department->name }}</span>
+                            <label class="partner-department-item">
+                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
+                                <span>{{ $department->name }}</span>
                             </label>
                         @endforeach
                     </div>
@@ -179,4 +173,26 @@
             togglePlanFile();
         })();
     </script>
+    <style>
+        .partner-departments-box {
+            border: 1px solid #dee2e6;
+            border-radius: .5rem;
+            padding: .5rem;
+            max-height: 180px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .5rem;
+        }
+        .partner-department-item {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .25rem .4rem;
+            border-radius: .35rem;
+            background: #f8f9fa;
+            margin: 0;
+            font-size: .9rem;
+        }
+    </style>
 @endsection
