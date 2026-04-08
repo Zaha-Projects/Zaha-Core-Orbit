@@ -98,6 +98,8 @@
                         <option value="draft" @selected($monthlyActivity->status === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
                         <option value="submitted" @selected($monthlyActivity->status === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
                         <option value="changes_requested" @selected($monthlyActivity->status === 'changes_requested')>{{ __('app.roles.programs.monthly_activities.statuses.changes_requested') }}</option>
+                        <option value="postponed" @selected($monthlyActivity->status === 'postponed')>{{ __('app.roles.programs.monthly_activities.statuses.postponed') }}</option>
+                        <option value="cancelled" @selected($monthlyActivity->status === 'cancelled')>{{ __('app.roles.programs.monthly_activities.statuses.cancelled') }}</option>
                         <option value="closed" @selected($monthlyActivity->status === 'closed')>{{ __('app.roles.programs.monthly_activities.statuses.closed') }}</option>
                     </select>
                 </div>

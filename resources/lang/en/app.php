@@ -666,6 +666,8 @@ return [
                     'submitted' => 'Submitted',
                     'approved' => 'Approved',
                     'changes_requested' => 'Changes requested',
+                    'postponed' => 'Postponed',
+                    'cancelled' => 'Cancelled',
                     'closed' => 'Closed',
                     'completed' => 'Completed',
                 ],

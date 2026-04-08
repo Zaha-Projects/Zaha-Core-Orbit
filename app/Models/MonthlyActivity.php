@@ -83,6 +83,8 @@ class MonthlyActivity extends Model
         'requires_workshops',
         'requires_communications',
         'status',
+        'plan_stage',
+        'plan_version',
         'lifecycle_status',
         'participation_status',
         'plan_type',
@@ -127,6 +129,8 @@ class MonthlyActivity extends Model
         'time_from' => 'datetime:H:i',
         'time_to' => 'datetime:H:i',
         'is_archived' => 'boolean',
+        'plan_stage' => 'integer',
+        'plan_version' => 'integer',
     ];
 
 

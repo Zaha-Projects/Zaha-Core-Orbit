@@ -11,6 +11,7 @@ use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivitySupply;
 use App\Models\MonthlyActivityTeam;
+use App\Models\WorkflowInstance;
 use App\Models\EvaluationQuestion;
 use App\Models\MonthlyActivityFollowup;
 use App\Models\MonthlyActivityEvaluationResponse;
@@ -29,6 +30,43 @@ use Illuminate\Support\Facades\Storage;
 
 class MonthlyActivitiesController extends Controller
 {
+    protected function isApprovedVersion(MonthlyActivity $monthlyActivity): bool
+    {
+        $workflowInstance = WorkflowInstance::query()
+            ->where('entity_type', MonthlyActivity::class)
+            ->where('entity_id', $monthlyActivity->id)
+            ->latest('id')
+            ->first();
+
+        return $workflowInstance?->status === 'approved'
+            || $monthlyActivity->status === 'approved'
+            || $monthlyActivity->executive_approval_status === 'approved'
+            || $monthlyActivity->lifecycle_status === 'Exec Director Approved';
+    }
+
+    protected function resetWorkflowForNewVersion(MonthlyActivity $monthlyActivity): void
+    {
+        $instance = WorkflowInstance::query()
+            ->where('entity_type', MonthlyActivity::class)
+            ->where('entity_id', $monthlyActivity->id)
+            ->latest('id')
+            ->first();
+
+        if (! $instance) {
+            return;
+        }
+
+        $firstStep = $instance->workflow?->steps()->orderBy('step_order')->orderBy('approval_level')->first();
+
+        $instance->update([
+            'status' => 'pending',
+            'current_step_id' => $firstStep?->id,
+            'edit_request_count' => 0,
+            'started_at' => now(),
+            'completed_at' => null,
+        ]);
+    }
+
     protected function syncTargetGroups(MonthlyActivity $monthlyActivity, array $data): void
     {
         $ids = collect($data['target_group_ids'] ?? [])
@@ -444,6 +482,8 @@ class MonthlyActivitiesController extends Controller
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
             'status' => $data['status'],
+            'plan_stage' => 1,
+            'plan_version' => 1,
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
             'time_from' => $data['time_from'] ?? null,
@@ -707,6 +747,8 @@ class MonthlyActivitiesController extends Controller
             'outside_google_maps_url',
             'outside_address',
             'status',
+            'plan_stage',
+            'plan_version',
             'responsible_party',
             'execution_time',
             'target_group',
@@ -748,7 +790,33 @@ class MonthlyActivitiesController extends Controller
             'branch_id',
             'month',
             'day',
+            'lifecycle_status',
+            'relations_officer_approval_status',
+            'relations_manager_approval_status',
+            'programs_officer_approval_status',
+            'programs_manager_approval_status',
+            'liaison_approval_status',
+            'hq_relations_manager_approval_status',
+            'executive_approval_status',
         ]);
+
+        $isRescheduled = ($data['status'] ?? null) === 'postponed'
+            || (
+                ! empty($data['rescheduled_date'])
+                && optional($monthlyActivity->rescheduled_date)?->toDateString() !== (string) $data['rescheduled_date']
+            );
+        $startsNewVersion = $this->isApprovedVersion($monthlyActivity) || $isRescheduled;
+        $nextStage = (int) ($monthlyActivity->plan_stage ?: 1);
+        $nextVersion = (int) ($monthlyActivity->plan_version ?: 1);
+        $newStatus = $data['status'];
+        $newLifecycleStatus = $monthlyActivity->lifecycle_status ?: 'Draft';
+
+        if ($startsNewVersion) {
+            $nextStage++;
+            $nextVersion++;
+            $newStatus = 'draft';
+            $newLifecycleStatus = 'Draft';
+        }
 
         $newValues = [
             'month' => (int) $date->format('m'),
@@ -767,7 +835,9 @@ class MonthlyActivitiesController extends Controller
             'outside_place_name' => $data['outside_place_name'] ?? null,
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
-            'status' => $data['status'],
+            'status' => $newStatus,
+            'plan_stage' => $nextStage,
+            'plan_version' => $nextVersion,
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
             'target_group' => $data['target_group'] ?? null,
@@ -801,6 +871,14 @@ class MonthlyActivitiesController extends Controller
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
             'branch_id' => $data['branch_id'],
             'center_id' => null,
+            'lifecycle_status' => $newLifecycleStatus,
+            'relations_officer_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->relations_officer_approval_status,
+            'relations_manager_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->relations_manager_approval_status,
+            'programs_officer_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->programs_officer_approval_status,
+            'programs_manager_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->programs_manager_approval_status,
+            'liaison_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->liaison_approval_status,
+            'hq_relations_manager_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->hq_relations_manager_approval_status,
+            'executive_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->executive_approval_status,
         ];
 
         $monthlyActivity->update([
@@ -822,6 +900,8 @@ class MonthlyActivitiesController extends Controller
             'outside_google_maps_url' => $newValues['outside_google_maps_url'],
             'outside_address' => $newValues['outside_address'],
             'status' => $newValues['status'],
+            'plan_stage' => $newValues['plan_stage'],
+            'plan_version' => $newValues['plan_version'],
             'responsible_party' => $newValues['responsible_party'],
             'execution_time' => $newValues['execution_time'],
             'target_group' => $newValues['target_group'],
@@ -855,9 +935,21 @@ class MonthlyActivitiesController extends Controller
             'requires_communications' => $newValues['requires_communications'],
             'branch_id' => $newValues['branch_id'],
             'center_id' => null,
+            'lifecycle_status' => $newValues['lifecycle_status'],
+            'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],
+            'relations_manager_approval_status' => $newValues['relations_manager_approval_status'],
+            'programs_officer_approval_status' => $newValues['programs_officer_approval_status'],
+            'programs_manager_approval_status' => $newValues['programs_manager_approval_status'],
+            'liaison_approval_status' => $newValues['liaison_approval_status'],
+            'hq_relations_manager_approval_status' => $newValues['hq_relations_manager_approval_status'],
+            'executive_approval_status' => $newValues['executive_approval_status'],
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
         ]);
+
+        if ($startsNewVersion) {
+            $this->resetWorkflowForNewVersion($monthlyActivity);
+        }
 
         $workflowService->initializeDynamicStatuses($monthlyActivity);
 

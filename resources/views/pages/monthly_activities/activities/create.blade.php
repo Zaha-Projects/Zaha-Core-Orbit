@@ -52,6 +52,8 @@
                     <select class="form-select" name="status" >
                         <option value="draft" @selected(old('status', 'draft') === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
                         <option value="submitted" @selected(old('status') === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
+                        <option value="postponed" @selected(old('status') === 'postponed')>{{ __('app.roles.programs.monthly_activities.statuses.postponed') }}</option>
+                        <option value="cancelled" @selected(old('status') === 'cancelled')>{{ __('app.roles.programs.monthly_activities.statuses.cancelled') }}</option>
                     </select>
                 </div>
 

@@ -666,6 +666,8 @@ return [
                     'submitted' => 'مرسل',
                     'approved' => 'معتمد',
                     'changes_requested' => 'مطلوب تعديل',
+                    'postponed' => 'مؤجل',
+                    'cancelled' => 'ملغي',
                     'closed' => 'مغلق',
                     'completed' => 'مكتمل',
                 ],
