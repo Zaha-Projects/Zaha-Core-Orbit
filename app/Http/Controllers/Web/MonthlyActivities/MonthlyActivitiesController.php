@@ -44,29 +44,6 @@ class MonthlyActivitiesController extends Controller
             || $monthlyActivity->lifecycle_status === 'Exec Director Approved';
     }
 
-    protected function resetWorkflowForNewVersion(MonthlyActivity $monthlyActivity): void
-    {
-        $instance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
-            ->where('entity_id', $monthlyActivity->id)
-            ->latest('id')
-            ->first();
-
-        if (! $instance) {
-            return;
-        }
-
-        $firstStep = $instance->workflow?->steps()->orderBy('step_order')->orderBy('approval_level')->first();
-
-        $instance->update([
-            'status' => 'pending',
-            'current_step_id' => $firstStep?->id,
-            'edit_request_count' => 0,
-            'started_at' => now(),
-            'completed_at' => null,
-        ]);
-    }
-
     protected function syncTargetGroups(MonthlyActivity $monthlyActivity, array $data): void
     {
         $ids = collect($data['target_group_ids'] ?? [])
@@ -484,6 +461,7 @@ class MonthlyActivitiesController extends Controller
             'status' => $data['status'],
             'plan_stage' => 1,
             'plan_version' => 1,
+            'previous_version_id' => null,
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
             'time_from' => $data['time_from'] ?? null,
@@ -838,6 +816,7 @@ class MonthlyActivitiesController extends Controller
             'status' => $newStatus,
             'plan_stage' => $nextStage,
             'plan_version' => $nextVersion,
+            'previous_version_id' => $startsNewVersion ? $monthlyActivity->id : $monthlyActivity->previous_version_id,
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
             'target_group' => $data['target_group'] ?? null,
@@ -881,7 +860,82 @@ class MonthlyActivitiesController extends Controller
             'executive_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->executive_approval_status,
         ];
 
-        $monthlyActivity->update([
+        $activityToSave = $monthlyActivity;
+
+        if ($startsNewVersion) {
+            $activityToSave = MonthlyActivity::create([
+                'month' => $newValues['month'],
+                'day' => $newValues['day'],
+                'title' => $newValues['title'],
+                'proposed_date' => $newValues['proposed_date'],
+                'is_in_agenda' => !empty($data['agenda_event_id']),
+                'agenda_event_id' => $newValues['agenda_event_id'],
+                'is_from_agenda' => $newValues['is_from_agenda'],
+                'participation_status' => $newValues['participation_status'],
+                'plan_type' => $newValues['plan_type'],
+                'branch_plan_file' => $newValues['branch_plan_file'],
+                'description' => $newValues['description'],
+                'location_type' => $newValues['location_type'],
+                'location_details' => $newValues['location_details'],
+                'internal_location' => $newValues['internal_location'],
+                'outside_place_name' => $newValues['outside_place_name'],
+                'outside_google_maps_url' => $newValues['outside_google_maps_url'],
+                'outside_address' => $newValues['outside_address'],
+                'status' => $newValues['status'],
+                'plan_stage' => $newValues['plan_stage'],
+                'plan_version' => $newValues['plan_version'],
+                'previous_version_id' => $newValues['previous_version_id'],
+                'responsible_party' => $newValues['responsible_party'],
+                'execution_time' => $newValues['execution_time'],
+                'target_group' => $newValues['target_group'],
+                'target_group_id' => $newValues['target_group_id'],
+                'target_group_other' => $newValues['target_group_other'],
+                'short_description' => $newValues['short_description'],
+                'work_teams_count' => $newValues['work_teams_count'],
+                'volunteer_need' => $newValues['volunteer_need'],
+                'needs_volunteers' => $newValues['needs_volunteers'],
+                'required_volunteers' => $newValues['required_volunteers'],
+                'expected_attendance' => $newValues['expected_attendance'],
+                'actual_attendance' => $newValues['actual_attendance'],
+                'attendance_notes' => $newValues['attendance_notes'],
+                'has_sponsor' => $newValues['has_sponsor'],
+                'sponsor_name_title' => $newValues['sponsor_name_title'],
+                'has_partners' => $newValues['has_partners'],
+                'needs_official_letters' => $newValues['needs_official_letters'],
+                'needs_official_correspondence' => $newValues['needs_official_correspondence'],
+                'official_correspondence_reason' => $newValues['official_correspondence_reason'],
+                'letter_purpose' => $newValues['letter_purpose'],
+                'rescheduled_date' => $newValues['rescheduled_date'],
+                'reschedule_reason' => $newValues['reschedule_reason'],
+                'relations_approval_on_reschedule' => $newValues['relations_approval_on_reschedule'],
+                'audience_satisfaction_percent' => $newValues['audience_satisfaction_percent'],
+                'evaluation_score' => $newValues['evaluation_score'],
+                'needs_media_coverage' => $newValues['needs_media_coverage'],
+                'media_coverage_notes' => $newValues['media_coverage_notes'],
+                'requires_programs' => $newValues['requires_programs'],
+                'is_program_related' => $newValues['is_program_related'],
+                'requires_workshops' => $newValues['requires_workshops'],
+                'requires_communications' => $newValues['requires_communications'],
+                'branch_id' => $newValues['branch_id'],
+                'center_id' => null,
+                'lifecycle_status' => $newValues['lifecycle_status'],
+                'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],
+                'relations_manager_approval_status' => $newValues['relations_manager_approval_status'],
+                'programs_officer_approval_status' => $newValues['programs_officer_approval_status'],
+                'programs_manager_approval_status' => $newValues['programs_manager_approval_status'],
+                'liaison_approval_status' => $newValues['liaison_approval_status'],
+                'hq_relations_manager_approval_status' => $newValues['hq_relations_manager_approval_status'],
+                'executive_approval_status' => $newValues['executive_approval_status'],
+                'lock_at' => $this->buildLockAt($data['proposed_date']),
+                'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
+                'created_by' => $request->user()->id,
+            ]);
+
+            $monthlyActivity->update([
+                'status' => 'cancelled',
+            ]);
+        } else {
+            $monthlyActivity->update([
             'month' => $newValues['month'],
             'day' => $newValues['day'],
             'title' => $newValues['title'],
@@ -902,6 +956,7 @@ class MonthlyActivitiesController extends Controller
             'status' => $newValues['status'],
             'plan_stage' => $newValues['plan_stage'],
             'plan_version' => $newValues['plan_version'],
+            'previous_version_id' => $newValues['previous_version_id'],
             'responsible_party' => $newValues['responsible_party'],
             'execution_time' => $newValues['execution_time'],
             'target_group' => $newValues['target_group'],
@@ -945,21 +1000,19 @@ class MonthlyActivitiesController extends Controller
             'executive_approval_status' => $newValues['executive_approval_status'],
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
-        ]);
-
-        if ($startsNewVersion) {
-            $this->resetWorkflowForNewVersion($monthlyActivity);
+            ]);
         }
 
-        $workflowService->initializeDynamicStatuses($monthlyActivity);
+        $workflowService->initializeDynamicStatuses($activityToSave);
 
-        $this->syncSponsorsAndPartners($monthlyActivity, $data);
-        if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($monthlyActivity)) {
-            $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
+        $this->syncSponsorsAndPartners($activityToSave, $data);
+        if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($activityToSave)) {
+            $this->syncEvaluationData($activityToSave, $data, $request->user()->id);
         }
-        $this->logChanges($monthlyActivity, $oldValues, $newValues, $request->user()->id);
-        $this->logWorkflowAction('updated', $monthlyActivity, $request, $monthlyActivity->status, [
+        $this->logChanges($activityToSave, $oldValues, $newValues, $request->user()->id);
+        $this->logWorkflowAction($startsNewVersion ? 'new_version_created' : 'updated', $activityToSave, $request, $activityToSave->status, [
             'changed_fields' => array_keys($newValues),
+            'source_activity_id' => $startsNewVersion ? $monthlyActivity->id : null,
         ]);
 
         return redirect()

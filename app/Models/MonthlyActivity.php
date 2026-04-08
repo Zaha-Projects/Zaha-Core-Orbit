@@ -85,6 +85,7 @@ class MonthlyActivity extends Model
         'status',
         'plan_stage',
         'plan_version',
+        'previous_version_id',
         'lifecycle_status',
         'participation_status',
         'plan_type',
