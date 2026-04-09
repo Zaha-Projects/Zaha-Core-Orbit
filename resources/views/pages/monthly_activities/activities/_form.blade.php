@@ -64,10 +64,18 @@
                     </select>
                 </div>
 
-                <div class="col-12 col-md-4 d-flex align-items-center mt-2">
-                    <div class="form-check mt-4">
+                <div class="col-12 mt-2">
+                    <div class="form-check form-switch mb-2">
                         <input class="form-check-input" type="checkbox" name="is_in_agenda" value="1" id="is_in_agenda" @checked(old('is_in_agenda'))>
                         <label class="form-check-label" for="is_in_agenda">النشاط الشهري ضمن الأجندة السنوية</label>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input js-has-sponsor" type="checkbox" name="has_sponsor" value="1" id="has_sponsor" @checked(old('has_sponsor'))>
+                        <label class="form-check-label" for="has_sponsor">يوجد راعي رسمي</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input js-has-partners" type="checkbox" name="has_partners" value="1" id="has_partners" @checked(old('has_partners'))>
+                        <label class="form-check-label" for="has_partners">يوجد شركاء</label>
                     </div>
                 </div>
 
@@ -177,13 +185,6 @@
                     <textarea class="form-control" name="description" rows="2" placeholder="تفاصيل النشاط (فقرات أو أجندة الفعالية)">{{ old('description') }}</textarea>
                 </div>
 
-                <div class="col-12 col-md-4 d-flex align-items-center mt-2">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input js-has-sponsor" type="checkbox" name="has_sponsor" value="1" id="has_sponsor" @checked(old('has_sponsor'))>
-                        <label class="form-check-label" for="has_sponsor">يوجد راعي رسمي</label>
-                    </div>
-                </div>
-
                 <div class="col-12 js-sponsor-wrapper">
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
@@ -192,13 +193,6 @@
                         <div class="col-12 col-md-6">
                             <input class="form-control" name="sponsors[0][title]" value="{{ old('sponsors.0.title') }}" placeholder="صفة الراعي">
                         </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-4 d-flex align-items-center mt-2">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input js-has-partners" type="checkbox" name="has_partners" value="1" id="has_partners" @checked(old('has_partners'))>
-                        <label class="form-check-label" for="has_partners">يوجد شركاء</label>
                     </div>
                 </div>
 

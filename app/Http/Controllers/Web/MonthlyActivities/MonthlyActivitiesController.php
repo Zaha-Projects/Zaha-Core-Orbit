@@ -291,7 +291,7 @@ class MonthlyActivitiesController extends Controller
         $outsideCenter = $monthlyActivity->location_type === 'outside_center';
         $needsSupplies = $monthlyActivity->supplies->isNotEmpty();
 
-        session()->flash('_old_input', [
+        $prefill = array_merge($monthlyActivity->getAttributes(), [
             'title' => $monthlyActivity->title,
             'activity_date' => optional($monthlyActivity->activity_date)->toDateString() ?: optional($monthlyActivity->proposed_date)->toDateString(),
             'proposed_date' => optional($monthlyActivity->proposed_date)->toDateString(),
@@ -336,6 +336,8 @@ class MonthlyActivitiesController extends Controller
             'target_group_other' => $monthlyActivity->target_group_other,
             'planning_attachment' => $monthlyActivity->planning_attachment,
         ]);
+
+        session()->flash('_old_input', $prefill);
     }
 
     public function syncFromAgenda(Request $request)
@@ -490,7 +492,7 @@ class MonthlyActivitiesController extends Controller
             'sponsors.*.is_official' => ['nullable', 'boolean'],
             'partners' => ['array'],
             'partners.*.name' => ['nullable', 'string', 'max:255'],
-            'partners.*.role' => ['required_with:partners.*.name', 'string', 'max:255'],
+            'partners.*.role' => ['nullable', 'required_with:partners.*.name', 'string', 'max:255'],
             'partners.*.contact_info' => ['nullable', 'string', 'max:255'],
             'team_members' => ['nullable', 'array'],
             'team_members.*.team_name' => ['nullable', 'string', 'max:255'],
@@ -513,7 +515,7 @@ class MonthlyActivitiesController extends Controller
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
             'evaluations.*.note' => ['nullable', 'string'],
             'followup_remarks' => ['nullable', 'string'],
-            'description' => ['required', 'string', 'min:20', 'max:2000'],
+            'description' => ['required', 'string', 'max:2000'],
         ]);
 
         if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
@@ -541,6 +543,14 @@ class MonthlyActivitiesController extends Controller
 
         if (! (bool) ($data['requires_supplies'] ?? false)) {
             $data['supplies'] = [];
+        }
+
+        if (! (bool) ($data['has_partners'] ?? false)) {
+            $data['partners'] = [];
+        }
+
+        if (! (bool) ($data['has_sponsor'] ?? false)) {
+            $data['sponsors'] = [];
         }
 
         $date = Carbon::parse($data['activity_date']);
@@ -833,14 +843,14 @@ class MonthlyActivitiesController extends Controller
             'sponsors.*.is_official' => ['nullable', 'boolean'],
             'partners' => ['array'],
             'partners.*.name' => ['nullable', 'string', 'max:255'],
-            'partners.*.role' => ['required_with:partners.*.name', 'string', 'max:255'],
+            'partners.*.role' => ['nullable', 'required_with:partners.*.name', 'string', 'max:255'],
             'partners.*.contact_info' => ['nullable', 'string', 'max:255'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
             'evaluations.*.note' => ['nullable', 'string'],
             'followup_remarks' => ['nullable', 'string'],
-            'description' => ['required', 'string', 'min:20', 'max:2000'],
+            'description' => ['required', 'string', 'max:2000'],
         ]);
 
         if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
@@ -864,6 +874,14 @@ class MonthlyActivitiesController extends Controller
         if (! (bool) ($data['needs_volunteers'] ?? false)) {
             $data['required_volunteers'] = null;
             $data['volunteer_need'] = null;
+        }
+
+        if (! (bool) ($data['has_partners'] ?? false)) {
+            $data['partners'] = [];
+        }
+
+        if (! (bool) ($data['has_sponsor'] ?? false)) {
+            $data['sponsors'] = [];
         }
 
         $date = Carbon::parse($data['activity_date']);
