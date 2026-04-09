@@ -103,6 +103,12 @@
                         <option value="closed" @selected($monthlyActivity->status === 'closed')>{{ __('app.roles.programs.monthly_activities.statuses.closed') }}</option>
                     </select>
                 </div>
+                <div class="col-12 col-md-4 d-flex align-items-center">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="is_in_agenda" value="1" id="is_in_agenda_edit" @checked(old('is_in_agenda', $monthlyActivity->is_in_agenda))>
+                        <label class="form-check-label" for="is_in_agenda_edit">النشاط الشهري ضمن الأجندة السنوية</label>
+                    </div>
+                </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">نوع المكان</label>
                     <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type" >
@@ -235,15 +241,15 @@
                 <div class="col-12"><h2 class="h6 mb-1">الحضور والمتطوعون</h2></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور المتوقع</label><input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance', $monthlyActivity->expected_attendance ) }}"></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور الفعلي</label><input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance ) }}"></div>
-                <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers', $monthlyActivity->needs_volunteers))><label class="form-check-label" for="needs_volunteers">نحتاج متطوعين</label></div></div>
-                <div class="col-12 col-md-3"><label class="form-label">عدد المتطوعين المطلوب</label><input class="form-control" type="number" min="0" name="required_volunteers" value="{{ old('required_volunteers', $monthlyActivity->required_volunteers ) }}"></div>
+                <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers', $monthlyActivity->needs_volunteers))><label class="form-check-label" for="needs_volunteers">نحتاج متطوعين</label></div></div>
+                <div class="col-12 col-md-3 js-volunteers-required-wrapper"><label class="form-label">عدد المتطوعين المطلوب</label><input class="form-control js-required-volunteers" type="number" min="1" name="required_volunteers" value="{{ old('required_volunteers', $monthlyActivity->required_volunteers ) }}"></div>
                 <div class="col-12"><label class="form-label">ملاحظات الحضور</label><textarea class="form-control" name="attendance_notes" rows="2">{{ old('attendance_notes', $monthlyActivity->attendance_notes ) }}</textarea></div>
 
                 <hr class="my-2">
                 <div class="col-12"><h2 class="h6 mb-1">المخاطبات والتغطية الإعلامية</h2></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence', $monthlyActivity->needs_official_correspondence))><label class="form-check-label" for="needs_official_correspondence">بحاجة إلى مخاطبات رسمية</label></div></div>
-                <div class="col-12 col-md-4"><label class="form-label">سبب المخاطبة</label><input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason', $monthlyActivity->official_correspondence_reason ) }}"></div>
-                <div class="col-12 col-md-4"><label class="form-label">الجهة المطلوب مخاطبتها</label><input class="form-control" name="official_correspondence_target" value="{{ old('official_correspondence_target', $monthlyActivity->official_correspondence_target ) }}"></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence', $monthlyActivity->needs_official_correspondence))><label class="form-check-label" for="needs_official_correspondence">بحاجة إلى مخاطبات رسمية</label></div></div>
+                <div class="col-12 col-md-4 js-letters-reason"><label class="form-label">سبب المخاطبة</label><input class="form-control js-official-correspondence-reason" name="official_correspondence_reason" value="{{ old('official_correspondence_reason', $monthlyActivity->official_correspondence_reason ) }}"></div>
+                <div class="col-12 col-md-4 js-letters-reason"><label class="form-label">الجهة المطلوب مخاطبتها</label><input class="form-control js-official-correspondence-target" name="official_correspondence_target" value="{{ old('official_correspondence_target', $monthlyActivity->official_correspondence_target ) }}"></div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_media_coverage" value="1" id="needs_media_coverage" @checked(old('needs_media_coverage', $monthlyActivity->needs_media_coverage))><label class="form-check-label" for="needs_media_coverage">بحاجة إلى تغطية إعلامية</label></div></div>
                 <div class="col-12 col-md-8"><label class="form-label">ملاحظات التغطية الإعلامية</label><input class="form-control" name="media_coverage_notes" value="{{ old('media_coverage_notes', $monthlyActivity->media_coverage_notes ) }}"></div>
 
@@ -580,6 +586,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const outside = document.querySelectorAll('.js-outside-location');
   const tg = document.querySelector('.js-target-group');
   const tgOther = document.querySelectorAll('.js-target-group-other');
+  const needsLetters = document.querySelector('.js-needs-letters');
+  const lettersReason = document.querySelectorAll('.js-letters-reason');
+  const lettersReasonInput = document.querySelector('.js-official-correspondence-reason');
+  const lettersTargetInput = document.querySelector('.js-official-correspondence-target');
+  const needsVolunteers = document.querySelector('.js-needs-volunteers');
+  const volunteersRequiredWrap = document.querySelectorAll('.js-volunteers-required-wrapper');
+  const requiredVolunteersInput = document.querySelector('.js-required-volunteers');
   const toggle = () => {
     const outsideSelected = locType && locType.value === 'outside_center';
     inside.forEach(el => el.style.display = outsideSelected ? 'none' : 'block');
@@ -587,9 +600,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const selected = tg?.selectedOptions?.[0];
     const isOther = selected && selected.dataset.isOther === '1';
     tgOther.forEach(el => el.style.display = isOther ? 'block' : 'none');
+    lettersReason.forEach(el => el.style.display = needsLetters?.checked ? 'block' : 'none');
+    if (lettersReasonInput) lettersReasonInput.required = !!needsLetters?.checked;
+    if (lettersTargetInput) lettersTargetInput.required = !!needsLetters?.checked;
+    volunteersRequiredWrap.forEach(el => el.style.display = needsVolunteers?.checked ? 'block' : 'none');
+    if (requiredVolunteersInput) requiredVolunteersInput.required = !!needsVolunteers?.checked;
   };
   locType?.addEventListener('change', toggle);
   tg?.addEventListener('change', toggle);
+  needsLetters?.addEventListener('change', toggle);
+  needsVolunteers?.addEventListener('change', toggle);
   toggle();
 
   const params = new URLSearchParams(window.location.search);

@@ -67,6 +67,13 @@
                     </select>
                 </div>
 
+                <div class="col-12 col-md-4 d-flex align-items-center mt-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="is_in_agenda" value="1" id="is_in_agenda" @checked(old('is_in_agenda'))>
+                        <label class="form-check-label" for="is_in_agenda">النشاط الشهري ضمن الأجندة السنوية</label>
+                    </div>
+                </div>
+
                 <div class="col-12 col-md-4">
                     <label class="form-label">المركز</label>
 </div>
@@ -156,6 +163,17 @@
                     <input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance') }}">
                 </div>
 
+                <div class="col-12 col-md-4 d-flex align-items-center">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers'))>
+                        <label class="form-check-label" for="needs_volunteers">هل النشاط بحاجة لمتطوعين؟</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 js-volunteers-required-wrapper">
+                    <label class="form-label">عدد المتطوعين المطلوب</label>
+                    <input class="form-control js-required-volunteers" type="number" min="1" name="required_volunteers" value="{{ old('required_volunteers') }}">
+                </div>
+
                 <div class="col-12 col-md-6">
                     <label class="form-label">الوصف التفصيلي</label>
                     <textarea class="form-control" name="description" rows="2" placeholder="تفاصيل النشاط (فقرات أو أجندة الفعالية)">{{ old('description') }}</textarea>
@@ -204,11 +222,11 @@
 
                 <div class="col-12 col-md-8 js-letters-reason">
                     <label class="form-label">سبب المخاطبة</label>
-                    <input class="form-control" name="official_correspondence_reason" value="{{ old('official_correspondence_reason') }}">
+                    <input class="form-control js-official-correspondence-reason" name="official_correspondence_reason" value="{{ old('official_correspondence_reason') }}">
                 </div>
                 <div class="col-12 col-md-6 js-letters-reason">
                     <label class="form-label">الجهة المطلوب مخاطبتها</label>
-                    <input class="form-control" name="official_correspondence_target" value="{{ old('official_correspondence_target') }}">
+                    <input class="form-control js-official-correspondence-target" name="official_correspondence_target" value="{{ old('official_correspondence_target') }}">
                 </div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center">
@@ -266,6 +284,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const needsLetters = document.querySelector('.js-needs-letters');
   const lettersReason = document.querySelectorAll('.js-letters-reason');
   const needsSupplies = document.querySelector('.js-needs-supplies');
+  const needsVolunteers = document.querySelector('.js-needs-volunteers');
+  const volunteersRequiredWrap = document.querySelectorAll('.js-volunteers-required-wrapper');
+  const requiredVolunteersInput = document.querySelector('.js-required-volunteers');
+  const lettersReasonInput = document.querySelector('.js-official-correspondence-reason');
+  const lettersTargetInput = document.querySelector('.js-official-correspondence-target');
   const suppliesWrap = document.querySelectorAll('.js-supplies-wrapper');
   const suppliesCount = document.querySelector('.js-supplies-count');
   const suppliesContainer = document.querySelector('.js-supplies-container');
@@ -388,7 +411,13 @@ document.addEventListener('DOMContentLoaded', function () {
     sponsorWrap.forEach(el => el.style.display = hasSponsor?.checked ? 'block' : 'none');
     partnersWrap.forEach(el => el.style.display = hasPartners?.checked ? 'block' : 'none');
     lettersReason.forEach(el => el.style.display = needsLetters?.checked ? 'block' : 'none');
+    if (lettersReasonInput) lettersReasonInput.required = !!needsLetters?.checked;
+    if (lettersTargetInput) lettersTargetInput.required = !!needsLetters?.checked;
     suppliesWrap.forEach(el => el.style.display = needsSupplies?.checked ? 'block' : 'none');
+    volunteersRequiredWrap.forEach(el => el.style.display = needsVolunteers?.checked ? 'block' : 'none');
+    if (requiredVolunteersInput) {
+      requiredVolunteersInput.required = !!needsVolunteers?.checked;
+    }
   };
 
   locType?.addEventListener('change', toggle);
@@ -397,6 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
   hasPartners?.addEventListener('change', toggle);
   needsLetters?.addEventListener('change', toggle);
   needsSupplies?.addEventListener('change', toggle);
+  needsVolunteers?.addEventListener('change', toggle);
   partnersCount?.addEventListener('input', renderPartners);
   teamGroupsCount?.addEventListener('input', renderTeamGroups);
   suppliesCount?.addEventListener('input', renderSupplies);

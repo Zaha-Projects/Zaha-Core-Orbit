@@ -330,6 +330,7 @@ class MonthlyActivitiesController extends Controller
             'branch_id' => ['required', 'exists:branches,id'],
             'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
+            'is_in_agenda' => ['nullable', 'boolean'],
             'status' => ['required', 'string', 'max:50'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
 
@@ -351,7 +352,7 @@ class MonthlyActivitiesController extends Controller
             'short_description' => ['nullable', 'string'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
-            'required_volunteers' => ['nullable', 'integer', 'min:0'],
+            'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'attendance_notes' => ['nullable', 'string'],
@@ -367,8 +368,8 @@ class MonthlyActivitiesController extends Controller
             'participation_status' => ['nullable', 'in:participant,not_participant,unspecified'],
             'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
-            'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
-            'official_correspondence_target' => ['nullable', 'string', 'max:255'],
+            'official_correspondence_reason' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
+            'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'has_sponsor' => ['nullable', 'boolean'],
             'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
@@ -440,7 +441,7 @@ class MonthlyActivitiesController extends Controller
             'day' => (int) $date->format('d'),
             'title' => $data['title'],
             'proposed_date' => $data['proposed_date'],
-            'is_in_agenda' => !empty($data['agenda_event_id']),
+            'is_in_agenda' => (bool) ($data['is_in_agenda'] ?? !empty($data['agenda_event_id'])),
             'is_from_agenda' => $isFromAgenda,
             'agenda_event_id' => $data['agenda_event_id'] ?? null,
             'participation_status' => $data['participation_status'] ?? 'unspecified',
@@ -587,6 +588,15 @@ class MonthlyActivitiesController extends Controller
         return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
     }
 
+    public function show(MonthlyActivity $monthlyActivity)
+    {
+        $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
+
+        $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups']);
+
+        return view('pages.monthly_activities.activities.show', compact('monthlyActivity'));
+    }
+
     public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
@@ -610,11 +620,13 @@ class MonthlyActivitiesController extends Controller
                 ->with('status', 'تم حفظ متابعة وتقييم الفعالية بنجاح.');
         }
 
-        if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin')) {
+        $isCreator = (int) $monthlyActivity->created_by === (int) $request->user()->id;
+
+        if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin') && ! $isCreator) {
             return back()->withErrors(['status' => __('app.roles.programs.monthly_activities.errors.locked')]);
         }
 
-        if ($request->user()->hasRole('programs_officer') && $monthlyActivity->executive_approval_status === 'approved') {
+        if ($request->user()->hasRole('programs_officer') && $monthlyActivity->executive_approval_status === 'approved' && ! $isCreator) {
             return back()->withErrors(['status' => 'لا يمكن تعديل الفعالية بعد الاعتماد التنفيذي النهائي.']);
         }
 
@@ -625,6 +637,7 @@ class MonthlyActivitiesController extends Controller
             'branch_id' => ['required', 'exists:branches,id'],
             'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
+            'is_in_agenda' => ['nullable', 'boolean'],
             'status' => ['required', 'string', 'max:50'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
 
@@ -641,7 +654,7 @@ class MonthlyActivitiesController extends Controller
             'short_description' => ['nullable', 'string'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
-            'required_volunteers' => ['nullable', 'integer', 'min:0'],
+            'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'attendance_notes' => ['nullable', 'string'],
@@ -655,7 +668,8 @@ class MonthlyActivitiesController extends Controller
             'participation_status' => ['nullable', 'in:participant,not_participant,unspecified'],
             'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
-            'official_correspondence_reason' => ['nullable', 'string', 'max:255'],
+            'official_correspondence_reason' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
+            'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'has_sponsor' => ['nullable', 'boolean'],
             'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
@@ -717,6 +731,7 @@ class MonthlyActivitiesController extends Controller
             'title',
             'proposed_date',
             'agenda_event_id',
+            'is_in_agenda',
             'description',
             'location_type',
             'location_details',
@@ -752,6 +767,7 @@ class MonthlyActivitiesController extends Controller
             'needs_official_letters',
             'needs_official_correspondence',
             'official_correspondence_reason',
+            'official_correspondence_target',
             'letter_purpose',
             'rescheduled_date',
             'reschedule_reason',
@@ -802,6 +818,7 @@ class MonthlyActivitiesController extends Controller
             'title' => $data['title'],
             'proposed_date' => $data['proposed_date'],
             'agenda_event_id' => $data['agenda_event_id'] ?? null,
+            'is_in_agenda' => (bool) ($data['is_in_agenda'] ?? $isFromAgenda),
             'is_from_agenda' => $isFromAgenda,
             'participation_status' => $data['participation_status'] ?? 'unspecified',
             'plan_type' => $planType ?? 'non_unified',
@@ -836,6 +853,7 @@ class MonthlyActivitiesController extends Controller
             'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
+            'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
             'letter_purpose' => $data['letter_purpose'] ?? null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
@@ -868,7 +886,7 @@ class MonthlyActivitiesController extends Controller
                 'day' => $newValues['day'],
                 'title' => $newValues['title'],
                 'proposed_date' => $newValues['proposed_date'],
-                'is_in_agenda' => !empty($data['agenda_event_id']),
+                'is_in_agenda' => $newValues['is_in_agenda'],
                 'agenda_event_id' => $newValues['agenda_event_id'],
                 'is_from_agenda' => $newValues['is_from_agenda'],
                 'participation_status' => $newValues['participation_status'],
@@ -904,6 +922,7 @@ class MonthlyActivitiesController extends Controller
                 'needs_official_letters' => $newValues['needs_official_letters'],
                 'needs_official_correspondence' => $newValues['needs_official_correspondence'],
                 'official_correspondence_reason' => $newValues['official_correspondence_reason'],
+                'official_correspondence_target' => $newValues['official_correspondence_target'],
                 'letter_purpose' => $newValues['letter_purpose'],
                 'rescheduled_date' => $newValues['rescheduled_date'],
                 'reschedule_reason' => $newValues['reschedule_reason'],
@@ -940,7 +959,7 @@ class MonthlyActivitiesController extends Controller
             'day' => $newValues['day'],
             'title' => $newValues['title'],
             'proposed_date' => $newValues['proposed_date'],
-            'is_in_agenda' => !empty($data['agenda_event_id']),
+            'is_in_agenda' => $newValues['is_in_agenda'],
             'agenda_event_id' => $newValues['agenda_event_id'],
             'is_from_agenda' => $newValues['is_from_agenda'],
             'participation_status' => $newValues['participation_status'],
@@ -976,6 +995,7 @@ class MonthlyActivitiesController extends Controller
             'needs_official_letters' => $newValues['needs_official_letters'],
             'needs_official_correspondence' => $newValues['needs_official_correspondence'],
             'official_correspondence_reason' => $newValues['official_correspondence_reason'],
+            'official_correspondence_target' => $newValues['official_correspondence_target'],
             'letter_purpose' => $newValues['letter_purpose'],
             'rescheduled_date' => $newValues['rescheduled_date'],
             'reschedule_reason' => $newValues['reschedule_reason'],
