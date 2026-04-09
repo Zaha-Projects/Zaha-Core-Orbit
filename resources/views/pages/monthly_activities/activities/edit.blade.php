@@ -86,7 +86,7 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.activity_date') }}</label>
-                    <input class="form-control" type="date" name="activity_date" value="{{ sprintf('%04d-%02d-%02d', now()->year, $monthlyActivity->month, $monthlyActivity->day) }}" >
+                    <input class="form-control" type="date" name="activity_date" value="{{ old('activity_date', optional($monthlyActivity->activity_date)->format('Y-m-d') ?: sprintf('%04d-%02d-%02d', now()->year, $monthlyActivity->month, $monthlyActivity->day)) }}" >
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.proposed_date') }}</label>
@@ -303,7 +303,7 @@
                 <div class="col-12"><h2 class="h6 mb-1">خطة الفرع ومسارات التحويل</h2></div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="is_program_related" value="1" id="is_program_related" @checked(old('is_program_related', $monthlyActivity->is_program_related))><label class="form-check-label" for="is_program_related">نشاط مرتبط بالبرامج</label></div></div>
                 <div class="col-12 col-md-4"><label class="form-label">حالة المشاركة</label><select class="form-select" name="participation_status"><option value="unspecified" @selected(old('participation_status',$monthlyActivity->participation_status ?? 'unspecified')==='unspecified')>غير محدد</option><option value="participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='participant')>مشارك</option><option value="not_participant" @selected(old('participation_status',$monthlyActivity->participation_status)==='not_participant')>غير مشارك</option></select></div>
-                <div class="col-12 col-md-4"><label class="form-label">مرفق خطة الفرع (اختياري)</label><input class="form-control" type="file" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">@if($monthlyActivity->branch_plan_file)<a class="small d-block mt-1" href="{{ asset('storage/'.$monthlyActivity->branch_plan_file) }}" target="_blank">عرض الملف الحالي</a>@endif</div>
+                <div class="col-12 col-md-4"><label class="form-label">مرفق التخطيط (اختياري)</label><input class="form-control" type="file" name="planning_attachment" accept=".pdf,.doc,.docx,.xls,.xlsx">@if($monthlyActivity->planning_attachment)<a class="small d-block mt-1" href="{{ asset('storage/'.$monthlyActivity->planning_attachment) }}" target="_blank">عرض الملف الحالي</a>@endif</div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_programs" value="1" id="requires_programs" @checked(old('requires_programs', $monthlyActivity->requires_programs))><label class="form-check-label" for="requires_programs">تحويل للبرامج</label></div></div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_workshops" value="1" id="requires_workshops" @checked(old('requires_workshops', $monthlyActivity->requires_workshops))><label class="form-check-label" for="requires_workshops">تحويل للمشاغل</label></div></div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="requires_communications" value="1" id="requires_communications" @checked(old('requires_communications', $monthlyActivity->requires_communications))><label class="form-check-label" for="requires_communications">تحويل للعلاقات</label></div></div>
@@ -762,7 +762,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (lettersTargetInput) lettersTargetInput.required = !!needsLetters?.checked;
     suppliesWrap.forEach(el => el.style.display = needsSupplies?.checked ? 'block' : 'none');
     volunteersRequiredWrap.forEach(el => el.style.display = needsVolunteers?.checked ? 'block' : 'none');
-    if (requiredVolunteersInput) requiredVolunteersInput.required = !!needsVolunteers?.checked;
+    if (requiredVolunteersInput) {
+      requiredVolunteersInput.required = !!needsVolunteers?.checked;
+      requiredVolunteersInput.disabled = !needsVolunteers?.checked;
+      if (!needsVolunteers?.checked) requiredVolunteersInput.value = '';
+    }
   };
   locType?.addEventListener('change', toggle);
   tg?.addEventListener('change', toggle);

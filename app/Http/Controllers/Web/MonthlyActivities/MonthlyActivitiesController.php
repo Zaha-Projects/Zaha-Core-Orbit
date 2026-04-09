@@ -26,7 +26,10 @@ use App\Services\NotificationService;
 use App\Services\MonthlyActivityWorkflowService;
 use App\Services\MonthlyActivityLifecycleService;
 use App\Services\DynamicWorkflowService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MonthlyActivitiesController extends Controller
 {
@@ -93,6 +96,36 @@ class MonthlyActivitiesController extends Controller
     protected function isLocked(MonthlyActivity $monthlyActivity): bool
     {
         return $monthlyActivity->lock_at !== null && now()->greaterThanOrEqualTo($monthlyActivity->lock_at);
+    }
+
+    protected function safeExternalUrlRules(): array
+    {
+        return [
+            'nullable',
+            'url',
+            'max:500',
+            function (string $attribute, mixed $value, \Closure $fail) {
+                if (! filled($value)) {
+                    return;
+                }
+
+                $url = trim((string) $value);
+                $parts = parse_url($url);
+                $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+                $host = strtolower((string) ($parts['host'] ?? ''));
+
+                if (! in_array($scheme, ['http', 'https'], true)) {
+                    $fail('صيغة الرابط غير آمنة.');
+                    return;
+                }
+
+                $allowedHosts = ['google.com', 'drive.google.com'];
+                $isAllowed = collect($allowedHosts)->contains(fn (string $allowed) => $host === $allowed || Str::endsWith($host, '.'.$allowed));
+                if (! $isAllowed) {
+                    $fail('الرابط يجب أن يكون ضمن النطاقات الموثوقة.');
+                }
+            },
+        ];
     }
 
     protected function logChanges(MonthlyActivity $monthlyActivity, array $oldValues, array $newValues, int $userId): void
@@ -323,6 +356,10 @@ class MonthlyActivitiesController extends Controller
 
     public function store(Request $request, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
     {
+        if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
+            $request->files->set('branch_plan_file', $request->file('planning_attachment'));
+        }
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'activity_date' => ['required', 'date'],
@@ -338,8 +375,8 @@ class MonthlyActivitiesController extends Controller
             'location_details' => ['nullable', 'string', 'max:255'],
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
-            'outside_google_maps_url' => ['nullable', 'url', 'max:500', 'required_if:location_type,outside_center'],
-            'outside_contact_number' => ['nullable', 'string', 'max:50'],
+            'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
+            'outside_contact_number' => ['nullable', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
@@ -349,7 +386,7 @@ class MonthlyActivitiesController extends Controller
             'target_group_ids' => ['nullable', 'array'],
             'target_group_ids.*' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
-            'short_description' => ['nullable', 'string'],
+            'short_description' => ['required', 'string', 'max:255'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
@@ -367,6 +404,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => ['nullable', 'boolean'],
             'participation_status' => ['nullable', 'in:participant,not_participant,unspecified'],
             'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
+            'planning_attachment' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
@@ -409,13 +447,13 @@ class MonthlyActivitiesController extends Controller
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.available' => ['nullable', 'boolean'],
             'supplies.*.provider_type' => ['nullable', 'string', 'max:255'],
-            'supplies.*.provider_name' => ['nullable', 'string', 'max:255'],
+            'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
             'evaluations.*.note' => ['nullable', 'string'],
             'followup_remarks' => ['nullable', 'string'],
-            'description' => ['nullable', 'string'],
+            'description' => ['required', 'string', 'min:20', 'max:2000'],
         ]);
 
         if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
@@ -446,7 +484,8 @@ class MonthlyActivitiesController extends Controller
             'agenda_event_id' => $data['agenda_event_id'] ?? null,
             'participation_status' => $data['participation_status'] ?? 'unspecified',
             'plan_type' => $planType ?? 'non_unified',
-            'branch_plan_file' => $request->file('branch_plan_file')?->store('monthly/plans', 'public'),
+            'activity_date' => $date->toDateString(),
+            'branch_plan_file' => $request->file('branch_plan_file')?->store('monthly/plans/v1', 'public'),
             'description' => $data['description'] ?? null,
             'location_type' => $data['location_type'],
             'location_details' => $data['location_details'] ?? null,
@@ -518,6 +557,11 @@ class MonthlyActivitiesController extends Controller
 
         $workflowService->initializeDynamicStatuses($monthlyActivity);
         $this->syncTargetGroups($monthlyActivity, $data);
+        Log::info('monthly_activity.created', [
+            'monthly_activity_id' => $monthlyActivity->id,
+            'created_by' => $request->user()->id,
+            'plan_version' => $monthlyActivity->plan_version,
+        ]);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
         foreach (($data['team_groups'] ?? []) as $groupIndex => $group) {
@@ -608,6 +652,10 @@ class MonthlyActivitiesController extends Controller
 
     public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
     {
+        if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
+            $request->files->set('branch_plan_file', $request->file('planning_attachment'));
+        }
+
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
 
         if ($request->user()->hasRole('followup_officer') && ! $request->user()->hasRole('super_admin')) {
@@ -654,13 +702,14 @@ class MonthlyActivitiesController extends Controller
             'location_details' => ['nullable', 'string', 'max:255'],
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
-            'outside_google_maps_url' => ['nullable', 'url', 'max:500', 'required_if:location_type,outside_center'],
+            'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
+            'outside_contact_number' => ['nullable', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
-            'short_description' => ['nullable', 'string'],
+            'short_description' => ['required', 'string', 'max:255'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
@@ -676,6 +725,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => ['nullable', 'boolean'],
             'participation_status' => ['nullable', 'in:participant,not_participant,unspecified'],
             'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
+            'planning_attachment' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
@@ -708,7 +758,7 @@ class MonthlyActivitiesController extends Controller
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
             'evaluations.*.note' => ['nullable', 'string'],
             'followup_remarks' => ['nullable', 'string'],
-            'description' => ['nullable', 'string'],
+            'description' => ['required', 'string', 'min:20', 'max:2000'],
         ]);
 
         if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
@@ -733,11 +783,13 @@ class MonthlyActivitiesController extends Controller
             if ($branchPlanFile) {
                 Storage::disk('public')->delete($branchPlanFile);
             }
-            $branchPlanFile = $request->file('branch_plan_file')->store('monthly/plans', 'public');
+            $nextVersionPath = 'monthly/plans/v'.((int) ($monthlyActivity->plan_version ?: 1));
+            $branchPlanFile = $request->file('branch_plan_file')->store($nextVersionPath, 'public');
         }
 
         $oldValues = $monthlyActivity->only([
             'title',
+            'activity_date',
             'proposed_date',
             'agenda_event_id',
             'is_in_agenda',
@@ -825,6 +877,7 @@ class MonthlyActivitiesController extends Controller
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
             'title' => $data['title'],
+            'activity_date' => $date->toDateString(),
             'proposed_date' => $data['proposed_date'],
             'agenda_event_id' => $data['agenda_event_id'] ?? null,
             'is_in_agenda' => (bool) ($data['is_in_agenda'] ?? $isFromAgenda),
@@ -838,6 +891,7 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => $data['internal_location'] ?? null,
             'outside_place_name' => $data['outside_place_name'] ?? null,
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
+            'outside_contact_number' => $data['outside_contact_number'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
             'status' => $newStatus,
             'plan_stage' => $nextStage,
@@ -889,10 +943,15 @@ class MonthlyActivitiesController extends Controller
 
         $activityToSave = $monthlyActivity;
 
-        if ($startsNewVersion) {
-            $activityToSave = MonthlyActivity::create([
+        DB::transaction(function () use ($startsNewVersion, $newValues, $data, $request, $monthlyActivity, &$activityToSave) {
+            $lockedCurrent = MonthlyActivity::query()->whereKey($monthlyActivity->id)->lockForUpdate()->firstOrFail();
+            $activityToSave = $lockedCurrent;
+
+            if ($startsNewVersion) {
+                $activityToSave = MonthlyActivity::create([
                 'month' => $newValues['month'],
                 'day' => $newValues['day'],
+                'activity_date' => $newValues['activity_date'],
                 'title' => $newValues['title'],
                 'proposed_date' => $newValues['proposed_date'],
                 'is_in_agenda' => $newValues['is_in_agenda'],
@@ -907,6 +966,7 @@ class MonthlyActivitiesController extends Controller
                 'internal_location' => $newValues['internal_location'],
                 'outside_place_name' => $newValues['outside_place_name'],
                 'outside_google_maps_url' => $newValues['outside_google_maps_url'],
+                'outside_contact_number' => $newValues['outside_contact_number'],
                 'outside_address' => $newValues['outside_address'],
                 'status' => $newValues['status'],
                 'plan_stage' => $newValues['plan_stage'],
@@ -959,13 +1019,14 @@ class MonthlyActivitiesController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
-            $monthlyActivity->update([
+                $lockedCurrent->update([
                 'status' => 'cancelled',
             ]);
-        } else {
-            $monthlyActivity->update([
+            } else {
+                $lockedCurrent->update([
             'month' => $newValues['month'],
             'day' => $newValues['day'],
+            'activity_date' => $newValues['activity_date'],
             'title' => $newValues['title'],
             'proposed_date' => $newValues['proposed_date'],
             'is_in_agenda' => $newValues['is_in_agenda'],
@@ -980,6 +1041,7 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => $newValues['internal_location'],
             'outside_place_name' => $newValues['outside_place_name'],
             'outside_google_maps_url' => $newValues['outside_google_maps_url'],
+            'outside_contact_number' => $newValues['outside_contact_number'],
             'outside_address' => $newValues['outside_address'],
             'status' => $newValues['status'],
             'plan_stage' => $newValues['plan_stage'],
@@ -1030,9 +1092,17 @@ class MonthlyActivitiesController extends Controller
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
             ]);
-        }
+                $activityToSave = $lockedCurrent;
+            }
+        });
 
         $workflowService->initializeDynamicStatuses($activityToSave);
+        Log::info('monthly_activity.updated', [
+            'monthly_activity_id' => $activityToSave->id,
+            'updated_by' => $request->user()->id,
+            'plan_version' => $activityToSave->plan_version,
+            'new_version_created' => $startsNewVersion,
+        ]);
 
         $this->syncSponsorsAndPartners($activityToSave, $data);
         if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($activityToSave)) {

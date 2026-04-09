@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\WorkflowInstance;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class MonthlyActivity extends Model
 {
@@ -13,6 +14,7 @@ class MonthlyActivity extends Model
     protected $fillable = [
         'month',
         'day',
+        'activity_date',
         'title',
         'proposed_date',
         'modified_proposed_date',
@@ -90,6 +92,7 @@ class MonthlyActivity extends Model
         'participation_status',
         'plan_type',
         'branch_plan_file',
+        'planning_attachment',
         'is_archived',
         'archived_year',
         'relations_officer_approval_status',
@@ -122,6 +125,7 @@ class MonthlyActivity extends Model
         'requires_workshops' => 'boolean',
         'requires_communications' => 'boolean',
         'proposed_date' => 'date',
+        'activity_date' => 'date',
         'modified_proposed_date' => 'date',
         'rescheduled_date' => 'date',
         'actual_date' => 'date',
@@ -133,6 +137,14 @@ class MonthlyActivity extends Model
         'plan_stage' => 'integer',
         'plan_version' => 'integer',
     ];
+
+    protected function planningAttachment(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->branch_plan_file,
+            set: fn ($value) => ['branch_plan_file' => $value],
+        );
+    }
 
 
     protected static function booted(): void

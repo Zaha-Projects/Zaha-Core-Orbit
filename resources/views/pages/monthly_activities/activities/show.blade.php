@@ -62,17 +62,17 @@
                     <div class="col-12 col-md-4"><strong>عدد الحضور المتوقع:</strong> {{ $monthlyActivity->expected_attendance ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>عدد الحضور الفعلي:</strong> {{ $monthlyActivity->actual_attendance ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>ملاحظات الحضور:</strong> {{ $monthlyActivity->attendance_notes ?? '-' }}</div>
-                    <div class="col-12 col-md-4"><strong>بحاجة لمتطوعين:</strong> {{ $monthlyActivity->needs_volunteers ? 'نعم' : 'لا' }}</div>
+                    <div class="col-12 col-md-4"><strong>بحاجة لمتطوعين:</strong> <span class="badge {{ $monthlyActivity->needs_volunteers ? 'bg-success' : 'bg-secondary' }}">{{ $monthlyActivity->needs_volunteers ? '✅ نعم' : '❌ لا' }}</span></div>
                     <div class="col-12 col-md-4"><strong>عدد المتطوعين المطلوب:</strong> {{ $monthlyActivity->required_volunteers ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>احتياج المتطوعين (نصي):</strong> {{ $monthlyActivity->volunteer_need ?? '-' }}</div>
 
                     <div class="col-12"><hr></div>
-                    <div class="col-12 col-md-4"><strong>بحاجة مخاطبات رسمية:</strong> {{ $monthlyActivity->needs_official_correspondence ? 'نعم' : 'لا' }}</div>
+                    <div class="col-12 col-md-4"><strong>بحاجة مخاطبات رسمية:</strong> <span class="badge {{ $monthlyActivity->needs_official_correspondence ? 'bg-success' : 'bg-secondary' }}">{{ $monthlyActivity->needs_official_correspondence ? '✅ نعم' : '❌ لا' }}</span></div>
                     <div class="col-12 col-md-4"><strong>سبب المخاطبة:</strong> {{ $monthlyActivity->official_correspondence_reason ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>الجهة المطلوب مخاطبتها:</strong> {{ $monthlyActivity->official_correspondence_target ?? '-' }}</div>
-                    <div class="col-12 col-md-4"><strong>بحاجة خطابات:</strong> {{ $monthlyActivity->needs_official_letters ? 'نعم' : 'لا' }}</div>
+                    <div class="col-12 col-md-4"><strong>بحاجة خطابات:</strong> <span class="badge {{ $monthlyActivity->needs_official_letters ? 'bg-success' : 'bg-secondary' }}">{{ $monthlyActivity->needs_official_letters ? '✅ نعم' : '❌ لا' }}</span></div>
                     <div class="col-12 col-md-4"><strong>سبب الخطابات:</strong> {{ $monthlyActivity->letter_purpose ?? '-' }}</div>
-                    <div class="col-12 col-md-4"><strong>تغطية إعلامية:</strong> {{ $monthlyActivity->needs_media_coverage ? 'نعم' : 'لا' }}</div>
+                    <div class="col-12 col-md-4"><strong>تغطية إعلامية:</strong> <span class="badge {{ $monthlyActivity->needs_media_coverage ? 'bg-success' : 'bg-secondary' }}">{{ $monthlyActivity->needs_media_coverage ? '✅ نعم' : '❌ لا' }}</span></div>
                     <div class="col-12 col-md-8"><strong>ملاحظات التغطية الإعلامية:</strong> {{ $monthlyActivity->media_coverage_notes ?? '-' }}</div>
 
                     <div class="col-12"><hr></div>
@@ -131,8 +131,8 @@
                     <div class="col-12 col-md-4"><strong>تحويل للعلاقات:</strong> {{ $monthlyActivity->requires_communications ? 'نعم' : 'لا' }}</div>
                     <div class="col-12 col-md-4"><strong>نشاط مرتبط بالبرامج:</strong> {{ $monthlyActivity->is_program_related ? 'نعم' : 'لا' }}</div>
                     <div class="col-12 col-md-4"><strong>ملف الخطة:</strong>
-                        @if($monthlyActivity->branch_plan_file)
-                            <a href="{{ asset('storage/' . $monthlyActivity->branch_plan_file) }}" target="_blank">عرض الملف</a>
+                        @if($monthlyActivity->planning_attachment)
+                            <a href="{{ asset('storage/' . $monthlyActivity->planning_attachment) }}" target="_blank">عرض الملف</a>
                         @else
                             -
                         @endif

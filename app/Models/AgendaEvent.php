@@ -16,6 +16,7 @@ class AgendaEvent extends Model
         'day',
         'event_name',
         'department_id',
+        'owner_department_id',
         'event_category_id',
         'event_category',
         'plan_type',
@@ -76,6 +77,11 @@ class AgendaEvent extends Model
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function ownerDepartment()
+    {
+        return $this->belongsTo(Department::class, 'owner_department_id');
     }
 
 

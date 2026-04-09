@@ -36,6 +36,15 @@
                     <input class="form-control" type="date" name="event_date" value="{{ old('event_date', optional($agendaEvent->event_date)->format('Y-m-d')) }}" required>
                 </div>
                 <div class="col-12 col-md-4">
+                    <label class="form-label">القسم المالك (Owner)</label>
+                    <select class="form-select js-owner-department" name="owner_department_id" required>
+                        <option value="">--</option>
+                        @foreach ($departments as $department)
+                            <option value="{{ $department->id }}" {{ (string) old('owner_department_id', $agendaEvent->owner_department_id) === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</label>
                     @php
                         $selectedPartnerDepartmentIds = array_map('strval', old('partner_department_ids', $agendaEvent->partnerDepartments->pluck('id')->all()));
@@ -159,14 +168,18 @@
             const categoryEl = document.getElementById('event_category_id');
             const planTypeEl = document.querySelector('.js-plan-type');
             const planFileRows = document.querySelectorAll('.js-agenda-plan-file');
+            const ownerDepartmentEl = document.querySelector('.js-owner-department');
             const partnerDepartmentEls = Array.from(document.querySelectorAll('.js-partner-department'));
 
             function filterCategories() {
-                const selectedPartnerDepartments = new Set(
+                const selectedDepartments = new Set(
                     partnerDepartmentEls
                         .filter((el) => el.checked)
                         .map((el) => String(el.value))
                 );
+                if (ownerDepartmentEl?.value) {
+                    selectedDepartments.add(String(ownerDepartmentEl.value));
+                }
 
                 Array.from(categoryEl.options).forEach((option) => {
                     const categoryDepartmentId = option.dataset.departmentId;
@@ -174,7 +187,7 @@
                         option.hidden = false;
                         return;
                     }
-                    option.hidden = !selectedPartnerDepartments.has(String(categoryDepartmentId));
+                    option.hidden = !selectedDepartments.has(String(categoryDepartmentId));
                 });
 
                 if (categoryEl.selectedOptions[0]?.hidden) {
@@ -182,7 +195,24 @@
                 }
             }
 
+            function syncOwnerVsPartners() {
+                const ownerId = String(ownerDepartmentEl?.value || '');
+                partnerDepartmentEls.forEach((el) => {
+                    const isOwner = ownerId !== '' && String(el.value) === ownerId;
+                    if (isOwner) {
+                        el.checked = false;
+                    }
+                    el.disabled = isOwner;
+                    el.closest('.partner-department-item')?.classList.toggle('opacity-50', isOwner);
+                });
+            }
+
+            ownerDepartmentEl?.addEventListener('change', () => {
+                syncOwnerVsPartners();
+                filterCategories();
+            });
             partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
+            syncOwnerVsPartners();
             filterCategories();
 
             function togglePlanFile() {

@@ -26,7 +26,7 @@
                 <div class="row g-3">
                     <div class="col-md-6"><strong>{{ __('app.roles.relations.agenda.fields.event_name') }}:</strong> {{ $agendaEvent->event_name }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields.event_date') }}:</strong> {{ optional($agendaEvent->event_date)->format('Y-m-d') ?? '-' }}</div>
-                    <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.department') }}:</strong> {{ $agendaEvent->department?->icon }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $agendaEvent->department?->color_hex ?? '#94a3b8' }}"></span> {{ $agendaEvent->department?->name ?? '-' }}</div>
+                    <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.department') }}:</strong> {{ $agendaEvent->ownerDepartment?->icon ?? $agendaEvent->department?->icon }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $agendaEvent->ownerDepartment?->color_hex ?? $agendaEvent->department?->color_hex ?? '#94a3b8' }}"></span> {{ $agendaEvent->ownerDepartment?->name ?? $agendaEvent->department?->name ?? '-' }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields.event_category') }}:</strong> {{ $agendaEvent->eventCategory?->name ?? $agendaEvent->event_category ?? '-' }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.event_type') }}:</strong> {{ __('app.roles.relations.agenda.types.' . $agendaEvent->event_type) }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}:</strong> {{ __('app.roles.relations.agenda.plans.' . $agendaEvent->plan_type) }}</div>
@@ -45,7 +45,7 @@
                             @forelse($agendaEvent->partnerDepartments as $partnerDepartment)
                                 <li>{{ $partnerDepartment->icon }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $partnerDepartment->color_hex ?? '#94a3b8' }}"></span> {{ $partnerDepartment->name }}</li>
                             @empty
-                                <li class="text-muted">-</li>
+                                <li class="text-muted">لا يوجد شركاء</li>
                             @endforelse
                         </ul>
                     </div>

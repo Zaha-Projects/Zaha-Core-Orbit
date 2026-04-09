@@ -17,15 +17,18 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Services\ConflictDetectionService;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class AgendaEventsController extends Controller
 {
     protected function syncPartnerDepartments(AgendaEvent $event, array $data): void
     {
+        $ownerDepartmentId = (int) ($data['owner_department_id'] ?? 0);
         $partnerDepartmentIds = collect($data['partner_department_ids'] ?? [])
             ->filter(fn ($id) => filled($id))
             ->map(fn ($id) => (int) $id)
+            ->reject(fn ($id) => $ownerDepartmentId > 0 && $id === $ownerDepartmentId)
             ->unique()
             ->values()
             ->all();
@@ -143,7 +146,7 @@ class AgendaEventsController extends Controller
             $perPage = 20;
         }
 
-        $eventsQuery = AgendaEvent::with(['creator', 'department', 'partnerDepartments', 'eventCategory', 'participations'])
+        $eventsQuery = AgendaEvent::with(['creator', 'department', 'ownerDepartment', 'partnerDepartments', 'eventCategory', 'participations'])
             ->enterpriseFilter($request->all())
             ->notArchived();
 
@@ -172,6 +175,7 @@ class AgendaEventsController extends Controller
             ->with([
                 'creator',
                 'department',
+                'ownerDepartment',
                 'partnerDepartments',
                 'eventCategory',
                 'monthlyActivities',
@@ -233,20 +237,23 @@ class AgendaEventsController extends Controller
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
+            'owner_department_id' => ['required', 'exists:departments,id'],
             'partner_department_ids' => ['array'],
-            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id'],
+            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id', 'different:owner_department_id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $partnerDepartmentIds = collect($request->input('partner_department_ids', []))
+                    $departmentIds = collect($request->input('partner_department_ids', []))
+                        ->push($request->input('owner_department_id'))
                         ->filter()
                         ->map(fn ($id) => (int) $id)
                         ->filter(fn ($id) => $id > 0)
+                        ->unique()
                         ->values()
                         ->all();
 
-                    if (! empty($partnerDepartmentIds)) {
-                        $query->whereIn('department_id', $partnerDepartmentIds);
+                    if (! empty($departmentIds)) {
+                        $query->whereIn('department_id', $departmentIds);
                     } else {
                         $query->whereRaw('1 = 0');
                     }
@@ -275,7 +282,8 @@ class AgendaEventsController extends Controller
             'event_date' => $date->toDateString(),
             'event_day' => $date->translatedFormat('l'),
             'event_name' => $data['event_name'],
-            'department_id' => null,
+            'department_id' => (int) $data['owner_department_id'],
+            'owner_department_id' => (int) $data['owner_department_id'],
             'event_category_id' => $data['event_category_id'] ?? null,
             'event_type' => $data['event_type'],
             'is_mandatory' => $data['event_type'] === 'mandatory',
@@ -292,6 +300,11 @@ class AgendaEventsController extends Controller
         ]);
 
         $this->syncPartnerDepartments($event, $data);
+        Log::info('agenda_event.created', [
+            'agenda_event_id' => $event->id,
+            'owner_department_id' => $event->owner_department_id,
+            'created_by' => $request->user()->id,
+        ]);
 
         foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
             AgendaParticipation::create([
@@ -345,20 +358,23 @@ class AgendaEventsController extends Controller
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
+            'owner_department_id' => ['required', 'exists:departments,id'],
             'partner_department_ids' => ['array'],
-            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id'],
+            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id', 'different:owner_department_id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $partnerDepartmentIds = collect($request->input('partner_department_ids', []))
+                    $departmentIds = collect($request->input('partner_department_ids', []))
+                        ->push($request->input('owner_department_id'))
                         ->filter()
                         ->map(fn ($id) => (int) $id)
                         ->filter(fn ($id) => $id > 0)
+                        ->unique()
                         ->values()
                         ->all();
 
-                    if (! empty($partnerDepartmentIds)) {
-                        $query->whereIn('department_id', $partnerDepartmentIds);
+                    if (! empty($departmentIds)) {
+                        $query->whereIn('department_id', $departmentIds);
                     } else {
                         $query->whereRaw('1 = 0');
                     }
@@ -395,7 +411,8 @@ class AgendaEventsController extends Controller
             'event_date' => $date->toDateString(),
             'event_day' => $date->translatedFormat('l'),
             'event_name' => $data['event_name'],
-            'department_id' => null,
+            'department_id' => (int) $data['owner_department_id'],
+            'owner_department_id' => (int) $data['owner_department_id'],
             'event_category_id' => $data['event_category_id'] ?? null,
             'event_type' => $data['event_type'],
             'is_mandatory' => $data['event_type'] === 'mandatory',
@@ -408,6 +425,11 @@ class AgendaEventsController extends Controller
         ]);
 
         $this->syncPartnerDepartments($agendaEvent, $data);
+        Log::info('agenda_event.updated', [
+            'agenda_event_id' => $agendaEvent->id,
+            'owner_department_id' => $agendaEvent->owner_department_id,
+            'updated_by' => $request->user()->id,
+        ]);
 
         $agendaEvent->participations()->where('entity_type', 'branch')->delete();
         foreach (($data['branch_participation'] ?? []) as $branchId => $status) {

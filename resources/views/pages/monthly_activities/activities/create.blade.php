@@ -79,8 +79,9 @@
 </div>
 
                 <div class="col-12 col-md-4">
-                    <label class="form-label">رفع أجندة/مرفقات (اختياري)</label>
-                    <input class="form-control @error('branch_plan_file') is-invalid @enderror" type="file" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                    <label class="form-label">مرفق التخطيط (اختياري)</label>
+                    <input class="form-control @error('planning_attachment') is-invalid @enderror @error('branch_plan_file') is-invalid @enderror" type="file" name="planning_attachment" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                    @error('planning_attachment')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     @error('branch_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
@@ -417,6 +418,8 @@ document.addEventListener('DOMContentLoaded', function () {
     volunteersRequiredWrap.forEach(el => el.style.display = needsVolunteers?.checked ? 'block' : 'none');
     if (requiredVolunteersInput) {
       requiredVolunteersInput.required = !!needsVolunteers?.checked;
+      requiredVolunteersInput.disabled = !needsVolunteers?.checked;
+      if (!needsVolunteers?.checked) requiredVolunteersInput.value = '';
     }
   };
 
