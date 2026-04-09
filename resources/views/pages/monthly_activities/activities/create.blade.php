@@ -165,7 +165,7 @@
                 </div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center">
-                    <div class="form-check mt-4">
+                    <div class="form-check form-switch mt-4">
                         <input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers'))>
                         <label class="form-check-label" for="needs_volunteers">هل النشاط بحاجة لمتطوعين؟</label>
                     </div>
@@ -215,7 +215,7 @@
                 </div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center">
-                    <div class="form-check mt-4">
+                    <div class="form-check form-switch mt-4">
                         <input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence'))>
                         <label class="form-check-label" for="needs_official_correspondence">هل الفعالية بحاجة لمخاطبات رسمية؟</label>
                     </div>
@@ -231,7 +231,7 @@
                 </div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center">
-                    <div class="form-check mt-4">
+                    <div class="form-check form-switch mt-4">
                         <input class="form-check-input js-needs-supplies" type="checkbox" name="requires_supplies" value="1" id="requires_supplies" @checked(old('requires_supplies'))>
                         <label class="form-check-label" for="requires_supplies">بحاجة مستلزمات</label>
                     </div>
@@ -288,6 +288,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const needsVolunteers = document.querySelector('.js-needs-volunteers');
   const volunteersRequiredWrap = document.querySelectorAll('.js-volunteers-required-wrapper');
   const requiredVolunteersInput = document.querySelector('.js-required-volunteers');
+  const outsideInputs = [
+    document.querySelector('[name="outside_place_name"]'),
+    document.querySelector('[name="outside_google_maps_url"]'),
+    document.querySelector('[name="outside_contact_number"]'),
+    document.querySelector('[name="outside_address"]')
+  ].filter(Boolean);
   const lettersReasonInput = document.querySelector('.js-official-correspondence-reason');
   const lettersTargetInput = document.querySelector('.js-official-correspondence-target');
   const suppliesWrap = document.querySelectorAll('.js-supplies-wrapper');
@@ -405,6 +411,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const outsideSelected = locType?.value === 'outside_center';
     inside.forEach(el => el.style.display = outsideSelected ? 'none' : 'block');
     outside.forEach(el => el.style.display = outsideSelected ? 'block' : 'none');
+    outsideInputs.forEach((input) => {
+      input.required = outsideSelected;
+      input.disabled = !outsideSelected;
+      if (!outsideSelected) input.value = '';
+    });
 
     const isOther = tgChecks.some((input) => input.checked && input.dataset.isOther === '1');
     tgOther.forEach(el => el.style.display = isOther ? 'block' : 'none');
@@ -412,9 +423,31 @@ document.addEventListener('DOMContentLoaded', function () {
     sponsorWrap.forEach(el => el.style.display = hasSponsor?.checked ? 'block' : 'none');
     partnersWrap.forEach(el => el.style.display = hasPartners?.checked ? 'block' : 'none');
     lettersReason.forEach(el => el.style.display = needsLetters?.checked ? 'block' : 'none');
-    if (lettersReasonInput) lettersReasonInput.required = !!needsLetters?.checked;
-    if (lettersTargetInput) lettersTargetInput.required = !!needsLetters?.checked;
+    if (lettersReasonInput) {
+      lettersReasonInput.required = !!needsLetters?.checked;
+      lettersReasonInput.disabled = !needsLetters?.checked;
+      if (!needsLetters?.checked) lettersReasonInput.value = '';
+    }
+    if (lettersTargetInput) {
+      lettersTargetInput.required = !!needsLetters?.checked;
+      lettersTargetInput.disabled = !needsLetters?.checked;
+      if (!needsLetters?.checked) lettersTargetInput.value = '';
+    }
     suppliesWrap.forEach(el => el.style.display = needsSupplies?.checked ? 'block' : 'none');
+    if (suppliesCount) {
+      suppliesCount.required = !!needsSupplies?.checked;
+      suppliesCount.disabled = !needsSupplies?.checked;
+      if (!needsSupplies?.checked) suppliesCount.value = '1';
+    }
+    if (!needsSupplies?.checked) {
+      suppliesContainer.querySelectorAll('input, select, textarea').forEach((input) => {
+        if (input.type === 'checkbox' || input.type === 'radio') {
+          input.checked = false;
+        } else {
+          input.value = '';
+        }
+      });
+    }
     volunteersRequiredWrap.forEach(el => el.style.display = needsVolunteers?.checked ? 'block' : 'none');
     if (requiredVolunteersInput) {
       requiredVolunteersInput.required = !!needsVolunteers?.checked;

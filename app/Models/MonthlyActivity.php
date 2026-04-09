@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\WorkflowInstance;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class MonthlyActivity extends Model
 {
@@ -138,12 +137,14 @@ class MonthlyActivity extends Model
         'plan_version' => 'integer',
     ];
 
-    protected function planningAttachment(): Attribute
+    public function getPlanningAttachmentAttribute(): ?string
     {
-        return Attribute::make(
-            get: fn () => $this->branch_plan_file,
-            set: fn ($value) => ['branch_plan_file' => $value],
-        );
+        return $this->attributes['branch_plan_file'] ?? null;
+    }
+
+    public function setPlanningAttachmentAttribute($value): void
+    {
+        $this->attributes['branch_plan_file'] = $value;
     }
 
 

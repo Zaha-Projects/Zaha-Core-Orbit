@@ -262,20 +262,20 @@
                 <div class="col-12"><h2 class="h6 mb-1">الحضور والمتطوعون</h2></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور المتوقع</label><input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance', $monthlyActivity->expected_attendance ) }}"></div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور الفعلي</label><input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance ) }}"></div>
-                <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers', $monthlyActivity->needs_volunteers))><label class="form-check-label" for="needs_volunteers">نحتاج متطوعين</label></div></div>
+                <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check form-switch mt-4"><input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers', $monthlyActivity->needs_volunteers))><label class="form-check-label" for="needs_volunteers">نحتاج متطوعين</label></div></div>
                 <div class="col-12 col-md-3 js-volunteers-required-wrapper"><label class="form-label">عدد المتطوعين المطلوب</label><input class="form-control js-required-volunteers" type="number" min="1" name="required_volunteers" value="{{ old('required_volunteers', $monthlyActivity->required_volunteers ) }}"></div>
                 <div class="col-12"><label class="form-label">ملاحظات الحضور</label><textarea class="form-control" name="attendance_notes" rows="2">{{ old('attendance_notes', $monthlyActivity->attendance_notes ) }}</textarea></div>
 
                 <hr class="my-2">
                 <div class="col-12"><h2 class="h6 mb-1">المخاطبات والتغطية الإعلامية</h2></div>
-                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence', $monthlyActivity->needs_official_correspondence))><label class="form-check-label" for="needs_official_correspondence">بحاجة إلى مخاطبات رسمية</label></div></div>
+                <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check form-switch mt-4"><input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence', $monthlyActivity->needs_official_correspondence))><label class="form-check-label" for="needs_official_correspondence">بحاجة إلى مخاطبات رسمية</label></div></div>
                 <div class="col-12 col-md-4 js-letters-reason"><label class="form-label">سبب المخاطبة</label><input class="form-control js-official-correspondence-reason" name="official_correspondence_reason" value="{{ old('official_correspondence_reason', $monthlyActivity->official_correspondence_reason ) }}"></div>
                 <div class="col-12 col-md-4 js-letters-reason"><label class="form-label">الجهة المطلوب مخاطبتها</label><input class="form-control js-official-correspondence-target" name="official_correspondence_target" value="{{ old('official_correspondence_target', $monthlyActivity->official_correspondence_target ) }}"></div>
                 <div class="col-12 col-md-4 d-flex align-items-center"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="needs_media_coverage" value="1" id="needs_media_coverage" @checked(old('needs_media_coverage', $monthlyActivity->needs_media_coverage))><label class="form-check-label" for="needs_media_coverage">بحاجة إلى تغطية إعلامية</label></div></div>
                 <div class="col-12 col-md-8"><label class="form-label">ملاحظات التغطية الإعلامية</label><input class="form-control" name="media_coverage_notes" value="{{ old('media_coverage_notes', $monthlyActivity->media_coverage_notes ) }}"></div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center">
-                    <div class="form-check mt-4">
+                    <div class="form-check form-switch mt-4">
                         <input class="form-check-input js-needs-supplies" type="checkbox" name="requires_supplies" value="1" id="requires_supplies" @checked(old('requires_supplies', $monthlyActivity->supplies->isNotEmpty()))>
                         <label class="form-check-label" for="requires_supplies">بحاجة مستلزمات</label>
                     </div>
@@ -651,6 +651,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const needsVolunteers = document.querySelector('.js-needs-volunteers');
   const volunteersRequiredWrap = document.querySelectorAll('.js-volunteers-required-wrapper');
   const requiredVolunteersInput = document.querySelector('.js-required-volunteers');
+  const outsideInputs = [
+    document.querySelector('[name="outside_place_name"]'),
+    document.querySelector('[name="outside_google_maps_url"]'),
+    document.querySelector('[name="outside_contact_number"]'),
+    document.querySelector('[name="outside_address"]')
+  ].filter(Boolean);
   const oldPartners = @json($oldPartners);
   const oldSupplies = @json($oldSupplies);
   const oldTeamGroups = @json($oldTeamGroups);
@@ -752,15 +758,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const outsideSelected = locType && locType.value === 'outside_center';
     inside.forEach(el => el.style.display = outsideSelected ? 'none' : 'block');
     outside.forEach(el => el.style.display = outsideSelected ? 'block' : 'none');
+    outsideInputs.forEach((input) => {
+      input.required = outsideSelected;
+      input.disabled = !outsideSelected;
+      if (!outsideSelected) input.value = '';
+    });
     const selected = tg?.selectedOptions?.[0];
     const isOther = selected && selected.dataset.isOther === '1';
     tgOther.forEach(el => el.style.display = isOther ? 'block' : 'none');
     sponsorWrap.forEach(el => el.style.display = hasSponsor?.checked ? 'block' : 'none');
     partnersWrap.forEach(el => el.style.display = hasPartners?.checked ? 'block' : 'none');
     lettersReason.forEach(el => el.style.display = needsLetters?.checked ? 'block' : 'none');
-    if (lettersReasonInput) lettersReasonInput.required = !!needsLetters?.checked;
-    if (lettersTargetInput) lettersTargetInput.required = !!needsLetters?.checked;
+    if (lettersReasonInput) {
+      lettersReasonInput.required = !!needsLetters?.checked;
+      lettersReasonInput.disabled = !needsLetters?.checked;
+      if (!needsLetters?.checked) lettersReasonInput.value = '';
+    }
+    if (lettersTargetInput) {
+      lettersTargetInput.required = !!needsLetters?.checked;
+      lettersTargetInput.disabled = !needsLetters?.checked;
+      if (!needsLetters?.checked) lettersTargetInput.value = '';
+    }
     suppliesWrap.forEach(el => el.style.display = needsSupplies?.checked ? 'block' : 'none');
+    if (suppliesCount) {
+      suppliesCount.required = !!needsSupplies?.checked;
+      suppliesCount.disabled = !needsSupplies?.checked;
+      if (!needsSupplies?.checked) suppliesCount.value = '1';
+    }
+    if (!needsSupplies?.checked) {
+      suppliesContainer.querySelectorAll('input, select, textarea').forEach((input) => {
+        if (input.type === 'checkbox' || input.type === 'radio') {
+          input.checked = false;
+        } else {
+          input.value = '';
+        }
+      });
+    }
     volunteersRequiredWrap.forEach(el => el.style.display = needsVolunteers?.checked ? 'block' : 'none');
     if (requiredVolunteersInput) {
       requiredVolunteersInput.required = !!needsVolunteers?.checked;

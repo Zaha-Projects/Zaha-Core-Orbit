@@ -98,6 +98,20 @@ class ProductionReadinessMonthlyActivitiesTest extends TestCase
             ->assertSessionHasErrors('partner_department_ids.0');
     }
 
+    public function test_planning_attachment_accessor_is_backward_compatible(): void
+    {
+        $activity = MonthlyActivity::factory()->create([
+            'branch_plan_file' => 'monthly/plans/legacy.docx',
+        ]);
+
+        $this->assertSame('monthly/plans/legacy.docx', $activity->planning_attachment);
+
+        $activity->planning_attachment = 'monthly/plans/new.pdf';
+        $activity->save();
+
+        $this->assertSame('monthly/plans/new.pdf', $activity->fresh()->branch_plan_file);
+    }
+
     private function actingRelationsOfficer(): array
     {
         $role = Role::findOrCreate('relations_officer', 'web');

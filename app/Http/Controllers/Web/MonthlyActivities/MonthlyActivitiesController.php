@@ -376,7 +376,7 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
-            'outside_contact_number' => ['nullable', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
@@ -447,7 +447,7 @@ class MonthlyActivitiesController extends Controller
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.available' => ['nullable', 'boolean'],
             'supplies.*.provider_type' => ['nullable', 'string', 'max:255'],
-            'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
+            'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,false'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -463,9 +463,24 @@ class MonthlyActivitiesController extends Controller
         if (($data['location_type'] ?? null) === 'inside_center') {
             $data['outside_place_name'] = null;
             $data['outside_google_maps_url'] = null;
+            $data['outside_contact_number'] = null;
             $data['outside_address'] = null;
         } else {
             $data['internal_location'] = null;
+        }
+
+        if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
+            $data['official_correspondence_reason'] = null;
+            $data['official_correspondence_target'] = null;
+        }
+
+        if (! (bool) ($data['needs_volunteers'] ?? false)) {
+            $data['required_volunteers'] = null;
+            $data['volunteer_need'] = null;
+        }
+
+        if (! (bool) ($data['requires_supplies'] ?? false)) {
+            $data['supplies'] = [];
         }
 
         $date = Carbon::parse($data['activity_date']);
@@ -703,7 +718,7 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
-            'outside_contact_number' => ['nullable', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'target_group' => ['nullable', 'string', 'max:255'],
@@ -768,9 +783,20 @@ class MonthlyActivitiesController extends Controller
         if (($data['location_type'] ?? null) === 'inside_center') {
             $data['outside_place_name'] = null;
             $data['outside_google_maps_url'] = null;
+            $data['outside_contact_number'] = null;
             $data['outside_address'] = null;
         } else {
             $data['internal_location'] = null;
+        }
+
+        if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
+            $data['official_correspondence_reason'] = null;
+            $data['official_correspondence_target'] = null;
+        }
+
+        if (! (bool) ($data['needs_volunteers'] ?? false)) {
+            $data['required_volunteers'] = null;
+            $data['volunteer_need'] = null;
         }
 
         $date = Carbon::parse($data['activity_date']);
