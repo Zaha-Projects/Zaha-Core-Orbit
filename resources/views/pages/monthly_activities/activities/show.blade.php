@@ -2,6 +2,7 @@
 
 @php
     $title = 'عرض تفاصيل النشاط';
+    $editMirrorMode = $editMirrorMode ?? false;
 @endphp
 
 @section('content')
@@ -14,7 +15,11 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.activities.index') }}">رجوع</a>
-                    <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', $monthlyActivity) }}">تعديل</a>
+                    @if($editMirrorMode)
+                        <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">فتح نموذج التعديل</a>
+                    @else
+                        <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">تعديل</a>
+                    @endif
                 </div>
             </div>
         </div>

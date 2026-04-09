@@ -579,6 +579,15 @@ class MonthlyActivitiesController extends Controller
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
+        if (! request()->boolean('form') && request('mode') !== 'post') {
+            $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups']);
+
+            return view('pages.monthly_activities.activities.show', [
+                'monthlyActivity' => $monthlyActivity,
+                'editMirrorMode' => true,
+            ]);
+        }
+
         $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
         $branches = Branch::orderBy('name')->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();

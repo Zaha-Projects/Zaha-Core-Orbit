@@ -514,7 +514,7 @@
             <div class="alert alert-light border mb-3">
                 <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                     <span>هذه الصفحة مخصصة فقط لمدخلات ما بعد التنفيذ.</span>
-                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', $monthlyActivity) }}">الرجوع لتعديل التخطيط</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">الرجوع لتعديل التخطيط</a>
                 </div>
             </div>
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.attachments.title') }}</h2>
