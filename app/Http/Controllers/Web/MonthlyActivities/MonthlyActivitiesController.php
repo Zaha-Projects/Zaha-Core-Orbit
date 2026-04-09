@@ -278,6 +278,66 @@ class MonthlyActivitiesController extends Controller
         return view('pages.monthly_activities.activities.create', compact('branches', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
     }
 
+    protected function flashFormPrefill(MonthlyActivity $monthlyActivity): void
+    {
+        if (session()->hasOldInput()) {
+            return;
+        }
+
+        $monthlyActivity->loadMissing(['sponsors', 'partners', 'supplies', 'targetGroups']);
+
+        $needsVolunteers = (bool) $monthlyActivity->needs_volunteers;
+        $needsOfficialCorrespondence = (bool) $monthlyActivity->needs_official_correspondence;
+        $outsideCenter = $monthlyActivity->location_type === 'outside_center';
+        $needsSupplies = $monthlyActivity->supplies->isNotEmpty();
+
+        session()->flash('_old_input', [
+            'title' => $monthlyActivity->title,
+            'activity_date' => optional($monthlyActivity->activity_date)->toDateString() ?: optional($monthlyActivity->proposed_date)->toDateString(),
+            'proposed_date' => optional($monthlyActivity->proposed_date)->toDateString(),
+            'branch_id' => $monthlyActivity->branch_id,
+            'agenda_event_id' => $monthlyActivity->agenda_event_id,
+            'is_in_agenda' => (int) $monthlyActivity->is_in_agenda,
+            'status' => $monthlyActivity->status,
+            'location_type' => $monthlyActivity->location_type,
+            'internal_location' => $outsideCenter ? null : $monthlyActivity->internal_location,
+            'outside_place_name' => $outsideCenter ? $monthlyActivity->outside_place_name : null,
+            'outside_google_maps_url' => $outsideCenter ? $monthlyActivity->outside_google_maps_url : null,
+            'outside_contact_number' => $outsideCenter ? $monthlyActivity->outside_contact_number : null,
+            'outside_address' => $outsideCenter ? $monthlyActivity->outside_address : null,
+            'short_description' => $monthlyActivity->short_description,
+            'description' => $monthlyActivity->description,
+            'needs_volunteers' => (int) $needsVolunteers,
+            'required_volunteers' => $needsVolunteers ? $monthlyActivity->required_volunteers : null,
+            'volunteer_need' => $needsVolunteers ? $monthlyActivity->volunteer_need : null,
+            'needs_official_correspondence' => (int) $needsOfficialCorrespondence,
+            'official_correspondence_reason' => $needsOfficialCorrespondence ? $monthlyActivity->official_correspondence_reason : null,
+            'official_correspondence_target' => $needsOfficialCorrespondence ? $monthlyActivity->official_correspondence_target : null,
+            'requires_supplies' => (int) $needsSupplies,
+            'supplies' => $needsSupplies
+                ? $monthlyActivity->supplies->map(fn ($supply) => [
+                    'item_name' => $supply->item_name,
+                    'available' => (int) $supply->available,
+                    'provider_type' => $supply->provider_type,
+                    'provider_name' => $supply->provider_name,
+                ])->values()->all()
+                : [],
+            'has_sponsor' => (int) $monthlyActivity->has_sponsor,
+            'sponsors' => $monthlyActivity->sponsors->map(fn ($sponsor) => [
+                'name' => $sponsor->name,
+                'title' => $sponsor->title,
+            ])->values()->all(),
+            'has_partners' => (int) $monthlyActivity->has_partners,
+            'partners' => $monthlyActivity->partners->map(fn ($partner) => [
+                'name' => $partner->name,
+                'role' => $partner->role,
+            ])->values()->all(),
+            'target_group_ids' => $monthlyActivity->targetGroups->pluck('id')->all(),
+            'target_group_other' => $monthlyActivity->target_group_other,
+            'planning_attachment' => $monthlyActivity->planning_attachment,
+        ]);
+    }
+
     public function syncFromAgenda(Request $request)
     {
         $data = $request->validate([
@@ -648,7 +708,14 @@ class MonthlyActivitiesController extends Controller
         }
 
         $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
-        $branches = Branch::orderBy('name')->get();
+        if (request()->boolean('form')) {
+            $this->flashFormPrefill($monthlyActivity);
+        }
+        $branches = Branch::query()->orderBy('name');
+        if ($this->shouldScopeToUserBranch(request()->user())) {
+            $branches->where('id', request()->user()->branch_id);
+        }
+        $branches = $branches->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();

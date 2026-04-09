@@ -40,6 +40,15 @@
 
 
 @section('content')
+    @if(request()->boolean('form'))
+        @include('pages.monthly_activities.activities._form', [
+            'formAction' => route('role.relations.activities.update', $monthlyActivity),
+            'formMethod' => 'PUT',
+            'submitLabel' => __('app.roles.programs.monthly_activities.actions.save'),
+            'title' => $title,
+            'subtitle' => $subtitle,
+        ])
+    @else
     <div class="event-module">
     <div class="card event-card mb-4">
         <div class="card-body">
@@ -825,4 +834,5 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 @endpush
 
+    @endif
 @endsection
