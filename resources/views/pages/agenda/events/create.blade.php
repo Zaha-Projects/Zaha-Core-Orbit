@@ -11,6 +11,16 @@
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
             <p class="text-muted mb-4">{{ $subtitle }}</p>
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <div class="fw-semibold mb-2">يرجى تصحيح الأخطاء التالية:</div>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <form method="POST" action="{{ route('role.relations.agenda.store') }}" enctype="multipart/form-data" class="row event-form-grid">
                 @csrf
                 <div class="col-12 col-md-6">
@@ -73,16 +83,25 @@
                 </div>
 
                 <div class="col-12"><div class="event-form-section">
-                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</h2>
+                    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                        <h2 class="event-section-title mb-0">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</h2>
+                        <button type="button" class="btn btn-sm btn-outline-primary js-enable-all-participants">تفعيل الكل كمشارك</button>
+                    </div>
                     <div class="row g-2">
                         @foreach ($branches as $branch)
+                            @php
+                                $branchStatus = old('branch_participation.'.$branch->id, 'not_participant');
+                                $isParticipant = $branchStatus === 'participant';
+                            @endphp
                             <div class="col-12 col-md-4">
-                                <label class="form-label small mb-1">{{ $branch->name }}</label>
-                                <select class="form-select form-select-sm" name="branch_participation[{{ $branch->id }}]">
-                                    <option value="unspecified">{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
-                                    <option value="participant">{{ __('app.roles.relations.agenda.participation.participant') }}</option>
-                                    <option value="not_participant">{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
-                                </select>
+                                <div class="branch-toggle-item">
+                                    <div class="small fw-semibold">{{ $branch->name }}</div>
+                                    <div class="form-check form-switch m-0">
+                                        <input type="hidden" name="branch_participation[{{ $branch->id }}]" value="{{ $isParticipant ? 'participant' : 'not_participant' }}" class="js-branch-status-hidden">
+                                        <input class="form-check-input js-branch-toggle" type="checkbox" role="switch" @checked($isParticipant)>
+                                        <label class="form-check-label small">{{ $isParticipant ? __('app.roles.relations.agenda.participation.participant') : __('app.roles.relations.agenda.participation.not_participant') }}</label>
+                                    </div>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -133,6 +152,37 @@
 
             planTypeEl?.addEventListener('change', togglePlanFile);
             togglePlanFile();
+
+            const toggleRows = Array.from(document.querySelectorAll('.branch-toggle-item'));
+            const enableAllBtn = document.querySelector('.js-enable-all-participants');
+
+            function syncToggleRow(row) {
+                const checkbox = row.querySelector('.js-branch-toggle');
+                const hiddenInput = row.querySelector('.js-branch-status-hidden');
+                const label = row.querySelector('.form-check-label');
+                const isOn = !!checkbox?.checked;
+
+                hiddenInput.value = isOn ? 'participant' : 'not_participant';
+                label.textContent = isOn
+                    ? "{{ __('app.roles.relations.agenda.participation.participant') }}"
+                    : "{{ __('app.roles.relations.agenda.participation.not_participant') }}";
+            }
+
+            toggleRows.forEach((row) => {
+                const checkbox = row.querySelector('.js-branch-toggle');
+                checkbox?.addEventListener('change', () => syncToggleRow(row));
+                syncToggleRow(row);
+            });
+
+            enableAllBtn?.addEventListener('click', () => {
+                toggleRows.forEach((row) => {
+                    const checkbox = row.querySelector('.js-branch-toggle');
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                    syncToggleRow(row);
+                });
+            });
         })();
     </script>
     <style>
@@ -155,6 +205,15 @@
             background: #f8f9fa;
             margin: 0;
             font-size: .9rem;
+        }
+        .branch-toggle-item {
+            border: 1px solid #dee2e6;
+            border-radius: .5rem;
+            padding: .55rem .75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
         }
     </style>
 @endsection
