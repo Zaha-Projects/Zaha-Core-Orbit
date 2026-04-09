@@ -279,6 +279,7 @@
                                 <tr>
                                     <th>{{ __('app.roles.relations.agenda.table.event_date') }}</th>
                                     <th>{{ __('app.roles.relations.agenda.table.event_name') }}</th>
+                                    <th>الإصدار</th>
                                     <th>{{ __('app.roles.relations.agenda.fields_ext.department') }}</th>
                                     <th>{{ __('app.roles.relations.agenda.fields.event_category') }}</th>
                                     <th>{{ __('app.roles.relations.agenda.fields_ext.event_type') }}/{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</th>
@@ -292,6 +293,7 @@
                                     <tr>
                                         <td>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</td>
                                         <td>{{ $event->event_name }}</td>
+                                        <td>V{{ (int) ($event->version ?? 1) }}</td>
                                         <td>{{ $event->department?->name ?? '-' }}</td>
                                         <td>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</td>
                                         <td>{{ __('app.roles.relations.agenda.types.' . $event->event_type) }} / {{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</td>
@@ -323,7 +325,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-muted">{{ __('app.roles.relations.agenda.table.empty') }}</td>
+                                        <td colspan="9" class="text-muted">{{ __('app.roles.relations.agenda.table.empty') }}</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -334,6 +336,7 @@
                         @foreach ($events as $event)
                             <div class="event-mobile-card">
                                 <div class="fw-semibold mb-2">{{ $event->event_name }}</div>
+                                <div class="event-mobile-row"><span class="text-muted">الإصدار</span><span>V{{ (int) ($event->version ?? 1) }}</span></div>
                                 <div class="event-mobile-row"><span class="text-muted">{{ __('app.roles.relations.agenda.table.event_date') }}</span><span>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span></div>
                                 <div class="event-mobile-row align-items-start">
                                     <span class="text-muted">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span>

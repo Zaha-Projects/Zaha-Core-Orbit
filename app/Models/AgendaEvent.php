@@ -32,6 +32,7 @@ class AgendaEvent extends Model
         'approved_by_executive_at',
         'notes',
         'agenda_plan_file',
+        'version',
     ];
 
     protected $casts = [
@@ -41,6 +42,7 @@ class AgendaEvent extends Model
         'is_archived' => 'boolean',
         'is_mandatory' => 'boolean',
         'is_unified' => 'boolean',
+        'version' => 'integer',
     ];
 
     public function scopeNotArchived($query)

@@ -9,7 +9,10 @@
 @section('content')
     <div class="event-module"><div class="card event-card">
         <div class="card-body">
-            <h1 class="h4 mb-2">{{ $title }}</h1>
+            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                <h1 class="h4 mb-0">{{ $title }}</h1>
+                <span class="badge bg-info-subtle text-info border">الإصدار V{{ (int) ($agendaEvent->version ?? 1) }}</span>
+            </div>
             <p class="text-muted mb-4">{{ $subtitle }}</p>
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -33,15 +36,6 @@
                     <input class="form-control" type="date" name="event_date" value="{{ old('event_date', optional($agendaEvent->event_date)->format('Y-m-d')) }}" required>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.primary_department') }}</label>
-                    <select class="form-select" name="department_id">
-                        <option value="">--</option>
-                        @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" {{ old('department_id', $agendaEvent->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</label>
                     @php
                         $selectedPartnerDepartmentIds = array_map('strval', old('partner_department_ids', $agendaEvent->partnerDepartments->pluck('id')->all()));
@@ -49,7 +43,7 @@
                     <div class="partner-departments-box">
                         @foreach ($departments as $department)
                             <label class="partner-department-item">
-                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
+                                <input class="form-check-input m-0 js-partner-department" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
                                 <span>{{ $department->name }}</span>
                             </label>
                         @endforeach
@@ -162,13 +156,17 @@
 
     <script>
         (function () {
-            const departmentEl = document.querySelector('select[name="department_id"]');
             const categoryEl = document.getElementById('event_category_id');
             const planTypeEl = document.querySelector('.js-plan-type');
             const planFileRows = document.querySelectorAll('.js-agenda-plan-file');
+            const partnerDepartmentEls = Array.from(document.querySelectorAll('.js-partner-department'));
 
             function filterCategories() {
-                const departmentId = departmentEl.value;
+                const selectedPartnerDepartments = new Set(
+                    partnerDepartmentEls
+                        .filter((el) => el.checked)
+                        .map((el) => String(el.value))
+                );
 
                 Array.from(categoryEl.options).forEach((option) => {
                     const categoryDepartmentId = option.dataset.departmentId;
@@ -176,7 +174,7 @@
                         option.hidden = false;
                         return;
                     }
-                    option.hidden = departmentId !== '' && categoryDepartmentId !== departmentId;
+                    option.hidden = !selectedPartnerDepartments.has(String(categoryDepartmentId));
                 });
 
                 if (categoryEl.selectedOptions[0]?.hidden) {
@@ -184,7 +182,7 @@
                 }
             }
 
-            departmentEl.addEventListener('change', filterCategories);
+            partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
             filterCategories();
 
             function togglePlanFile() {

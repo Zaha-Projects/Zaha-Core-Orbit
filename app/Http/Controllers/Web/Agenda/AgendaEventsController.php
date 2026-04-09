@@ -233,16 +233,22 @@ class AgendaEventsController extends Controller
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
-            'department_id' => ['nullable', 'exists:departments,id'],
             'partner_department_ids' => ['array'],
             'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $departmentId = (int) $request->input('department_id');
+                    $partnerDepartmentIds = collect($request->input('partner_department_ids', []))
+                        ->filter()
+                        ->map(fn ($id) => (int) $id)
+                        ->filter(fn ($id) => $id > 0)
+                        ->values()
+                        ->all();
 
-                    if ($departmentId > 0) {
-                        $query->where('department_id', $departmentId);
+                    if (! empty($partnerDepartmentIds)) {
+                        $query->whereIn('department_id', $partnerDepartmentIds);
+                    } else {
+                        $query->whereRaw('1 = 0');
                     }
                 }),
             ],
@@ -258,10 +264,6 @@ class AgendaEventsController extends Controller
             return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
         }
 
-        if (! empty($data['department_id']) && in_array((int) $data['department_id'], array_map('intval', $data['partner_department_ids'] ?? []), true)) {
-            return back()->withErrors(['partner_department_ids' => __('app.roles.relations.agenda.errors.partner_department_conflict')])->withInput();
-        }
-
         $date = Carbon::parse($data['event_date']);
 
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
@@ -273,7 +275,7 @@ class AgendaEventsController extends Controller
             'event_date' => $date->toDateString(),
             'event_day' => $date->translatedFormat('l'),
             'event_name' => $data['event_name'],
-            'department_id' => $data['department_id'] ?? null,
+            'department_id' => null,
             'event_category_id' => $data['event_category_id'] ?? null,
             'event_type' => $data['event_type'],
             'is_mandatory' => $data['event_type'] === 'mandatory',
@@ -286,6 +288,7 @@ class AgendaEventsController extends Controller
             'created_by' => $request->user()->id,
             'notes' => $data['notes'] ?? null,
             'agenda_plan_file' => $request->file('agenda_plan_file')?->store('agenda/plans', 'public'),
+            'version' => 1,
         ]);
 
         $this->syncPartnerDepartments($event, $data);
@@ -342,16 +345,22 @@ class AgendaEventsController extends Controller
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
-            'department_id' => ['nullable', 'exists:departments,id'],
             'partner_department_ids' => ['array'],
             'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $departmentId = (int) $request->input('department_id');
+                    $partnerDepartmentIds = collect($request->input('partner_department_ids', []))
+                        ->filter()
+                        ->map(fn ($id) => (int) $id)
+                        ->filter(fn ($id) => $id > 0)
+                        ->values()
+                        ->all();
 
-                    if ($departmentId > 0) {
-                        $query->where('department_id', $departmentId);
+                    if (! empty($partnerDepartmentIds)) {
+                        $query->whereIn('department_id', $partnerDepartmentIds);
+                    } else {
+                        $query->whereRaw('1 = 0');
                     }
                 }),
             ],
@@ -365,10 +374,6 @@ class AgendaEventsController extends Controller
 
         if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
             return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
-        }
-
-        if (! empty($data['department_id']) && in_array((int) $data['department_id'], array_map('intval', $data['partner_department_ids'] ?? []), true)) {
-            return back()->withErrors(['partner_department_ids' => __('app.roles.relations.agenda.errors.partner_department_conflict')])->withInput();
         }
 
         $date = Carbon::parse($data['event_date']);
@@ -390,7 +395,7 @@ class AgendaEventsController extends Controller
             'event_date' => $date->toDateString(),
             'event_day' => $date->translatedFormat('l'),
             'event_name' => $data['event_name'],
-            'department_id' => $data['department_id'] ?? null,
+            'department_id' => null,
             'event_category_id' => $data['event_category_id'] ?? null,
             'event_type' => $data['event_type'],
             'is_mandatory' => $data['event_type'] === 'mandatory',
@@ -399,6 +404,7 @@ class AgendaEventsController extends Controller
             'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
             'notes' => $data['notes'] ?? null,
             'agenda_plan_file' => $agendaPlanFile,
+            'version' => (int) ($agendaEvent->version ?? 1) + 1,
         ]);
 
         $this->syncPartnerDepartments($agendaEvent, $data);
