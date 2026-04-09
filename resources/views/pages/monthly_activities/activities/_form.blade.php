@@ -64,21 +64,6 @@
                     </select>
                 </div>
 
-                <div class="col-12 mt-2">
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" name="is_in_agenda" value="1" id="is_in_agenda" @checked(old('is_in_agenda'))>
-                        <label class="form-check-label" for="is_in_agenda">النشاط الشهري ضمن الأجندة السنوية</label>
-                    </div>
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input js-has-sponsor" type="checkbox" name="has_sponsor" value="1" id="has_sponsor" @checked(old('has_sponsor'))>
-                        <label class="form-check-label" for="has_sponsor">يوجد راعي رسمي</label>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input js-has-partners" type="checkbox" name="has_partners" value="1" id="has_partners" @checked(old('has_partners'))>
-                        <label class="form-check-label" for="has_partners">يوجد شركاء</label>
-                    </div>
-                </div>
-
                 <div class="col-12 col-md-4">
                     <label class="form-label">المركز</label>
 </div>
@@ -169,8 +154,13 @@
                     <input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance') }}">
                 </div>
 
-                <div class="col-12 col-md-4 d-flex align-items-center">
-                    <div class="form-check form-switch mt-4">
+                <div class="col-12">
+                    <h2 class="h6 mt-3 mb-2">خيارات التفعيل</h2>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="is_in_agenda" value="1" id="is_in_agenda" @checked(old('is_in_agenda'))>
+                        <label class="form-check-label" for="is_in_agenda">النشاط الشهري ضمن الأجندة السنوية</label>
+                    </div>
+                    <div class="form-check form-switch mb-2">
                         <input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers'))>
                         <label class="form-check-label" for="needs_volunteers">هل النشاط بحاجة لمتطوعين؟</label>
                     </div>
@@ -180,11 +170,41 @@
                     <input class="form-control js-required-volunteers" type="number" min="1" name="required_volunteers" value="{{ old('required_volunteers') }}">
                 </div>
 
-                <div class="col-12 col-md-6">
-                    <label class="form-label">الوصف التفصيلي</label>
-                    <textarea class="form-control" name="description" rows="2" placeholder="تفاصيل النشاط (فقرات أو أجندة الفعالية)">{{ old('description') }}</textarea>
+                <div class="col-12">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence'))>
+                        <label class="form-check-label" for="needs_official_correspondence">هل الفعالية بحاجة لمخاطبات رسمية؟</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-8 js-letters-reason">
+                    <label class="form-label">سبب المخاطبة</label>
+                    <input class="form-control js-official-correspondence-reason" name="official_correspondence_reason" value="{{ old('official_correspondence_reason') }}">
+                </div>
+                <div class="col-12 col-md-6 js-letters-reason">
+                    <label class="form-label">الجهة المطلوب مخاطبتها</label>
+                    <input class="form-control js-official-correspondence-target" name="official_correspondence_target" value="{{ old('official_correspondence_target') }}">
                 </div>
 
+                <div class="col-12">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input js-needs-supplies" type="checkbox" name="requires_supplies" value="1" id="requires_supplies" @checked(old('requires_supplies'))>
+                        <label class="form-check-label" for="requires_supplies">بحاجة مستلزمات</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 js-supplies-wrapper">
+                    <label class="form-label">عدد المستلزمات</label>
+                    <input class="form-control js-supplies-count" type="number" min="1" max="20" value="{{ old('supplies_count', $suppliesCount) }}">
+                </div>
+                <div class="col-12 js-supplies-wrapper">
+                    <div class="row g-2 js-supplies-container"></div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input js-has-sponsor" type="checkbox" name="has_sponsor" value="1" id="has_sponsor" @checked(old('has_sponsor'))>
+                        <label class="form-check-label" for="has_sponsor">يوجد راعي رسمي</label>
+                    </div>
+                </div>
                 <div class="col-12 js-sponsor-wrapper">
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
@@ -196,45 +216,23 @@
                     </div>
                 </div>
 
+                <div class="col-12">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input js-has-partners" type="checkbox" name="has_partners" value="1" id="has_partners" @checked(old('has_partners'))>
+                        <label class="form-check-label" for="has_partners">يوجد شركاء</label>
+                    </div>
+                </div>
                 <div class="col-12 col-md-4 js-partners-wrapper">
                     <label class="form-label">عدد الشركاء</label>
                     <input class="form-control js-partners-count" type="number" min="1" max="10" value="{{ old('partners_count', $partnersCount) }}">
                 </div>
-
                 <div class="col-12 js-partners-wrapper">
                     <div class="row g-2 js-partners-container"></div>
                 </div>
 
-                <div class="col-12 col-md-4 d-flex align-items-center">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence'))>
-                        <label class="form-check-label" for="needs_official_correspondence">هل الفعالية بحاجة لمخاطبات رسمية؟</label>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-8 js-letters-reason">
-                    <label class="form-label">سبب المخاطبة</label>
-                    <input class="form-control js-official-correspondence-reason" name="official_correspondence_reason" value="{{ old('official_correspondence_reason') }}">
-                </div>
-                <div class="col-12 col-md-6 js-letters-reason">
-                    <label class="form-label">الجهة المطلوب مخاطبتها</label>
-                    <input class="form-control js-official-correspondence-target" name="official_correspondence_target" value="{{ old('official_correspondence_target') }}">
-                </div>
-
-                <div class="col-12 col-md-4 d-flex align-items-center">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input js-needs-supplies" type="checkbox" name="requires_supplies" value="1" id="requires_supplies" @checked(old('requires_supplies'))>
-                        <label class="form-check-label" for="requires_supplies">بحاجة مستلزمات</label>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-4 js-supplies-wrapper">
-                    <label class="form-label">عدد المستلزمات</label>
-                    <input class="form-control js-supplies-count" type="number" min="1" max="20" value="{{ old('supplies_count', $suppliesCount) }}">
-                </div>
-
-                <div class="col-12 js-supplies-wrapper">
-                    <div class="row g-2 js-supplies-container"></div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">الوصف التفصيلي</label>
+                    <textarea class="form-control" name="description" rows="2" placeholder="تفاصيل النشاط (فقرات أو أجندة الفعالية)">{{ old('description') }}</textarea>
                 </div>
 
                 <div class="col-12">
