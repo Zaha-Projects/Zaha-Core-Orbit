@@ -40,11 +40,24 @@ class MonthlyActivitiesApprovalsController extends Controller
             ->withQueryString();
 
         $activities->getCollection()->transform(function (MonthlyActivity $activity) use ($dynamicWorkflowService) {
-            $dynamicWorkflowService->forModel('monthly_activities', $activity);
+            $instance = $dynamicWorkflowService->forModel('monthly_activities', $activity);
+            $activity->setRelation('workflowInstance', $instance);
+
             return $activity;
         });
 
         $activities->load('workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor');
+
+        $activities->getCollection()->transform(function (MonthlyActivity $activity) use ($dynamicWorkflowService, $viewer) {
+            $instance = $activity->workflowInstance;
+            $activity->can_current_user_decide = $instance
+                && $dynamicWorkflowService->canDecide($instance)
+                && $dynamicWorkflowService->currentStepForUser($instance, $viewer) !== null;
+            $activity->can_add_department_note = ($viewer->hasRole('workshops_secretary') && (bool) $activity->requires_workshops)
+                || ($viewer->hasRole('communication_head') && (bool) $activity->requires_communications);
+
+            return $activity;
+        });
 
         $collection = $activities->getCollection();
         if ($viewer->hasRole('workshops_secretary')) {
@@ -104,18 +117,20 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         $user = $request->user();
 
-        if ($user->hasRole('workshops_secretary') || $user->hasRole('communication_head')) {
-            $this->storeDepartmentNote($monthlyActivity, $user, $data);
-
-            return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.notes_saved'));
-        }
-
         $instance = $dynamicWorkflowService->forModel('monthly_activities', $monthlyActivity);
         abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
         abort_if(! $dynamicWorkflowService->canDecide($instance), 422, __('app.roles.programs.monthly_activities.approvals.errors.not_available_for_current_state'));
 
+        $savedDepartmentNote = $this->storeDepartmentNoteIfPresent($monthlyActivity, $user, $data);
+
         $step = $dynamicWorkflowService->currentStepForUser($instance, $user);
-        abort_unless($step !== null, 403, __('app.roles.programs.monthly_activities.approvals.errors.not_assigned_to_current_step'));
+
+        if (! $step) {
+            abort_if(! $savedDepartmentNote, 403, __('app.roles.programs.monthly_activities.approvals.errors.not_assigned_to_current_step'));
+
+            return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.notes_saved'));
+        }
+
         abort_if((int) $monthlyActivity->created_by === (int) $user->id, 422, __('app.roles.programs.monthly_activities.approvals.errors.self_approval_forbidden'));
 
         $dynamicWorkflowService->assertPrerequisites($instance, $step);
@@ -164,8 +179,10 @@ class MonthlyActivitiesApprovalsController extends Controller
             $lifecycleService->transitionOrFail($monthlyActivity, 'Exec Director Approved');
         }
 
+        $nextRecipients = $dynamicWorkflowService->eligibleUsersForStep($instance);
+
         $notifications->notifyUsers(
-            collect([$monthlyActivity->creator])->filter(),
+            collect([$monthlyActivity->creator])->filter()->merge($nextRecipients)->unique('id'),
             'approval_decision',
             __('app.roles.programs.monthly_activities.approvals.notifications.title'),
             __('app.roles.programs.monthly_activities.approvals.notifications.body', ['decision' => $data['decision'], 'step' => $step->step_key]),
@@ -192,9 +209,14 @@ class MonthlyActivitiesApprovalsController extends Controller
         return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.updated', ['activity' => $monthlyActivity->title]));
     }
 
-    protected function storeDepartmentNote(MonthlyActivity $monthlyActivity, $user, array $data): void
+    protected function storeDepartmentNoteIfPresent(MonthlyActivity $monthlyActivity, $user, array $data): bool
     {
-        abort_if(empty(trim((string) ($data['note'] ?? ''))), 422, __('app.roles.programs.monthly_activities.approvals.errors.note_required'));
+        $note = trim((string) ($data['note'] ?? ''));
+        if ($note === '') {
+            return false;
+        }
+
+        abort_unless($user->hasRole('workshops_secretary') || $user->hasRole('communication_head'), 403);
 
         if ($user->hasRole('workshops_secretary')) {
             $role = 'workshops';
@@ -208,8 +230,10 @@ class MonthlyActivitiesApprovalsController extends Controller
             'activity_id' => $monthlyActivity->id,
             'user_id' => $user->id,
             'role' => $role,
-            'note' => trim((string) $data['note']),
+            'note' => $note,
             'coverage_status' => $role === 'communications' ? ($data['coverage_status'] ?? null) : null,
         ]);
+
+        return true;
     }
 }

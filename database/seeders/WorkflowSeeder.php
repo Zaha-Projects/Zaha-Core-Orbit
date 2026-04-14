@@ -13,93 +13,15 @@ class WorkflowSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedWorkflow(
-            code: 'agenda_approval',
-            module: 'agenda',
-            nameAr: 'سير اعتماد الأجندة',
-            nameEn: 'Agenda Approval Workflow',
-            steps: [
-                [
-                    'step_key' => 'agenda_relations_officer_submit',
-                    'step_order' => 1,
-                    'approval_level' => 1,
-                    'name_ar' => 'إرسال مسؤول العلاقات',
-                    'name_en' => 'Relations Officer Submission',
-                    'step_type' => 'sub',
-                    'role' => 'relations_officer',
-                    'is_editable' => true,
-                ],
-                [
-                    'step_key' => 'agenda_relations_manager_review',
-                    'step_order' => 2,
-                    'approval_level' => 2,
-                    'name_ar' => 'مراجعة مدير العلاقات',
-                    'name_en' => 'Relations Manager Review',
-                    'step_type' => 'main',
-                    'role' => 'relations_manager',
-                    'is_editable' => false,
-                ],
-                [
-                    'step_key' => 'agenda_executive_manager_final_approval',
-                    'step_order' => 3,
-                    'approval_level' => 3,
-                    'name_ar' => 'الاعتماد النهائي من المدير التنفيذي',
-                    'name_en' => 'Executive Manager Final Approval',
-                    'step_type' => 'main',
-                    'role' => 'executive_manager',
-                    'is_editable' => false,
-                ],
-            ]
-        );
-
-        $this->seedWorkflow(
-            code: 'monthly_activity_approval',
-            module: 'monthly_activities',
-            nameAr: 'سير اعتماد الأنشطة الشهرية',
-            nameEn: 'Monthly Activities Approval Workflow',
-            steps: [
-                [
-                    'step_key' => 'monthly_branch_relations_officer_submit',
-                    'step_order' => 1,
-                    'approval_level' => 1,
-                    'name_ar' => 'إرسال مسؤول علاقات الفروع',
-                    'name_en' => 'Branch Relations Officer Submission',
-                    'step_type' => 'sub',
-                    'role' => 'branch_relations_officer',
-                    'is_editable' => true,
-                ],
-                [
-                    'step_key' => 'monthly_relations_manager_review',
-                    'step_order' => 2,
-                    'approval_level' => 2,
-                    'name_ar' => 'مراجعة مدير العلاقات',
-                    'name_en' => 'Relations Manager Review',
-                    'step_type' => 'main',
-                    'role' => 'relations_manager',
-                    'is_editable' => false,
-                ],
-                [
-                    'step_key' => 'monthly_programs_manager_review',
-                    'step_order' => 3,
-                    'approval_level' => 3,
-                    'name_ar' => 'مراجعة مدير البرامج',
-                    'name_en' => 'Programs Manager Review',
-                    'step_type' => 'main',
-                    'role' => 'programs_manager',
-                    'is_editable' => false,
-                ],
-                [
-                    'step_key' => 'monthly_executive_manager_final_approval',
-                    'step_order' => 4,
-                    'approval_level' => 4,
-                    'name_ar' => 'الاعتماد النهائي من المدير التنفيذي',
-                    'name_en' => 'Executive Manager Final Approval',
-                    'step_type' => 'main',
-                    'role' => 'executive_manager',
-                    'is_editable' => false,
-                ],
-            ]
-        );
+        foreach ($this->workflowDefinitions() as $workflow) {
+            $this->seedWorkflow(
+                code: $workflow['code'],
+                module: $workflow['module'],
+                nameAr: $workflow['name_ar'],
+                nameEn: $workflow['name_en'],
+                steps: $workflow['steps'],
+            );
+        }
     }
 
     /**
@@ -148,6 +70,8 @@ class WorkflowSeeder extends Seeder
                     'step_type' => $step['step_type'],
                     'role_id' => $role->id,
                     'permission_id' => null,
+                    'condition_field' => $step['condition_field'] ?? null,
+                    'condition_value' => $step['condition_value'] ?? null,
                     'is_editable' => $step['is_editable'],
                 ]
             );
@@ -184,5 +108,156 @@ class WorkflowSeeder extends Seeder
                 "Workflow [{$workflowCode}] contains duplicate {$field}: " . $duplicates->implode(', ')
             );
         }
+    }
+
+    /**
+     * @return array<int, array{code:string,module:string,name_ar:string,name_en:string,steps:array<int, array<string, mixed>>}>
+     */
+    private function workflowDefinitions(): array
+    {
+        return [
+            [
+                'code' => 'agenda_approval',
+                'module' => 'agenda',
+                'name_ar' => 'سير اعتماد الأجندة السنوية',
+                'name_en' => 'Annual Agenda Approval Workflow',
+                'steps' => [
+                    [
+                        'step_key' => 'agenda_relations_officer_submit',
+                        'step_order' => 1,
+                        'approval_level' => 1,
+                        'name_ar' => 'إنشاء وإرسال مسؤول العلاقات الرئيسي',
+                        'name_en' => 'Primary Relations Officer Draft & Submit',
+                        'step_type' => 'sub',
+                        'role' => 'relations_officer',
+                        'is_editable' => true,
+                    ],
+                    [
+                        'step_key' => 'agenda_relations_manager_review',
+                        'step_order' => 2,
+                        'approval_level' => 2,
+                        'name_ar' => 'اعتماد مدير العلاقات الرئيسي',
+                        'name_en' => 'Primary Relations Manager Approval',
+                        'step_type' => 'main',
+                        'role' => 'relations_manager',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'agenda_executive_manager_final_approval',
+                        'step_order' => 3,
+                        'approval_level' => 3,
+                        'name_ar' => 'الاعتماد النهائي من المدير التنفيذي',
+                        'name_en' => 'Executive Manager Final Approval',
+                        'step_type' => 'main',
+                        'role' => 'executive_manager',
+                        'is_editable' => false,
+                    ],
+                ],
+            ],
+            [
+                'code' => 'monthly_activity_approval',
+                'module' => 'monthly_activities',
+                'name_ar' => 'سير اعتماد الخطة الشهرية',
+                'name_en' => 'Monthly Plan Approval Workflow',
+                'steps' => [
+                    [
+                        'step_key' => 'monthly_branch_relations_officer_submit',
+                        'step_order' => 1,
+                        'approval_level' => 1,
+                        'name_ar' => 'إنشاء وإرسال مسؤول علاقات الفرع',
+                        'name_en' => 'Branch Relations Officer Draft & Submit',
+                        'step_type' => 'sub',
+                        'role' => 'branch_relations_officer',
+                        'is_editable' => true,
+                    ],
+                    [
+                        'step_key' => 'monthly_branch_relations_manager_review',
+                        'step_order' => 2,
+                        'approval_level' => 2,
+                        'name_ar' => 'اعتماد مدير علاقات الفرع',
+                        'name_en' => 'Branch Relations Manager Approval',
+                        'step_type' => 'main',
+                        'role' => 'branch_relations_manager',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'monthly_branch_coordinator_review',
+                        'step_order' => 3,
+                        'approval_level' => 3,
+                        'name_ar' => 'اعتماد منسق الفروع',
+                        'name_en' => 'Branch Coordinator Approval',
+                        'step_type' => 'main',
+                        'role' => 'branch_coordinator',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'monthly_relations_officer_review',
+                        'step_order' => 4,
+                        'approval_level' => 4,
+                        'name_ar' => 'اعتماد مسؤول العلاقات الرئيسي',
+                        'name_en' => 'Primary Relations Officer Approval',
+                        'step_type' => 'main',
+                        'role' => 'relations_officer',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'monthly_programs_manager_review',
+                        'step_order' => 5,
+                        'approval_level' => 5,
+                        'name_ar' => 'اعتماد مدير البرامج',
+                        'name_en' => 'Programs Manager Approval',
+                        'step_type' => 'main',
+                        'role' => 'programs_manager',
+                        'condition_field' => 'requires_programs',
+                        'condition_value' => '1',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'monthly_workshops_secretary_review',
+                        'step_order' => 6,
+                        'approval_level' => 6,
+                        'name_ar' => 'اعتماد سكرتير الورش',
+                        'name_en' => 'Workshops Secretary Approval',
+                        'step_type' => 'main',
+                        'role' => 'workshops_secretary',
+                        'condition_field' => 'requires_workshops',
+                        'condition_value' => '1',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'monthly_communication_head_review',
+                        'step_order' => 7,
+                        'approval_level' => 7,
+                        'name_ar' => 'اعتماد رئيس قسم الاتصال',
+                        'name_en' => 'Communication Head Approval',
+                        'step_type' => 'main',
+                        'role' => 'communication_head',
+                        'condition_field' => 'requires_communications',
+                        'condition_value' => '1',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'monthly_relations_manager_review',
+                        'step_order' => 8,
+                        'approval_level' => 8,
+                        'name_ar' => 'اعتماد مدير العلاقات الرئيسي',
+                        'name_en' => 'Primary Relations Manager Approval',
+                        'step_type' => 'main',
+                        'role' => 'relations_manager',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'monthly_executive_manager_final_approval',
+                        'step_order' => 9,
+                        'approval_level' => 9,
+                        'name_ar' => 'الاعتماد النهائي من المدير التنفيذي',
+                        'name_en' => 'Executive Manager Final Approval',
+                        'step_type' => 'main',
+                        'role' => 'executive_manager',
+                        'is_editable' => false,
+                    ],
+                ],
+            ],
+        ];
     }
 }

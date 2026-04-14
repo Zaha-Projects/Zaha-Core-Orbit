@@ -19,12 +19,19 @@ class WorkflowStep extends Model
         'approval_level',
         'role_id',
         'permission_id',
+        'condition_field',
+        'condition_value',
         'is_editable',
     ];
 
     protected $casts = [
         'is_editable' => 'boolean',
     ];
+
+    public function hasCondition(): bool
+    {
+        return filled($this->condition_field);
+    }
 
     public function workflow()
     {

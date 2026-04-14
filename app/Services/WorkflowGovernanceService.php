@@ -60,6 +60,10 @@ class WorkflowGovernanceService
             ->exists();
 
         abort_if($orderLevelExists, 422, __('app.roles.super_admin.workflows.errors.step_order_level_duplicate'));
+
+        if (blank($data['role_id'] ?? null) && blank($data['permission_id'] ?? null)) {
+            abort(422, __('app.roles.super_admin.workflows.errors.role_required'));
+        }
     }
 
     private function deactivateOthers(string $module, ?int $exceptWorkflowId = null): void

@@ -452,9 +452,9 @@ class MonthlyActivitiesController extends Controller
             $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
         }
 
-        $nextRole = $instance->currentStep?->role?->name;
+        $nextRecipients = $dynamicWorkflowService->eligibleUsersForStep($instance);
         $notifications->notifyUsers(
-            $nextRole ? User::role($nextRole)->get() : collect(),
+            $nextRecipients,
             'approval_requested',
             __('app.roles.programs.monthly_activities.approvals.notifications.submit_title'),
             __('app.roles.programs.monthly_activities.approvals.notifications.submit_body', ['activity' => $monthlyActivity->title]),

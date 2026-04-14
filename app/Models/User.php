@@ -66,11 +66,7 @@ class User extends Authenticatable
             return false;
         }
 
-        if ($this->can('branches.view.own')) {
-            return true;
-        }
-
-        return $this->hasRole('branch_relations_officer') || $this->hasRole('relations_officer');
+        return $this->can('branches.view.own');
     }
 
     public function hasBranchScopedAgendaVisibility(): bool
@@ -79,7 +75,7 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->can('branches.view.own') || $this->hasRole('branch_relations_officer');
+        return $this->can('branches.view.own');
     }
 
     public function branch()

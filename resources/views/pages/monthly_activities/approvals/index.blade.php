@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
@@ -6,7 +6,6 @@
 
 @php
     $viewer = auth()->user();
-    $isNotesOnlyRole = $viewer?->hasRole('workshops_secretary') || $viewer?->hasRole('communication_head');
     $currentStatus = request('status');
 @endphp
 
@@ -57,23 +56,52 @@
                     && method_exists($viewer, 'isKheldaUser')
                     && $viewer->isKheldaUser()
                     && $activity->needs_official_correspondence;
+                $canDecide = (bool) ($activity->can_current_user_decide ?? false);
+                $canAddDepartmentNote = (bool) ($activity->can_add_department_note ?? false);
+                $currentStepLabel = $wf?->currentStep?->name_ar ?? $wf?->currentStep?->name_en ?? __('workflow_ui.common.unknown_step');
+                $currentRoleLabel = $wf?->currentStep?->role?->display_name ?? __('workflow_ui.common.none_option');
+                $currentConditionField = $wf?->currentStep?->condition_field;
+                $requirements = [];
+
+                if ($activity->requires_programs) {
+                    $requirements[] = __('workflow_ui.approvals.requirements.programs');
+                }
+
+                if ($activity->requires_workshops) {
+                    $requirements[] = __('workflow_ui.approvals.requirements.workshops');
+                }
+
+                if ($activity->requires_communications) {
+                    $requirements[] = __('workflow_ui.approvals.requirements.communications');
+                }
             @endphp
             <div class="wf-card card">
                 <div class="card-body">
                     <div class="wf-summary mb-3">
-                        <div>
-                            <h3 class="h6 mb-1">{{ $activity->title }}</h3>
-                            <div class="wf-kv">{{ optional($activity->branch)->name ?? '-' }} — {{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</div>
-                            <div class="wf-kv mt-1">{{ __('workflow_ui.common.current_step') }}: {{ $wf?->currentStep?->name_ar ?? $wf?->currentStep?->name_en ?? __('workflow_ui.common.unknown_step') }}</div>
-                        </div>
-                        <div class="text-end">
-                            <span class="wf-status-badge {{ in_array($status, ['approved','rejected','changes_requested','in_progress','pending']) ? $statusClass : 'wf-status-default' }}">
-                                @if($status === 'approved') <i class="feather-check-circle"></i>
-                                @elseif($status === 'rejected') <i class="feather-x-circle"></i>
-                                @elseif($status === 'changes_requested') <i class="feather-rotate-ccw"></i>
-                                @else <i class="feather-clock"></i> @endif
-                                {{ __('workflow_ui.approvals.status_labels.' . $status) }}
-                            </span>
+                        <div class="w-100">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <div>
+                                    <h3 class="h6 mb-1">{{ $activity->title }}</h3>
+                                    <div class="wf-kv">{{ optional($activity->branch)->name ?? '-' }} | {{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="wf-status-badge {{ in_array($status, ['approved','rejected','changes_requested','in_progress','pending']) ? $statusClass : 'wf-status-default' }}">
+                                        @if($status === 'approved') <i class="feather-check-circle"></i>
+                                        @elseif($status === 'rejected') <i class="feather-x-circle"></i>
+                                        @elseif($status === 'changes_requested') <i class="feather-rotate-ccw"></i>
+                                        @else <i class="feather-clock"></i> @endif
+                                        {{ __('workflow_ui.approvals.status_labels.' . $status) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="wf-chip-row mt-3">
+                                <span class="wf-chip wf-chip-primary">{{ __('workflow_ui.common.current_step') }}: {{ $currentStepLabel }}</span>
+                                <span class="wf-chip">{{ __('workflow_ui.common.assignee') }}: {{ $currentRoleLabel }}</span>
+                                @foreach($requirements as $requirement)
+                                    <span class="wf-chip wf-chip-soft">{{ $requirement }}</span>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
 
@@ -123,82 +151,98 @@
                                         <div class="col-lg-5">
                                             <div class="border rounded-3 p-3 mb-3">
                                                 <h4 class="h6 mb-2">{{ __('workflow_ui.common.status') }}</h4>
-                                                <div class="wf-kv">{{ __('workflow_ui.common.assignee') }}: {{ $wf?->currentStep?->role?->display_name ?? __('workflow_ui.common.none_option') }}</div>
+                                                <div class="wf-kv">{{ __('workflow_ui.common.current_step') }}: {{ $currentStepLabel }}</div>
+                                                <div class="wf-kv">{{ __('workflow_ui.common.assignee') }}: {{ $currentRoleLabel }}</div>
+                                                @if($currentConditionField)
+                                                    <div class="wf-kv">{{ __('workflow_ui.builder.condition') }}: {{ $currentConditionField }}</div>
+                                                @endif
                                                 <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.decision') }}: {{ $latestApproval?->decision ? __('workflow_ui.approvals.status_labels.' . $latestApproval->decision) : __('workflow_ui.common.none_option') }}</div>
                                             </div>
 
                                             @if($activity->needs_official_correspondence)
                                                 <div class="border rounded-3 p-3 mb-3">
-                                                    <h4 class="h6 mb-2">المخاطبة الرسمية</h4>
-                                                    <div class="wf-kv mb-2">الجهة: {{ $activity->official_correspondence_target ?: '-' }}</div>
-                                                    <div class="wf-kv mb-2">السبب: {{ $activity->official_correspondence_reason ?: '-' }}</div>
-                                                    <div class="wf-kv mb-2">البريف: {{ $activity->official_correspondence_brief ?: '-' }}</div>
+                                                    <h4 class="h6 mb-2">{{ __('workflow_ui.approvals.official.title') }}</h4>
+                                                    <div class="wf-kv mb-2">{{ __('workflow_ui.approvals.official.target') }}: {{ $activity->official_correspondence_target ?: '-' }}</div>
+                                                    <div class="wf-kv mb-2">{{ __('workflow_ui.approvals.official.reason') }}: {{ $activity->official_correspondence_reason ?: '-' }}</div>
+                                                    <div class="wf-kv mb-2">{{ __('workflow_ui.approvals.official.brief') }}: {{ $activity->official_correspondence_brief ?: '-' }}</div>
                                                     <div class="d-flex flex-column gap-2">
                                                         @forelse($officialCorrespondenceAttachments as $attachment)
                                                             @php($isExternal = filter_var($attachment->file_path, FILTER_VALIDATE_URL))
                                                             <a class="btn btn-sm btn-outline-secondary text-start" href="{{ $isExternal ? $attachment->file_path : asset('storage/'.$attachment->file_path) }}" target="_blank" rel="noopener">
-                                                                {{ $attachment->title ?: 'عرض المخاطبة الرسمية' }}
+                                                                {{ $attachment->title ?: __('workflow_ui.approvals.official.view_attachment') }}
                                                             </a>
                                                         @empty
-                                                            <div class="wf-kv">لا يوجد مرفق رسمي مرفوع حتى الآن.</div>
+                                                            <div class="wf-kv">{{ __('workflow_ui.approvals.official.empty') }}</div>
                                                         @endforelse
                                                     </div>
                                                 </div>
                                             @endif
 
-                                            <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" enctype="multipart/form-data" class="decision-form" data-confirm-title="{{ __('workflow_ui.approvals.confirm_action') }}" data-confirm-body="{{ __('workflow_ui.approvals.confirm_action_body') }}" data-comment-required="{{ __('workflow_ui.approvals.comment_required') }}">
-                                                @csrf
-                                                @method('PUT')
+                                            @if($canDecide || $canAddDepartmentNote)
+                                                <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" enctype="multipart/form-data" class="decision-form" data-confirm-title="{{ __('workflow_ui.approvals.confirm_action') }}" data-confirm-body="{{ __('workflow_ui.approvals.confirm_action_body') }}" data-comment-required="{{ __('workflow_ui.approvals.comment_required') }}">
+                                                    @csrf
+                                                    @method('PUT')
 
-                                                @if($isNotesOnlyRole)
-                                                    <div class="mb-2">
-                                                        <label class="form-label">{{ __('workflow_ui.common.comment') }}</label>
-                                                        <textarea class="form-control" name="note" rows="3" required></textarea>
-                                                    </div>
-                                                    @if($viewer?->hasRole('communication_head'))
+                                                    @if($canDecide)
                                                         <div class="mb-2">
-                                                            <label class="form-label">{{ __('workflow_ui.common.coverage_status') }}</label>
-                                                            <select class="form-select" name="coverage_status">
-                                                                <option value="not_required">{{ __('workflow_ui.common.coverage_not_required') }}</option>
-                                                                <option value="planned">{{ __('workflow_ui.common.coverage_planned') }}</option>
-                                                                <option value="in_progress">{{ __('workflow_ui.common.coverage_in_progress') }}</option>
-                                                                <option value="completed">{{ __('workflow_ui.common.coverage_completed') }}</option>
+                                                            <label class="form-label">{{ __('workflow_ui.approvals.timeline.decision') }}</label>
+                                                            <select class="form-select decision-select" name="decision" required>
+                                                                <option value="approved">{{ __('workflow_ui.approvals.status_labels.approved') }}</option>
+                                                                <option value="changes_requested">{{ __('workflow_ui.approvals.status_labels.changes_requested') }}</option>
+                                                                <option value="rejected">{{ __('workflow_ui.approvals.status_labels.rejected') }}</option>
                                                             </select>
                                                         </div>
+                                                        <div class="mb-2">
+                                                            <label class="form-label">{{ __('workflow_ui.common.comment') }}</label>
+                                                            <textarea class="form-control decision-comment" name="comment" rows="3"></textarea>
+                                                        </div>
+                                                    @else
+                                                        <div class="alert alert-light border mb-2">{{ __('workflow_ui.approvals.note_only_hint') }}</div>
                                                     @endif
-                                                @else
-                                                    <div class="mb-2">
-                                                        <label class="form-label">{{ __('workflow_ui.approvals.timeline.decision') }}</label>
-                                                        <select class="form-select decision-select" name="decision" required>
-                                                            <option value="approved">{{ __('workflow_ui.approvals.status_labels.approved') }}</option>
-                                                            <option value="changes_requested">{{ __('workflow_ui.approvals.status_labels.changes_requested') }}</option>
-                                                            <option value="rejected">{{ __('workflow_ui.approvals.status_labels.rejected') }}</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">{{ __('workflow_ui.common.comment') }}</label>
-                                                        <textarea class="form-control decision-comment" name="comment" rows="3"></textarea>
-                                                    </div>
-                                                    @if($canUploadOfficialCorrespondence)
-                                                        <div class="border rounded-3 p-3 mb-2 bg-light-subtle">
-                                                            <div class="fw-semibold mb-2">إرفاق المخاطبة الرسمية للفرع</div>
+
+                                                    @if($canAddDepartmentNote)
+                                                        <div class="mb-2">
+                                                            <label class="form-label">{{ __('workflow_ui.approvals.department_note') }}</label>
+                                                            <textarea class="form-control" name="note" rows="3"></textarea>
+                                                        </div>
+                                                        @if($viewer?->hasRole('communication_head'))
                                                             <div class="mb-2">
-                                                                <label class="form-label">عنوان المرفق</label>
-                                                                <input class="form-control" name="official_correspondence_title" value="{{ old('official_correspondence_title', 'المخاطبة الرسمية المعتمدة') }}">
+                                                                <label class="form-label">{{ __('workflow_ui.common.coverage_status') }}</label>
+                                                                <select class="form-select" name="coverage_status">
+                                                                    <option value="not_required">{{ __('workflow_ui.common.coverage_not_required') }}</option>
+                                                                    <option value="planned">{{ __('workflow_ui.common.coverage_planned') }}</option>
+                                                                    <option value="in_progress">{{ __('workflow_ui.common.coverage_in_progress') }}</option>
+                                                                    <option value="completed">{{ __('workflow_ui.common.coverage_completed') }}</option>
+                                                                </select>
+                                                            </div>
+                                                        @endif
+                                                    @endif
+
+                                                    @if($canUploadOfficialCorrespondence && $canDecide)
+                                                        <div class="border rounded-3 p-3 mb-2 bg-light-subtle">
+                                                            <div class="fw-semibold mb-2">{{ __('workflow_ui.approvals.official.upload_title') }}</div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">{{ __('workflow_ui.approvals.official.attachment_title') }}</label>
+                                                                <input class="form-control" name="official_correspondence_title" value="{{ old('official_correspondence_title', __('workflow_ui.approvals.official.default_attachment_title')) }}">
                                                             </div>
                                                             <div>
-                                                                <label class="form-label">تحميل المرفق</label>
+                                                                <label class="form-label">{{ __('workflow_ui.approvals.official.upload_field') }}</label>
                                                                 <input class="form-control" type="file" name="official_correspondence_file" accept=".pdf,.doc,.docx">
-                                                                <small class="text-muted d-block mt-1">سيظهر هذا المرفق مباشرة لموظف العلاقات في الفرع داخل صفحة النشاط.</small>
+                                                                <small class="text-muted d-block mt-1">{{ __('workflow_ui.approvals.official.upload_help') }}</small>
                                                             </div>
                                                         </div>
                                                     @endif
-                                                @endif
 
-                                                <div class="d-flex justify-content-end">
-                                                    <button class="btn btn-primary btn-sm">{{ __('workflow_ui.approvals.submit_decision') }}</button>
+                                                    <div class="d-flex justify-content-end">
+                                                        <button class="btn btn-primary btn-sm">{{ $canDecide ? __('workflow_ui.approvals.submit_decision') : __('workflow_ui.approvals.submit_note') }}</button>
+                                                    </div>
+                                                </form>
+                                            @else
+                                                <div class="border rounded-3 p-3 wf-panel-soft">
+                                                    <div class="fw-semibold mb-1">{{ __('workflow_ui.approvals.waiting_title') }}</div>
+                                                    <div class="wf-kv">{{ __('workflow_ui.approvals.waiting_body', ['role' => $currentRoleLabel]) }}</div>
                                                 </div>
-                                            </form>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

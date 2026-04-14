@@ -76,6 +76,8 @@ class WorkflowsController extends Controller
         $workflow->steps()->create([
             ...$data,
             'permission_id' => null,
+            'condition_field' => $data['condition_field'] ?? null,
+            'condition_value' => $data['condition_value'] ?? null,
             'is_editable' => (bool) ($data['is_editable'] ?? true),
         ]);
 
@@ -91,6 +93,8 @@ class WorkflowsController extends Controller
         $step->update([
             ...$data,
             'permission_id' => null,
+            'condition_field' => $data['condition_field'] ?? null,
+            'condition_value' => $data['condition_value'] ?? null,
             'is_editable' => (bool) ($data['is_editable'] ?? false),
         ]);
 
@@ -114,6 +118,8 @@ class WorkflowsController extends Controller
             'name_ar' => ['nullable', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
             'role_id' => ['nullable', 'exists:roles,id'],
+            'condition_field' => ['nullable', 'string', 'max:100'],
+            'condition_value' => ['nullable', 'string', 'max:255', 'required_with:condition_field'],
             'is_editable' => ['nullable', 'boolean'],
         ]);
     }
