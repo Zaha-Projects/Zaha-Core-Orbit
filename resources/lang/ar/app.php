@@ -245,6 +245,7 @@ return [
                 'branches' => 'الفروع',
                 'centers' => 'المراكز',
                 'roles' => 'الأدوار',
+                'event_lookups' => 'القوائم المرجعية',
                 'approvals' => 'الاعتمادات',
                 'reports' => 'التقارير',
             ],

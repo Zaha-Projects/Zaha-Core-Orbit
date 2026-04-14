@@ -11,7 +11,7 @@
     <div class="event-module">
         <div class="card event-card mb-4">
             <div class="card-body">
-                <h1 class="h4 mb-2">إعدادات اللوك أب للأنشطة</h1>
+                <h1 class="h4 mb-2">إدارة القوائم المرجعية</h1>
                 <p class="text-muted mb-0">كل الخيارات التالية قابلة للإضافة والتعديل والتفعيل أو التعطيل من السوبر أدمن، وتُستخدم في الأجندة والخطة الشهرية.</p>
             </div>
         </div>

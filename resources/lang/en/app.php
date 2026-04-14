@@ -245,6 +245,7 @@ return [
                 'branches' => 'Branches',
                 'centers' => 'Centers',
                 'roles' => 'Roles',
+                'event_lookups' => 'Lookups',
                 'approvals' => 'Approvals',
                 'reports' => 'Reports',
             ],

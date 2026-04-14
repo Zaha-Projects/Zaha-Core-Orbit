@@ -31,6 +31,12 @@
 </li>
 @endcan
 <li class="nxl-item">
+    <a class="nxl-link {{ request()->routeIs('role.super_admin.events_lookups*') ? 'active' : '' }}" href="{{ route('role.super_admin.events_lookups.index') }}">
+        <span class="nxl-micon"><i class="feather-sliders"></i></span>
+        <span class="nxl-mtext">{{ __('app.roles.super_admin.sidebar.event_lookups') }}</span>
+    </a>
+</li>
+<li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.super_admin.approvals*') ? 'active' : '' }}" href="{{ route('role.super_admin.approvals') }}">
         <span class="nxl-micon"><i class="feather-check-circle"></i></span>
         <span class="nxl-mtext">{{ __('app.roles.super_admin.sidebar.approvals') }}</span>
