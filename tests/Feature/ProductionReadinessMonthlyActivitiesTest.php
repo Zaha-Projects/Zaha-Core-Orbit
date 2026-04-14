@@ -7,6 +7,10 @@ use App\Models\Center;
 use App\Models\Department;
 use App\Models\MonthlyActivity;
 use App\Models\User;
+use App\Models\Workflow;
+use App\Models\WorkflowInstance;
+use App\Models\WorkflowLog;
+use App\Models\WorkflowStep;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -76,6 +80,107 @@ class ProductionReadinessMonthlyActivitiesTest extends TestCase
             'plan_version' => 2,
             'title' => 'Updated title',
         ]);
+    }
+
+    public function test_submitted_activity_with_existing_approval_trail_creates_new_version_when_edited(): void
+    {
+        [$user, $branch, $center] = $this->actingRelationsOfficer();
+
+        $approverRole = Role::findOrCreate('relations_manager', 'web');
+        $workflow = Workflow::query()->create([
+            'module' => 'monthly_activities',
+            'code' => 'monthly_versioning_' . uniqid(),
+            'is_active' => true,
+        ]);
+        $step = WorkflowStep::query()->create([
+            'workflow_id' => $workflow->id,
+            'step_key' => 'relations_review',
+            'step_order' => 1,
+            'approval_level' => 1,
+            'step_type' => 'main',
+            'role_id' => $approverRole->id,
+            'is_editable' => false,
+        ]);
+
+        $activity = MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'center_id' => $center->id,
+            'created_by' => $user->id,
+            'status' => 'submitted',
+            'plan_version' => 1,
+            'plan_stage' => 1,
+            'proposed_date' => '2026-04-15',
+            'activity_date' => '2026-04-15',
+            'location_type' => 'inside_center',
+            'description' => str_repeat('x', 30),
+            'short_description' => 'short',
+        ]);
+
+        $instance = WorkflowInstance::query()->create([
+            'workflow_id' => $workflow->id,
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $activity->id,
+            'status' => 'in_progress',
+            'current_step_id' => $step->id,
+            'started_at' => now(),
+        ]);
+
+        WorkflowLog::query()->create([
+            'workflow_instance_id' => $instance->id,
+            'workflow_step_id' => $step->id,
+            'acted_by' => $user->id,
+            'action' => 'approved',
+            'edit_request_iteration' => 0,
+            'acted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('role.relations.activities.update', $activity), $this->validPayload($branch, [
+                'center_id' => $center->id,
+                'title' => 'Submitted version edited',
+            ]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('monthly_activities', [
+            'id' => $activity->id,
+            'status' => 'cancelled',
+        ]);
+
+        $this->assertDatabaseHas('monthly_activities', [
+            'previous_version_id' => $activity->id,
+            'plan_version' => 2,
+            'title' => 'Submitted version edited',
+        ]);
+
+        $this->assertDatabaseHas('workflow_instances', [
+            'id' => $instance->id,
+            'status' => 'rejected',
+        ]);
+    }
+
+    public function test_superseded_activity_cannot_be_submitted_again(): void
+    {
+        [$user, $branch, $center] = $this->actingRelationsOfficer();
+
+        $oldActivity = MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'center_id' => $center->id,
+            'created_by' => $user->id,
+            'status' => 'cancelled',
+        ]);
+
+        MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'center_id' => $center->id,
+            'created_by' => $user->id,
+            'previous_version_id' => $oldActivity->id,
+            'plan_version' => 2,
+            'status' => 'draft',
+        ]);
+
+        $this->actingAs($user)
+            ->patch(route('role.relations.activities.submit', $oldActivity))
+            ->assertSessionHasErrors('status');
     }
 
     public function test_agenda_event_requires_owner_and_owner_not_partner(): void

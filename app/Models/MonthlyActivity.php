@@ -224,6 +224,16 @@ class MonthlyActivity extends Model
         return $this->belongsTo(AgendaEvent::class);
     }
 
+    public function previousVersion()
+    {
+        return $this->belongsTo(self::class, 'previous_version_id');
+    }
+
+    public function newerVersions()
+    {
+        return $this->hasMany(self::class, 'previous_version_id');
+    }
+
     public function supplies()
     {
         return $this->hasMany(MonthlyActivitySupply::class);

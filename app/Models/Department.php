@@ -11,7 +11,14 @@ class Department extends Model
 
     protected $fillable = [
         'name',
+        'is_active',
+        'sort_order',
         'color_hex',
         'icon',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 }

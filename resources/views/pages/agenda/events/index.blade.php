@@ -10,14 +10,14 @@
     $canManageAgenda = $authUser?->can('agenda.create') ?? false;
     $canBranchInteract = ($authUser?->can('agenda.participation.update') ?? false) && ! $isKhaldaHq;
 
-    $agendaStatusLabel = function (?string $status): string {
-        if (!$status) {
+    $agendaStatusLabels = collect($agendaStatusOptions ?? [])->pluck('name', 'code')->all();
+    $agendaStatusLabel = function (?string $status) use ($agendaStatusLabels): string {
+        if (! $status) {
             return '-';
         }
 
-        $translated = __('app.roles.relations.agenda.status_labels.' . $status);
-
-        return $translated !== 'app.roles.relations.agenda.status_labels.' . $status ? $translated : $status;
+        return $agendaStatusLabels[$status]
+            ?? \App\Models\EventStatusLookup::labelFor('agenda', $status);
     };
 
     $roleDisplayNames = \App\Models\Role::query()
@@ -159,27 +159,44 @@
 
         <form method="GET" class="card card-body mb-3">
             <div class="row g-2">
-                <div class="col-md-2"><input class="form-control" type="number" name="year" placeholder="{{ __('app.enterprise.year') }}" value="{{ request('year') }}"></div>
-                <div class="col-md-2"><input class="form-control" type="number" min="1" max="12" name="month" placeholder="{{ __('app.roles.programs.monthly_activities.sync.month') }}" value="{{ request('month') }}"></div>
-                <div class="col-md-2"><input class="form-control" name="status" placeholder="{{ __('app.roles.reports.fields.status') }}" value="{{ request('status') }}"></div>
+                <div class="col-md-2"><input class="form-control" type="text" inputmode="numeric" pattern="[0-9]*" name="year" placeholder="اكتب السنة" value="{{ request('year') }}"></div>
+                <div class="col-md-2"><input class="form-control" type="number" min="1" max="12" name="month" placeholder="اكتب رقم الشهر" value="{{ request('month') }}"></div>
+                <div class="col-md-2">
+                    <select class="form-select" name="status">
+                        <option value="">كل الحالات</option>
+                        @foreach ($agendaStatusOptions as $statusOption)
+                            <option value="{{ $statusOption->code }}" @selected(request('status') === $statusOption->code)>{{ $agendaStatusLabel($statusOption->code) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @if ($canFilterBranches)
+                    <div class="col-md-2">
+                        <select class="form-select" name="branch_id">
+                            <option value="">كل الفروع</option>
+                            @foreach ($branches as $branch)
+                                <option value="{{ $branch->id }}" @selected((string) request('branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div class="col-md-2">
                     <select class="form-select" name="event_type">
-                        <option value="">{{ __('All') }} - {{ __('app.roles.relations.agenda.fields_ext.event_type') }}</option>
-                        <option value="mandatory" @selected(request('event_type') === 'mandatory')>{{ __('Mandatory') }}</option>
-                        <option value="optional" @selected(request('event_type') === 'optional')>{{ __('Optional') }}</option>
+                        <option value="">كل أنواع الفعالية</option>
+                        <option value="mandatory" @selected(request('event_type') === 'mandatory')>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
+                        <option value="optional" @selected(request('event_type') === 'optional')>{{ __('app.roles.relations.agenda.types.optional') }}</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="plan_type">
-                        <option value="">{{ __('All') }} - {{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</option>
-                        <option value="unified" @selected(request('plan_type') === 'unified')>{{ __('Unified') }}</option>
-                        <option value="non_unified" @selected(request('plan_type') === 'non_unified')>{{ __('Non-Unified') }}</option>
+                        <option value="">كل أنواع الخطة</option>
+                        <option value="unified" @selected(request('plan_type') === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
+                        <option value="non_unified" @selected(request('plan_type') === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="per_page">
                         @foreach ([10, 20, 50, 100] as $size)
-                            <option value="{{ $size }}" @selected((int) request('per_page', 20) === $size)>{{ __('عرض') }} {{ $size }}</option>
+                            <option value="{{ $size }}" @selected((int) request('per_page', 20) === $size)>عرض {{ $size }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -213,8 +230,8 @@
                                             <div class="small text-muted">📅 {{ $baseDate }}</div>
                                         </div>
                                         <div class="d-flex gap-1 flex-wrap justify-content-end">
-                                            <span class="badge {{ $event->event_type === 'mandatory' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' }}">{{ $event->event_type }}</span>
-                                            <span class="badge {{ $event->plan_type === 'unified' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info' }}">{{ $event->plan_type }}</span>
+                                            <span class="badge {{ $event->event_type === 'mandatory' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' }}">{{ __('app.roles.relations.agenda.types.' . $event->event_type) }}</span>
+                                            <span class="badge {{ $event->plan_type === 'unified' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info' }}">{{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</span>
                                         </div>
                                     </div>
 

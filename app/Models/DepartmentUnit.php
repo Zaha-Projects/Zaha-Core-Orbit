@@ -12,8 +12,15 @@ class DepartmentUnit extends Model
     protected $fillable = [
         'unit_key',
         'name',
+        'is_active',
+        'sort_order',
         'role_name',
         'color_hex',
         'icon',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 }

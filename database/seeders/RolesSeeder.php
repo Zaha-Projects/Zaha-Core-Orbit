@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 
 class RolesSeeder extends Seeder
 {
@@ -50,6 +51,61 @@ class RolesSeeder extends Seeder
                 'name_ar' => 'سكرتير الورش',
                 'name_en' => 'Workshops Secretary',
             ],
+            [
+                'key' => 'programs_officer',
+                'name_ar' => 'مسؤول البرامج',
+                'name_en' => 'Programs Officer',
+            ],
+            [
+                'key' => 'communication_head',
+                'name_ar' => 'رئيس قسم الاتصال',
+                'name_en' => 'Communication Head',
+            ],
+            [
+                'key' => 'finance_officer',
+                'name_ar' => 'مسؤول المالية',
+                'name_en' => 'Finance Officer',
+            ],
+            [
+                'key' => 'maintenance_officer',
+                'name_ar' => 'مسؤول الصيانة',
+                'name_en' => 'Maintenance Officer',
+            ],
+            [
+                'key' => 'transport_officer',
+                'name_ar' => 'مسؤول النقل',
+                'name_en' => 'Transport Officer',
+            ],
+            [
+                'key' => 'reports_viewer',
+                'name_ar' => 'مستعرض التقارير',
+                'name_en' => 'Reports Viewer',
+            ],
+            [
+                'key' => 'staff',
+                'name_ar' => 'موظف',
+                'name_en' => 'Staff',
+            ],
+            [
+                'key' => 'liaison',
+                'name_ar' => 'منسق',
+                'name_en' => 'Liaison',
+            ],
+            [
+                'key' => 'movement_manager',
+                'name_ar' => 'مدير الحركة',
+                'name_en' => 'Movement Manager',
+            ],
+            [
+                'key' => 'movement_editor',
+                'name_ar' => 'محرر الحركة',
+                'name_en' => 'Movement Editor',
+            ],
+            [
+                'key' => 'movement_viewer',
+                'name_ar' => 'مستعرض الحركة',
+                'name_en' => 'Movement Viewer',
+            ],
         ];
 
         foreach ($roles as $roleData) {
@@ -69,16 +125,27 @@ class RolesSeeder extends Seeder
     {
         $map = [
             'super_admin' => ['*'],
-            'executive_manager' => ['agenda.view', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.approve', 'branches.view.all', 'reports.view'],
-            'programs_manager' => ['monthly_activities.view', 'monthly_activities.approve', 'evaluation.manage', 'branches.view.all', 'reports.view', 'kpi.view'],
-            'relations_manager' => ['agenda.view', 'agenda.create', 'agenda.update', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.approve', 'branches.view.all'],
+            'executive_manager' => ['agenda.view', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'branches.view.all', 'reports.view'],
+            'programs_manager' => ['monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'evaluation.manage', 'branches.view.all', 'reports.view', 'kpi.view'],
+            'relations_manager' => ['agenda.view', 'agenda.create', 'agenda.update', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'branches.view.all'],
             'branch_relations_officer' => ['agenda.view', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'branches.view.own', 'communications.upload_media'],
             'relations_officer' => ['agenda.view', 'agenda.create', 'agenda.update', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'branches.view.own'],
-            'followup_officer' => ['reports.view', 'kpi.view', 'kpi.manage', 'agenda.view', 'monthly_activities.view', 'evaluation.view', 'branches.view.all'],
-            'workshops_secretary' => ['agenda.view', 'agenda.participation.update', 'monthly_activities.view', 'branches.view.all'],
+            'followup_officer' => ['reports.view', 'kpi.view', 'kpi.manage', 'agenda.view', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'evaluation.view', 'branches.view.all'],
+            'workshops_secretary' => ['agenda.view', 'agenda.participation.update', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'branches.view.all'],
+            'programs_officer' => ['monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'monthly_activities.edit', 'branches.view.all', 'reports.view'],
+            'communication_head' => ['agenda.view', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'branches.view.all'],
+            'finance_officer' => ['reports.view'],
+            'maintenance_officer' => [],
+            'transport_officer' => [],
+            'reports_viewer' => ['reports.view', 'kpi.view'],
+            'staff' => ['agenda.view', 'monthly_activities.view'],
+            'liaison' => ['monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'branches.view.all'],
+            'movement_manager' => [],
+            'movement_editor' => [],
+            'movement_viewer' => [],
         ];
 
-        $allPermissions = \Spatie\Permission\Models\Permission::query()->where('guard_name', 'web')->pluck('name')->all();
+        $allPermissions = Permission::query()->where('guard_name', 'web')->get();
 
         foreach ($map as $roleKey => $permissionNames) {
             $role = Role::query()->where('guard_name', 'web')->where('name', $roleKey)->first();
@@ -93,7 +160,12 @@ class RolesSeeder extends Seeder
                 continue;
             }
 
-            $role->syncPermissions($permissionNames);
+            $permissions = Permission::query()
+                ->where('guard_name', 'web')
+                ->whereIn('name', $permissionNames)
+                ->get();
+
+            $role->syncPermissions($permissions);
         }
     }
 }

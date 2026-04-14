@@ -44,6 +44,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'branches.view.all', 'module' => 'branch_scope', 'action' => 'view_all', 'name_ar' => 'عرض كل الفروع', 'name_en' => 'View all branches'],
             ['name' => 'branches.view.own', 'module' => 'branch_scope', 'action' => 'view_own', 'name_ar' => 'عرض الفرع الخاص', 'name_en' => 'View own branch'],
 
+            ['name' => 'monthly_activities.view_other_branches', 'module' => 'monthly_activities', 'action' => 'view_other_branches', 'name_ar' => 'عرض الخطط الشهرية للفروع الأخرى', 'name_en' => 'View other branches monthly plans'],
         ];
 
         foreach ($permissions as $permission) {

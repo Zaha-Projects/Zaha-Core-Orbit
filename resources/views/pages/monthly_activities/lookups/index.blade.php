@@ -28,6 +28,30 @@
     </div></div>
 
     <div class="card event-card mt-4"><div class="card-body">
+        <h2 class="h6">وحدات الأقسام</h2>
+        <form method="POST" action="{{ route('role.super_admin.events_lookups.department_units.store') }}" class="row g-2 mb-3">@csrf
+            <div class="col-12 col-md-3"><input class="form-control" name="unit_key" placeholder="unit_key" required></div>
+            <div class="col-12 col-md-4"><input class="form-control" name="name" placeholder="اسم الوحدة" required></div>
+            <div class="col-12 col-md-3"><input class="form-control" name="role_name" placeholder="الدور المرتبط (اختياري)"></div>
+            <div class="col-12 col-md-2"><button class="btn btn-primary w-100">إضافة</button></div>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>الاسم</th><th>المعرف</th><th>الدور</th></tr></thead>
+                <tbody>
+                @foreach($departmentUnits as $unit)
+                    <tr>
+                        <td>{{ $unit->name }}</td>
+                        <td><code>{{ $unit->unit_key }}</code></td>
+                        <td>{{ $unit->role_name ?: '-' }}</td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div></div>
+
+    <div class="card event-card mt-4"><div class="card-body">
         <h2 class="h6">ألوان وأيقونات الأقسام</h2>
         <div class="table-responsive">
             <table class="table table-sm align-middle">

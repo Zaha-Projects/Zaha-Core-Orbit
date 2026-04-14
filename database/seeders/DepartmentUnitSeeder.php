@@ -16,8 +16,16 @@ class DepartmentUnitSeeder extends Seeder
             ['unit_key' => 'khalda_events_relations', 'name' => 'فعاليات خلدا', 'role_name' => 'relations_manager'],
         ];
 
-        foreach ($units as $unit) {
-            DepartmentUnit::updateOrCreate(['unit_key' => $unit['unit_key']], $unit);
+        foreach ($units as $index => $unit) {
+            DepartmentUnit::updateOrCreate(
+                ['unit_key' => $unit['unit_key']],
+                array_merge($unit, [
+                    'sort_order' => $index + 1,
+                    'is_active' => true,
+                    'color_hex' => $unit['color_hex'] ?? '#2563EB',
+                    'icon' => $unit['icon'] ?? 'UNIT',
+                ])
+            );
         }
     }
 }

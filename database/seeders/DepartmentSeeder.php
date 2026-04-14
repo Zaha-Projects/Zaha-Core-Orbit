@@ -18,8 +18,16 @@ class DepartmentSeeder extends Seeder
             ['name' => 'المتابعة والتقييم'],
         ];
 
-        foreach ($departments as $department) {
-            Department::firstOrCreate(['name' => $department['name']], $department);
+        foreach ($departments as $index => $department) {
+            Department::updateOrCreate(
+                ['name' => $department['name']],
+                array_merge($department, [
+                    'sort_order' => $index + 1,
+                    'is_active' => true,
+                    'color_hex' => $department['color_hex'] ?? '#2563EB',
+                    'icon' => $department['icon'] ?? 'DPT',
+                ])
+            );
         }
     }
 }

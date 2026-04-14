@@ -22,10 +22,13 @@ class EventCategorySeeder extends Seeder
                 continue;
             }
 
-            foreach ($categories as $categoryName) {
+            foreach ($categories as $index => $categoryName) {
                 EventCategory::updateOrCreate(
                     ['department_id' => $department->id, 'name' => $categoryName],
-                    ['active' => true]
+                    [
+                        'active' => true,
+                        'sort_order' => $index + 1,
+                    ]
                 );
             }
         }

@@ -4,10 +4,11 @@
     $title = __('app.roles.relations.agenda.show_title');
     $subtitle = __('app.roles.relations.agenda.subtitle');
     $statusLabel = function (?string $status): string {
-        if (!$status) return '-';
-        $translated = __('app.roles.relations.agenda.status_labels.' . $status);
+        if (! $status) {
+            return '-';
+        }
 
-        return $translated !== 'app.roles.relations.agenda.status_labels.' . $status ? $translated : $status;
+        return \App\Models\EventStatusLookup::labelFor('agenda', $status);
     };
 @endphp
 

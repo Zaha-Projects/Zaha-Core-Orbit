@@ -36,6 +36,11 @@
     $partnersCount = max(1, count($oldPartners));
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
+    $editUser = auth()->user();
+    $isBranchScopedUser = $editUser
+        && method_exists($editUser, 'hasBranchScopedMonthlyVisibility')
+        && $editUser->hasBranchScopedMonthlyVisibility()
+        && ! empty($editUser->branch_id);
 @endphp
 
 
@@ -103,14 +108,20 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.branch') }}</label>
-                    <select class="form-select" name="branch_id" >
-                        <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
-                        @foreach ($branches as $branch)
-                            <option value="{{ $branch->id }}" @selected($monthlyActivity->branch_id === $branch->id)>
-                                {{ $branch->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @if ($isBranchScopedUser)
+                        <input type="hidden" name="branch_id" value="{{ $monthlyActivity->branch_id }}">
+                        <input class="form-control" value="{{ $monthlyActivity->branch?->name ?? '-' }}" readonly>
+                        <small class="text-muted d-block mt-1">يتم اعتماد فرع المستخدم تلقائيًا.</small>
+                    @else
+                        <select class="form-select" name="branch_id" >
+                            <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
+                            @foreach ($branches as $branch)
+                                <option value="{{ $branch->id }}" @selected($monthlyActivity->branch_id === $branch->id)>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
                 <div class="col-12 col-md-4">
                     
@@ -129,12 +140,9 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>
                     <select class="form-select" name="status" >
-                        <option value="draft" @selected($monthlyActivity->status === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
-                        <option value="submitted" @selected($monthlyActivity->status === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
-                        <option value="changes_requested" @selected($monthlyActivity->status === 'changes_requested')>{{ __('app.roles.programs.monthly_activities.statuses.changes_requested') }}</option>
-                        <option value="postponed" @selected($monthlyActivity->status === 'postponed')>{{ __('app.roles.programs.monthly_activities.statuses.postponed') }}</option>
-                        <option value="cancelled" @selected($monthlyActivity->status === 'cancelled')>{{ __('app.roles.programs.monthly_activities.statuses.cancelled') }}</option>
-                        <option value="closed" @selected($monthlyActivity->status === 'closed')>{{ __('app.roles.programs.monthly_activities.statuses.closed') }}</option>
+                        @foreach (($monthlyStatusOptions ?? collect()) as $statusOption)
+                            <option value="{{ $statusOption->code }}" @selected($monthlyActivity->status === $statusOption->code)>{{ $statusOption->name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-12 col-md-4 d-flex align-items-center">
@@ -240,7 +248,7 @@
                 <div class="col-12"><h2 class="h6 mb-1">المراسلات والتواريخ</h2></div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" name="needs_official_letters" value="1" id="needs_letters_edit" @checked($monthlyActivity->needs_official_letters)>
+                        <input class="form-check-input" type="checkbox" name="needs_official_letters" value="1" id="needs_letters_edit" @checked(old('needs_official_letters', $monthlyActivity->needs_official_letters))>
                         <label class="form-check-label" for="needs_letters_edit">بحاجة إلى خطابات</label>
                     </div>
                 </div>
@@ -258,7 +266,7 @@
                 </div>
                 <div class="col-12 col-md-3 d-flex align-items-center">
                     <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" name="relations_approval_on_reschedule" value="1" id="relations_reschedule_approve_edit" @checked($monthlyActivity->relations_approval_on_reschedule)>
+                        <input class="form-check-input" type="checkbox" name="relations_approval_on_reschedule" value="1" id="relations_reschedule_approve_edit" @checked(old('relations_approval_on_reschedule', $monthlyActivity->relations_approval_on_reschedule))>
                         <label class="form-check-label" for="relations_reschedule_approve_edit">اعتماد العلاقات على التعديل</label>
                     </div>
                 </div>
@@ -618,8 +626,9 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>
                     <select class="form-select" name="status" >
-                        <option value="closed">{{ __('app.roles.programs.monthly_activities.statuses.closed') }}</option>
-                        <option value="completed">{{ __('app.roles.programs.monthly_activities.statuses.completed') }}</option>
+                        @foreach (($monthlyCloseStatusOptions ?? collect()) as $statusOption)
+                            <option value="{{ $statusOption->code }}" @selected($monthlyActivity->status === $statusOption->code)>{{ $statusOption->name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-12 col-md-4 d-flex justify-content-end align-items-end">

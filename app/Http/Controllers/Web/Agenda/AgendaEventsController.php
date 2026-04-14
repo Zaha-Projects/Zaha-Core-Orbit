@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\Department;
 use App\Models\DepartmentUnit;
 use App\Models\EventCategory;
+use App\Models\EventStatusLookup;
 use App\Models\MonthlyActivity;
 use App\Models\AuditLog;
 use App\Models\User;
@@ -138,8 +139,92 @@ class AgendaEventsController extends Controller
                 });
         });
     }
+
+    protected function agendaStatusOptions(?string $currentStatus = null)
+    {
+        return EventStatusLookup::query()
+            ->forModule('agenda')
+            ->where(function ($query) use ($currentStatus) {
+                $query->where('is_active', true);
+
+                if (filled($currentStatus)) {
+                    $query->orWhere('code', $currentStatus);
+                }
+            })
+            ->ordered()
+            ->get()
+            ->unique('code')
+            ->values();
+    }
+
+    protected function agendaDepartmentsForForm(?AgendaEvent $agendaEvent = null)
+    {
+        $selectedIds = collect([$agendaEvent?->owner_department_id])
+            ->merge($agendaEvent?->partnerDepartments?->pluck('id') ?? [])
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        return Department::query()
+            ->where(function ($query) use ($selectedIds) {
+                $query->where('is_active', true);
+
+                if ($selectedIds->isNotEmpty()) {
+                    $query->orWhereIn('id', $selectedIds->all());
+                }
+            })
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    protected function agendaCategoriesForForm(?AgendaEvent $agendaEvent = null)
+    {
+        $selectedCategoryId = $agendaEvent?->event_category_id;
+
+        return EventCategory::query()
+            ->where(function ($query) use ($selectedCategoryId) {
+                $query->where('active', true);
+
+                if (filled($selectedCategoryId)) {
+                    $query->orWhereKey($selectedCategoryId);
+                }
+            })
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    protected function departmentUnitsForAgenda(?AgendaEvent $agendaEvent = null)
+    {
+        $selectedUnitIds = collect($agendaEvent?->participations ?? [])
+            ->where('entity_type', 'department_unit')
+            ->pluck('entity_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        return DepartmentUnit::query()
+            ->where(function ($query) use ($selectedUnitIds) {
+                $query->where('is_active', true);
+
+                if ($selectedUnitIds->isNotEmpty()) {
+                    $query->orWhereIn('id', $selectedUnitIds->all());
+                }
+            })
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function index(Request $request)
     {
+        if ($branchId = $this->currentUserBranchIdForFilters($request)) {
+            $request->merge(['branch_id' => $branchId]);
+        }
+
         $allowedPerPage = [10, 20, 50, 100];
         $perPage = (int) $request->input('per_page', 20);
         if (! in_array($perPage, $allowedPerPage, true)) {
@@ -158,12 +243,35 @@ class AgendaEventsController extends Controller
             ->withQueryString();
 
         $branchActor = $this->branchActor($request);
+        $branches = Branch::query()
+            ->when($this->currentUserBranchIdForFilters($request), fn ($query, $branchId) => $query->whereKey($branchId))
+            ->orderBy('name')
+            ->get();
+        $canFilterBranches = $this->currentUserBranchIdForFilters($request) === null;
 
         $filters = array_merge($request->all(), [
             'per_page' => $perPage,
         ]);
 
-        return view('pages.agenda.events.index', compact('events', 'filters', 'branchActor'));
+        $agendaStatusOptions = $this->agendaStatusOptions((string) $request->input('status'));
+
+        return view('pages.agenda.events.index', compact('events', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
+    }
+
+    protected function currentUserBranchIdForFilters(Request $request): ?int
+    {
+        $user = $request->user();
+
+        if (
+            $user
+            && method_exists($user, 'hasBranchScopedAgendaVisibility')
+            && $user->hasBranchScopedAgendaVisibility()
+            && ! empty($user->branch_id)
+        ) {
+            return (int) $user->branch_id;
+        }
+
+        return null;
     }
 
     public function show(Request $request, AgendaEvent $agendaEvent)
@@ -223,8 +331,8 @@ class AgendaEventsController extends Controller
     {
         $this->assertKhaldaHqAgendaAuthority(request());
 
-        $departments = Department::orderBy('name')->get();
-        $categories = EventCategory::where('active', true)->orderBy('name')->get();
+        $departments = $this->agendaDepartmentsForForm();
+        $categories = $this->agendaCategoriesForForm();
         $branches = Branch::orderBy('name')->get();
 
         return view('pages.agenda.events.create', compact('departments', 'categories', 'branches'));
@@ -328,8 +436,8 @@ class AgendaEventsController extends Controller
         $this->assertEventManageAccess(request(), $agendaEvent);
 
         $agendaEvent->load(['participations', 'partnerDepartments']);
-        $departments = Department::orderBy('name')->get();
-        $categories = EventCategory::where('active', true)->orderBy('name')->get();
+        $departments = $this->agendaDepartmentsForForm($agendaEvent);
+        $categories = $this->agendaCategoriesForForm($agendaEvent);
         $branches = Branch::orderBy('name')->get();
         $branchParticipations = $agendaEvent->participations
             ->where('entity_type', 'branch')
@@ -345,7 +453,7 @@ class AgendaEventsController extends Controller
             })
             ->toArray();
 
-        $departmentUnits = DepartmentUnit::orderBy('id')->get();
+        $departmentUnits = $this->departmentUnitsForAgenda($agendaEvent);
 
         return view('pages.agenda.events.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
     }

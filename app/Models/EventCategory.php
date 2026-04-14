@@ -13,10 +13,12 @@ class EventCategory extends Model
         'department_id',
         'name',
         'active',
+        'sort_order',
     ];
 
     protected $casts = [
         'active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     public function department()

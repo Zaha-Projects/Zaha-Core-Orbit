@@ -1,10 +1,27 @@
 @php
+    $existingMonthlyActivity = $monthlyActivity ?? null;
     $oldPartners = old('partners', []);
     $oldSupplies = old('supplies', []);
     $oldTeamGroups = old('team_groups', []);
     $partnersCount = max(1, count($oldPartners));
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
+    $formUser = auth()->user();
+    $isBranchScopedUser = $formUser
+        && method_exists($formUser, 'hasBranchScopedMonthlyVisibility')
+        && $formUser->hasBranchScopedMonthlyVisibility()
+        && ! empty($formUser->branch_id);
+    $selectedBranch = $branches->firstWhere('id', old('branch_id', $existingMonthlyActivity?->branch_id ?? $formUser?->branch_id));
+    $selectedResponsibleEntities = collect(old('responsible_entities', array_values(array_filter([
+        ($existingMonthlyActivity?->requires_communications ?? false) ? 'relations' : null,
+        ($existingMonthlyActivity?->requires_programs ?? false) ? 'programs' : null,
+    ]))));
+    $isInAgendaChecked = (bool) old('is_in_agenda', $existingMonthlyActivity?->is_in_agenda ?? false);
+    $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
+    $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
+    $requiresSuppliesChecked = (bool) old('requires_supplies', $existingMonthlyActivity?->supplies?->isNotEmpty() ?? false);
+    $hasSponsorChecked = (bool) old('has_sponsor', $existingMonthlyActivity?->has_sponsor ?? false);
+    $hasPartnersChecked = (bool) old('has_partners', $existingMonthlyActivity?->has_partners ?? false);
 @endphp
 
 <div class="event-module"><div class="card event-card">
@@ -47,21 +64,26 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">الحالة</label>
                     <select class="form-select" name="status" >
-                        <option value="draft" @selected(old('status', 'draft') === 'draft')>{{ __('app.roles.programs.monthly_activities.statuses.draft') }}</option>
-                        <option value="submitted" @selected(old('status') === 'submitted')>{{ __('app.roles.programs.monthly_activities.statuses.submitted') }}</option>
-                        <option value="postponed" @selected(old('status') === 'postponed')>{{ __('app.roles.programs.monthly_activities.statuses.postponed') }}</option>
-                        <option value="cancelled" @selected(old('status') === 'cancelled')>{{ __('app.roles.programs.monthly_activities.statuses.cancelled') }}</option>
+                        @foreach (($monthlyStatusOptions ?? collect()) as $statusOption)
+                            <option value="{{ $statusOption->code }}" @selected(old('status', 'draft') === $statusOption->code)>{{ $statusOption->name }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">الفرع</label>
-                    <select class="form-select" name="branch_id" >
-                        <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
-                        @foreach ($branches as $branch)
-                            <option value="{{ $branch->id }}" @selected((string) old('branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
+                    @if ($isBranchScopedUser && $selectedBranch)
+                        <input type="hidden" name="branch_id" value="{{ $selectedBranch->id }}">
+                        <input class="form-control" value="{{ $selectedBranch->name }}" readonly>
+                        <small class="text-muted d-block mt-1">يتم اعتماد فرع المستخدم تلقائيًا.</small>
+                    @else
+                        <select class="form-select" name="branch_id" >
+                            <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
+                            @foreach ($branches as $branch)
+                                <option value="{{ $branch->id }}" @selected((string) old('branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
 
                 <div class="col-12 col-md-4">
@@ -121,11 +143,11 @@
                     <label class="form-label d-block mb-2">الجهة المسؤولة</label>
                     <div class="d-flex flex-wrap gap-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="responsible_entities[]" value="relations" id="entity-relations" @checked(collect(old('responsible_entities', []))->contains('relations'))>
+                            <input class="form-check-input" type="checkbox" name="responsible_entities[]" value="relations" id="entity-relations" @checked($selectedResponsibleEntities->contains('relations'))>
                             <label class="form-check-label" for="entity-relations">العلاقات</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="responsible_entities[]" value="programs" id="entity-programs" @checked(collect(old('responsible_entities', []))->contains('programs'))>
+                            <input class="form-check-input" type="checkbox" name="responsible_entities[]" value="programs" id="entity-programs" @checked($selectedResponsibleEntities->contains('programs'))>
                             <label class="form-check-label" for="entity-programs">البرامج</label>
                         </div>
                     </div>
@@ -157,11 +179,11 @@
                 <div class="col-12">
                     <h2 class="h6 mt-3 mb-2">خيارات التفعيل</h2>
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" name="is_in_agenda" value="1" id="is_in_agenda" @checked(old('is_in_agenda'))>
+                        <input class="form-check-input" type="checkbox" name="is_in_agenda" value="1" id="is_in_agenda" @checked($isInAgendaChecked)>
                         <label class="form-check-label" for="is_in_agenda">النشاط الشهري ضمن الأجندة السنوية</label>
                     </div>
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers'))>
+                        <input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked($needsVolunteersChecked)>
                         <label class="form-check-label" for="needs_volunteers">هل النشاط بحاجة لمتطوعين؟</label>
                     </div>
                 </div>
@@ -172,7 +194,7 @@
 
                 <div class="col-12">
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked(old('needs_official_correspondence'))>
+                        <input class="form-check-input js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" id="needs_official_correspondence" @checked($needsOfficialCorrespondenceChecked)>
                         <label class="form-check-label" for="needs_official_correspondence">هل الفعالية بحاجة لمخاطبات رسمية؟</label>
                     </div>
                 </div>
@@ -187,7 +209,7 @@
 
                 <div class="col-12">
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input js-needs-supplies" type="checkbox" name="requires_supplies" value="1" id="requires_supplies" @checked(old('requires_supplies'))>
+                        <input class="form-check-input js-needs-supplies" type="checkbox" name="requires_supplies" value="1" id="requires_supplies" @checked($requiresSuppliesChecked)>
                         <label class="form-check-label" for="requires_supplies">بحاجة مستلزمات</label>
                     </div>
                 </div>
@@ -201,7 +223,7 @@
 
                 <div class="col-12">
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input js-has-sponsor" type="checkbox" name="has_sponsor" value="1" id="has_sponsor" @checked(old('has_sponsor'))>
+                        <input class="form-check-input js-has-sponsor" type="checkbox" name="has_sponsor" value="1" id="has_sponsor" @checked($hasSponsorChecked)>
                         <label class="form-check-label" for="has_sponsor">يوجد راعي رسمي</label>
                     </div>
                 </div>
@@ -218,7 +240,7 @@
 
                 <div class="col-12">
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input js-has-partners" type="checkbox" name="has_partners" value="1" id="has_partners" @checked(old('has_partners'))>
+                        <input class="form-check-input js-has-partners" type="checkbox" name="has_partners" value="1" id="has_partners" @checked($hasPartnersChecked)>
                         <label class="form-check-label" for="has_partners">يوجد شركاء</label>
                     </div>
                 </div>

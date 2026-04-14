@@ -30,6 +30,7 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         $activities = MonthlyActivity::query()
             ->with(['approvals.approver', 'creator', 'branch', 'notes.user', 'workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
+            ->whereDoesntHave('newerVersions')
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
             ->when($filters['date_from'] ?? null, fn ($q, $dateFrom) => $q->whereDate('proposed_date', '>=', $dateFrom))
             ->when($filters['date_to'] ?? null, fn ($q, $dateTo) => $q->whereDate('proposed_date', '<=', $dateTo))

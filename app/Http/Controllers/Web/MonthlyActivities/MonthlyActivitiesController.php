@@ -11,8 +11,10 @@ use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivitySupply;
 use App\Models\MonthlyActivityTeam;
+use App\Models\WorkflowLog;
 use App\Models\WorkflowInstance;
 use App\Models\EvaluationQuestion;
+use App\Models\EventStatusLookup;
 use App\Models\MonthlyActivityFollowup;
 use App\Models\MonthlyActivityEvaluationResponse;
 use App\Models\TargetGroup;
@@ -33,6 +35,15 @@ use Illuminate\Support\Str;
 
 class MonthlyActivitiesController extends Controller
 {
+    protected function currentUserBranchId(?User $user): ?int
+    {
+        if (! $this->shouldScopeToUserBranch($user) || empty($user?->branch_id)) {
+            return null;
+        }
+
+        return (int) $user->branch_id;
+    }
+
     protected function isApprovedVersion(MonthlyActivity $monthlyActivity): bool
     {
         $workflowInstance = WorkflowInstance::query()
@@ -45,6 +56,11 @@ class MonthlyActivitiesController extends Controller
             || $monthlyActivity->status === 'approved'
             || $monthlyActivity->executive_approval_status === 'approved'
             || $monthlyActivity->lifecycle_status === 'Exec Director Approved';
+    }
+
+    protected function isSupersededVersion(MonthlyActivity $monthlyActivity): bool
+    {
+        return $monthlyActivity->newerVersions()->exists();
     }
 
     protected function syncTargetGroups(MonthlyActivity $monthlyActivity, array $data): void
@@ -76,9 +92,30 @@ class MonthlyActivitiesController extends Controller
         return $query;
     }
 
+    protected function canViewOtherBranches(?User $user): bool
+    {
+        return $user !== null
+            && ($user->can('monthly_activities.view_other_branches') || $user->hasRole('super_admin'));
+    }
+
+    protected function applyDraftVisibilityScope($query, ?User $user)
+    {
+        return $query->where(function ($visibilityQuery) use ($user) {
+            $visibilityQuery->where('status', '!=', 'draft');
+
+            if ($user) {
+                $visibilityQuery->orWhere('created_by', $user->id);
+            }
+        });
+    }
+
     protected function ensureActivityVisibleToUser(MonthlyActivity $monthlyActivity, User $user): void
     {
         if ($this->shouldScopeToUserBranch($user) && (int) $monthlyActivity->branch_id !== (int) $user->branch_id) {
+            abort(403);
+        }
+
+        if ((string) $monthlyActivity->status === 'draft' && (int) $monthlyActivity->created_by !== (int) $user->id) {
             abort(403);
         }
     }
@@ -233,19 +270,79 @@ class MonthlyActivitiesController extends Controller
             || in_array((string) $monthlyActivity->lifecycle_status, ['Executed', 'Evaluated', 'Closed'], true);
     }
 
+    protected function statusLookupOptions(string $module, array $allowedCodes = [], ?string $currentCode = null)
+    {
+        return EventStatusLookup::query()
+            ->forModule($module)
+            ->when($allowedCodes !== [], fn ($query) => $query->whereIn('code', $allowedCodes))
+            ->where(function ($query) use ($currentCode) {
+                $query->where('is_active', true);
+
+                if (filled($currentCode)) {
+                    $query->orWhere('code', $currentCode);
+                }
+            })
+            ->ordered()
+            ->get()
+            ->unique('code')
+            ->values();
+    }
+
+    protected function monthlyPlanningStatusOptions(?string $currentCode = null)
+    {
+        return $this->statusLookupOptions('monthly_activities', [
+            'draft',
+            'submitted',
+            'changes_requested',
+            'postponed',
+            'cancelled',
+            'closed',
+        ], $currentCode);
+    }
+
+    protected function monthlyCreationStatusOptions(?string $currentCode = null)
+    {
+        return $this->statusLookupOptions('monthly_activities', [
+            'draft',
+            'submitted',
+            'postponed',
+            'cancelled',
+        ], $currentCode);
+    }
+
+    protected function monthlyCloseStatusOptions(?string $currentCode = null)
+    {
+        return $this->statusLookupOptions('monthly_activities', [
+            'closed',
+            'completed',
+            'executed',
+        ], $currentCode);
+    }
+
     public function index(Request $request)
     {
+        $user = $request->user();
+        $viewScope = $request->input('scope', 'default');
+
+        if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
+            abort(403);
+        }
+
         $activitiesQuery = MonthlyActivity::with([
             'branch',
-                        'agendaEvent',
+            'agendaEvent',
             'creator',
             'workflowInstance.workflow.steps.role',
             'workflowInstance.logs.step',
         ])
+            ->withCount('newerVersions')
             ->enterpriseFilter($request->all())
             ->notArchived();
 
-        $this->applyBranchVisibilityScope($activitiesQuery, $request->user());
+        if ($viewScope !== 'all_branches') {
+            $this->applyBranchVisibilityScope($activitiesQuery, $user);
+        }
+        $this->applyDraftVisibilityScope($activitiesQuery, $user);
 
         $activities = $activitiesQuery
             ->orderBy('month')
@@ -254,28 +351,54 @@ class MonthlyActivitiesController extends Controller
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
-                if ($this->shouldScopeToUserBranch($request->user())) {
-            $branches->where('id', $request->user()->branch_id);
+        if ($this->shouldScopeToUserBranch($user) && $viewScope !== 'all_branches') {
+            $branches->where('id', $user->branch_id);
         }
         $branches = $branches->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
+        $filters = [
+            'year' => $request->input('year'),
+            'month' => $request->input('month'),
+            'status' => $request->input('status'),
+            'branch_id' => $request->input('branch_id'),
+        ];
+        $canFilterBranches = $viewScope === 'all_branches'
+            ? $this->canViewOtherBranches($user)
+            : ! $this->shouldScopeToUserBranch($user);
 
-        return view('pages.monthly_activities.activities.index', compact('activities', 'branches', 'agendaEvents'));
+        $monthlyStatusOptions = $this->statusLookupOptions('monthly_activities', [], (string) $request->input('status'));
+
+        return view('pages.monthly_activities.activities.index', compact(
+            'activities',
+            'branches',
+            'agendaEvents',
+            'filters',
+            'canFilterBranches',
+            'viewScope',
+            'monthlyStatusOptions',
+        ));
     }
 
     public function create()
     {
         $user = request()->user();
         $branches = Branch::query()->orderBy('name');
-                if ($this->shouldScopeToUserBranch($user)) {
+        if ($this->shouldScopeToUserBranch($user)) {
             $branches->where('id', $user->branch_id);
         }
         $branches = $branches->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
+        $monthlyStatusOptions = $this->monthlyCreationStatusOptions('draft');
 
-        return view('pages.monthly_activities.activities.create', compact('branches', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
+        return view('pages.monthly_activities.activities.create', compact(
+            'branches',
+            'agendaEvents',
+            'targetGroups',
+            'evaluationQuestions',
+            'monthlyStatusOptions',
+        ));
     }
 
     protected function flashFormPrefill(MonthlyActivity $monthlyActivity): void
@@ -340,8 +463,72 @@ class MonthlyActivitiesController extends Controller
         session()->flash('_old_input', $prefill);
     }
 
+    protected function normalizeComparableValue(mixed $value): mixed
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+
+        return $value;
+    }
+
+    protected function meaningfulChangedFields(array $oldValues, array $newValues): array
+    {
+        return collect($newValues)
+            ->filter(function ($newValue, string $field) use ($oldValues) {
+                return $this->normalizeComparableValue($oldValues[$field] ?? null) !== $this->normalizeComparableValue($newValue);
+            })
+            ->keys()
+            ->values()
+            ->all();
+    }
+
+    protected function activityHasApprovalTrail(MonthlyActivity $monthlyActivity): bool
+    {
+        $instance = WorkflowInstance::query()
+            ->where('entity_type', MonthlyActivity::class)
+            ->where('entity_id', $monthlyActivity->id)
+            ->withCount('logs')
+            ->first();
+
+        if (! $instance) {
+            return ! in_array((string) $monthlyActivity->status, ['draft', 'cancelled'], true);
+        }
+
+        return $instance->logs_count > 0
+            || ! in_array((string) $instance->status, ['pending'], true)
+            || ! in_array((string) $monthlyActivity->status, ['draft', 'cancelled'], true);
+    }
+
+    protected function shouldStartNewVersion(MonthlyActivity $monthlyActivity, array $changedFields, bool $isRescheduled): bool
+    {
+        if ($changedFields === []) {
+            return false;
+        }
+
+        return $this->isApprovedVersion($monthlyActivity)
+            || $isRescheduled
+            || $this->activityHasApprovalTrail($monthlyActivity);
+    }
+
     public function syncFromAgenda(Request $request)
     {
+        if ($branchId = $this->currentUserBranchId($request->user())) {
+            $request->merge(['branch_id' => $branchId]);
+        }
+
         $data = $request->validate([
             'branch_id' => ['required', 'exists:branches,id'],
             'center_id' => ['nullable'],
@@ -420,6 +607,10 @@ class MonthlyActivitiesController extends Controller
     {
         if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
             $request->files->set('branch_plan_file', $request->file('planning_attachment'));
+        }
+
+        if ($branchId = $this->currentUserBranchId($request->user())) {
+            $request->merge(['branch_id' => $branchId]);
         }
 
         $data = $request->validate([
@@ -709,7 +900,8 @@ class MonthlyActivitiesController extends Controller
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
         if (! request()->boolean('form') && request('mode') !== 'post') {
-            $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups']);
+            $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
+                ->loadCount('newerVersions');
 
             return view('pages.monthly_activities.activities.show', [
                 'monthlyActivity' => $monthlyActivity,
@@ -729,17 +921,31 @@ class MonthlyActivitiesController extends Controller
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
+        $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);
+        $monthlyCloseStatusOptions = $this->monthlyCloseStatusOptions((string) $monthlyActivity->status);
 
-        return view('pages.monthly_activities.activities.edit', compact('monthlyActivity', 'branches', 'agendaEvents', 'targetGroups', 'evaluationQuestions'));
+        return view('pages.monthly_activities.activities.edit', compact(
+            'monthlyActivity',
+            'branches',
+            'agendaEvents',
+            'targetGroups',
+            'evaluationQuestions',
+            'monthlyStatusOptions',
+            'monthlyCloseStatusOptions',
+        ));
     }
 
     public function show(MonthlyActivity $monthlyActivity)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
-        $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups']);
+        $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
+            ->loadCount('newerVersions');
+        $monthlyStatusLabels = $this->statusLookupOptions('monthly_activities', [], (string) $monthlyActivity->status)
+            ->pluck('name', 'code')
+            ->all();
 
-        return view('pages.monthly_activities.activities.show', compact('monthlyActivity'));
+        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels'));
     }
 
     public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
@@ -749,6 +955,16 @@ class MonthlyActivitiesController extends Controller
         }
 
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
+        if ($this->isSupersededVersion($monthlyActivity)) {
+            return back()->withErrors([
+                'status' => 'هذه نسخة قديمة من النشاط. يرجى متابعة آخر نسخة فقط.',
+            ]);
+        }
+
+        if ($branchId = $this->currentUserBranchId($request->user())) {
+            $request->merge(['branch_id' => $branchId]);
+        }
 
         if ($request->user()->hasRole('followup_officer') && ! $request->user()->hasRole('super_admin')) {
             abort_unless($this->canSubmitPostEvaluation($monthlyActivity), 422, 'التقييم متاح فقط بعد تنفيذ الفعالية.');
@@ -971,18 +1187,11 @@ class MonthlyActivitiesController extends Controller
                 ! empty($data['rescheduled_date'])
                 && optional($monthlyActivity->rescheduled_date)?->toDateString() !== (string) $data['rescheduled_date']
             );
-        $startsNewVersion = $this->isApprovedVersion($monthlyActivity) || $isRescheduled;
         $nextStage = (int) ($monthlyActivity->plan_stage ?: 1);
         $nextVersion = (int) ($monthlyActivity->plan_version ?: 1);
         $newStatus = $data['status'];
         $newLifecycleStatus = $monthlyActivity->lifecycle_status ?: 'Draft';
-
-        if ($startsNewVersion) {
-            $nextStage++;
-            $nextVersion++;
-            $newStatus = 'draft';
-            $newLifecycleStatus = 'Draft';
-        }
+        $startsNewVersion = false;
 
         $newValues = [
             'month' => (int) $date->format('m'),
@@ -1043,14 +1252,37 @@ class MonthlyActivitiesController extends Controller
             'branch_id' => $data['branch_id'],
             'center_id' => null,
             'lifecycle_status' => $newLifecycleStatus,
-            'relations_officer_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->relations_officer_approval_status,
-            'relations_manager_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->relations_manager_approval_status,
-            'programs_officer_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->programs_officer_approval_status,
-            'programs_manager_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->programs_manager_approval_status,
-            'liaison_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->liaison_approval_status,
-            'hq_relations_manager_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->hq_relations_manager_approval_status,
-            'executive_approval_status' => $startsNewVersion ? 'pending' : $monthlyActivity->executive_approval_status,
+            'relations_officer_approval_status' => $monthlyActivity->relations_officer_approval_status,
+            'relations_manager_approval_status' => $monthlyActivity->relations_manager_approval_status,
+            'programs_officer_approval_status' => $monthlyActivity->programs_officer_approval_status,
+            'programs_manager_approval_status' => $monthlyActivity->programs_manager_approval_status,
+            'liaison_approval_status' => $monthlyActivity->liaison_approval_status,
+            'hq_relations_manager_approval_status' => $monthlyActivity->hq_relations_manager_approval_status,
+            'executive_approval_status' => $monthlyActivity->executive_approval_status,
         ];
+
+        $changedFields = $this->meaningfulChangedFields($oldValues, $newValues);
+        $startsNewVersion = $this->shouldStartNewVersion($monthlyActivity, $changedFields, $isRescheduled);
+
+        if ($startsNewVersion) {
+            $nextStage++;
+            $nextVersion++;
+            $newStatus = 'draft';
+            $newLifecycleStatus = 'Draft';
+
+            $newValues['status'] = $newStatus;
+            $newValues['plan_stage'] = $nextStage;
+            $newValues['plan_version'] = $nextVersion;
+            $newValues['previous_version_id'] = $monthlyActivity->id;
+            $newValues['lifecycle_status'] = $newLifecycleStatus;
+            $newValues['relations_officer_approval_status'] = 'pending';
+            $newValues['relations_manager_approval_status'] = 'pending';
+            $newValues['programs_officer_approval_status'] = 'pending';
+            $newValues['programs_manager_approval_status'] = 'pending';
+            $newValues['liaison_approval_status'] = 'pending';
+            $newValues['hq_relations_manager_approval_status'] = 'pending';
+            $newValues['executive_approval_status'] = 'pending';
+        }
 
         $activityToSave = $monthlyActivity;
 
@@ -1131,8 +1363,17 @@ class MonthlyActivitiesController extends Controller
             ]);
 
                 $lockedCurrent->update([
-                'status' => 'cancelled',
-            ]);
+                    'status' => 'cancelled',
+                ]);
+
+                WorkflowInstance::query()
+                    ->where('entity_type', MonthlyActivity::class)
+                    ->where('entity_id', $lockedCurrent->id)
+                    ->update([
+                        'status' => 'rejected',
+                        'current_step_id' => null,
+                        'completed_at' => now(),
+                    ]);
             } else {
                 $lockedCurrent->update([
             'month' => $newValues['month'],
@@ -1207,7 +1448,10 @@ class MonthlyActivitiesController extends Controller
             }
         });
 
-        $workflowService->initializeDynamicStatuses($activityToSave);
+        if ($startsNewVersion) {
+            $workflowService->initializeDynamicStatuses($activityToSave);
+        }
+        $this->syncTargetGroups($activityToSave, $data);
         Log::info('monthly_activity.updated', [
             'monthly_activity_id' => $activityToSave->id,
             'updated_by' => $request->user()->id,
@@ -1221,7 +1465,7 @@ class MonthlyActivitiesController extends Controller
         }
         $this->logChanges($activityToSave, $oldValues, $newValues, $request->user()->id);
         $this->logWorkflowAction($startsNewVersion ? 'new_version_created' : 'updated', $activityToSave, $request, $activityToSave->status, [
-            'changed_fields' => array_keys($newValues),
+            'changed_fields' => $changedFields,
             'source_activity_id' => $startsNewVersion ? $monthlyActivity->id : null,
         ]);
 
@@ -1234,12 +1478,38 @@ class MonthlyActivitiesController extends Controller
     public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications, MonthlyActivityLifecycleService $lifecycle, DynamicWorkflowService $dynamicWorkflowService)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
+        $actor = request()->user();
+
+        if ($this->isSupersededVersion($monthlyActivity)) {
+            return back()->withErrors([
+                'status' => 'هذه نسخة قديمة من النشاط ولا يمكن إرسالها للاعتماد.',
+            ]);
+        }
 
         $instance = $dynamicWorkflowService->forModel('monthly_activities', $monthlyActivity);
         abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
 
-        if ($instance->status === 'changes_requested') {
+        $currentStep = $dynamicWorkflowService->currentStep($instance);
+
+        if ($instance->status === 'changes_requested' && $currentStep?->step_type !== 'sub') {
             $dynamicWorkflowService->markResubmitted($instance);
+            $instance = $instance->fresh();
+            $currentStep = $dynamicWorkflowService->currentStep($instance);
+        }
+
+        if ($currentStep?->step_type === 'sub') {
+            WorkflowLog::query()->create([
+                'workflow_instance_id' => $instance->id,
+                'workflow_step_id' => $currentStep->id,
+                'acted_by' => $actor->id,
+                'action' => 'approved',
+                'comment' => null,
+                'edit_request_iteration' => (int) $instance->edit_request_count,
+                'acted_at' => now(),
+            ]);
+
+            $dynamicWorkflowService->advanceToNextStep($instance->fresh());
+            $instance = $instance->fresh();
         }
 
         $monthlyActivity->update([
@@ -1250,7 +1520,14 @@ class MonthlyActivitiesController extends Controller
             $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
         }
 
-        $notifications->notifyUsers(User::role('relations_officer')->get(), 'approval_requested', __('app.roles.programs.monthly_activities.approvals.notifications.submit_title'), __('app.roles.programs.monthly_activities.approvals.notifications.submit_body', ['activity' => $monthlyActivity->title]), route('role.programs.approvals.index'));
+        $nextRole = $instance->currentStep?->role?->name;
+        $notifications->notifyUsers(
+            $nextRole ? User::role($nextRole)->get() : collect(),
+            'approval_requested',
+            __('app.roles.programs.monthly_activities.approvals.notifications.submit_title'),
+            __('app.roles.programs.monthly_activities.approvals.notifications.submit_body', ['activity' => $monthlyActivity->title]),
+            route('role.programs.approvals.index')
+        );
 
         $request = request();
         if ($request && $request->user()) {
@@ -1265,6 +1542,12 @@ class MonthlyActivitiesController extends Controller
     public function close(Request $request, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
+        if ($this->isSupersededVersion($monthlyActivity)) {
+            return back()->withErrors([
+                'status' => 'هذه نسخة قديمة من النشاط ولا يمكن إغلاقها.',
+            ]);
+        }
 
         $data = $request->validate([
             'actual_date' => ['nullable', 'date'],
@@ -1294,14 +1577,23 @@ class MonthlyActivitiesController extends Controller
     {
         $year = (int) $request->input('year', now()->year);
         $month = (int) $request->input('month', now()->month);
+        $viewScope = $request->input('scope', 'default');
+
+        if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($request->user())) {
+            abort(403);
+        }
 
         $query = MonthlyActivity::query()
             ->with('branch')
+            ->whereDoesntHave('newerVersions')
             ->whereYear('proposed_date', $year)
             ->whereMonth('proposed_date', $month)
             ->notArchived();
 
-        $this->applyBranchVisibilityScope($query, $request->user());
+        if ($viewScope !== 'all_branches') {
+            $this->applyBranchVisibilityScope($query, $request->user());
+        }
+        $this->applyDraftVisibilityScope($query, $request->user());
 
         $items = $query->orderBy('proposed_date')->orderBy('day')->get()->map(function (MonthlyActivity $activity) {
             return [

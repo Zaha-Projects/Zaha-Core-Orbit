@@ -3,6 +3,14 @@
 @php
     $title = 'عرض تفاصيل النشاط';
     $editMirrorMode = $editMirrorMode ?? false;
+    $statusLabel = function (?string $status) use ($monthlyStatusLabels): string {
+        if (! $status) {
+            return '-';
+        }
+
+        return $monthlyStatusLabels[$status]
+            ?? \App\Models\EventStatusLookup::labelFor('monthly_activities', $status);
+    };
 @endphp
 
 @section('content')
@@ -12,6 +20,12 @@
                 <div>
                     <h1 class="h4 mb-1">{{ $title }}</h1>
                     <p class="text-muted mb-0">{{ $monthlyActivity->title }}</p>
+                    <div class="d-flex gap-2 flex-wrap mt-2">
+                        <span class="badge bg-light text-dark border">نسخة {{ (int) ($monthlyActivity->plan_version ?: 1) }}</span>
+                        @if (($monthlyActivity->newer_versions_count ?? 0) > 0)
+                            <span class="badge bg-secondary-subtle text-secondary">نسخة قديمة</span>
+                        @endif
+                    </div>
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.activities.index') }}">رجوع</a>
@@ -30,7 +44,7 @@
                     <div class="col-12 col-md-4"><strong>عنوان النشاط:</strong> {{ $monthlyActivity->title }}</div>
                     <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</div>
                     <div class="col-12 col-md-4"><strong>التاريخ المقترح:</strong> {{ optional($monthlyActivity->proposed_date)->format('Y-m-d') ?? '-' }}</div>
-                    <div class="col-12 col-md-4"><strong>الحالة:</strong> {{ $monthlyActivity->status }}</div>
+                    <div class="col-12 col-md-4"><strong>الحالة:</strong> {{ $statusLabel($monthlyActivity->status) }}</div>
                     <div class="col-12 col-md-4"><strong>الفرع:</strong> {{ $monthlyActivity->branch?->name ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>مرتبط بفعالية أجندة:</strong> {{ $monthlyActivity->agendaEvent?->event_name ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>ضمن الأجندة السنوية:</strong> {{ $monthlyActivity->is_in_agenda ? 'نعم' : 'لا' }}</div>

@@ -93,6 +93,21 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
         $this->assertSame('in_progress', $activity->fresh()->workflowInstance->status);
     }
 
+    public function test_submit_advances_past_submission_step_to_first_approver(): void
+    {
+        [$approver, $activity] = $this->seedApprovalSetup(withActivity: true, withTwoSteps: true);
+
+        $this->actingAs($activity->creator)
+            ->patch(route('role.relations.activities.submit', $activity))
+            ->assertRedirect();
+
+        $activity = $activity->fresh()->load('workflowInstance.currentStep');
+
+        $this->assertSame('submitted', $activity->status);
+        $this->assertSame('in_progress', $activity->workflowInstance->status);
+        $this->assertSame('s2', $activity->workflowInstance->currentStep?->step_key);
+    }
+
     private function seedApprovalSetup(bool $withActivity = false, bool $withTwoSteps = false): array
     {
         $relationsRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);

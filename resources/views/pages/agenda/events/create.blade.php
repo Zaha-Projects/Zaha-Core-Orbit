@@ -13,7 +13,7 @@
             <p class="text-muted mb-4">{{ $subtitle }}</p>
             @if ($errors->any())
                 <div class="alert alert-danger">
-                    <div class="fw-semibold mb-2">يرجى تصحيح الأخطاء التالية:</div>
+                    <div class="fw-semibold mb-2">Ã™Å Ã˜Â±Ã˜Â¬Ã™â€° Ã˜ÂªÃ˜ÂµÃ˜Â­Ã™Å Ã˜Â­ Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â®Ã˜Â·Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â§Ã™â€žÃ™Å Ã˜Â©:</div>
                     <ul class="mb-0">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -32,7 +32,7 @@
                     <input class="form-control" type="date" name="event_date" value="{{ old('event_date') }}" required>
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">القسم المالك (Owner)</label>
+                    <label class="form-label">الوحدة/القسم المالك</label>
                     <select class="form-select js-owner-department" name="owner_department_id" required>
                         <option value="">--</option>
                         @foreach ($departments as $department)
@@ -78,14 +78,14 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-4 js-agenda-plan-file">
-                    <label class="form-label">agenda_plan_file</label>
+                    <label class="form-label">Ù…Ù„Ù Ø§Ù„Ø®Ø·Ø©</label>
                     <input class="form-control" type="file" name="agenda_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
                 </div>
 
                 <div class="col-12"><div class="event-form-section">
                     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
                         <h2 class="event-section-title mb-0">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</h2>
-                        <button type="button" class="btn btn-sm btn-outline-primary js-enable-all-participants">تفعيل الكل كمشارك</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary js-enable-all-participants">Ã˜ÂªÃ™ÂÃ˜Â¹Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ™Æ’Ã™â€ž Ã™Æ’Ã™â€¦Ã˜Â´Ã˜Â§Ã˜Â±Ã™Æ’</button>
                     </div>
                     <div class="row g-2">
                         @foreach ($branches as $branch)
@@ -242,3 +242,4 @@
         }
     </style>
 @endsection
+
