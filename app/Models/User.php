@@ -33,6 +33,13 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    public function assignedBranches()
+    {
+        return $this->belongsToMany(Branch::class, 'branch_user_assignments')
+            ->withTimestamps()
+            ->orderBy('name');
+    }
+
     public function deniedPermissions()
     {
         return $this->morphToMany(\Spatie\Permission\Models\Permission::class, 'model', 'model_denied_permissions', 'model_id', 'permission_id');
@@ -81,6 +88,38 @@ class User extends Authenticatable
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    public function approvalBranchIds(): array
+    {
+        $assignedIds = $this->relationLoaded('assignedBranches')
+            ? $this->assignedBranches->pluck('id')
+            : $this->assignedBranches()->pluck('branches.id');
+
+        $ids = $assignedIds
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($ids !== []) {
+            return $ids;
+        }
+
+        return filled($this->branch_id) ? [(int) $this->branch_id] : [];
+    }
+
+    public function isAssignedToApprovalBranch(?int $branchId): bool
+    {
+        if (! $branchId) {
+            return false;
+        }
+
+        return in_array($branchId, $this->approvalBranchIds(), true);
     }
 
 

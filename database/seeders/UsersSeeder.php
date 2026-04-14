@@ -33,6 +33,7 @@ class UsersSeeder extends Seeder
             );
 
             $user->syncRoles([$userData['role']]);
+            $user->assignedBranches()->sync($userData['role'] === 'branch_coordinator' ? [$branch->id] : []);
         }
 
         return;

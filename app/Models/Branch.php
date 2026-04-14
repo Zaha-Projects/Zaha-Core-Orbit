@@ -23,6 +23,12 @@ class Branch extends Model
         return $this->hasMany(User::class);
     }
 
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'branch_user_assignments')
+            ->withTimestamps();
+    }
+
     public function monthlyActivities()
     {
         return $this->hasMany(MonthlyActivity::class);

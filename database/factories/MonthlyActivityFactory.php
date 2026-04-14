@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Branch;
-use App\Models\Center;
 use App\Models\MonthlyActivity;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +22,6 @@ class MonthlyActivityFactory extends Factory
             'status' => 'draft',
             'lifecycle_status' => 'Draft',
             'branch_id' => Branch::factory(),
-            'center_id' => Center::factory(),
             'created_by' => User::factory(),
         ];
     }

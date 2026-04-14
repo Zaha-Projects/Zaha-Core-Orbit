@@ -240,7 +240,9 @@ class DynamicWorkflowService
         if ($this->isBranchScopedStep($instance, $step)) {
             $branchId = $this->resolveBranchId($instance);
             if ($branchId) {
-                $query->where('branch_id', $branchId);
+                $this->applyBranchScopedApproverFilter($query, $step, $branchId);
+            } else {
+                $query->whereRaw('1 = 0');
             }
         }
 
@@ -354,7 +356,15 @@ class DynamicWorkflowService
 
         $branchId = $this->resolveBranchId($instance);
 
-        return $branchId !== null && (int) $user->branch_id === $branchId;
+        if ($branchId === null) {
+            return false;
+        }
+
+        if ((string) $step->role?->name === 'branch_coordinator') {
+            return $user->isAssignedToApprovalBranch($branchId);
+        }
+
+        return (int) $user->branch_id === $branchId;
     }
 
     private function isBranchScopedStep(WorkflowInstance $instance, WorkflowStep $step): bool
@@ -390,5 +400,24 @@ class DynamicWorkflowService
         }
 
         return $entityType::query()->find($instance->entity_id);
+    }
+
+    private function applyBranchScopedApproverFilter($query, WorkflowStep $step, int $branchId): void
+    {
+        if ((string) $step->role?->name !== 'branch_coordinator') {
+            $query->where('branch_id', $branchId);
+
+            return;
+        }
+
+        $query->where(function ($branchQuery) use ($branchId) {
+            $branchQuery->whereHas('assignedBranches', function ($assignedQuery) use ($branchId) {
+                $assignedQuery->where('branches.id', $branchId);
+            })->orWhere(function ($fallbackQuery) use ($branchId) {
+                $fallbackQuery
+                    ->whereDoesntHave('assignedBranches')
+                    ->where('branch_id', $branchId);
+            });
+        });
     }
 }

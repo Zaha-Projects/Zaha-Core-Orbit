@@ -4,6 +4,8 @@
     use Illuminate\Support\Str;
     $title = __('app.roles.super_admin.users.title');
     $subtitle = __('app.roles.super_admin.users.subtitle');
+    $branchCoordinatorRole = 'branch_coordinator';
+    $createAssignedBranchIds = collect(old('assigned_branch_ids', []))->map(fn ($id) => (int) $id)->all();
     $permissionsByModule = $permissions->groupBy('module');
     $translateModule = function (?string $module) {
         $moduleKey = (string) $module;
@@ -82,11 +84,39 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.role') }}</label>
-                            <select class="form-select" name="role" >
+                            <select class="form-select" name="role" data-user-role-select>
                                 @foreach ($roles as $role)
-                                    <option value="{{ $role->name }}">{{ $role->display_name }}</option>
+                                    <option value="{{ $role->name }}" @selected(old('role') === $role->name)>{{ $role->display_name }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div class="col-12" data-branch-assignment-wrapper hidden>
+                            <label class="form-label">{{ __('app.roles.super_admin.users.fields.assigned_branches') }}</label>
+                            <div class="form-text mb-2">{{ __('app.roles.super_admin.users.fields.assigned_branches_help') }}</div>
+                            <div class="border rounded-3 p-3">
+                                <div class="row g-2">
+                                    @foreach ($branches as $branch)
+                                        <div class="col-12 col-md-6 col-xl-4">
+                                            <label class="form-check border rounded-3 px-3 py-2 h-100">
+                                                <input
+                                                    class="form-check-input me-2"
+                                                    type="checkbox"
+                                                    name="assigned_branch_ids[]"
+                                                    value="{{ $branch->id }}"
+                                                    @checked(in_array($branch->id, $createAssignedBranchIds, true))
+                                                >
+                                                <span class="form-check-label">{{ $branch->name }}</span>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @error('assigned_branch_ids')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
+                            @error('assigned_branch_ids.*')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="col-12">
@@ -199,7 +229,15 @@
                                     <tr>
                                         <td>{{ $user->name }}</td>
                                         <td>{{ $user->email }}</td>
-                                        <td>{{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }}</td>
+                                        <td>
+                                            {{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }}
+                                            @if ($user->roles->contains('name', $branchCoordinatorRole) && $user->assignedBranches->isNotEmpty())
+                                                <div class="small text-muted mt-1">
+                                                    {{ __('app.roles.super_admin.users.fields.assigned_branches_short') }}:
+                                                    {{ $user->assignedBranches->pluck('name')->join('، ') }}
+                                                </div>
+                                            @endif
+                                        </td>
                                         <td>{{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }}</td>
                                         <td>{{ $user->roles->pluck('name')->join(', ') }}</td>
                                         <td>{{ $user->status }}</td>
@@ -218,6 +256,7 @@
                                     </tr>
                                     <tr class="collapse" id="edit-user-{{ $user->id }}">
                                         <td colspan="7">
+                                            @php($editAssignedBranchIds = $user->assignedBranches->pluck('id')->map(fn ($id) => (int) $id)->all())
                                             <form method="POST" action="{{ route('role.super_admin.users.update', $user) }}" class="row g-3">
                                                 @csrf
                                                 @method('PUT')
@@ -249,13 +288,35 @@
 </div>
                                                 <div class="col-12 col-md-4">
                                                     <label class="form-label">{{ __('app.roles.super_admin.users.fields.role') }}</label>
-                                                    <select class="form-select" name="role" >
+                                                    <select class="form-select" name="role" data-user-role-select>
                                                         @foreach ($roles as $role)
                                                             <option value="{{ $role->name }}" @selected($user->roles->contains('name', $role->name))>
                                                                 {{ $role->display_name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
+                                                </div>
+                                                <div class="col-12" data-branch-assignment-wrapper hidden>
+                                                    <label class="form-label">{{ __('app.roles.super_admin.users.fields.assigned_branches') }}</label>
+                                                    <div class="form-text mb-2">{{ __('app.roles.super_admin.users.fields.assigned_branches_help') }}</div>
+                                                    <div class="border rounded-3 p-3">
+                                                        <div class="row g-2">
+                                                            @foreach ($branches as $branch)
+                                                                <div class="col-12 col-md-6 col-xl-4">
+                                                                    <label class="form-check border rounded-3 px-3 py-2 h-100">
+                                                                        <input
+                                                                            class="form-check-input me-2"
+                                                                            type="checkbox"
+                                                                            name="assigned_branch_ids[]"
+                                                                            value="{{ $branch->id }}"
+                                                                            @checked(in_array($branch->id, $editAssignedBranchIds, true))
+                                                                        >
+                                                                        <span class="form-check-label">{{ $branch->name }}</span>
+                                                                    </label>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
                                                 </div>
 
 
@@ -374,6 +435,27 @@ document.querySelectorAll('.js-user-delete-form').forEach((form) => {
             }
         });
     });
+});
+
+document.querySelectorAll('form').forEach((form) => {
+    const roleSelect = form.querySelector('[data-user-role-select]');
+    const assignmentWrapper = form.querySelector('[data-branch-assignment-wrapper]');
+
+    if (!roleSelect || !assignmentWrapper) {
+        return;
+    }
+
+    const syncBranchAssignments = () => {
+        const isBranchCoordinator = roleSelect.value === @json($branchCoordinatorRole);
+
+        assignmentWrapper.hidden = !isBranchCoordinator;
+        assignmentWrapper.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+            input.disabled = !isBranchCoordinator;
+        });
+    };
+
+    roleSelect.addEventListener('change', syncBranchAssignments);
+    syncBranchAssignments();
 });
 </script>
 @endpush

@@ -19,6 +19,7 @@ class MonthlyActivitiesApprovalsController extends Controller
     public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService)
     {
         $viewer = $request->user();
+        $branchCoordinatorScope = $this->branchCoordinatorApprovalScope($viewer);
         $filters = $request->validate([
             'status' => ['nullable', 'string', 'in:pending,in_progress,approved,changes_requested,rejected'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
@@ -29,9 +30,22 @@ class MonthlyActivitiesApprovalsController extends Controller
             'my_pending' => ['nullable', 'boolean'],
         ]);
 
+        if (($filters['branch_id'] ?? null) && $branchCoordinatorScope !== null && ! in_array((int) $filters['branch_id'], $branchCoordinatorScope, true)) {
+            abort(403);
+        }
+
         $activities = MonthlyActivity::query()
             ->with(['approvals.approver', 'creator', 'branch', 'notes.user', 'attachments.uploader', 'workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
             ->whereDoesntHave('newerVersions')
+            ->when($branchCoordinatorScope !== null, function ($query) use ($branchCoordinatorScope) {
+                if ($branchCoordinatorScope === []) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query->whereIn('branch_id', $branchCoordinatorScope);
+            })
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
             ->when($filters['date_from'] ?? null, fn ($q, $dateFrom) => $q->whereDate('proposed_date', '>=', $dateFrom))
             ->when($filters['date_to'] ?? null, fn ($q, $dateTo) => $q->whereDate('proposed_date', '<=', $dateTo))
@@ -98,7 +112,18 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         $activities->setCollection($collection);
 
-        $branches = Branch::query()->orderBy('name')->get();
+        $branches = Branch::query()
+            ->when($branchCoordinatorScope !== null, function ($query) use ($branchCoordinatorScope) {
+                if ($branchCoordinatorScope === []) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query->whereIn('id', $branchCoordinatorScope);
+            })
+            ->orderBy('name')
+            ->get();
 
         return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters'));
     }
@@ -235,5 +260,19 @@ class MonthlyActivitiesApprovalsController extends Controller
         ]);
 
         return true;
+    }
+
+    /**
+     * @return array<int, int>|null
+     */
+    protected function branchCoordinatorApprovalScope($user): ?array
+    {
+        if (! $user || ! $user->hasRole('branch_coordinator') || $user->can('branches.view.all')) {
+            return null;
+        }
+
+        return method_exists($user, 'approvalBranchIds')
+            ? $user->approvalBranchIds()
+            : (filled($user->branch_id) ? [(int) $user->branch_id] : []);
     }
 }
