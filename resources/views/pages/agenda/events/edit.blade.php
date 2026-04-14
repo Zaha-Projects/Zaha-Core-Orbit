@@ -1,290 +1,64 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @php
     $title = __('app.roles.relations.agenda.edit_title');
     $subtitle = __('app.roles.relations.agenda.subtitle');
 @endphp
 
-
 @section('content')
-    <div class="event-module"><div class="card event-card">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
-                <h1 class="h4 mb-0">{{ $title }}</h1>
-                <span class="badge bg-info-subtle text-info border">Ã˜Â§Ã™â€žÃ˜Â¥Ã˜ÂµÃ˜Â¯Ã˜Â§Ã˜Â± V{{ (int) ($agendaEvent->version ?? 1) }}</span>
-            </div>
-            <p class="text-muted mb-4">{{ $subtitle }}</p>
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <div class="fw-semibold mb-2">Ã™Å Ã˜Â±Ã˜Â¬Ã™â€° Ã˜ÂªÃ˜ÂµÃ˜Â­Ã™Å Ã˜Â­ Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â®Ã˜Â·Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â§Ã™â€žÃ™Å Ã˜Â©:</div>
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-            <form method="POST" action="{{ route('role.relations.agenda.update', $agendaEvent) }}" enctype="multipart/form-data" class="row event-form-grid">
-                @csrf
-                @method('PUT')
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_name') }}</label>
-                    <input class="form-control" name="event_name" value="{{ old('event_name', $agendaEvent->event_name) }}" required>
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_date') }}</label>
-                    <input class="form-control" type="date" name="event_date" value="{{ old('event_date', optional($agendaEvent->event_date)->format('Y-m-d')) }}" required>
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">الوحدة/القسم المالك</label>
-                    <select class="form-select js-owner-department" name="owner_department_id" required>
-                        <option value="">--</option>
-                        @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" {{ (string) old('owner_department_id', $agendaEvent->owner_department_id) === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</label>
-                    @php
-                        $selectedPartnerDepartmentIds = array_map('strval', old('partner_department_ids', $agendaEvent->partnerDepartments->pluck('id')->all()));
-                    @endphp
-                    <div class="partner-departments-box">
-                        @foreach ($departments as $department)
-                            <label class="partner-department-item">
-                                <input class="form-check-input m-0 js-partner-department" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
-                                <span>{{ $department->name }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_category') }}</label>
-                    <select class="form-select" name="event_category_id" id="event_category_id">
-                        <option value="">--</option>
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" {{ old('event_category_id', $agendaEvent->event_category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-12 col-md-2">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.event_type') }}</label>
-                    <select class="form-select" name="event_type" required>
-                        <option value="mandatory" {{ old('event_type', $agendaEvent->event_type) === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
-                        <option value="optional" {{ old('event_type', $agendaEvent->event_type) === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-2">
-                    <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</label>
-                    <select class="form-select js-plan-type" name="plan_type" required>
-                        <option value="unified" {{ old('plan_type', $agendaEvent->plan_type) === 'unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
-                        <option value="non_unified" {{ old('plan_type', $agendaEvent->plan_type) === 'non_unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-4 js-agenda-plan-file">
-                    <label class="form-label">Ù…Ù„Ù Ø§Ù„Ø®Ø·Ø©</label>
-                    <input class="form-control" type="file" name="agenda_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
-                    @if($agendaEvent->agenda_plan_file)
-                        <a class="small d-block mt-1" href="{{ asset('storage/'.$agendaEvent->agenda_plan_file) }}" target="_blank">Ã˜Â¹Ã˜Â±Ã˜Â¶ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€žÃ™Â Ã˜Â§Ã™â€žÃ˜Â­Ã˜Â§Ã™â€žÃ™Å </a>
-                    @endif
-                </div>
+    @include('pages.agenda.events._form', [
+        'formAction' => route('role.relations.agenda.update', $agendaEvent),
+        'formMethod' => 'PUT',
+        'submitLabel' => __('app.roles.relations.agenda.actions.update'),
+        'title' => $title,
+        'subtitle' => $subtitle,
+        'branchParticipations' => $branchParticipations,
+        'headerBadge' => 'الإصدار V' . (int) ($agendaEvent->version ?? 1),
+    ])
 
-                <div class="col-12"><div class="event-form-section">
-                    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
-                        <h2 class="event-section-title mb-0">{{ __('app.roles.relations.agenda.fields_ext.branch_participation') }}</h2>
-                        <button type="button" class="btn btn-sm btn-outline-primary js-enable-all-participants">Ã˜ÂªÃ™ÂÃ˜Â¹Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ™Æ’Ã™â€ž Ã™Æ’Ã™â€¦Ã˜Â´Ã˜Â§Ã˜Â±Ã™Æ’</button>
+    <div class="event-module mt-3 agenda-form-page">
+        <div class="card event-card">
+            <div class="card-body">
+                <div class="agenda-form-section">
+                    <div class="agenda-form-section__head">
+                        <h2 class="agenda-form-section__title">مشاركة الوحدات</h2>
+                        <p class="agenda-form-section__text">يمكن تحديث حالة مشاركة كل وحدة مرتبطة بهذه الفعالية من هنا.</p>
                     </div>
-                    <div class="row g-2">
-                        @foreach ($branches as $branch)
+                    <div class="row g-3">
+                        @foreach ($departmentUnits as $unit)
                             @php
-                                $branchStatus = old('branch_participation.'.$branch->id, $branchParticipations[$branch->id] ?? 'not_participant');
-                                $isParticipant = $branchStatus === 'participant';
+                                $canEditUnit = auth()->user()->hasRole('relations_manager') || auth()->user()->hasRole($unit->role_name);
                             @endphp
-                            <div class="col-12 col-md-4">
-                                <div class="branch-toggle-item">
-                                    <div class="small fw-semibold">{{ $branch->name }}</div>
-                                    <div class="form-check form-switch m-0">
-                                        <input type="hidden" name="branch_participation[{{ $branch->id }}]" value="{{ $isParticipant ? 'participant' : 'not_participant' }}" class="js-branch-status-hidden">
-                                        <input class="form-check-input js-branch-toggle" type="checkbox" role="switch" @checked($isParticipant)>
-                                        <label class="form-check-label small">{{ $isParticipant ? __('app.roles.relations.agenda.participation.participant') : __('app.roles.relations.agenda.participation.not_participant') }}</label>
+                            <div class="col-12 col-md-6">
+                                <form method="POST" action="{{ route('role.relations.agenda.unit_participation.update', $agendaEvent) }}" class="agenda-form-section h-100">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="unit_key" value="{{ $unit->unit_key }}">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+                                        <div>
+                                            <div class="fw-semibold">{{ $unit->name }}</div>
+                                            <div class="small text-muted">تحديث حالة مشاركة الوحدة في النشاط.</div>
+                                        </div>
+                                        @if (!$canEditUnit)
+                                            <span class="badge text-bg-light">{{ __('app.roles.relations.agenda.participation.view_only') }}</span>
+                                        @endif
                                     </div>
-                                </div>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <select class="form-select form-select-sm" name="status" {{ $canEditUnit ? '' : 'disabled' }}>
+                                            <option value="unspecified" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'unspecified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
+                                            <option value="participant" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.participant') }}</option>
+                                            <option value="not_participant" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'not_participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
+                                        </select>
+                                        @if ($canEditUnit)
+                                            <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.save') }}</button>
+                                        @endif
+                                    </div>
+                                </form>
                             </div>
                         @endforeach
                     </div>
-                </div></div>
-
-                <div class="col-12"><div class="event-form-section">
-                    <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields.notes') }}</h2>
-                    <textarea class="form-control" name="notes" rows="3">{{ old('notes', $agendaEvent->notes) }}</textarea>
-                </div></div>
-                <div class="col-12 d-flex justify-content-end gap-2">
-                    <button class="btn btn-primary" type="submit">{{ __('app.roles.relations.agenda.actions.update') }}</button>
-                </div>
-            </form>
-        </div>
-    </div></div>
-
-    <div class="event-module mt-3">
-        <div class="card event-card">
-            <div class="card-body">
-                <h2 class="event-section-title">{{ __('app.roles.relations.agenda.fields_ext.unit_participation') }}</h2>
-                <div class="row g-2">
-                    @foreach ($departmentUnits as $unit)
-                        @php
-                            $canEditUnit = auth()->user()->hasRole('relations_manager') || auth()->user()->hasRole($unit->role_name);
-                        @endphp
-                        <div class="col-12 col-md-6">
-                            <form method="POST" action="{{ route('role.relations.agenda.unit_participation.update', $agendaEvent) }}" class="event-approval-panel">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="unit_key" value="{{ $unit->unit_key }}">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small fw-semibold">{{ $unit->name }}</span>
-                                    @if (!$canEditUnit)
-                                        <span class="badge text-bg-light">{{ __('app.roles.relations.agenda.participation.view_only') }}</span>
-                                    @endif
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <select class="form-select form-select-sm" name="status" {{ $canEditUnit ? '' : 'disabled' }}>
-                                        <option value="unspecified" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'unspecified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.unspecified') }}</option>
-                                        <option value="participant" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.participant') }}</option>
-                                        <option value="not_participant" {{ ($unitStatuses[$unit->unit_key] ?? 'unspecified') === 'not_participant' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.participation.not_participant') }}</option>
-                                    </select>
-                                    @if ($canEditUnit)
-                                        <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.save') }}</button>
-                                    @endif
-                                </div>
-                            </form>
-                        </div>
-                    @endforeach
                 </div>
             </div>
         </div>
     </div>
-
-    <script>
-        (function () {
-            const categoryEl = document.getElementById('event_category_id');
-            const planTypeEl = document.querySelector('.js-plan-type');
-            const planFileRows = document.querySelectorAll('.js-agenda-plan-file');
-            const ownerDepartmentEl = document.querySelector('.js-owner-department');
-            const partnerDepartmentEls = Array.from(document.querySelectorAll('.js-partner-department'));
-
-            function filterCategories() {
-                const selectedDepartments = new Set(
-                    partnerDepartmentEls
-                        .filter((el) => el.checked)
-                        .map((el) => String(el.value))
-                );
-                if (ownerDepartmentEl?.value) {
-                    selectedDepartments.add(String(ownerDepartmentEl.value));
-                }
-
-                Array.from(categoryEl.options).forEach((option) => {
-                    const categoryDepartmentId = option.dataset.departmentId;
-                    if (!categoryDepartmentId) {
-                        option.hidden = false;
-                        return;
-                    }
-                    option.hidden = !selectedDepartments.has(String(categoryDepartmentId));
-                });
-
-                if (categoryEl.selectedOptions[0]?.hidden) {
-                    categoryEl.value = '';
-                }
-            }
-
-            function syncOwnerVsPartners() {
-                const ownerId = String(ownerDepartmentEl?.value || '');
-                partnerDepartmentEls.forEach((el) => {
-                    const isOwner = ownerId !== '' && String(el.value) === ownerId;
-                    if (isOwner) {
-                        el.checked = false;
-                    }
-                    el.disabled = isOwner;
-                    el.closest('.partner-department-item')?.classList.toggle('opacity-50', isOwner);
-                });
-            }
-
-            ownerDepartmentEl?.addEventListener('change', () => {
-                syncOwnerVsPartners();
-                filterCategories();
-            });
-            partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
-            syncOwnerVsPartners();
-            filterCategories();
-
-            function togglePlanFile() {
-                const isNonUnified = planTypeEl?.value === 'non_unified';
-                planFileRows.forEach((row) => row.style.display = isNonUnified ? 'block' : 'none');
-            }
-
-            planTypeEl?.addEventListener('change', togglePlanFile);
-            togglePlanFile();
-
-            const toggleRows = Array.from(document.querySelectorAll('.branch-toggle-item'));
-            const enableAllBtn = document.querySelector('.js-enable-all-participants');
-
-            function syncToggleRow(row) {
-                const checkbox = row.querySelector('.js-branch-toggle');
-                const hiddenInput = row.querySelector('.js-branch-status-hidden');
-                const label = row.querySelector('.form-check-label');
-                const isOn = !!checkbox?.checked;
-
-                hiddenInput.value = isOn ? 'participant' : 'not_participant';
-                label.textContent = isOn
-                    ? "{{ __('app.roles.relations.agenda.participation.participant') }}"
-                    : "{{ __('app.roles.relations.agenda.participation.not_participant') }}";
-            }
-
-            toggleRows.forEach((row) => {
-                const checkbox = row.querySelector('.js-branch-toggle');
-                checkbox?.addEventListener('change', () => syncToggleRow(row));
-                syncToggleRow(row);
-            });
-
-            enableAllBtn?.addEventListener('click', () => {
-                toggleRows.forEach((row) => {
-                    const checkbox = row.querySelector('.js-branch-toggle');
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                    syncToggleRow(row);
-                });
-            });
-        })();
-    </script>
-    <style>
-        .partner-departments-box {
-            border: 1px solid #dee2e6;
-            border-radius: .5rem;
-            padding: .5rem;
-            max-height: 180px;
-            overflow-y: auto;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: .5rem;
-        }
-        .partner-department-item {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            padding: .25rem .4rem;
-            border-radius: .35rem;
-            background: #f8f9fa;
-            margin: 0;
-            font-size: .9rem;
-        }
-        .branch-toggle-item {
-            border: 1px solid #dee2e6;
-            border-radius: .5rem;
-            padding: .55rem .75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8f9fa;
-        }
-    </style>
 @endsection
-

@@ -13,7 +13,7 @@ class MonthlyActivityAttachmentsController extends Controller
     public function store(Request $request, MonthlyActivity $monthlyActivity)
     {
         $data = $request->validate([
-            'file_type' => ['required', 'in:image,document,report,other,link'],
+            'file_type' => ['required', 'in:image,document,report,other,link,official_correspondence'],
             'title' => ['nullable', 'string', 'max:255'],
             'external_url' => ['nullable', 'url', 'max:2048', 'required_without:file'],
             'file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf,doc,docx,xlsx,xls', 'max:10240', 'required_without:external_url'],

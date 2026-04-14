@@ -7,6 +7,7 @@ use App\Models\ActivityNote;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivityApproval;
+use App\Models\MonthlyActivityAttachment;
 use App\Models\WorkflowActionLog;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         ]);
 
         $activities = MonthlyActivity::query()
-            ->with(['approvals.approver', 'creator', 'branch', 'notes.user', 'workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
+            ->with(['approvals.approver', 'creator', 'branch', 'notes.user', 'attachments.uploader', 'workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
             ->whereDoesntHave('newerVersions')
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
             ->when($filters['date_from'] ?? null, fn ($q, $dateFrom) => $q->whereDate('proposed_date', '>=', $dateFrom))
@@ -97,6 +98,8 @@ class MonthlyActivitiesApprovalsController extends Controller
             'is_edit_request_implemented' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
             'coverage_status' => ['nullable', 'string', 'in:not_required,planned,in_progress,completed'],
+            'official_correspondence_title' => ['nullable', 'string', 'max:255'],
+            'official_correspondence_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
         ]);
 
         $user = $request->user();
@@ -118,6 +121,24 @@ class MonthlyActivitiesApprovalsController extends Controller
         $dynamicWorkflowService->assertPrerequisites($instance, $step);
 
         abort_if(empty($data['decision']), 422, __('app.roles.programs.monthly_activities.approvals.errors.decision_required'));
+
+        if (
+            $request->hasFile('official_correspondence_file')
+            && $user->hasRole('relations_manager')
+            && method_exists($user, 'isKheldaUser')
+            && $user->isKheldaUser()
+            && (bool) $monthlyActivity->needs_official_correspondence
+        ) {
+            $path = $request->file('official_correspondence_file')->store("events/{$monthlyActivity->id}/official-correspondence", 'public');
+
+            MonthlyActivityAttachment::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'file_type' => 'official_correspondence',
+                'title' => $data['official_correspondence_title'] ?: 'المخاطبة الرسمية المعتمدة',
+                'file_path' => $path,
+                'uploaded_by' => $user->id,
+            ]);
+        }
 
         MonthlyActivityApproval::create([
             'monthly_activity_id' => $monthlyActivity->id,
@@ -148,7 +169,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'approval_decision',
             __('app.roles.programs.monthly_activities.approvals.notifications.title'),
             __('app.roles.programs.monthly_activities.approvals.notifications.body', ['decision' => $data['decision'], 'step' => $step->step_key]),
-            route('role.programs.approvals.index')
+            route('role.relations.activities.show', $monthlyActivity)
         );
 
         WorkflowActionLog::create([

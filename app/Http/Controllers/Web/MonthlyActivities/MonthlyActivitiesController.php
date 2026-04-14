@@ -319,6 +319,153 @@ class MonthlyActivitiesController extends Controller
         ], $currentCode);
     }
 
+    protected function executionStatusLabels(): array
+    {
+        return [
+            'executed' => 'منفذة',
+            'postponed' => 'مؤجلة',
+            'cancelled' => 'ملغية',
+        ];
+    }
+
+    protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
+    {
+        $selectedEventId = $monthlyActivity?->agenda_event_id;
+
+        return AgendaEvent::query()
+            ->when($this->shouldScopeToUserBranch($user), function ($query) use ($user, $selectedEventId) {
+                $query->where(function ($scopedQuery) use ($user, $selectedEventId) {
+                    $scopedQuery->where('event_type', 'mandatory')
+                        ->orWhereHas('participations', function ($participationQuery) use ($user) {
+                            $participationQuery
+                                ->where('entity_type', 'branch')
+                                ->where('entity_id', $user->branch_id)
+                                ->where('participation_status', 'participant');
+                        });
+
+                    if ($selectedEventId) {
+                        $scopedQuery->orWhereKey($selectedEventId);
+                    }
+                });
+            })
+            ->orderBy('month')
+            ->orderBy('day')
+            ->get();
+    }
+
+    protected function normalizePlanningPayload(array &$data): void
+    {
+        $data['execution_status'] = $data['execution_status'] ?? 'executed';
+        $data['status'] = $data['status'] ?? 'draft';
+
+        if (($data['location_type'] ?? null) === 'inside_center') {
+            $data['outside_place_name'] = null;
+            $data['outside_google_maps_url'] = null;
+            $data['outside_contact_number'] = null;
+            $data['external_liaison_name'] = null;
+            $data['external_liaison_phone'] = null;
+            $data['outside_address'] = null;
+        } else {
+            $data['internal_location'] = null;
+        }
+
+        if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
+            $data['official_correspondence_reason'] = null;
+            $data['official_correspondence_target'] = null;
+            $data['official_correspondence_brief'] = null;
+        }
+
+        if (! (bool) ($data['needs_volunteers'] ?? false)) {
+            $data['required_volunteers'] = null;
+            $data['volunteer_need'] = null;
+            $data['volunteer_age_range'] = null;
+            $data['volunteer_gender'] = null;
+            $data['volunteer_tasks_summary'] = null;
+        }
+
+        if (($data['execution_status'] ?? 'executed') !== 'postponed') {
+            $data['rescheduled_date'] = null;
+            $data['reschedule_reason'] = null;
+        }
+
+        if (($data['execution_status'] ?? 'executed') !== 'cancelled') {
+            $data['cancellation_reason'] = null;
+        }
+
+        if (! (bool) ($data['requires_supplies'] ?? false)) {
+            $data['supplies'] = [];
+        }
+
+        if (! (bool) ($data['has_partners'] ?? false)) {
+            $data['partners'] = [];
+        }
+
+        if (! (bool) ($data['has_sponsor'] ?? false)) {
+            $data['sponsors'] = [];
+        }
+    }
+
+    protected function shouldSubmitFromRequest(Request $request): bool
+    {
+        return $request->input('submit_action') === 'submit';
+    }
+
+    protected function submitActivityForApproval(
+        MonthlyActivity $monthlyActivity,
+        User $actor,
+        NotificationService $notifications,
+        MonthlyActivityLifecycleService $lifecycle,
+        DynamicWorkflowService $dynamicWorkflowService,
+        ?Request $request = null
+    ): void {
+        $instance = $dynamicWorkflowService->forModel('monthly_activities', $monthlyActivity);
+        abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
+
+        $currentStep = $dynamicWorkflowService->currentStep($instance);
+
+        if ($instance->status === 'changes_requested' && $currentStep?->step_type !== 'sub') {
+            $dynamicWorkflowService->markResubmitted($instance);
+            $instance = $instance->fresh();
+            $currentStep = $dynamicWorkflowService->currentStep($instance);
+        }
+
+        if ($currentStep?->step_type === 'sub') {
+            WorkflowLog::query()->create([
+                'workflow_instance_id' => $instance->id,
+                'workflow_step_id' => $currentStep->id,
+                'acted_by' => $actor->id,
+                'action' => 'approved',
+                'comment' => null,
+                'edit_request_iteration' => (int) $instance->edit_request_count,
+                'acted_at' => now(),
+            ]);
+
+            $dynamicWorkflowService->advanceToNextStep($instance->fresh());
+            $instance = $instance->fresh();
+        }
+
+        $monthlyActivity->update([
+            'status' => 'submitted',
+        ]);
+
+        if (($monthlyActivity->lifecycle_status ?: 'Draft') !== 'Submitted') {
+            $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
+        }
+
+        $nextRole = $instance->currentStep?->role?->name;
+        $notifications->notifyUsers(
+            $nextRole ? User::role($nextRole)->get() : collect(),
+            'approval_requested',
+            __('app.roles.programs.monthly_activities.approvals.notifications.submit_title'),
+            __('app.roles.programs.monthly_activities.approvals.notifications.submit_body', ['activity' => $monthlyActivity->title]),
+            route('role.programs.approvals.index')
+        );
+
+        if ($request && $request->user()) {
+            $this->logWorkflowAction('submitted', $monthlyActivity, $request, 'submitted');
+        }
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -387,10 +534,11 @@ class MonthlyActivitiesController extends Controller
             $branches->where('id', $user->branch_id);
         }
         $branches = $branches->get();
-        $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
+        $agendaEvents = $this->agendaEventsForUser($user);
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
         $monthlyStatusOptions = $this->monthlyCreationStatusOptions('draft');
+        $executionStatusLabels = $this->executionStatusLabels();
 
         return view('pages.monthly_activities.activities.create', compact(
             'branches',
@@ -398,6 +546,7 @@ class MonthlyActivitiesController extends Controller
             'targetGroups',
             'evaluationQuestions',
             'monthlyStatusOptions',
+            'executionStatusLabels',
         ));
     }
 
@@ -422,20 +571,32 @@ class MonthlyActivitiesController extends Controller
             'agenda_event_id' => $monthlyActivity->agenda_event_id,
             'is_in_agenda' => (int) $monthlyActivity->is_in_agenda,
             'status' => $monthlyActivity->status,
+            'execution_status' => $monthlyActivity->execution_status ?: 'executed',
             'location_type' => $monthlyActivity->location_type,
             'internal_location' => $outsideCenter ? null : $monthlyActivity->internal_location,
             'outside_place_name' => $outsideCenter ? $monthlyActivity->outside_place_name : null,
             'outside_google_maps_url' => $outsideCenter ? $monthlyActivity->outside_google_maps_url : null,
             'outside_contact_number' => $outsideCenter ? $monthlyActivity->outside_contact_number : null,
+            'external_liaison_name' => $outsideCenter ? $monthlyActivity->external_liaison_name : null,
+            'external_liaison_phone' => $outsideCenter ? $monthlyActivity->external_liaison_phone : null,
             'outside_address' => $outsideCenter ? $monthlyActivity->outside_address : null,
+            'time_from' => optional($monthlyActivity->time_from)->format('H:i'),
+            'time_to' => optional($monthlyActivity->time_to)->format('H:i'),
             'short_description' => $monthlyActivity->short_description,
             'description' => $monthlyActivity->description,
             'needs_volunteers' => (int) $needsVolunteers,
             'required_volunteers' => $needsVolunteers ? $monthlyActivity->required_volunteers : null,
             'volunteer_need' => $needsVolunteers ? $monthlyActivity->volunteer_need : null,
+            'volunteer_age_range' => $needsVolunteers ? $monthlyActivity->volunteer_age_range : null,
+            'volunteer_gender' => $needsVolunteers ? $monthlyActivity->volunteer_gender : null,
+            'volunteer_tasks_summary' => $needsVolunteers ? $monthlyActivity->volunteer_tasks_summary : null,
             'needs_official_correspondence' => (int) $needsOfficialCorrespondence,
             'official_correspondence_reason' => $needsOfficialCorrespondence ? $monthlyActivity->official_correspondence_reason : null,
             'official_correspondence_target' => $needsOfficialCorrespondence ? $monthlyActivity->official_correspondence_target : null,
+            'official_correspondence_brief' => $needsOfficialCorrespondence ? $monthlyActivity->official_correspondence_brief : null,
+            'rescheduled_date' => optional($monthlyActivity->rescheduled_date)->toDateString(),
+            'reschedule_reason' => $monthlyActivity->reschedule_reason,
+            'cancellation_reason' => $monthlyActivity->cancellation_reason,
             'requires_supplies' => (int) $needsSupplies,
             'supplies' => $needsSupplies
                 ? $monthlyActivity->supplies->map(fn ($supply) => [
@@ -588,6 +749,7 @@ class MonthlyActivitiesController extends Controller
                 'location_type' => 'inside_center',
                 'location_details' => null,
                 'status' => 'draft',
+                'execution_status' => 'executed',
                 'lock_at' => $this->buildLockAt(optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString()),
                 'is_official' => false,
                 'branch_id' => (int) $data['branch_id'],
@@ -603,7 +765,14 @@ class MonthlyActivitiesController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.sync.done', ['count' => $created]));
     }
 
-    public function store(Request $request, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
+    public function store(
+        Request $request,
+        ConflictDetectionService $conflicts,
+        MonthlyActivityWorkflowService $workflowService,
+        NotificationService $notifications,
+        MonthlyActivityLifecycleService $lifecycle,
+        DynamicWorkflowService $dynamicWorkflowService
+    )
     {
         if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
             $request->files->set('branch_plan_file', $request->file('planning_attachment'));
@@ -621,7 +790,9 @@ class MonthlyActivitiesController extends Controller
             'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'is_in_agenda' => ['nullable', 'boolean'],
-            'status' => ['required', 'string', 'max:50'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'submit_action' => ['nullable', 'in:draft,submit'],
+            'execution_status' => ['required', 'in:executed,postponed,cancelled'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
 
             'location_type' => ['required', 'in:inside_center,outside_center'],
@@ -630,6 +801,8 @@ class MonthlyActivitiesController extends Controller
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
             'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'external_liaison_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
+            'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
@@ -643,6 +816,9 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
+            'volunteer_age_range' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'attendance_notes' => ['nullable', 'string'],
@@ -661,6 +837,7 @@ class MonthlyActivitiesController extends Controller
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
+            'official_correspondence_brief' => ['nullable', 'string', 'max:1500', 'required_if:needs_official_correspondence,1'],
             'has_sponsor' => ['nullable', 'boolean'],
             'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
@@ -672,8 +849,9 @@ class MonthlyActivitiesController extends Controller
             'partner_3_role' => ['nullable', 'string', 'max:255'],
             'needs_official_letters' => ['nullable', 'boolean'],
             'letter_purpose' => ['nullable', 'string', 'max:255'],
-            'rescheduled_date' => ['nullable', 'date'],
-            'reschedule_reason' => ['nullable', 'string'],
+            'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
+            'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
+            'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
             'relations_approval_on_reschedule' => ['nullable', 'boolean'],
             'audience_satisfaction_percent' => ['nullable', 'numeric', 'between:0,100'],
             'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
@@ -713,36 +891,7 @@ class MonthlyActivitiesController extends Controller
             abort(403);
         }
 
-        if (($data['location_type'] ?? null) === 'inside_center') {
-            $data['outside_place_name'] = null;
-            $data['outside_google_maps_url'] = null;
-            $data['outside_contact_number'] = null;
-            $data['outside_address'] = null;
-        } else {
-            $data['internal_location'] = null;
-        }
-
-        if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
-            $data['official_correspondence_reason'] = null;
-            $data['official_correspondence_target'] = null;
-        }
-
-        if (! (bool) ($data['needs_volunteers'] ?? false)) {
-            $data['required_volunteers'] = null;
-            $data['volunteer_need'] = null;
-        }
-
-        if (! (bool) ($data['requires_supplies'] ?? false)) {
-            $data['supplies'] = [];
-        }
-
-        if (! (bool) ($data['has_partners'] ?? false)) {
-            $data['partners'] = [];
-        }
-
-        if (! (bool) ($data['has_sponsor'] ?? false)) {
-            $data['sponsors'] = [];
-        }
+        $this->normalizePlanningPayload($data);
 
         $date = Carbon::parse($data['activity_date']);
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id'], null, $data['execution_time'] ?? null);
@@ -769,12 +918,11 @@ class MonthlyActivitiesController extends Controller
             'outside_place_name' => $data['outside_place_name'] ?? null,
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
             'outside_contact_number' => $data['outside_contact_number'] ?? null,
+            'external_liaison_name' => $data['external_liaison_name'] ?? null,
+            'external_liaison_phone' => $data['external_liaison_phone'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
-            'internal_location' => $data['internal_location'] ?? null,
-            'outside_place_name' => $data['outside_place_name'] ?? null,
-            'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
-            'outside_address' => $data['outside_address'] ?? null,
-            'status' => $data['status'],
+            'status' => 'draft',
+            'execution_status' => $data['execution_status'],
             'plan_stage' => 1,
             'plan_version' => 1,
             'previous_version_id' => null,
@@ -785,19 +933,14 @@ class MonthlyActivitiesController extends Controller
             'target_group' => $data['target_group'] ?? null,
             'target_group_id' => $data['target_group_id'] ?? ($data['target_group_ids'][0] ?? null),
             'target_group_other' => $data['target_group_other'] ?? null,
-            'target_group_id' => $data['target_group_id'] ?? null,
-            'target_group_other' => $data['target_group_other'] ?? null,
             'short_description' => $data['short_description'] ?? null,
-            'work_teams_count' => $data['work_teams_count'] ?? null,
             'work_teams_count' => $data['work_teams_count'] ?? null,
             'volunteer_need' => $data['volunteer_need'] ?? null,
             'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
             'required_volunteers' => $data['required_volunteers'] ?? null,
-            'expected_attendance' => $data['expected_attendance'] ?? null,
-            'actual_attendance' => $data['actual_attendance'] ?? null,
-            'attendance_notes' => $data['attendance_notes'] ?? null,
-            'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
-            'required_volunteers' => $data['required_volunteers'] ?? null,
+            'volunteer_age_range' => $data['volunteer_age_range'] ?? null,
+            'volunteer_gender' => $data['volunteer_gender'] ?? null,
+            'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
             'actual_attendance' => $data['actual_attendance'] ?? null,
             'attendance_notes' => $data['attendance_notes'] ?? null,
@@ -808,16 +951,14 @@ class MonthlyActivitiesController extends Controller
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
-            'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
-            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
+            'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
             'letter_purpose' => $data['letter_purpose'] ?? null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
+            'cancellation_reason' => $data['cancellation_reason'] ?? null,
             'relations_approval_on_reschedule' => (bool) ($data['relations_approval_on_reschedule'] ?? false),
             'audience_satisfaction_percent' => $data['audience_satisfaction_percent'] ?? null,
             'evaluation_score' => $data['evaluation_score'] ?? null,
-            'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
-            'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'requires_programs' => (bool) (($data['requires_programs'] ?? false) || in_array('programs', $data['responsible_entities'] ?? [], true)),
@@ -889,6 +1030,10 @@ class MonthlyActivitiesController extends Controller
         }
         $this->logWorkflowAction('created', $monthlyActivity, $request, $monthlyActivity->status);
 
+        if ($this->shouldSubmitFromRequest($request)) {
+            $this->submitActivityForApproval($monthlyActivity, $request->user(), $notifications, $lifecycle, $dynamicWorkflowService, $request);
+        }
+
         return redirect()
             ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.created'))
@@ -918,11 +1063,12 @@ class MonthlyActivitiesController extends Controller
             $branches->where('id', request()->user()->branch_id);
         }
         $branches = $branches->get();
-        $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
+        $agendaEvents = $this->agendaEventsForUser(request()->user(), $monthlyActivity);
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
         $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);
         $monthlyCloseStatusOptions = $this->monthlyCloseStatusOptions((string) $monthlyActivity->status);
+        $executionStatusLabels = $this->executionStatusLabels();
 
         return view('pages.monthly_activities.activities.edit', compact(
             'monthlyActivity',
@@ -932,6 +1078,7 @@ class MonthlyActivitiesController extends Controller
             'evaluationQuestions',
             'monthlyStatusOptions',
             'monthlyCloseStatusOptions',
+            'executionStatusLabels',
         ));
     }
 
@@ -939,16 +1086,25 @@ class MonthlyActivitiesController extends Controller
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
-        $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
+        $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups', 'attachments.uploader'])
             ->loadCount('newerVersions');
         $monthlyStatusLabels = $this->statusLookupOptions('monthly_activities', [], (string) $monthlyActivity->status)
             ->pluck('name', 'code')
             ->all();
+        $executionStatusLabels = $this->executionStatusLabels();
 
-        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels'));
+        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels'));
     }
 
-    public function update(Request $request, MonthlyActivity $monthlyActivity, ConflictDetectionService $conflicts, MonthlyActivityWorkflowService $workflowService)
+    public function update(
+        Request $request,
+        MonthlyActivity $monthlyActivity,
+        ConflictDetectionService $conflicts,
+        MonthlyActivityWorkflowService $workflowService,
+        NotificationService $notifications,
+        MonthlyActivityLifecycleService $lifecycle,
+        DynamicWorkflowService $dynamicWorkflowService
+    )
     {
         if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
             $request->files->set('branch_plan_file', $request->file('planning_attachment'));
@@ -1003,7 +1159,9 @@ class MonthlyActivitiesController extends Controller
             'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'is_in_agenda' => ['nullable', 'boolean'],
-            'status' => ['required', 'string', 'max:50'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'submit_action' => ['nullable', 'in:draft,submit'],
+            'execution_status' => ['required', 'in:executed,postponed,cancelled'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
 
             'location_type' => ['required', 'in:inside_center,outside_center'],
@@ -1012,15 +1170,24 @@ class MonthlyActivitiesController extends Controller
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
             'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'external_liaison_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
+            'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center'],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
+            'time_from' => ['nullable', 'date_format:H:i'],
+            'time_to' => ['nullable', 'date_format:H:i', 'after:time_from'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
+            'target_group_ids' => ['nullable', 'array'],
+            'target_group_ids.*' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
             'short_description' => ['required', 'string', 'max:255'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
+            'volunteer_age_range' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'attendance_notes' => ['nullable', 'string'],
@@ -1037,6 +1204,7 @@ class MonthlyActivitiesController extends Controller
             'needs_official_correspondence' => ['nullable', 'boolean'],
             'official_correspondence_reason' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
+            'official_correspondence_brief' => ['nullable', 'string', 'max:1500', 'required_if:needs_official_correspondence,1'],
             'has_sponsor' => ['nullable', 'boolean'],
             'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
@@ -1048,8 +1216,9 @@ class MonthlyActivitiesController extends Controller
             'partner_3_role' => ['nullable', 'string', 'max:255'],
             'needs_official_letters' => ['nullable', 'boolean'],
             'letter_purpose' => ['nullable', 'string', 'max:255'],
-            'rescheduled_date' => ['nullable', 'date'],
-            'reschedule_reason' => ['nullable', 'string'],
+            'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
+            'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
+            'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
             'relations_approval_on_reschedule' => ['nullable', 'boolean'],
             'audience_satisfaction_percent' => ['nullable', 'numeric', 'between:0,100'],
             'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
@@ -1073,32 +1242,7 @@ class MonthlyActivitiesController extends Controller
             abort(403);
         }
 
-        if (($data['location_type'] ?? null) === 'inside_center') {
-            $data['outside_place_name'] = null;
-            $data['outside_google_maps_url'] = null;
-            $data['outside_contact_number'] = null;
-            $data['outside_address'] = null;
-        } else {
-            $data['internal_location'] = null;
-        }
-
-        if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
-            $data['official_correspondence_reason'] = null;
-            $data['official_correspondence_target'] = null;
-        }
-
-        if (! (bool) ($data['needs_volunteers'] ?? false)) {
-            $data['required_volunteers'] = null;
-            $data['volunteer_need'] = null;
-        }
-
-        if (! (bool) ($data['has_partners'] ?? false)) {
-            $data['partners'] = [];
-        }
-
-        if (! (bool) ($data['has_sponsor'] ?? false)) {
-            $data['sponsors'] = [];
-        }
+        $this->normalizePlanningPayload($data);
 
         $date = Carbon::parse($data['activity_date']);
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id'], $monthlyActivity->id, $data['execution_time'] ?? null);
@@ -1126,12 +1270,18 @@ class MonthlyActivitiesController extends Controller
             'internal_location',
             'outside_place_name',
             'outside_google_maps_url',
+            'outside_contact_number',
+            'external_liaison_name',
+            'external_liaison_phone',
             'outside_address',
             'status',
+            'execution_status',
             'plan_stage',
             'plan_version',
             'responsible_party',
             'execution_time',
+            'time_from',
+            'time_to',
             'target_group',
             'target_group_id',
             'target_group_other',
@@ -1140,6 +1290,9 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need',
             'needs_volunteers',
             'required_volunteers',
+            'volunteer_age_range',
+            'volunteer_gender',
+            'volunteer_tasks_summary',
             'expected_attendance',
             'actual_attendance',
             'attendance_notes',
@@ -1156,9 +1309,11 @@ class MonthlyActivitiesController extends Controller
             'needs_official_correspondence',
             'official_correspondence_reason',
             'official_correspondence_target',
+            'official_correspondence_brief',
             'letter_purpose',
             'rescheduled_date',
             'reschedule_reason',
+            'cancellation_reason',
             'relations_approval_on_reschedule',
             'audience_satisfaction_percent',
             'evaluation_score',
@@ -1182,14 +1337,14 @@ class MonthlyActivitiesController extends Controller
             'executive_approval_status',
         ]);
 
-        $isRescheduled = ($data['status'] ?? null) === 'postponed'
+        $isRescheduled = ($data['execution_status'] ?? null) === 'postponed'
             || (
                 ! empty($data['rescheduled_date'])
                 && optional($monthlyActivity->rescheduled_date)?->toDateString() !== (string) $data['rescheduled_date']
             );
         $nextStage = (int) ($monthlyActivity->plan_stage ?: 1);
         $nextVersion = (int) ($monthlyActivity->plan_version ?: 1);
-        $newStatus = $data['status'];
+        $newStatus = $this->shouldSubmitFromRequest($request) ? $monthlyActivity->status : 'draft';
         $newLifecycleStatus = $monthlyActivity->lifecycle_status ?: 'Draft';
         $startsNewVersion = false;
 
@@ -1212,21 +1367,29 @@ class MonthlyActivitiesController extends Controller
             'outside_place_name' => $data['outside_place_name'] ?? null,
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
             'outside_contact_number' => $data['outside_contact_number'] ?? null,
+            'external_liaison_name' => $data['external_liaison_name'] ?? null,
+            'external_liaison_phone' => $data['external_liaison_phone'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
             'status' => $newStatus,
+            'execution_status' => $data['execution_status'],
             'plan_stage' => $nextStage,
             'plan_version' => $nextVersion,
             'previous_version_id' => $startsNewVersion ? $monthlyActivity->id : $monthlyActivity->previous_version_id,
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
+            'time_from' => $data['time_from'] ?? null,
+            'time_to' => $data['time_to'] ?? null,
             'target_group' => $data['target_group'] ?? null,
-            'target_group_id' => $data['target_group_id'] ?? null,
+            'target_group_id' => $data['target_group_id'] ?? ($data['target_group_ids'][0] ?? null),
             'target_group_other' => $data['target_group_other'] ?? null,
             'short_description' => $data['short_description'] ?? null,
             'work_teams_count' => $data['work_teams_count'] ?? null,
             'volunteer_need' => $data['volunteer_need'] ?? null,
             'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
             'required_volunteers' => $data['required_volunteers'] ?? null,
+            'volunteer_age_range' => $data['volunteer_age_range'] ?? null,
+            'volunteer_gender' => $data['volunteer_gender'] ?? null,
+            'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
             'actual_attendance' => $data['actual_attendance'] ?? null,
             'attendance_notes' => $data['attendance_notes'] ?? null,
@@ -1237,9 +1400,11 @@ class MonthlyActivitiesController extends Controller
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
+            'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
             'letter_purpose' => $data['letter_purpose'] ?? null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
+            'cancellation_reason' => $data['cancellation_reason'] ?? null,
             'relations_approval_on_reschedule' => (bool) ($data['relations_approval_on_reschedule'] ?? false),
             'audience_satisfaction_percent' => $data['audience_satisfaction_percent'] ?? null,
             'evaluation_score' => $data['evaluation_score'] ?? null,
@@ -1310,13 +1475,18 @@ class MonthlyActivitiesController extends Controller
                 'outside_place_name' => $newValues['outside_place_name'],
                 'outside_google_maps_url' => $newValues['outside_google_maps_url'],
                 'outside_contact_number' => $newValues['outside_contact_number'],
+                'external_liaison_name' => $newValues['external_liaison_name'],
+                'external_liaison_phone' => $newValues['external_liaison_phone'],
                 'outside_address' => $newValues['outside_address'],
                 'status' => $newValues['status'],
+                'execution_status' => $newValues['execution_status'],
                 'plan_stage' => $newValues['plan_stage'],
                 'plan_version' => $newValues['plan_version'],
                 'previous_version_id' => $newValues['previous_version_id'],
                 'responsible_party' => $newValues['responsible_party'],
                 'execution_time' => $newValues['execution_time'],
+                'time_from' => $newValues['time_from'],
+                'time_to' => $newValues['time_to'],
                 'target_group' => $newValues['target_group'],
                 'target_group_id' => $newValues['target_group_id'],
                 'target_group_other' => $newValues['target_group_other'],
@@ -1325,6 +1495,9 @@ class MonthlyActivitiesController extends Controller
                 'volunteer_need' => $newValues['volunteer_need'],
                 'needs_volunteers' => $newValues['needs_volunteers'],
                 'required_volunteers' => $newValues['required_volunteers'],
+                'volunteer_age_range' => $newValues['volunteer_age_range'],
+                'volunteer_gender' => $newValues['volunteer_gender'],
+                'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
                 'expected_attendance' => $newValues['expected_attendance'],
                 'actual_attendance' => $newValues['actual_attendance'],
                 'attendance_notes' => $newValues['attendance_notes'],
@@ -1335,9 +1508,11 @@ class MonthlyActivitiesController extends Controller
                 'needs_official_correspondence' => $newValues['needs_official_correspondence'],
                 'official_correspondence_reason' => $newValues['official_correspondence_reason'],
                 'official_correspondence_target' => $newValues['official_correspondence_target'],
+                'official_correspondence_brief' => $newValues['official_correspondence_brief'],
                 'letter_purpose' => $newValues['letter_purpose'],
                 'rescheduled_date' => $newValues['rescheduled_date'],
                 'reschedule_reason' => $newValues['reschedule_reason'],
+                'cancellation_reason' => $newValues['cancellation_reason'],
                 'relations_approval_on_reschedule' => $newValues['relations_approval_on_reschedule'],
                 'audience_satisfaction_percent' => $newValues['audience_satisfaction_percent'],
                 'evaluation_score' => $newValues['evaluation_score'],
@@ -1394,13 +1569,18 @@ class MonthlyActivitiesController extends Controller
             'outside_place_name' => $newValues['outside_place_name'],
             'outside_google_maps_url' => $newValues['outside_google_maps_url'],
             'outside_contact_number' => $newValues['outside_contact_number'],
+            'external_liaison_name' => $newValues['external_liaison_name'],
+            'external_liaison_phone' => $newValues['external_liaison_phone'],
             'outside_address' => $newValues['outside_address'],
             'status' => $newValues['status'],
+            'execution_status' => $newValues['execution_status'],
             'plan_stage' => $newValues['plan_stage'],
             'plan_version' => $newValues['plan_version'],
             'previous_version_id' => $newValues['previous_version_id'],
             'responsible_party' => $newValues['responsible_party'],
             'execution_time' => $newValues['execution_time'],
+            'time_from' => $newValues['time_from'],
+            'time_to' => $newValues['time_to'],
             'target_group' => $newValues['target_group'],
             'target_group_id' => $newValues['target_group_id'],
             'target_group_other' => $newValues['target_group_other'],
@@ -1409,6 +1589,9 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need' => $newValues['volunteer_need'],
             'needs_volunteers' => $newValues['needs_volunteers'],
             'required_volunteers' => $newValues['required_volunteers'],
+            'volunteer_age_range' => $newValues['volunteer_age_range'],
+            'volunteer_gender' => $newValues['volunteer_gender'],
+            'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
             'expected_attendance' => $newValues['expected_attendance'],
             'actual_attendance' => $newValues['actual_attendance'],
             'attendance_notes' => $newValues['attendance_notes'],
@@ -1419,9 +1602,11 @@ class MonthlyActivitiesController extends Controller
             'needs_official_correspondence' => $newValues['needs_official_correspondence'],
             'official_correspondence_reason' => $newValues['official_correspondence_reason'],
             'official_correspondence_target' => $newValues['official_correspondence_target'],
+            'official_correspondence_brief' => $newValues['official_correspondence_brief'],
             'letter_purpose' => $newValues['letter_purpose'],
             'rescheduled_date' => $newValues['rescheduled_date'],
             'reschedule_reason' => $newValues['reschedule_reason'],
+            'cancellation_reason' => $newValues['cancellation_reason'],
             'relations_approval_on_reschedule' => $newValues['relations_approval_on_reschedule'],
             'audience_satisfaction_percent' => $newValues['audience_satisfaction_percent'],
             'evaluation_score' => $newValues['evaluation_score'],
@@ -1469,6 +1654,10 @@ class MonthlyActivitiesController extends Controller
             'source_activity_id' => $startsNewVersion ? $monthlyActivity->id : null,
         ]);
 
+        if ($this->shouldSubmitFromRequest($request)) {
+            $this->submitActivityForApproval($activityToSave, $request->user(), $notifications, $lifecycle, $dynamicWorkflowService, $request);
+        }
+
         return redirect()
             ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.updated', ['activity' => $monthlyActivity->title]))
@@ -1486,53 +1675,7 @@ class MonthlyActivitiesController extends Controller
             ]);
         }
 
-        $instance = $dynamicWorkflowService->forModel('monthly_activities', $monthlyActivity);
-        abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
-
-        $currentStep = $dynamicWorkflowService->currentStep($instance);
-
-        if ($instance->status === 'changes_requested' && $currentStep?->step_type !== 'sub') {
-            $dynamicWorkflowService->markResubmitted($instance);
-            $instance = $instance->fresh();
-            $currentStep = $dynamicWorkflowService->currentStep($instance);
-        }
-
-        if ($currentStep?->step_type === 'sub') {
-            WorkflowLog::query()->create([
-                'workflow_instance_id' => $instance->id,
-                'workflow_step_id' => $currentStep->id,
-                'acted_by' => $actor->id,
-                'action' => 'approved',
-                'comment' => null,
-                'edit_request_iteration' => (int) $instance->edit_request_count,
-                'acted_at' => now(),
-            ]);
-
-            $dynamicWorkflowService->advanceToNextStep($instance->fresh());
-            $instance = $instance->fresh();
-        }
-
-        $monthlyActivity->update([
-            'status' => 'submitted',
-        ]);
-
-        if (($monthlyActivity->lifecycle_status ?: 'Draft') !== 'Submitted') {
-            $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
-        }
-
-        $nextRole = $instance->currentStep?->role?->name;
-        $notifications->notifyUsers(
-            $nextRole ? User::role($nextRole)->get() : collect(),
-            'approval_requested',
-            __('app.roles.programs.monthly_activities.approvals.notifications.submit_title'),
-            __('app.roles.programs.monthly_activities.approvals.notifications.submit_body', ['activity' => $monthlyActivity->title]),
-            route('role.programs.approvals.index')
-        );
-
-        $request = request();
-        if ($request && $request->user()) {
-            $this->logWorkflowAction('submitted', $monthlyActivity, $request, 'submitted');
-        }
+        $this->submitActivityForApproval($monthlyActivity, $actor, $notifications, $lifecycle, $dynamicWorkflowService, request());
 
         return redirect()
             ->route('role.relations.activities.index')
@@ -1559,6 +1702,7 @@ class MonthlyActivitiesController extends Controller
             'actual_date' => $data['actual_date'] ?? $monthlyActivity->actual_date,
             'actual_attendance' => $data['actual_attendance'] ?? $monthlyActivity->actual_attendance,
             'status' => $data['status'],
+            'execution_status' => $data['status'] === 'executed' ? 'executed' : $monthlyActivity->execution_status,
             'is_official' => true,
         ]);
 

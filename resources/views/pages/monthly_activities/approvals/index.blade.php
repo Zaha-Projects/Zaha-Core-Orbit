@@ -52,6 +52,11 @@
                 $status = $wf?->status ?? 'pending';
                 $statusClass = 'wf-status-' . $status;
                 $latestApproval = $activity->approvals->last();
+                $officialCorrespondenceAttachments = $activity->attachments->where('file_type', 'official_correspondence');
+                $canUploadOfficialCorrespondence = $viewer?->hasRole('relations_manager')
+                    && method_exists($viewer, 'isKheldaUser')
+                    && $viewer->isKheldaUser()
+                    && $activity->needs_official_correspondence;
             @endphp
             <div class="wf-card card">
                 <div class="card-body">
@@ -122,7 +127,26 @@
                                                 <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.decision') }}: {{ $latestApproval?->decision ? __('workflow_ui.approvals.status_labels.' . $latestApproval->decision) : __('workflow_ui.common.none_option') }}</div>
                                             </div>
 
-                                            <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" class="decision-form" data-confirm-title="{{ __('workflow_ui.approvals.confirm_action') }}" data-confirm-body="{{ __('workflow_ui.approvals.confirm_action_body') }}" data-comment-required="{{ __('workflow_ui.approvals.comment_required') }}">
+                                            @if($activity->needs_official_correspondence)
+                                                <div class="border rounded-3 p-3 mb-3">
+                                                    <h4 class="h6 mb-2">المخاطبة الرسمية</h4>
+                                                    <div class="wf-kv mb-2">الجهة: {{ $activity->official_correspondence_target ?: '-' }}</div>
+                                                    <div class="wf-kv mb-2">السبب: {{ $activity->official_correspondence_reason ?: '-' }}</div>
+                                                    <div class="wf-kv mb-2">البريف: {{ $activity->official_correspondence_brief ?: '-' }}</div>
+                                                    <div class="d-flex flex-column gap-2">
+                                                        @forelse($officialCorrespondenceAttachments as $attachment)
+                                                            @php($isExternal = filter_var($attachment->file_path, FILTER_VALIDATE_URL))
+                                                            <a class="btn btn-sm btn-outline-secondary text-start" href="{{ $isExternal ? $attachment->file_path : asset('storage/'.$attachment->file_path) }}" target="_blank" rel="noopener">
+                                                                {{ $attachment->title ?: 'عرض المخاطبة الرسمية' }}
+                                                            </a>
+                                                        @empty
+                                                            <div class="wf-kv">لا يوجد مرفق رسمي مرفوع حتى الآن.</div>
+                                                        @endforelse
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            <form method="POST" action="{{ route('role.programs.approvals.update', $activity) }}" enctype="multipart/form-data" class="decision-form" data-confirm-title="{{ __('workflow_ui.approvals.confirm_action') }}" data-confirm-body="{{ __('workflow_ui.approvals.confirm_action_body') }}" data-comment-required="{{ __('workflow_ui.approvals.comment_required') }}">
                                                 @csrf
                                                 @method('PUT')
 
@@ -155,6 +179,20 @@
                                                         <label class="form-label">{{ __('workflow_ui.common.comment') }}</label>
                                                         <textarea class="form-control decision-comment" name="comment" rows="3"></textarea>
                                                     </div>
+                                                    @if($canUploadOfficialCorrespondence)
+                                                        <div class="border rounded-3 p-3 mb-2 bg-light-subtle">
+                                                            <div class="fw-semibold mb-2">إرفاق المخاطبة الرسمية للفرع</div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">عنوان المرفق</label>
+                                                                <input class="form-control" name="official_correspondence_title" value="{{ old('official_correspondence_title', 'المخاطبة الرسمية المعتمدة') }}">
+                                                            </div>
+                                                            <div>
+                                                                <label class="form-label">تحميل المرفق</label>
+                                                                <input class="form-control" type="file" name="official_correspondence_file" accept=".pdf,.doc,.docx">
+                                                                <small class="text-muted d-block mt-1">سيظهر هذا المرفق مباشرة لموظف العلاقات في الفرع داخل صفحة النشاط.</small>
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 @endif
 
                                                 <div class="d-flex justify-content-end">

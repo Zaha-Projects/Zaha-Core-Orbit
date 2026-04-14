@@ -211,6 +211,10 @@
             </div>
         </div>
 
+        <div class="alert alert-info mt-3">
+            الأجندة السنوية تعرض فعاليات جميع الفروع، بينما التخطيط الشهري يبقى محصوراً بفعاليات الفرع المرتبط بالمستخدم.
+        </div>
+
         @if($canBranchInteract)
             <div class="card event-card mb-3">
                 <div class="card-body">
@@ -395,6 +399,29 @@
                         <h2 class="h6 mb-0" data-calendar-title></h2>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">{{ __('app.roles.relations.agenda.calendar.next_month') }}</button>
                     </div>
+                    <div class="agenda-legend-explainer">
+                        <div class="agenda-legend-card">
+                            <span class="legend-badge legend-badge--square legend-badge--soft"></span>
+                            <div>
+                                <div class="fw-semibold">لون المربع</div>
+                                <div class="small text-muted">يدل على الباب أو الوحدة أو القسم المرتبط بالفعالية.</div>
+                            </div>
+                        </div>
+                        <div class="agenda-legend-card">
+                            <span class="legend-badge legend-badge--circle legend-badge--soft"></span>
+                            <div>
+                                <div class="fw-semibold">النقطة الدائرية</div>
+                                <div class="small text-muted">تدل على الفرع المشارك في الفعالية.</div>
+                            </div>
+                        </div>
+                        <div class="agenda-legend-card">
+                            <span class="event-status status-published">الحالة</span>
+                            <div>
+                                <div class="fw-semibold">شريط الحالة</div>
+                                <div class="small text-muted">يبين وضع الفعالية الحالي داخل مسار الأجندة.</div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="agenda-calendar-legend agenda-calendar-legend--top" data-calendar-legend-top></div>
 
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
@@ -409,13 +436,16 @@
         .approval-sequence-list { display: flex; flex-direction: column; gap: .35rem; }
         .approval-sequence-item { display: flex; flex-direction: column; gap: .15rem; }
         .approval-sequence-role { font-size: .75rem; color: #64748b; font-weight: 600; line-height: 1.2; }
-        .agenda-calendar-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: .75rem 0 1rem; padding: .5rem; border: 1px solid #e2e8f0; border-radius: .5rem; }
-        .agenda-calendar-legend--top { background: #f8fafc; }
-        .agenda-calendar-legend--bottom { background: #fff7ed; margin-top: 1rem; }
-        .legend-item { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: #334155; }
-        .legend-badge { width: .8rem; height: .8rem; display: inline-block; border: 1px solid rgba(0,0,0,.12); }
+        .agenda-legend-explainer { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; margin: 1rem 0; }
+        .agenda-legend-card { display: flex; align-items: center; gap: .85rem; padding: .9rem 1rem; border-radius: 1rem; background: linear-gradient(180deg, #fbfdff 0%, #f4f8fc 100%); border: 1px solid #dce6ef; }
+        .agenda-calendar-legend { display: flex; flex-wrap: wrap; gap: .85rem 1rem; margin: .75rem 0 1rem; padding: .9rem 1rem; border: 1px solid #e2e8f0; border-radius: 1rem; }
+        .agenda-calendar-legend--top { background: #f8fbfd; }
+        .agenda-calendar-legend--bottom { background: #fcfaf7; margin-top: 1rem; }
+        .legend-item { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; color: #334155; padding: .4rem .7rem; border-radius: 999px; background: rgba(255,255,255,.7); }
+        .legend-badge { width: 1rem; height: 1rem; display: inline-block; border: 1px solid rgba(0,0,0,.12); }
         .legend-badge--square { border-radius: .2rem; }
         .legend-badge--circle { border-radius: 999px; }
+        .legend-badge--soft { background: #dbeafe; }
         .agenda-event-chip-branches { display: flex; align-items: center; gap: .2rem; margin-top: .25rem; }
         .agenda-event-chip-units { display: flex; align-items: center; gap: .2rem; margin-top: .2rem; }
         .agenda-event-chip-dot { width: .5rem; height: .5rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
@@ -492,6 +522,18 @@
                 return palette[key % palette.length];
             }
 
+            function softenColor(hex) {
+                if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex;
+                const normalized = hex.length === 4
+                    ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+                    : hex;
+                const r = parseInt(normalized.slice(1, 3), 16);
+                const g = parseInt(normalized.slice(3, 5), 16);
+                const b = parseInt(normalized.slice(5, 7), 16);
+                const mix = (channel) => Math.round(channel + ((255 - channel) * 0.55));
+                return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+            }
+
             function iconForEntity(entity, id = null) {
                 if (entity?.icon) return entity.icon;
                 const key = Math.abs(Number(id || entity?.id || 0));
@@ -542,7 +584,7 @@
                     return `
                         <span class="legend-item">
                             <span>${iconForEntity(entity, id)}</span>
-                            <span class="legend-badge ${shapeClass}" style="background:${colorForEntity(entity, id)}"></span>
+                            <span class="legend-badge ${shapeClass}" style="background:${softenColor(colorForEntity(entity, id))}"></span>
                             <span>${prefix}${entity.name}</span>
                         </span>
                     `;
@@ -616,7 +658,7 @@
                         }
                         eventLink.className = `agenda-event-chip status-${event.status}`;
                         const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => {
-                            return `<span class="agenda-event-chip-dot" style="background:${colorForEntity(branch)}" title="${branch.name}"></span>`;
+                            return `<span class="agenda-event-chip-dot" style="background:${softenColor(colorForEntity(branch))}" title="${branch.name}"></span>`;
                         }).join('');
                         const unitSquares = [
                             ...(event.department && event.department !== '-' ? [{
@@ -628,7 +670,7 @@
                             ...(event.partner_departments ?? []),
                             ...(event.participant_units ?? []),
                         ].slice(0, 5).map((entity) => (
-                            `<span class="agenda-event-chip-square" style="background:${colorForEntity(entity)}" title="${entity.name}"></span>`
+                            `<span class="agenda-event-chip-square" style="background:${softenColor(colorForEntity(entity))}" title="${entity.name}"></span>`
                         )).join('');
                         eventLink.innerHTML = `
                             <span class="agenda-event-chip-title">${event.name}</span>
@@ -640,13 +682,13 @@
                         eventLink.addEventListener('mouseenter', (evt) => {
                             const tooltip = ensureTooltip();
                             const branchPills = (event.participant_branches ?? []).map((branch) => (
-                                `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge legend-badge--circle" style="background:${colorForEntity(branch)}"></span><span>${branch.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge legend-badge--circle" style="background:${softenColor(colorForEntity(branch))}"></span><span>${branch.name}</span></span>`
                             )).join('');
                             const partnerDepartmentPills = (event.partner_departments ?? []).map((department) => (
-                                `<span class="tooltip-pill"><span>${iconForEntity(department)}</span><span class="legend-badge legend-badge--square" style="background:${colorForEntity(department)}"></span><span>${department.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(department)}</span><span class="legend-badge legend-badge--square" style="background:${softenColor(colorForEntity(department))}"></span><span>${department.name}</span></span>`
                             )).join('');
                             const unitPills = (event.participant_units ?? []).map((unit) => (
-                                `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge legend-badge--square" style="background:${colorForEntity(unit)}"></span><span>${unit.name}</span></span>`
+                                `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge legend-badge--square" style="background:${softenColor(colorForEntity(unit))}"></span><span>${unit.name}</span></span>`
                             )).join('');
 
                             tooltip.innerHTML = `

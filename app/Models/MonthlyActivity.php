@@ -19,6 +19,7 @@ class MonthlyActivity extends Model
         'modified_proposed_date',
         'rescheduled_date',
         'reschedule_reason',
+        'cancellation_reason',
         'relations_approval_on_reschedule',
         'actual_date',
         'is_in_agenda',
@@ -43,6 +44,7 @@ class MonthlyActivity extends Model
         'correspondence_status',
         'official_correspondence_reason',
         'official_correspondence_target',
+        'official_correspondence_brief',
         'letter_purpose',
         'location_type',
         'location_details',
@@ -53,6 +55,8 @@ class MonthlyActivity extends Model
         'outside_place_name',
         'outside_google_maps_url',
         'outside_contact_number',
+        'external_liaison_name',
+        'external_liaison_phone',
         'outside_address',
         'time_from',
         'time_to',
@@ -68,6 +72,9 @@ class MonthlyActivity extends Model
         'volunteers_required',
         'volunteers_count',
         'required_volunteers',
+        'volunteer_age_range',
+        'volunteer_gender',
+        'volunteer_tasks_summary',
         'expected_attendance',
         'actual_attendance',
         'attendance_rate',
@@ -84,6 +91,7 @@ class MonthlyActivity extends Model
         'requires_workshops',
         'requires_communications',
         'status',
+        'execution_status',
         'plan_stage',
         'plan_version',
         'previous_version_id',
@@ -247,6 +255,11 @@ class MonthlyActivity extends Model
     public function attachments()
     {
         return $this->hasMany(MonthlyActivityAttachment::class);
+    }
+
+    public function officialCorrespondenceAttachments()
+    {
+        return $this->attachments()->where('file_type', 'official_correspondence');
     }
 
     public function approvals()

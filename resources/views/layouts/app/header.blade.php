@@ -49,16 +49,33 @@
 
                 <div class="dropdown nxl-h-item">
                     <a class="nxl-head-link me-0" data-bs-toggle="dropdown" href="#"><i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">{{ $unreadNotifications->count() }}</span></a>
-                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown" style="min-width: 320px;">
-                        @forelse($unreadNotifications as $notification)
-                            <div class="dropdown-item small">
-                                <div class="fw-semibold">{{ $notification->title }}</div>
-                                <div class="text-muted">{{ $notification->message }}</div>
-                                <form method="POST" action="{{ route('role.notifications.read', $notification) }}">@csrf @method('PATCH')<button class="btn btn-link p-0 small" type="submit">{{ __('app.common.mark_as_read') }}</button></form>
-                            </div>
-                        @empty
-                            <div class="dropdown-item text-muted">{{ __('app.common.no_new_notifications') }}</div>
-                        @endforelse
+                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown notification-chat-menu">
+                        <div class="notification-chat-head">
+                            <div class="fw-semibold">الإشعارات</div>
+                            <div class="small text-muted">{{ $unreadNotifications->count() }} جديدة</div>
+                        </div>
+                        <div class="notification-chat-list">
+                            @forelse($unreadNotifications as $notification)
+                                <div class="notification-chat-item">
+                                    <div class="notification-chat-bubble">
+                                        <div class="fw-semibold mb-1">{{ $notification->title }}</div>
+                                        <div class="text-muted small">{{ $notification->message }}</div>
+                                        <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
+                                            @if($notification->action_url)
+                                                <a class="small text-decoration-none" href="{{ $notification->action_url }}">فتح الإشعار</a>
+                                            @endif
+                                            <form method="POST" action="{{ route('role.notifications.read', $notification) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button class="btn btn-link p-0 small text-decoration-none" type="submit">{{ __('app.common.mark_as_read') }}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="notification-chat-empty">{{ __('app.common.no_new_notifications') }}</div>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
 
@@ -76,3 +93,56 @@
         </div>
     </div>
 </header>
+
+<style>
+    .notification-chat-menu {
+        min-width: 360px;
+        max-width: 420px;
+        padding: 0;
+        overflow: hidden;
+        border-radius: 18px;
+        border: 1px solid #d9e4ef;
+    }
+    .notification-chat-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .9rem 1rem;
+        border-bottom: 1px solid #e8eef5;
+        background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
+    }
+    .notification-chat-list {
+        max-height: 420px;
+        overflow-y: auto;
+        padding: .85rem;
+        background: #f7fafc;
+    }
+    .notification-chat-item + .notification-chat-item {
+        margin-top: .75rem;
+    }
+    .notification-chat-bubble {
+        position: relative;
+        padding: .85rem .95rem;
+        border-radius: 16px 16px 16px 6px;
+        background: #ffffff;
+        border: 1px solid #dde7f0;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+    }
+    .notification-chat-bubble::after {
+        content: '';
+        position: absolute;
+        inset-inline-start: 14px;
+        bottom: -8px;
+        width: 14px;
+        height: 14px;
+        background: #ffffff;
+        border-inline-start: 1px solid #dde7f0;
+        border-bottom: 1px solid #dde7f0;
+        transform: rotate(-45deg);
+    }
+    .notification-chat-empty {
+        padding: 1.25rem 1rem;
+        text-align: center;
+        color: #64748b;
+    }
+</style>

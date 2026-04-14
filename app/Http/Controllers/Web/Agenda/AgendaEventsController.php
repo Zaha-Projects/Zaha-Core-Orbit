@@ -221,21 +221,22 @@ class AgendaEventsController extends Controller
 
     public function index(Request $request)
     {
-        if ($branchId = $this->currentUserBranchIdForFilters($request)) {
-            $request->merge(['branch_id' => $branchId]);
-        }
-
         $allowedPerPage = [10, 20, 50, 100];
         $perPage = (int) $request->input('per_page', 20);
         if (! in_array($perPage, $allowedPerPage, true)) {
             $perPage = 20;
         }
 
-        $eventsQuery = AgendaEvent::with(['creator', 'department', 'ownerDepartment', 'partnerDepartments', 'eventCategory', 'participations'])
-            ->enterpriseFilter($request->all())
-            ->notArchived();
+        $filteredBranchId = $this->canUserFilterAgendaBranches($request->user())
+            ? $request->input('branch_id')
+            : null;
+        $agendaFilters = array_merge($request->all(), [
+            'branch_id' => $filteredBranchId,
+        ]);
 
-        $this->applyBranchVisibilityScope($eventsQuery, $request->user());
+        $eventsQuery = AgendaEvent::with(['creator', 'department', 'ownerDepartment', 'partnerDepartments', 'eventCategory', 'participations'])
+            ->enterpriseFilter($agendaFilters)
+            ->notArchived();
 
         $events = $eventsQuery
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
@@ -244,12 +245,11 @@ class AgendaEventsController extends Controller
 
         $branchActor = $this->branchActor($request);
         $branches = Branch::query()
-            ->when($this->currentUserBranchIdForFilters($request), fn ($query, $branchId) => $query->whereKey($branchId))
             ->orderBy('name')
             ->get();
-        $canFilterBranches = $this->currentUserBranchIdForFilters($request) === null;
+        $canFilterBranches = $this->canUserFilterAgendaBranches($request->user());
 
-        $filters = array_merge($request->all(), [
+        $filters = array_merge($agendaFilters, [
             'per_page' => $perPage,
         ]);
 
@@ -260,26 +260,22 @@ class AgendaEventsController extends Controller
 
     protected function currentUserBranchIdForFilters(Request $request): ?int
     {
-        $user = $request->user();
+        return null;
+    }
 
-        if (
+    protected function canUserFilterAgendaBranches(?User $user): bool
+    {
+        return ! (
             $user
             && method_exists($user, 'hasBranchScopedAgendaVisibility')
             && $user->hasBranchScopedAgendaVisibility()
-            && ! empty($user->branch_id)
-        ) {
-            return (int) $user->branch_id;
-        }
-
-        return null;
+        );
     }
 
     public function show(Request $request, AgendaEvent $agendaEvent)
     {
-        $scopedEventQuery = AgendaEvent::query()->whereKey($agendaEvent->id);
-        $this->applyBranchVisibilityScope($scopedEventQuery, $request->user());
-
-        $agendaEvent = $scopedEventQuery
+        $agendaEvent = AgendaEvent::query()
+            ->whereKey($agendaEvent->id)
             ->with([
                 'creator',
                 'department',
