@@ -11,17 +11,22 @@ use App\Models\MonthlyActivityAttachment;
 use App\Models\WorkflowActionLog;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
+use App\Services\MonthlyWorkflowPresenter;
 use App\Services\NotificationService;
 use App\Services\MonthlyActivityLifecycleService;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
-    public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService)
+    public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService, MonthlyWorkflowPresenter $monthlyWorkflowPresenter)
     {
         $viewer = $request->user();
+        abort_unless(
+            $dynamicWorkflowService->userMayParticipateInWorkflow('monthly_activities', $viewer) || $viewer->can('monthly_activities.approve'),
+            403
+        );
         $branchCoordinatorScope = $this->branchCoordinatorApprovalScope($viewer);
         $filters = $request->validate([
-            'status' => ['nullable', 'string', 'in:pending,in_progress,approved,changes_requested,rejected'],
+            'status' => ['nullable', 'string', 'in:draft,submitted,in_review,pending,in_progress,approved,changes_requested,rejected'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'assignee' => ['nullable', 'string'],
             'current_step' => ['nullable', 'string'],
@@ -62,13 +67,15 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         $activities->load('workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor');
 
-        $activities->getCollection()->transform(function (MonthlyActivity $activity) use ($dynamicWorkflowService, $viewer) {
+        $activities->getCollection()->transform(function (MonthlyActivity $activity) use ($dynamicWorkflowService, $viewer, $monthlyWorkflowPresenter) {
             $instance = $activity->workflowInstance;
             $activity->can_current_user_decide = $instance
                 && $dynamicWorkflowService->canDecide($instance)
                 && $dynamicWorkflowService->currentStepForUser($instance, $viewer) !== null;
             $activity->can_add_department_note = ($viewer->hasRole('workshops_secretary') && (bool) $activity->requires_workshops)
                 || ($viewer->hasRole('communication_head') && (bool) $activity->requires_communications);
+
+            $monthlyWorkflowPresenter->attach($activity, $viewer);
 
             return $activity;
         });
@@ -83,7 +90,11 @@ class MonthlyActivitiesApprovalsController extends Controller
         }
 
         if (! empty($filters['status'])) {
-            $collection = $collection->filter(fn (MonthlyActivity $activity) => optional($activity->workflowInstance)->status === $filters['status'])->values();
+            $collection = $collection->filter(function (MonthlyActivity $activity) use ($filters) {
+                $summary = $activity->workflow_summary ?? [];
+
+                return ($summary['status_key'] ?? optional($activity->workflowInstance)->status) === $filters['status'];
+            })->values();
         }
 
         if (! empty($filters['assignee'])) {

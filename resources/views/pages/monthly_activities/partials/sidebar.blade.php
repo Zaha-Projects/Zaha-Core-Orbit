@@ -1,3 +1,11 @@
+@php
+    $canAccessMonthlyApprovals = auth()->user()
+        && (
+            auth()->user()->can('monthly_activities.approve')
+            || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('monthly_activities', auth()->user())
+        );
+@endphp
+
 @canany(['monthly_activities.view','monthly_plan.view'])
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'active' : '' }}" href="{{ route('role.relations.activities.index') }}">
@@ -14,11 +22,11 @@
     </a>
 </li>
 @endcan
-@canany(['monthly_activities.approve','monthly_plan.approve'])
+@if($canAccessMonthlyApprovals)
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.programs.approvals.*') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index') }}">
         <span class="nxl-micon"><i class="feather-check-square"></i></span>
         <span class="nxl-mtext">{{ __('app.roles.programs.monthly_activities.approvals.title') }}</span>
     </a>
 </li>
-@endcanany
+@endif

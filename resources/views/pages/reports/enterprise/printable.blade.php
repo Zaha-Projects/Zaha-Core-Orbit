@@ -30,7 +30,7 @@
             <tr>
                 <td>{{ optional($event->event_date)->format('Y-m-d') }}</td>
                 <td>{{ $event->event_name }}</td>
-                <td>{{ $event->status }}</td>
+                <td>{{ data_get($event, 'workflow_summary.status_label', $event->status) }}</td>
             </tr>
         @empty
             <tr>
@@ -54,7 +54,7 @@
             <tr>
                 <td>{{ optional($activity->proposed_date)->format('Y-m-d') }}</td>
                 <td>{{ $activity->title }}</td>
-                <td>{{ $activity->status }}</td>
+                <td>{{ data_get($activity, 'workflow_summary.status_label', $activity->status) }}</td>
             </tr>
         @empty
             <tr>

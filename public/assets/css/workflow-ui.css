@@ -158,6 +158,19 @@
   gap: 8px;
 }
 
+.workflow-ui .wf-summary {
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid #e5edf8;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.workflow-ui .wf-kv {
+  color: #64748b;
+  font-size: .86rem;
+  line-height: 1.7;
+}
+
 .workflow-ui .wf-chip,
 .workflow-ui .wf-badge {
   border-radius: 999px;
@@ -200,6 +213,65 @@
   color: var(--wf-warning);
 }
 
+.workflow-ui .wf-status-badge {
+  border-radius: 999px;
+  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .78rem;
+  font-weight: 800;
+  border: 1px solid #dbe7f5;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.workflow-ui .wf-status-approved {
+  background: #ebfbf4;
+  border-color: #bce8d1;
+  color: #147a50;
+}
+
+.workflow-ui .wf-status-rejected {
+  background: #fff1f1;
+  border-color: #f4c4c4;
+  color: #c63d3d;
+}
+
+.workflow-ui .wf-status-changes_requested,
+.workflow-ui .wf-status-awaiting_resubmission {
+  background: #fff6e4;
+  border-color: #ffd796;
+  color: #b76a00;
+}
+
+.workflow-ui .wf-status-in_progress,
+.workflow-ui .wf-status-current {
+  background: #edf4ff;
+  border-color: #c9dcff;
+  color: #1f4ba6;
+}
+
+.workflow-ui .wf-status-submitted {
+  background: #eefaf7;
+  border-color: #cfece2;
+  color: #0f766e;
+}
+
+.workflow-ui .wf-status-draft,
+.workflow-ui .wf-status-pending,
+.workflow-ui .wf-status-default {
+  background: #f8fafc;
+  border-color: #dbe4ef;
+  color: #475569;
+}
+
+.workflow-ui .wf-status-skipped {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
 .workflow-ui .wf-create-box,
 .workflow-ui .wf-panel,
 .workflow-ui .wf-step-card {
@@ -237,6 +309,21 @@
 .workflow-ui .wf-details-toggle::-webkit-details-marker,
 .workflow-ui .wf-advanced-box summary::-webkit-details-marker {
   display: none;
+}
+
+.workflow-ui .accordion-button {
+  font-weight: 800;
+  color: var(--wf-primary);
+}
+
+.workflow-ui .accordion-button:not(.collapsed) {
+  color: #0f172a;
+  background: transparent;
+  box-shadow: none;
+}
+
+.workflow-ui .accordion-button:focus {
+  box-shadow: none;
 }
 
 .workflow-ui .wf-toggle-label {

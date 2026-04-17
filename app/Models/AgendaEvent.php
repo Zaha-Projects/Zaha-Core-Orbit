@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\WorkflowInstance;
 
 class AgendaEvent extends Model
 {
@@ -119,5 +120,10 @@ class AgendaEvent extends Model
     public function monthlyActivities()
     {
         return $this->hasMany(MonthlyActivity::class);
+    }
+
+    public function workflowInstance()
+    {
+        return $this->morphOne(WorkflowInstance::class, 'entity');
     }
 }

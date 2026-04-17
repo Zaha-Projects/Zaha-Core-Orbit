@@ -14,7 +14,7 @@ class EnterpriseAnalyticsService
         $monthly = MonthlyActivity::query()->whereYear('proposed_date', $year)->notArchived();
 
         $totalEvents = (clone $agenda)->count();
-        $approvedEvents = (clone $agenda)->whereIn('status', ['relations_approved', 'published'])->count();
+        $approvedEvents = (clone $agenda)->where('status', 'published')->count();
         $rejectedEvents = (clone $agenda)->where('status', 'rejected')->count();
         $pendingApprovals = (clone $agenda)->whereIn('status', ['submitted', 'changes_requested'])->count();
         $executedActivities = (clone $monthly)->whereNotNull('actual_date')->count();
@@ -50,7 +50,7 @@ class EnterpriseAnalyticsService
         return Branch::query()->withCount([
             'monthlyActivities as total_activities' => fn ($q) => $q->whereYear('proposed_date', $year),
             'monthlyActivities as completed_activities' => fn ($q) => $q->whereYear('proposed_date', $year)->whereNotNull('actual_date'),
-            'monthlyActivities as approved_activities' => fn ($q) => $q->whereYear('proposed_date', $year)->where('executive_approval_status', 'approved'),
+            'monthlyActivities as approved_activities' => fn ($q) => $q->whereYear('proposed_date', $year)->where('status', 'approved'),
         ])->get()->map(function ($branch) {
             $total = max(1, $branch->total_activities);
             return [

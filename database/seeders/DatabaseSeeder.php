@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RolesSeeder::class);
         $this->call(UsersSeeder::class);
         $this->call(WorkflowSeeder::class);
+        $this->call(WorkflowShowcaseSeeder::class);
 
         $this->call(MovementSeeder::class);
         $this->call(MonthlyKpiSeeder::class);

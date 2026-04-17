@@ -20,34 +20,6 @@
             ?? \App\Models\EventStatusLookup::labelFor('agenda', $status);
     };
 
-    $roleDisplayNames = \App\Models\Role::query()
-        ->whereIn('name', ['relations_manager', 'executive_manager'])
-        ->get()
-        ->mapWithKeys(fn ($role) => [$role->name => $role->display_name])
-        ->all();
-
-    $roleLabel = function (?string $roleKey) use ($roleDisplayNames): string {
-        if (! $roleKey) {
-            return '-';
-        }
-
-        if (! empty($roleDisplayNames[$roleKey])) {
-            return $roleDisplayNames[$roleKey];
-        }
-
-        $translated = __('app.acl.roles.' . $roleKey);
-        if ($translated !== 'app.acl.roles.' . $roleKey) {
-            return $translated;
-        }
-
-        return (string) \Illuminate\Support\Str::of($roleKey)->replace('_', ' ')->title();
-    };
-
-    $agendaApprovalSteps = [
-        ['role_label' => $roleLabel('relations_manager'), 'status_field' => 'relations_approval_status'],
-        ['role_label' => $roleLabel('executive_manager'), 'status_field' => 'executive_approval_status'],
-    ];
-
     $branchesById = \App\Models\Branch::query()
         ->get()
         ->mapWithKeys(fn ($branch) => [
@@ -70,6 +42,7 @@
     $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser, $branchesById, $unitsById) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
+        $workflowSummary = $event->workflow_summary ?? [];
         $branchParticipation = $event->participations
             ->where('entity_type', 'branch')
             ->where('entity_id', $authUser?->branch_id)
@@ -121,8 +94,11 @@
             'partner_departments' => $partnerDepartments,
             'participant_units' => $participantUnits,
             'category' => $event->eventCategory?->name ?? $event->event_category ?? '-',
-            'status' => $event->relations_approval_status ?? $event->status,
-            'status_label' => $agendaStatusLabel($event->relations_approval_status ?? $event->status),
+            'status' => $workflowSummary['status_key'] ?? $event->status,
+            'status_label' => $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status),
+            'workflow_state' => $workflowSummary['workflow_state_label'] ?? __('app.common.na'),
+            'current_step_label' => $workflowSummary['current_step_label'] ?? __('app.common.na'),
+            'current_role_label' => $workflowSummary['current_role_label'] ?? __('app.common.na'),
             'edit_url' => $canManageAgenda ? route('role.relations.agenda.edit', $event) : null,
             'view_url' => route('role.relations.agenda.show', $event),
             'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
@@ -311,6 +287,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($events as $event)
+                                    @php($workflowSummary = $event->workflow_summary ?? [])
                                     <tr>
                                         <td>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</td>
                                         <td>{{ $event->event_name }}</td>
@@ -320,13 +297,18 @@
                                         <td>{{ __('app.roles.relations.agenda.types.' . $event->event_type) }} / {{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</td>
                                         <td>
                                             <div class="approval-sequence-list">
-                                                @foreach($agendaApprovalSteps as $approvalStep)
-                                                    @php($stepStatus = data_get($event, $approvalStep['status_field']) ?? 'pending')
-                                                    <div class="approval-sequence-item">
-                                                        <div class="approval-sequence-role">{{ $approvalStep['role_label'] }}</div>
-                                                        <span class="event-status status-{{ $stepStatus }}">{{ $agendaStatusLabel($stepStatus) }}</span>
-                                                    </div>
-                                                @endforeach
+                                                <div class="approval-sequence-item">
+                                                    <div class="approval-sequence-role">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</div>
+                                                    <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
+                                                </div>
+                                                <div class="approval-sequence-item">
+                                                    <div class="approval-sequence-role">{{ __('workflow_ui.common.current_step') }}</div>
+                                                    <span>{{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
+                                                </div>
+                                                <div class="approval-sequence-item">
+                                                    <div class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</div>
+                                                    <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>{{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</td>
@@ -355,6 +337,7 @@
 
                     <div class="event-mobile-cards">
                         @foreach ($events as $event)
+                            @php($workflowSummary = $event->workflow_summary ?? [])
                             <div class="event-mobile-card">
                                 <div class="fw-semibold mb-2">{{ $event->event_name }}</div>
                                 <div class="event-mobile-row"><span class="text-muted">الإصدار</span><span>V{{ (int) ($event->version ?? 1) }}</span></div>
@@ -362,13 +345,18 @@
                                 <div class="event-mobile-row align-items-start">
                                     <span class="text-muted">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span>
                                     <span class="approval-sequence-list">
-                                        @foreach($agendaApprovalSteps as $approvalStep)
-                                            @php($stepStatus = data_get($event, $approvalStep['status_field']) ?? 'pending')
-                                            <span class="approval-sequence-item">
-                                                <span class="approval-sequence-role">{{ $approvalStep['role_label'] }}</span>
-                                                <span class="event-status status-{{ $stepStatus }}">{{ $agendaStatusLabel($stepStatus) }}</span>
-                                            </span>
-                                        @endforeach
+                                        <span class="approval-sequence-item">
+                                            <span class="approval-sequence-role">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span>
+                                            <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
+                                        </span>
+                                        <span class="approval-sequence-item">
+                                            <span class="approval-sequence-role">{{ __('workflow_ui.common.current_step') }}</span>
+                                            <span>{{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
+                                        </span>
+                                        <span class="approval-sequence-item">
+                                            <span class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</span>
+                                            <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
+                                        </span>
                                     </span>
                                 </div>
                                 <div class="event-actions mt-2">

@@ -28,6 +28,7 @@ use App\Services\NotificationService;
 use App\Services\MonthlyActivityWorkflowService;
 use App\Services\MonthlyActivityLifecycleService;
 use App\Services\DynamicWorkflowService;
+use App\Services\MonthlyWorkflowPresenter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -37,11 +38,30 @@ class MonthlyActivitiesController extends Controller
 {
     protected function currentUserBranchId(?User $user): ?int
     {
-        if (! $this->shouldScopeToUserBranch($user) || empty($user?->branch_id)) {
-            return null;
+        $branchIds = $this->scopedBranchIds($user);
+
+        return count($branchIds) === 1 ? $branchIds[0] : null;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    protected function scopedBranchIds(?User $user): array
+    {
+        if (! $this->shouldScopeToUserBranch($user)) {
+            return [];
         }
 
-        return (int) $user->branch_id;
+        return method_exists($user, 'scopedBranchIds')
+            ? $user->scopedBranchIds()
+            : (filled($user?->branch_id) ? [(int) $user->branch_id] : []);
+    }
+
+    protected function canAccessScopedBranch(?User $user, ?int $branchId): bool
+    {
+        $scopedBranchIds = $this->scopedBranchIds($user);
+
+        return $scopedBranchIds === [] || in_array((int) $branchId, $scopedBranchIds, true);
     }
 
     protected function isApprovedVersion(MonthlyActivity $monthlyActivity): bool
@@ -85,8 +105,10 @@ class MonthlyActivitiesController extends Controller
 
     protected function applyBranchVisibilityScope($query, ?User $user)
     {
-        if ($this->shouldScopeToUserBranch($user)) {
-            $query->where('branch_id', $user->branch_id);
+        $scopedBranchIds = $this->scopedBranchIds($user);
+
+        if ($scopedBranchIds !== []) {
+            $query->whereIn('branch_id', $scopedBranchIds);
         }
 
         return $query;
@@ -111,7 +133,7 @@ class MonthlyActivitiesController extends Controller
 
     protected function ensureActivityVisibleToUser(MonthlyActivity $monthlyActivity, User $user): void
     {
-        if ($this->shouldScopeToUserBranch($user) && (int) $monthlyActivity->branch_id !== (int) $user->branch_id) {
+        if (! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
             abort(403);
         }
 
@@ -331,15 +353,16 @@ class MonthlyActivitiesController extends Controller
     protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
     {
         $selectedEventId = $monthlyActivity?->agenda_event_id;
+        $scopedBranchIds = $this->scopedBranchIds($user);
 
         return AgendaEvent::query()
-            ->when($this->shouldScopeToUserBranch($user), function ($query) use ($user, $selectedEventId) {
-                $query->where(function ($scopedQuery) use ($user, $selectedEventId) {
+            ->when($scopedBranchIds !== [], function ($query) use ($scopedBranchIds, $selectedEventId) {
+                $query->where(function ($scopedQuery) use ($scopedBranchIds, $selectedEventId) {
                     $scopedQuery->where('event_type', 'mandatory')
-                        ->orWhereHas('participations', function ($participationQuery) use ($user) {
+                        ->orWhereHas('participations', function ($participationQuery) use ($scopedBranchIds) {
                             $participationQuery
                                 ->where('entity_type', 'branch')
-                                ->where('entity_id', $user->branch_id)
+                                ->whereIn('entity_id', $scopedBranchIds)
                                 ->where('participation_status', 'participant');
                         });
 
@@ -498,8 +521,9 @@ class MonthlyActivitiesController extends Controller
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
-        if ($this->shouldScopeToUserBranch($user) && $viewScope !== 'all_branches') {
-            $branches->where('id', $user->branch_id);
+        $scopedBranchIds = $this->scopedBranchIds($user);
+        if ($scopedBranchIds !== [] && $viewScope !== 'all_branches') {
+            $branches->whereIn('id', $scopedBranchIds);
         }
         $branches = $branches->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
@@ -511,7 +535,7 @@ class MonthlyActivitiesController extends Controller
         ];
         $canFilterBranches = $viewScope === 'all_branches'
             ? $this->canViewOtherBranches($user)
-            : ! $this->shouldScopeToUserBranch($user);
+            : ($scopedBranchIds === [] || count($scopedBranchIds) > 1);
 
         $monthlyStatusOptions = $this->statusLookupOptions('monthly_activities', [], (string) $request->input('status'));
 
@@ -530,8 +554,9 @@ class MonthlyActivitiesController extends Controller
     {
         $user = request()->user();
         $branches = Branch::query()->orderBy('name');
-        if ($this->shouldScopeToUserBranch($user)) {
-            $branches->where('id', $user->branch_id);
+        $scopedBranchIds = $this->scopedBranchIds($user);
+        if ($scopedBranchIds !== []) {
+            $branches->whereIn('id', $scopedBranchIds);
         }
         $branches = $branches->get();
         $agendaEvents = $this->agendaEventsForUser($user);
@@ -697,7 +722,7 @@ class MonthlyActivitiesController extends Controller
             'year' => ['required', 'integer', 'min:2020', 'max:2100'],
         ]);
 
-        if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
+        if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
         }
 
@@ -887,7 +912,7 @@ class MonthlyActivitiesController extends Controller
             'description' => ['required', 'string', 'max:2000'],
         ]);
 
-        if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
+        if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
         }
 
@@ -1059,8 +1084,9 @@ class MonthlyActivitiesController extends Controller
             $this->flashFormPrefill($monthlyActivity);
         }
         $branches = Branch::query()->orderBy('name');
-        if ($this->shouldScopeToUserBranch(request()->user())) {
-            $branches->where('id', request()->user()->branch_id);
+        $scopedBranchIds = $this->scopedBranchIds(request()->user());
+        if ($scopedBranchIds !== []) {
+            $branches->whereIn('id', $scopedBranchIds);
         }
         $branches = $branches->get();
         $agendaEvents = $this->agendaEventsForUser(request()->user(), $monthlyActivity);
@@ -1082,12 +1108,29 @@ class MonthlyActivitiesController extends Controller
         ));
     }
 
-    public function show(MonthlyActivity $monthlyActivity)
+    public function show(MonthlyActivity $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
-        $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups', 'attachments.uploader'])
+        $monthlyActivity->load([
+            'branch',
+            'creator',
+            'agendaEvent',
+            'sponsors',
+            'partners',
+            'supplies',
+            'team',
+            'targetGroups',
+            'attachments.uploader',
+            'workflowInstance.workflow.steps.role',
+            'workflowInstance.currentStep.role',
+            'workflowInstance.currentStep.permission',
+            'workflowInstance.logs.step.role',
+            'workflowInstance.logs.step.permission',
+            'workflowInstance.logs.actor',
+        ])
             ->loadCount('newerVersions');
+        $monthlyWorkflowPresenter->attach($monthlyActivity, request()->user());
         $monthlyStatusLabels = $this->statusLookupOptions('monthly_activities', [], (string) $monthlyActivity->status)
             ->pluck('name', 'code')
             ->all();
@@ -1238,7 +1281,7 @@ class MonthlyActivitiesController extends Controller
             'description' => ['required', 'string', 'max:2000'],
         ]);
 
-        if ($this->shouldScopeToUserBranch($request->user()) && (int) $data['branch_id'] !== (int) $request->user()->branch_id) {
+        if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
         }
 

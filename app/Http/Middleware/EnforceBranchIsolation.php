@@ -22,12 +22,18 @@ class EnforceBranchIsolation
             return $next($request);
         }
 
+        $allowedBranchIds = method_exists($user, 'scopedBranchIds')
+            ? $user->scopedBranchIds()
+            : (filled($user->branch_id) ? [(int) $user->branch_id] : []);
+
         $branchId = (int) $request->input('branch_id', 0);
-        if ($branchId > 0 && $branchId !== (int) $user->branch_id) {
+        if ($branchId > 0 && ! in_array($branchId, $allowedBranchIds, true)) {
             abort(403);
         }
 
-        $request->merge(['branch_id' => $request->input('branch_id', $user->branch_id)]);
+        if ($branchId <= 0 && count($allowedBranchIds) === 1) {
+            $request->merge(['branch_id' => $allowedBranchIds[0]]);
+        }
 
         return $next($request);
     }

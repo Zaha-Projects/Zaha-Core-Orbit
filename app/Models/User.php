@@ -93,7 +93,7 @@ class User extends Authenticatable
     /**
      * @return array<int, int>
      */
-    public function approvalBranchIds(): array
+    public function scopedBranchIds(): array
     {
         $assignedIds = $this->relationLoaded('assignedBranches')
             ? $this->assignedBranches->pluck('id')
@@ -113,13 +113,35 @@ class User extends Authenticatable
         return filled($this->branch_id) ? [(int) $this->branch_id] : [];
     }
 
+    public function primaryScopedBranchId(): ?int
+    {
+        return $this->scopedBranchIds()[0] ?? null;
+    }
+
+    public function hasAccessToScopedBranch(?int $branchId): bool
+    {
+        if (! $branchId) {
+            return false;
+        }
+
+        return in_array((int) $branchId, $this->scopedBranchIds(), true);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    public function approvalBranchIds(): array
+    {
+        return $this->scopedBranchIds();
+    }
+
     public function isAssignedToApprovalBranch(?int $branchId): bool
     {
         if (! $branchId) {
             return false;
         }
 
-        return in_array($branchId, $this->approvalBranchIds(), true);
+        return $this->hasAccessToScopedBranch($branchId);
     }
 
 

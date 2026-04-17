@@ -13,10 +13,14 @@ use App\Models\EventStatusLookup;
 use App\Models\MonthlyActivity;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\WorkflowLog;
+use App\Services\AgendaWorkflowPresenter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Services\AgendaWorkflowBridgeService;
 use App\Services\ConflictDetectionService;
+use App\Services\DynamicWorkflowService;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -128,16 +132,56 @@ class AgendaEventsController extends Controller
 
     protected function applyBranchVisibilityScope($query, User $user)
     {
-        if (! method_exists($user, 'hasBranchScopedAgendaVisibility') || ! $user->hasBranchScopedAgendaVisibility() || empty($user->branch_id)) {
+        $branchIds = $this->scopedBranchIds($user);
+
+        if ($branchIds === []) {
             return $query;
         }
 
-        return $query->where(function ($scoped) use ($user) {
+        return $query->where(function ($scoped) use ($user, $branchIds) {
             $scoped->where('created_by', $user->id)
-                ->orWhereHas('participations', function ($participation) use ($user) {
-                    $participation->where('entity_type', 'branch')->where('entity_id', $user->branch_id);
+                ->orWhereHas('participations', function ($participation) use ($branchIds) {
+                    $participation->where('entity_type', 'branch')->whereIn('entity_id', $branchIds);
                 });
         });
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    protected function scopedBranchIds(?User $user): array
+    {
+        if (! $user
+            || ! method_exists($user, 'hasBranchScopedAgendaVisibility')
+            || ! $user->hasBranchScopedAgendaVisibility()
+        ) {
+            return [];
+        }
+
+        return method_exists($user, 'scopedBranchIds')
+            ? $user->scopedBranchIds()
+            : (filled($user->branch_id) ? [(int) $user->branch_id] : []);
+    }
+
+    protected function ensureAgendaVisibleToUser(AgendaEvent $agendaEvent, User $user): void
+    {
+        $branchIds = $this->scopedBranchIds($user);
+
+        if ($branchIds === []) {
+            return;
+        }
+
+        if ((int) $agendaEvent->created_by === (int) $user->id) {
+            return;
+        }
+
+        abort_unless(
+            $agendaEvent->participations()
+                ->where('entity_type', 'branch')
+                ->whereIn('entity_id', $branchIds)
+                ->exists(),
+            403
+        );
     }
 
     protected function agendaStatusOptions(?string $currentStatus = null)
@@ -219,7 +263,7 @@ class AgendaEventsController extends Controller
             ->get();
     }
 
-    public function index(Request $request)
+    public function index(Request $request, AgendaWorkflowPresenter $agendaWorkflowPresenter)
     {
         $allowedPerPage = [10, 20, 50, 100];
         $perPage = (int) $request->input('per_page', 20);
@@ -234,17 +278,37 @@ class AgendaEventsController extends Controller
             'branch_id' => $filteredBranchId,
         ]);
 
-        $eventsQuery = AgendaEvent::with(['creator', 'department', 'ownerDepartment', 'partnerDepartments', 'eventCategory', 'participations'])
+        $eventsQuery = AgendaEvent::with([
+            'creator',
+            'department',
+            'ownerDepartment',
+            'partnerDepartments',
+            'eventCategory',
+            'participations',
+            'workflowInstance.workflow.steps.role',
+            'workflowInstance.currentStep.role',
+            'workflowInstance.logs.step.role',
+            'workflowInstance.logs.actor',
+        ])
             ->enterpriseFilter($agendaFilters)
             ->notArchived();
+
+        $this->applyBranchVisibilityScope($eventsQuery, $request->user());
 
         $events = $eventsQuery
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
             ->paginate($perPage)
             ->withQueryString();
 
+        $events->getCollection()->transform(function (AgendaEvent $event) use ($agendaWorkflowPresenter, $request) {
+            return $agendaWorkflowPresenter->attach($event, $request->user());
+        });
+
         $branchActor = $this->branchActor($request);
         $branches = Branch::query()
+            ->when($this->scopedBranchIds($request->user()) !== [] && $this->canUserFilterAgendaBranches($request->user()), function ($query) use ($request) {
+                $query->whereIn('id', $this->scopedBranchIds($request->user()));
+            })
             ->orderBy('name')
             ->get();
         $canFilterBranches = $this->canUserFilterAgendaBranches($request->user());
@@ -265,14 +329,12 @@ class AgendaEventsController extends Controller
 
     protected function canUserFilterAgendaBranches(?User $user): bool
     {
-        return ! (
-            $user
-            && method_exists($user, 'hasBranchScopedAgendaVisibility')
-            && $user->hasBranchScopedAgendaVisibility()
-        );
+        $scopedBranchIds = $this->scopedBranchIds($user);
+
+        return $scopedBranchIds === [] || count($scopedBranchIds) > 1;
     }
 
-    public function show(Request $request, AgendaEvent $agendaEvent)
+    public function show(Request $request, AgendaEvent $agendaEvent, AgendaWorkflowPresenter $agendaWorkflowPresenter)
     {
         $agendaEvent = AgendaEvent::query()
             ->whereKey($agendaEvent->id)
@@ -284,8 +346,14 @@ class AgendaEventsController extends Controller
                 'eventCategory',
                 'monthlyActivities',
                 'participations',
+                'workflowInstance.workflow.steps.role',
+                'workflowInstance.currentStep.role',
+                'workflowInstance.logs.step.role',
+                'workflowInstance.logs.actor',
             ])
             ->firstOrFail();
+
+        $this->ensureAgendaVisibleToUser($agendaEvent, $request->user());
 
         $branchesById = Branch::query()
             ->get()
@@ -319,6 +387,8 @@ class AgendaEventsController extends Controller
                 ];
             })
             ->values();
+
+        $agendaWorkflowPresenter->attach($agendaEvent, $request->user());
 
         return view('pages.agenda.events.show', compact('agendaEvent', 'branchParticipations', 'unitParticipations'));
     }
@@ -552,7 +622,13 @@ class AgendaEventsController extends Controller
             ->with('warning', $conflictWarning);
     }
 
-    public function submit(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications)
+    public function submit(
+        Request $request,
+        AgendaEvent $agendaEvent,
+        NotificationService $notifications,
+        DynamicWorkflowService $dynamicWorkflowService,
+        AgendaWorkflowBridgeService $agendaWorkflowBridgeService
+    )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
@@ -567,10 +643,41 @@ class AgendaEventsController extends Controller
             return back()->withErrors(['branch_participation' => __('app.roles.relations.agenda.errors.optional_requires_branch_participation')]);
         }
 
-        $agendaEvent->update([
-            'status' => 'submitted',
-        ]);
-        $notifications->notifyUsers(User::role('relations_manager')->get(), 'approval_requested', 'Agenda approval requested', $agendaEvent->event_name, route('role.relations.approvals.index'));
+        $instance = $dynamicWorkflowService->forModel('agenda', $agendaEvent);
+        abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
+
+        $currentStep = $dynamicWorkflowService->currentStep($instance);
+
+        if ($instance->status === DynamicWorkflowService::DECISION_CHANGES_REQUESTED && $currentStep?->step_type !== 'sub') {
+            $dynamicWorkflowService->markResubmitted($instance);
+            $instance = $instance->fresh();
+            $currentStep = $dynamicWorkflowService->currentStep($instance);
+        }
+
+        if ($currentStep?->step_type === 'sub') {
+            WorkflowLog::query()->create([
+                'workflow_instance_id' => $instance->id,
+                'workflow_step_id' => $currentStep->id,
+                'acted_by' => $request->user()->id,
+                'action' => DynamicWorkflowService::DECISION_APPROVED,
+                'comment' => null,
+                'edit_request_iteration' => (int) $instance->edit_request_count,
+                'acted_at' => now(),
+            ]);
+
+            $dynamicWorkflowService->advanceToNextStep($instance->fresh());
+            $instance = $instance->fresh();
+        }
+
+        $agendaEvent = $agendaWorkflowBridgeService->syncApprovalState($agendaEvent, $instance);
+
+        $notifications->notifyUsers(
+            $dynamicWorkflowService->eligibleUsersForStep($instance),
+            'approval_requested',
+            'Agenda approval requested',
+            $agendaEvent->event_name,
+            route('role.relations.approvals.index')
+        );
 
 
         return redirect()

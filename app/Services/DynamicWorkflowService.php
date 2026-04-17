@@ -90,6 +90,28 @@ class DynamicWorkflowService
         return ($matchesRole || $matchesPermission) ? $step : null;
     }
 
+    public function userMayParticipateInWorkflow(string $module, User $user): bool
+    {
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        $workflow = $this->findActiveWorkflow($module);
+
+        if (! $workflow) {
+            return false;
+        }
+
+        $workflow->loadMissing('steps.role', 'steps.permission');
+
+        return $workflow->steps->contains(function (WorkflowStep $step) use ($user): bool {
+            $matchesRole = $step->role && $user->hasRole($step->role->name);
+            $matchesPermission = $step->permission && $user->can($step->permission->name);
+
+            return $matchesRole || $matchesPermission;
+        });
+    }
+
     public function assertPrerequisites(WorkflowInstance $instance, WorkflowStep $step): void
     {
         $instance->loadMissing('workflow.steps');
