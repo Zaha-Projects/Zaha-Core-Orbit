@@ -232,7 +232,7 @@ class AgendaEventsController extends Controller
                 $query->where('active', true);
 
                 if (filled($selectedCategoryId)) {
-                    $query->orWhereKey($selectedCategoryId);
+                    $query->orWhere($query->getModel()->getQualifiedKeyName(), $selectedCategoryId);
                 }
             })
             ->orderBy('sort_order')
