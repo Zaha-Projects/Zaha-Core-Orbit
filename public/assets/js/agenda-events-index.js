@@ -34,6 +34,14 @@
         return isRtl ? 6 - jsDayIndex : jsDayIndex;
     }
 
+    function decorateCalendarDayCell(cell, year, month, day) {
+        const jsDayIndex = new Date(year, month, day).getDay();
+        cell.classList.add(`agenda-calendar-day--weekday-${jsDayIndex}`);
+        if (jsDayIndex === 5) {
+            cell.classList.add('agenda-calendar-day--friday');
+        }
+    }
+
     function colorForEntity(entity, id = null) {
         if (entity?.color_hex) return entity.color_hex;
         const key = Math.abs(Number(id || entity?.id || 0));
@@ -117,9 +125,10 @@
 
     function renderWeekdays() {
         weekdaysContainer.innerHTML = '';
-        weekDayLabels.forEach((label) => {
+        weekDayLabels.forEach((label, jsDayIndex) => {
             const item = document.createElement('div');
             item.className = 'agenda-weekday';
+            if (jsDayIndex === 5) item.classList.add('agenda-weekday--friday');
             item.textContent = label;
             weekdaysContainer.appendChild(item);
         });
@@ -159,6 +168,7 @@
         for (let day = 1; day <= daysInMonth; day += 1) {
             const dayCell = document.createElement('div');
             dayCell.className = 'agenda-calendar-day';
+            decorateCalendarDayCell(dayCell, year, month, day);
 
             const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
             if (isToday) dayCell.classList.add('agenda-calendar-day--today');

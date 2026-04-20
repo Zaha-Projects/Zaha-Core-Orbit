@@ -12,7 +12,9 @@
     const endpoint = module.dataset.calendarEndpoint;
 
     const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    weekdaysContainer.innerHTML = weekdays.map((label) => `<div class="agenda-weekday">${label}</div>`).join('');
+    weekdaysContainer.innerHTML = weekdays
+        .map((label, jsDayIndex) => `<div class="agenda-weekday ${jsDayIndex === 5 ? 'agenda-weekday--friday' : ''}">${label}</div>`)
+        .join('');
 
     const now = new Date();
     const searchParams = new URLSearchParams(window.location.search);
@@ -25,6 +27,14 @@
     let currentMonth = Number.parseInt(searchParams.get('month') || '', 10) || (now.getMonth() + 1);
 
     function mapPos(day) { return isRtl ? 6 - day : day; }
+
+    function decorateCalendarDayCell(cell, year, month, day) {
+        const jsDayIndex = new Date(year, month - 1, day).getDay();
+        cell.classList.add(`agenda-calendar-day--weekday-${jsDayIndex}`);
+        if (jsDayIndex === 5) {
+            cell.classList.add('agenda-calendar-day--friday');
+        }
+    }
 
     async function loadCalendar() {
         const requestParams = new URLSearchParams(preservedParams.toString());
@@ -54,6 +64,7 @@
             const dayItems = items.filter((it) => it.date === dateStr);
             const cell = document.createElement('div');
             cell.className = 'agenda-calendar-day';
+            decorateCalendarDayCell(cell, currentYear, currentMonth, day);
             if (today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth && today.getDate() === day) {
                 cell.classList.add('agenda-calendar-day--today');
             }

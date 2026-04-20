@@ -265,6 +265,8 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    position: relative;
+    overflow: hidden;
 }
 
 .agenda-calendar-day--empty {
@@ -282,6 +284,36 @@
     font-weight: 700;
     color: var(--text-primary);
     font-size: 0.9rem;
+    position: relative;
+    z-index: 2;
+}
+
+.agenda-weekday--friday {
+    color: #0f766e;
+    font-weight: 700;
+}
+
+.agenda-calendar-day--weekday-0 { background: linear-gradient(180deg, #fff7ed 0%, #ffffff 65%); }
+.agenda-calendar-day--weekday-1 { background: linear-gradient(180deg, #eff6ff 0%, #ffffff 65%); }
+.agenda-calendar-day--weekday-2 { background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 65%); }
+.agenda-calendar-day--weekday-3 { background: linear-gradient(180deg, #faf5ff 0%, #ffffff 65%); }
+.agenda-calendar-day--weekday-4 { background: linear-gradient(180deg, #fefce8 0%, #ffffff 65%); }
+.agenda-calendar-day--weekday-5 { background: linear-gradient(180deg, #ecfeff 0%, #ffffff 65%); }
+.agenda-calendar-day--weekday-6 { background: linear-gradient(180deg, #fdf2f8 0%, #ffffff 65%); }
+
+.agenda-calendar-day--friday {
+    border-color: #67e8f9;
+    box-shadow: inset 0 0 0 1px #cffafe;
+}
+
+.agenda-calendar-day--friday::after {
+    content: '🕌';
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+    font-size: 1.15rem;
+    opacity: 0.35;
+    z-index: 1;
 }
 
 .agenda-event-chip {
@@ -295,6 +327,8 @@
     background: #fff;
     padding: 8px;
     transition: all 0.2s ease;
+    position: relative;
+    z-index: 2;
 }
 
 .agenda-event-chip:hover {
