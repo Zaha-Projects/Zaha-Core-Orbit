@@ -8,11 +8,8 @@
 <link rel="stylesheet" href="{{ asset('assets/css/monthly-approvals.css') }}">
 @endpush
 
-@php
-    $viewer = auth()->user();
-@endphp
-
 @section('content')
+@php($viewer = $viewer ?? auth()->user())
 <div class="workflow-ui">
     <div class="wf-card card mb-4">
         <div class="card-body">
@@ -67,6 +64,7 @@
     <div class="d-flex flex-column gap-3">
         @forelse($activities as $activity)
             @php
+                $viewer = $viewer ?? auth()->user();
                 $wf = $activity->workflowInstance;
                 $workflowSummary = $activity->workflow_summary ?? [];
                 $logs = collect($workflowSummary['timeline'] ?? []);
