@@ -171,7 +171,7 @@
 
                 <details class="monthly-full-details">
                     <summary>عرض التفاصيل الكاملة</summary>
-                    <div class="row g-3 mt-2">
+                    <div class="row g-3 mt-2 monthly-details-content">
                     <div class="col-12 col-md-4"><strong>عنوان النشاط:</strong> {{ $monthlyActivity->title }}</div>
                     <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</div>
                     <div class="col-12 col-md-4"><strong>التاريخ المقترح:</strong> {{ optional($monthlyActivity->proposed_date)->format('Y-m-d') ?? '-' }}</div>
@@ -321,18 +321,40 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .monthly-summary-grid {
+            display: grid;
+            gap: .75rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+        .monthly-summary-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: .9rem;
+            background: linear-gradient(180deg, #fff, #f8fbff);
+        }
+        .monthly-summary-item span {
+            display: block;
+            color: #64748b;
+            font-size: .78rem;
+            margin-bottom: .2rem;
+        }
+        .monthly-full-details {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: .9rem;
+            background: #fff;
+        }
+        .monthly-full-details > summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: .4rem;
+        }
+        .monthly-details-content strong {
+            color: #334155;
+            margin-inline-end: .35rem;
+        }
+    </style>
 @endsection
-
-@push('styles')
-<style>
-    .monthly-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; }
-    .monthly-summary-item { border: 1px solid #e2e8f0; border-radius: 12px; padding: .75rem; background: #f8fafc; }
-    .monthly-summary-item span { font-size: .8rem; color: #64748b; display: block; }
-    .monthly-summary-item strong { font-size: .95rem; color: #0f172a; display: block; margin-top: .2rem; }
-    .monthly-full-details summary { cursor: pointer; font-weight: 600; color: #1d4ed8; margin-bottom: .25rem; }
-    .monthly-full-details[open] summary { margin-bottom: .75rem; }
-</style>
-@endpush
-
-
-

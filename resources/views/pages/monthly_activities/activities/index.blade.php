@@ -69,7 +69,7 @@
         @endif
 
         <div class="event-kpi-grid">
-            <div class="event-kpi-card"><div class="text-muted small">{{ __('app.roles.programs.monthly_activities.list_title') }}</div><div class="event-kpi-value">{{ $activities->count() }}</div></div>
+            <div class="event-kpi-card"><div class="text-muted small">{{ __('app.roles.programs.monthly_activities.list_title') }}</div><div class="event-kpi-value">{{ method_exists($activities, 'total') ? $activities->total() : $activities->count() }}</div></div>
             <div class="event-kpi-card"><div class="text-muted small">{{ __('app.roles.programs.monthly_activities.statuses.approved') }}</div><div class="event-kpi-value">{{ $activities->where('status','approved')->count() }}</div></div>
         </div>
 
@@ -86,7 +86,7 @@
                             <select class="form-select" name="branch_id">
                                 <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
                                 @foreach ($branches as $branch)
-                                    <option value="{{ $branch->id }}" @selected((string) ($filters['branch_id'] ?? '') === (string) $branch->id)>{{ $branch->name }}</option>
+                                    <option value="{{ $branch->id }}" {{ (string) ($filters['branch_id'] ?? '') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -98,7 +98,7 @@
                         <select class="form-select" name="status">
                             <option value="">كل الحالات</option>
                             @foreach ($monthlyStatusOptions as $statusOption)
-                                <option value="{{ $statusOption->code }}" @selected(($filters['status'] ?? '') === $statusOption->code)>{{ $workflowStatusLabel($statusOption->code) }}</option>
+                                <option value="{{ $statusOption->code }}" {{ ($filters['status'] ?? '') === $statusOption->code ? 'selected' : '' }}>{{ $workflowStatusLabel($statusOption->code) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -125,17 +125,22 @@
         <div class="agenda-view-pane" data-view-pane="table">
             <div class="card event-card">
                 <div class="card-body">
-                    <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <h2 class="event-section-title mb-0">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
+                        <span class="text-muted small">عرض {{ $activities->count() }} من أصل {{ method_exists($activities, 'total') ? $activities->total() : $activities->count() }} نشاط</span>
+                    </div>
                     <div class="monthly-cards-grid">
                         @forelse ($activities as $activity)
                             @php
-                                $isOldVersion = (int) ($activity->newer_versions_count ?? 0) > 0;
                                 $isSubmittedOrBeyond = in_array((string) $activity->status, ['submitted', 'in_review', 'approved', 'completed', 'closed'], true);
                             @endphp
                             <article class="monthly-activity-card">
-                                <div class="d-flex justify-content-between gap-2 align-items-start flex-wrap">
+                                <div class="d-flex justify-content-between gap-2 align-items-start flex-wrap mb-2">
                                     <h3 class="h6 mb-1">{{ $activity->title }}</h3>
                                     <span class="event-status status-{{ $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    {{ $activity->agendaEvent?->event_name ? 'فعالية مرتبطة: '.$activity->agendaEvent->event_name : 'فعالية مستقلة' }}
                                 </div>
                                 <div class="monthly-activity-meta">
                                     <span>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</span>
@@ -143,25 +148,20 @@
                                     <span>{{ $activity->is_in_agenda ? 'من الأجندة' : 'إدخال يدوي' }}</span>
                                     <span>نسخة {{ (int) ($activity->plan_version ?: 1) }}</span>
                                 </div>
-                                @if($isOldVersion)
-                                    <span class="badge bg-secondary-subtle text-secondary mt-2">نسخة قديمة</span>
-                                @endif
                                 <p class="text-muted small mt-2 mb-3">{{ \Illuminate\Support\Str::limit($activity->short_description ?: $activity->description ?: 'لا يوجد وصف مختصر.', 140) }}</p>
                                 <div class="event-actions">
                                     <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.show', $activity) }}">عرض</a>
-                                    @unless($isOldVersion)
-                                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a>
-                                        <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a>
-                                        @if (! $isSubmittedOrBeyond)
-                                            <form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button>
-                                            </form>
-                                        @else
-                                            <span class="badge bg-info-subtle text-info">الحالة: {{ $workflowStatusLabel($activity->status) }}</span>
-                                        @endif
-                                    @endunless
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a>
+                                    <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a>
+                                    @if (! $isSubmittedOrBeyond)
+                                        <form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button>
+                                        </form>
+                                    @else
+                                        <span class="badge bg-info-subtle text-info">الحالة: {{ $workflowStatusLabel($activity->status) }}</span>
+                                    @endif
                                 </div>
                             </article>
                         @empty
@@ -194,10 +194,12 @@
     </div>
 
     <style>
-        .monthly-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1rem; }
-        .monthly-activity-card { border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem; background: #fff; box-shadow: 0 6px 16px rgba(15, 23, 42, .04); }
+        .monthly-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .monthly-activity-card { border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem; background: linear-gradient(180deg, #fff, #fcfdff); box-shadow: 0 6px 16px rgba(15, 23, 42, .04); transition: transform .18s ease, box-shadow .18s ease; }
+        .monthly-activity-card:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(15, 23, 42, .08); }
         .monthly-activity-meta { display: flex; flex-wrap: wrap; gap: .45rem; font-size: .8rem; color: #64748b; }
         .monthly-activity-meta span { background: #f8fafc; border: 1px solid #e2e8f0; padding: .15rem .5rem; border-radius: 999px; }
+        .monthly-activity-card .event-actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
         .monthly-calendar-badge { border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; width: fit-content; }
         .monthly-calendar-badge--draft { background: #e5e7eb; color: #374151; }
         .monthly-calendar-badge--in-review { background: #fff4e5; color: #a16207; }
