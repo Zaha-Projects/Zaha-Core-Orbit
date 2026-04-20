@@ -173,6 +173,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/programs/monthly-activities/{monthlyActivity}/attachments', [ProgramsMonthlyActivityAttachmentsController::class, 'store'])->middleware('role:programs_manager|programs_officer|relations_manager|relations_officer|branch_relations_officer|super_admin')->name('role.programs.attachments.store');
     Route::delete('/dashboard/programs/attachments/{monthlyActivityAttachment}', [ProgramsMonthlyActivityAttachmentsController::class, 'destroy'])->middleware('role:programs_manager|programs_officer|relations_manager|relations_officer|branch_relations_officer|super_admin')->name('role.programs.attachments.destroy');
     Route::get('/dashboard/programs/monthly-activities/approvals', [ProgramsMonthlyActivityApprovalsController::class, 'index'])->name('role.programs.approvals.index');
+    Route::get('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}/details', [ProgramsMonthlyActivityApprovalsController::class, 'details'])->name('role.programs.approvals.details');
 
     Route::get('/dashboard/programs/workshops-requests', [WorkshopsRequestsController::class, 'index'])->middleware('role:workshops_secretary|super_admin')->name('role.programs.workshops_requests.index');
     Route::put('/dashboard/programs/workshops-requests/{workshopsRequest}', [WorkshopsRequestsController::class, 'update'])->middleware('role:workshops_secretary|super_admin')->name('role.programs.workshops_requests.update');
