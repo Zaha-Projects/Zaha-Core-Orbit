@@ -1837,28 +1837,56 @@ class MonthlyActivitiesController extends Controller
         $query = MonthlyActivity::query()
             ->with('branch')
             ->whereDoesntHave('newerVersions')
-            ->whereYear('proposed_date', $year)
-            ->whereMonth('proposed_date', $month)
             ->notArchived();
+
+        $query->where(function ($dateQuery) use ($year, $month) {
+            $dateQuery
+                ->where(function ($proposedDateQuery) use ($year, $month) {
+                    $proposedDateQuery
+                        ->whereNotNull('proposed_date')
+                        ->whereYear('proposed_date', $year)
+                        ->whereMonth('proposed_date', $month);
+                })
+                ->orWhere(function ($fallbackMonthQuery) use ($month) {
+                    $fallbackMonthQuery
+                        ->whereNull('proposed_date')
+                        ->where('month', $month);
+                });
+        });
 
         if ($viewScope !== 'all_branches') {
             $this->applyBranchVisibilityScope($query, $request->user());
         }
         $this->applyDraftVisibilityScope($query, $request->user());
 
-        $items = $query->orderBy('proposed_date')->orderBy('day')->get()->map(function (MonthlyActivity $activity) {
+        if ($viewScope === 'all_branches') {
+            $query
+                ->where('status', 'approved')
+                ->where(function ($approvalQuery) {
+                    $approvalQuery
+                        ->where('executive_approval_status', 'approved')
+                        ->orWhereIn('lifecycle_status', ['Exec Director Approved', 'Approved', 'Published'])
+                        ->orWhereHas('workflowInstance', fn ($workflowQuery) => $workflowQuery->where('status', 'approved'));
+                });
+        }
+
+        $items = $query->orderBy('month')
+            ->orderBy('day')
+            ->orderBy('proposed_date')
+            ->get()
+            ->map(function (MonthlyActivity $activity) use ($year) {
             return [
                 'id' => $activity->id,
                 'title' => $activity->title,
                 'date' => optional($activity->proposed_date)->format('Y-m-d')
-                    ?? sprintf('%04d-%02d-%02d', now()->year, $activity->month, $activity->day),
+                    ?? sprintf('%04d-%02d-%02d', $year, $activity->month, $activity->day),
                 'branch' => $activity->branch?->name,
                 'status' => $activity->status,
                 'requires_workshops' => (bool) $activity->requires_workshops,
                 'requires_communications' => (bool) $activity->requires_communications,
                 'edit_url' => route('role.relations.activities.edit', $activity),
             ];
-        })->values();
+            })->values();
 
         return response()->json([
             'year' => $year,
