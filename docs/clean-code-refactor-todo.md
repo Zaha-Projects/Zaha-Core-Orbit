@@ -3,6 +3,8 @@
 ## Objective
 Move page-specific inline `<style>` and `<script>` blocks from Blade templates into dedicated asset files under `public/assets/css` and `public/assets/js`, then load them with `asset()` from each page.
 
+> Reference map for all future edits: `docs/code-change-sitemap.md`.
+
 ## Completed in this branch
 - [x] `resources/views/pages/monthly_activities/lookups/admin.blade.php`
   - Moved page CSS to: `public/assets/css/lookups-admin.css`
