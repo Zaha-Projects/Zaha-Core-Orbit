@@ -11,9 +11,11 @@
 @section('content')
 <div class="workflow-ui">
     <div class="wf-card card mb-4">
-        <div class="card-body">
+        <div class="card-header approvals-card-header">
             <h1 class="wf-page-title mb-1">{{ __('workflow_ui.approvals.title') }}</h1>
             <p class="wf-muted mb-0">{{ __('workflow_ui.approvals.subtitle') }}</p>
+        </div>
+        <div class="card-body">
             <div class="approvals-kpi-row mt-3">
                 <div class="approvals-kpi-card">
                     <div class="approvals-kpi-label">إجمالي المعروض</div>
@@ -29,6 +31,9 @@
                 </div>
             </div>
         </div>
+        <div class="card-footer approvals-card-footer small text-muted">
+            ملخص سريع لحالة الاعتمادات الحالية.
+        </div>
     </div>
 
     @if (session('status'))
@@ -40,6 +45,9 @@
     </div>
 
     <div class="wf-card card mb-3">
+        <div class="card-header approvals-card-header">
+            <h2 class="h6 mb-0">التصفية وعرض الاعتمادات</h2>
+        </div>
         <div class="card-body d-flex flex-column gap-3">
             <div class="wf-tabbar">
                 <a class="wf-tab {{ request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['my_pending' => 1, 'status' => null])) }}">{{ __('workflow_ui.approvals.tabs.my_pending') }}</a>
@@ -57,6 +65,9 @@
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.to') }}</label><input class="form-control" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
                 <div class="col-12 d-flex justify-content-end"><button class="btn btn-outline-primary btn-sm">{{ __('workflow_ui.approvals.filters.apply') }}</button></div>
             </form>
+        </div>
+        <div class="card-footer approvals-card-footer small text-muted">
+            استخدم الفلاتر للحصول على النتائج المطلوبة بسرعة.
         </div>
     </div>
 

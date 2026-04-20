@@ -138,21 +138,26 @@
                                     && (string) optional($activity->agendaEvent)->event_type === 'mandatory';
                             @endphp
                             <article class="monthly-activity-card">
-                                <div class="d-flex justify-content-between gap-2 align-items-start flex-wrap mb-2">
-                                    <h3 class="h6 mb-1">{{ $activity->title }}</h3>
-                                    <span class="event-status status-{{ $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
+                                <div class="module-card-header">
+                                    <div class="d-flex justify-content-between gap-2 align-items-start flex-wrap mb-0">
+                                        <h3 class="h6 mb-1">{{ $activity->title }}</h3>
+                                        <span class="event-status status-{{ $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
+                                    </div>
                                 </div>
-                                <div class="small text-muted mb-2">
-                                    {{ $activity->agendaEvent?->event_name ? 'فعالية مرتبطة: '.$activity->agendaEvent->event_name : 'فعالية مستقلة' }}
+                                <div class="module-card-body">
+                                    <div class="small text-muted mb-2">
+                                        {{ $activity->agendaEvent?->event_name ? 'فعالية مرتبطة: '.$activity->agendaEvent->event_name : 'فعالية مستقلة' }}
+                                    </div>
+                                    <div class="monthly-activity-meta">
+                                        <span>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</span>
+                                        <span>{{ $activity->branch?->name ?? '-' }}</span>
+                                        <span>{{ $activity->is_in_agenda ? 'من الأجندة' : 'إدخال يدوي' }}</span>
+                                        <span>نسخة {{ (int) ($activity->plan_version ?: 1) }}</span>
+                                    </div>
+                                    <p class="text-muted small mt-2 mb-0">{{ \Illuminate\Support\Str::limit($activity->short_description ?: $activity->description ?: 'لا يوجد وصف مختصر.', 140) }}</p>
                                 </div>
-                                <div class="monthly-activity-meta">
-                                    <span>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</span>
-                                    <span>{{ $activity->branch?->name ?? '-' }}</span>
-                                    <span>{{ $activity->is_in_agenda ? 'من الأجندة' : 'إدخال يدوي' }}</span>
-                                    <span>نسخة {{ (int) ($activity->plan_version ?: 1) }}</span>
-                                </div>
-                                <p class="text-muted small mt-2 mb-3">{{ \Illuminate\Support\Str::limit($activity->short_description ?: $activity->description ?: 'لا يوجد وصف مختصر.', 140) }}</p>
-                                <div class="event-actions">
+                                <div class="module-card-footer">
+                                    <div class="event-actions">
                                     <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.show', $activity) }}">عرض</a>
                                     @if($isReadOnlyUnified)
                                         <span class="badge bg-success-subtle text-success">موحد معتمد — عرض فقط</span>
@@ -169,6 +174,7 @@
                                             <span class="badge bg-info-subtle text-info">الحالة: {{ $workflowStatusLabel($activity->status) }}</span>
                                         @endif
                                     @endif
+                                    </div>
                                 </div>
                             </article>
                         @empty

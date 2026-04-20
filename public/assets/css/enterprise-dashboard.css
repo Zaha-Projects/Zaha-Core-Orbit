@@ -4,6 +4,8 @@
 .app-skin-dark .enterprise-dashboard .kpi{background:linear-gradient(145deg,#2c3156,#1e2340);color:#e8ebff}
 [dir='rtl'] .enterprise-dashboard .kpi{text-align:right}
 .enterprise-dashboard .card.card-body .form-label{font-weight:600;margin-bottom:.35rem}
+.enterprise-dashboard .card > .card-header{background:linear-gradient(90deg,#ccfbf1 0%,#f0fdfa 100%);border-bottom:1px solid #99f6e4}
+.enterprise-dashboard .card > .card-footer{background:#f8fafc;border-top:1px solid #e2e8f0}
 .enterprise-dashboard .annual-planning-card{background:var(--card-bg,#fff);border-color:var(--border-soft,#e5e9f2)!important}
 .enterprise-dashboard .annual-planning-list{padding-inline-start:1rem;margin-bottom:.5rem}
 .enterprise-dashboard .annual-planning-list li{margin-bottom:.35rem}

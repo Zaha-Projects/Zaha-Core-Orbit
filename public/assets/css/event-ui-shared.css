@@ -14,6 +14,8 @@
     padding: 1rem;
     box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
     transition: transform .15s ease, box-shadow .15s ease;
+    overflow: hidden;
+    padding: 0;
 }
 
 .agenda-event-card:hover,
@@ -45,6 +47,34 @@
     flex-wrap: wrap;
     gap: .4rem;
     align-items: center;
+}
+
+.module-card-header,
+.module-card-body,
+.module-card-footer {
+    padding: .85rem 1rem;
+}
+
+.module-card-header {
+    border-bottom: 1px solid #dbe4ef;
+    background: linear-gradient(90deg, #f1f5f9 0%, #ffffff 100%);
+}
+
+.module-card-body {
+    background: #ffffff;
+}
+
+.module-card-footer {
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.agenda-module .agenda-event-card .module-card-header {
+    background: linear-gradient(90deg, #e0f2fe 0%, #f8fbff 100%);
+}
+
+.monthly-activities-module .monthly-activity-card .module-card-header {
+    background: linear-gradient(90deg, #f3e8ff 0%, #fcfaff 100%);
 }
 
 .event-module .agenda-view-switch .btn {

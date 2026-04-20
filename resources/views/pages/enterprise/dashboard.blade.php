@@ -5,8 +5,12 @@
 
 @section('content')
     <div class="enterprise-dashboard">
-        <form class="card card-body mb-3" method="GET">
-            <div class="row g-2 align-items-end">
+        <form class="card mb-3 enterprise-filter-card" method="GET">
+            <div class="card-header">
+                <h2 class="h6 mb-0">{{ __('app.common.filter') }}</h2>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 align-items-end">
                 <div class="col-12 col-sm-6 col-lg-2">
                     <label class="form-label" for="enterprise-year">{{ __('app.enterprise.year') }}</label>
                     <select class="form-select" id="enterprise-year" name="year">
@@ -45,10 +49,10 @@
                         @endforeach
                     </select>
                 </div>
-
-                <div class="col-12 col-lg-3">
-                    <button class="btn btn-primary w-100" type="submit">{{ __('app.enterprise.apply') }}</button>
                 </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button class="btn btn-primary" type="submit">{{ __('app.enterprise.apply') }}</button>
             </div>
         </form>
 
