@@ -406,6 +406,65 @@ textarea {
     border-color: var(--border-soft);
 }
 
+/* Global card anatomy + module-aware colored headers */
+.main-content {
+    --module-card-accent: #64748b;
+}
+
+.agenda-module,
+.agenda-form-page {
+    --module-card-accent: #0ea5e9;
+}
+
+.monthly-activities-module,
+.monthly-plan-form-page {
+    --module-card-accent: #8b5cf6;
+}
+
+.enterprise-dashboard {
+    --module-card-accent: #14b8a6;
+}
+
+.main-content .card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--module-card-accent) 22%, #e2e8f0);
+    border-radius: 16px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.main-content .card::before {
+    content: '';
+    display: block;
+    height: 7px;
+    background: linear-gradient(90deg, var(--module-card-accent), color-mix(in srgb, var(--module-card-accent) 45%, #ffffff));
+}
+
+.main-content .card::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 4px;
+    background: color-mix(in srgb, var(--module-card-accent) 28%, #ffffff);
+}
+
+.main-content .card > .card-header {
+    background: color-mix(in srgb, var(--module-card-accent) 11%, #ffffff);
+    color: #0f172a;
+    border-bottom: 1px solid color-mix(in srgb, var(--module-card-accent) 30%, #dbe4ef);
+    font-weight: 700;
+}
+
+.main-content .card > .card-body {
+    background: #ffffff;
+}
+
+.main-content .card > .card-footer {
+    background: color-mix(in srgb, var(--module-card-accent) 6%, #ffffff);
+    border-top: 1px solid color-mix(in srgb, var(--module-card-accent) 25%, #dbe4ef);
+}
+
 .dashboard-shell .nxl-header-clean {
     backdrop-filter: blur(8px);
     background: color-mix(in srgb, var(--card-bg) 90%, transparent);
