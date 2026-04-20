@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
@@ -8,6 +8,8 @@
     $title = 'عرض تفاصيل النشاط';
     $editMirrorMode = $editMirrorMode ?? false;
     $workflowSummary = $monthlyActivity->workflow_summary ?? [];
+    $monthlyStatusLabels = $monthlyStatusLabels ?? [];
+    $executionStatusLabels = $executionStatusLabels ?? [];
     $statusLabel = function (?string $status) use ($monthlyStatusLabels): string {
         if (! $status) {
             return '-';

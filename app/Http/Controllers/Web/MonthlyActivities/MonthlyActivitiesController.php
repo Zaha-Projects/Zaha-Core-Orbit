@@ -1117,9 +1117,23 @@ class MonthlyActivitiesController extends Controller
             $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
                 ->loadCount('newerVersions');
 
+            $monthlyStatusLabels = $this->statusLookupOptions('monthly_activities', [], (string) $monthlyActivity->status)
+                ->pluck('name', 'code')
+                ->all();
+            $executionStatusLabels = $this->executionStatusLabels();
+            $archivedVersions = collect();
+            $cursor = $monthlyActivity->previousVersion;
+            while ($cursor) {
+                $archivedVersions->push($cursor);
+                $cursor = $cursor->previousVersion;
+            }
+
             return view('pages.monthly_activities.activities.show', [
                 'monthlyActivity' => $monthlyActivity,
                 'editMirrorMode' => true,
+                'monthlyStatusLabels' => $monthlyStatusLabels,
+                'executionStatusLabels' => $executionStatusLabels,
+                'archivedVersions' => $archivedVersions,
             ]);
         }
 
