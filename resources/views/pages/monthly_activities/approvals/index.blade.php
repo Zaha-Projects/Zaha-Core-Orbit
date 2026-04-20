@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @push('styles')
 @php($workflowUiCssPath = public_path('assets/css/workflow-ui.css'))
@@ -62,15 +62,16 @@
     </div>
 
     <div class="d-flex flex-column gap-3">
-        @forelse($activities as $activity)
+        @if($activities->count())
+            @foreach($activities as $activity)
             @php
                 $viewer = $viewer ?? auth()->user();
                 $wf = $activity->workflowInstance;
                 $workflowSummary = $activity->workflow_summary ?? [];
                 $logs = collect($workflowSummary['timeline'] ?? []);
-                $statusClass = 'wf-status-' . (($workflowSummary['status_key'] ?? '') ?: (($workflowSummary['workflow_state'] ?? '') ?: ($wf?->status ?? 'pending')));
+                $statusClass = 'wf-status-' . (($workflowSummary['status_key'] ?? '') ?: (($workflowSummary['workflow_state'] ?? '') ?: ($wf ? $wf->status : 'pending')));
                 $officialCorrespondenceAttachments = $activity->attachments->where('file_type', 'official_correspondence');
-                $canUploadOfficialCorrespondence = $viewer?->hasRole('relations_manager')
+                $canUploadOfficialCorrespondence = $viewer && method_exists($viewer, 'hasRole') && $viewer->hasRole('relations_manager')
                     && method_exists($viewer, 'isKheldaUser')
                     && $viewer->isKheldaUser()
                     && $activity->needs_official_correspondence;
@@ -278,7 +279,7 @@
                                                             <label class="form-label">{{ __('workflow_ui.approvals.department_note') }}</label>
                                                             <textarea class="form-control" name="note" rows="3"></textarea>
                                                         </div>
-                                                        @if($viewer?->hasRole('communication_head'))
+                                                        @if($viewer && method_exists($viewer, 'hasRole') && $viewer->hasRole('communication_head'))
                                                             <div class="mb-2">
                                                                 <label class="form-label">{{ __('workflow_ui.common.coverage_status') }}</label>
                                                                 <select class="form-select" name="coverage_status">
@@ -324,9 +325,10 @@
                     </div>
                 </div>
             </div>
-        @empty
+            @endforeach
+        @else
             <div class="wf-card card"><div class="card-body"><p class="wf-muted mb-0">{{ __('workflow_ui.common.no_data') }}</p></div></div>
-        @endforelse
+        @endif
     </div>
 
     <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
