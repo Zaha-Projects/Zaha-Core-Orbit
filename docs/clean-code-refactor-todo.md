@@ -11,17 +11,17 @@ Move page-specific inline `<style>` and `<script>` blocks from Blade templates i
   - Moved page CSS to: `public/assets/css/monthly-approvals.css`
   - Moved page JS to: `public/assets/js/monthly-approvals.js`
   - Page now loads assets via `asset()`.
+- [x] `resources/views/pages/agenda/events/_form.blade.php`
+  - Moved page CSS to: `public/assets/css/agenda-events-form.css`
+  - Moved page JS to: `public/assets/js/agenda-events-form.js`
+  - Replaced inline translation bindings with form-level `data-*` labels consumed by JS.
+- [x] `resources/views/pages/agenda/events/index.blade.php`
+  - Moved page CSS to: `public/assets/css/agenda-events-index.css`
+  - Moved calendar/view-toggle JS to: `public/assets/js/agenda-events-index.js`
+  - Kept server data in JSON script tags and `data-*` attributes only.
 
 ## Remaining pages with inline CSS/JS (next steps)
 ### Agenda module
-- [ ] `resources/views/pages/agenda/events/_form.blade.php`
-  - Extract inline style -> `public/assets/css/agenda-event-form.css`
-  - Extract inline JS -> `public/assets/js/agenda-event-form.js`
-- [ ] `resources/views/pages/agenda/events/index.blade.php`
-  - Extract inline style -> `public/assets/css/agenda-events-index.css`
-  - Extract inline JS calendar logic -> `public/assets/js/agenda-events-index.js`
-  - Keep server data in `data-*` attributes / JSON script tag only.
-
 ### Monthly activities module
 - [ ] `resources/views/pages/monthly_activities/activities/_form.blade.php`
   - Extract inline style -> `public/assets/css/monthly-activity-form.css`

@@ -32,7 +32,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data" class="row g-4 agenda-form">
+            <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data" class="row g-4 agenda-form" data-label-participant="{{ __('app.roles.relations.agenda.participation.participant') }}" data-label-not-participant="{{ __('app.roles.relations.agenda.participation.not_participant') }}">
                 @csrf
                 @if (($formMethod ?? 'POST') !== 'POST')
                     @method($formMethod)
@@ -190,177 +190,11 @@
     </div>
 </div>
 
+
 @push('styles')
-    <style>
-        .agenda-form-page .agenda-form-section {
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            padding: 1rem;
-            background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
-        }
-        .agenda-form-page .agenda-form-section__head {
-            margin-bottom: .9rem;
-        }
-        .agenda-form-page .agenda-form-section__title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin: 0;
-            color: #0f172a;
-        }
-        .agenda-form-page .agenda-form-section__text {
-            margin: .2rem 0 0;
-            color: #64748b;
-            font-size: .9rem;
-        }
-        .agenda-form-page .partner-departments-box {
-            border: 1px solid #dee7f0;
-            border-radius: 14px;
-            padding: .75rem;
-            max-height: 220px;
-            overflow-y: auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-            gap: .65rem;
-            background: #f8fbfe;
-        }
-        .agenda-form-page .partner-department-item {
-            display: inline-flex;
-            align-items: center;
-            gap: .55rem;
-            padding: .6rem .7rem;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            margin: 0;
-        }
-        .agenda-form-page .branch-toggle-item {
-            border: 1px solid #dde7f0;
-            border-radius: 14px;
-            padding: .8rem .95rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: .75rem;
-            background: #f8fbfd;
-            min-height: 100%;
-        }
-        .agenda-form-page .agenda-form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: .75rem;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('assets/css/agenda-events-form.css') }}">
 @endpush
 
 @push('scripts')
-    <script>
-        (function () {
-            const form = document.querySelector('.agenda-form');
-            if (!form) return;
-
-            const categoryEl = form.querySelector('#event_category_id');
-            const planTypeEl = form.querySelector('.js-plan-type');
-            const unifiedPlanSourceEl = form.querySelector('.js-unified-plan-source-select');
-            const unifiedPlanSourceRows = form.querySelectorAll('.js-unified-plan-source');
-            const planFileRows = form.querySelectorAll('.js-agenda-plan-file');
-            const ownerDepartmentEl = form.querySelector('.js-owner-department');
-            const partnerDepartmentEls = Array.from(form.querySelectorAll('.js-partner-department'));
-            const toggleRows = Array.from(form.querySelectorAll('.branch-toggle-item'));
-            const enableAllBtn = form.querySelector('.js-enable-all-participants');
-
-            function filterCategories() {
-                if (!categoryEl) return;
-
-                const selectedDepartments = new Set(
-                    partnerDepartmentEls
-                        .filter((el) => el.checked)
-                        .map((el) => String(el.value))
-                );
-
-                if (ownerDepartmentEl?.value) {
-                    selectedDepartments.add(String(ownerDepartmentEl.value));
-                }
-
-                Array.from(categoryEl.options).forEach((option) => {
-                    const categoryDepartmentId = option.dataset.departmentId;
-                    if (!categoryDepartmentId) {
-                        option.hidden = false;
-                        return;
-                    }
-                    option.hidden = !selectedDepartments.has(String(categoryDepartmentId));
-                });
-
-                if (categoryEl.selectedOptions[0]?.hidden) {
-                    categoryEl.value = '';
-                }
-            }
-
-            function syncOwnerVsPartners() {
-                const ownerId = String(ownerDepartmentEl?.value || '');
-                partnerDepartmentEls.forEach((el) => {
-                    const isOwner = ownerId !== '' && String(el.value) === ownerId;
-                    if (isOwner) {
-                        el.checked = false;
-                    }
-                    el.disabled = isOwner;
-                    el.closest('.partner-department-item')?.classList.toggle('opacity-50', isOwner);
-                });
-            }
-
-            function togglePlanFile() {
-                const isUnified = planTypeEl?.value === 'unified';
-                const wantsFileUpload = unifiedPlanSourceEl?.value === 'upload_file';
-
-                unifiedPlanSourceRows.forEach((row) => {
-                    row.style.display = isUnified ? '' : 'none';
-                });
-
-                planFileRows.forEach((row) => {
-                    row.style.display = (isUnified && wantsFileUpload) ? '' : 'none';
-                });
-            }
-
-            function syncToggleRow(row) {
-                const checkbox = row.querySelector('.js-branch-toggle');
-                const hiddenInput = row.querySelector('.js-branch-status-hidden');
-                const label = row.querySelector('.form-check-label');
-                const isOn = !!checkbox?.checked;
-
-                if (hiddenInput) {
-                    hiddenInput.value = isOn ? 'participant' : 'not_participant';
-                }
-                if (label) {
-                    label.textContent = isOn
-                        ? @json(__('app.roles.relations.agenda.participation.participant'))
-                        : @json(__('app.roles.relations.agenda.participation.not_participant'));
-                }
-            }
-
-            ownerDepartmentEl?.addEventListener('change', () => {
-                syncOwnerVsPartners();
-                filterCategories();
-            });
-            partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
-            planTypeEl?.addEventListener('change', togglePlanFile);
-            unifiedPlanSourceEl?.addEventListener('change', togglePlanFile);
-
-            toggleRows.forEach((row) => {
-                const checkbox = row.querySelector('.js-branch-toggle');
-                checkbox?.addEventListener('change', () => syncToggleRow(row));
-                syncToggleRow(row);
-            });
-
-            enableAllBtn?.addEventListener('click', () => {
-                toggleRows.forEach((row) => {
-                    const checkbox = row.querySelector('.js-branch-toggle');
-                    if (checkbox) checkbox.checked = true;
-                    syncToggleRow(row);
-                });
-            });
-
-            syncOwnerVsPartners();
-            filterCategories();
-            togglePlanFile();
-        })();
-    </script>
+    <script src="{{ asset('assets/js/agenda-events-form.js') }}"></script>
 @endpush
