@@ -10,6 +10,9 @@
         ($existingMonthlyActivity?->requires_communications ?? false) ? 'relations' : null,
         ($existingMonthlyActivity?->requires_programs ?? false) ? 'programs' : null,
     ]))));
+    $departmentsFromForm = $departments ?? \App\Models\Department::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+    $selectedOwnerDepartmentId = (string) old('owner_department_id', '');
+    $selectedPartnerDepartmentIds = collect(old('partner_department_ids', []))->map(fn ($id) => (string) $id)->all();
     $isInAgendaChecked = (bool) old('is_in_agenda', $existingMonthlyActivity?->is_in_agenda ?? false);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
@@ -92,8 +95,13 @@
                 </div>
 
                 <div class="col-12 col-lg-6">
-                    <label class="form-label">الجهة المسؤولة</label>
-                    <input class="form-control" name="responsible_party" value="{{ old('responsible_party', $existingMonthlyActivity?->responsible_party) }}" placeholder="مثال: العلاقات / البرامج / لجنة مشتركة">
+                    <label class="form-label">الجهة المالكة</label>
+                    <select class="form-select" name="owner_department_id">
+                        <option value="">اختر الجهة المالكة</option>
+                        @foreach($departmentsFromForm as $department)
+                            <option value="{{ $department->id }}" {{ $selectedOwnerDepartmentId === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="col-12 col-lg-6">
@@ -117,7 +125,7 @@
                     <label class="form-label">حالة النشاط</label>
                     <select class="form-select js-execution-status @error('execution_status') is-invalid @enderror" name="execution_status">
                         @foreach(($executionStatusLabels ?? []) as $statusCode => $statusLabel)
-                            <option value="{{ $statusCode }}" @selected($selectedExecutionStatus === $statusCode)>{{ $statusLabel }}</option>
+                            <option value="{{ $statusCode }}" {{ $selectedExecutionStatus === $statusCode ? 'selected' : '' }}>{{ $statusLabel }}</option>
                         @endforeach
                     </select>
                     @error('execution_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -150,7 +158,7 @@
                         <select class="form-select @error('branch_id') is-invalid @enderror" name="branch_id">
                             <option value="">اختر الفرع</option>
                             @foreach ($branches as $branch)
-                                <option value="{{ $branch->id }}" @selected((string) old('branch_id', $existingMonthlyActivity?->branch_id) === (string) $branch->id)>{{ $branch->name }}</option>
+                                <option value="{{ $branch->id }}" {{ (string) old('branch_id', $existingMonthlyActivity?->branch_id) === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
                             @endforeach
                         </select>
                         @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -162,7 +170,7 @@
                     <select class="form-select" name="agenda_event_id">
                         <option value="">اختياري</option>
                         @foreach ($agendaEvents as $event)
-                            <option value="{{ $event->id }}" @selected((string) old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) === (string) $event->id)>{{ $event->event_name }}</option>
+                            <option value="{{ $event->id }}" {{ (string) old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) === (string) $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -177,20 +185,29 @@
                     @error('branch_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12">
-                    <label class="form-label d-block mb-2">الجهات المعنية</label>
+                    <label class="form-label d-block mb-2">الجهات الشركاء</label>
+                    <div class="partner-departments-box mb-3">
+                        @foreach($departmentsFromForm as $department)
+                            <label class="partner-department-item">
+                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
+                                <span>{{ $department->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <label class="form-label d-block mb-2">خيارات إضافية</label>
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="relations" @checked($selectedResponsibleEntities->contains('relations'))>
+                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="relations" {{ $selectedResponsibleEntities->contains('relations') ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>العلاقات</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="programs" @checked($selectedResponsibleEntities->contains('programs'))>
+                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="programs" {{ $selectedResponsibleEntities->contains('programs') ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>البرامج</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="is_in_agenda" value="1" @checked($isInAgendaChecked)>
+                            <input class="form-check-input m-0" type="checkbox" name="is_in_agenda" value="1" {{ $isInAgendaChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>يظهر ضمن الأجندة السنوية</span>
                         </label>
@@ -206,8 +223,8 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">نوع المكان</label>
                     <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type">
-                        <option value="inside_center" @selected(old('location_type', $existingMonthlyActivity?->location_type ?? 'inside_center') === 'inside_center')>داخل المركز</option>
-                        <option value="outside_center" @selected(old('location_type', $existingMonthlyActivity?->location_type) === 'outside_center')>خارجي</option>
+                        <option value="inside_center" {{ old('location_type', $existingMonthlyActivity?->location_type ?? 'inside_center') === 'inside_center' ? 'selected' : '' }}>داخل المركز (داخل مرافق زها)</option>
+                        <option value="outside_center" {{ old('location_type', $existingMonthlyActivity?->location_type) === 'outside_center' ? 'selected' : '' }}>خارج المركز (موقع خارجي)</option>
                     </select>
                     @error('location_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -298,37 +315,37 @@
                 <div class="col-12">
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" @checked($needsVolunteersChecked)>
+                            <input class="form-check-input m-0 js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" {{ $needsVolunteersChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمتطوعين</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" @checked($needsOfficialCorrespondenceChecked)>
+                            <input class="form-check-input m-0 js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" {{ $needsOfficialCorrespondenceChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمخاطبة الرسمية</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-official-letters" type="checkbox" name="needs_official_letters" value="1" @checked($needsOfficialLettersChecked)>
+                            <input class="form-check-input m-0 js-needs-official-letters" type="checkbox" name="needs_official_letters" value="1" {{ $needsOfficialLettersChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للكتب الرسمية</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-media" type="checkbox" name="needs_media_coverage" value="1" @checked($needsMediaCoverageChecked)>
+                            <input class="form-check-input m-0 js-needs-media" type="checkbox" name="needs_media_coverage" value="1" {{ $needsMediaCoverageChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة لتغطية إعلامية</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-supplies" type="checkbox" name="requires_supplies" value="1" @checked($requiresSuppliesChecked)>
+                            <input class="form-check-input m-0 js-needs-supplies" type="checkbox" name="requires_supplies" value="1" {{ $requiresSuppliesChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمستلزمات</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-has-sponsor" type="checkbox" name="has_sponsor" value="1" @checked($hasSponsorChecked)>
+                            <input class="form-check-input m-0 js-has-sponsor" type="checkbox" name="has_sponsor" value="1" {{ $hasSponsorChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>يوجد راعٍ</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-has-partners" type="checkbox" name="has_partners" value="1" @checked($hasPartnersChecked)>
+                            <input class="form-check-input m-0 js-has-partners" type="checkbox" name="has_partners" value="1" {{ $hasPartnersChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>يوجد شركاء</span>
                         </label>

@@ -932,6 +932,19 @@ class MonthlyActivitiesController extends Controller
             abort(403);
         }
 
+        if (! empty($data['agenda_event_id'])) {
+            $hasActiveForSameAgenda = MonthlyActivity::query()
+                ->where('branch_id', (int) $data['branch_id'])
+                ->where('agenda_event_id', (int) $data['agenda_event_id'])
+                ->where('status', '!=', 'cancelled')
+                ->whereDoesntHave('newerVersions')
+                ->exists();
+
+            if ($hasActiveForSameAgenda) {
+                return back()->withErrors(['agenda_event_id' => 'لا يمكن ربط أكثر من خطة فعالة لنفس الفرع مع نفس فعالية الأجندة.'])->withInput();
+            }
+        }
+
         $this->normalizePlanningPayload($data);
 
         $date = Carbon::parse($data['activity_date']);
@@ -1305,6 +1318,20 @@ class MonthlyActivitiesController extends Controller
 
         if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
+        }
+
+        if (! empty($data['agenda_event_id'])) {
+            $hasActiveForSameAgenda = MonthlyActivity::query()
+                ->where('branch_id', (int) $data['branch_id'])
+                ->where('agenda_event_id', (int) $data['agenda_event_id'])
+                ->where('status', '!=', 'cancelled')
+                ->whereDoesntHave('newerVersions')
+                ->where('id', '!=', $monthlyActivity->id)
+                ->exists();
+
+            if ($hasActiveForSameAgenda) {
+                return back()->withErrors(['agenda_event_id' => 'لا يمكن ربط أكثر من خطة فعالة لنفس الفرع مع نفس فعالية الأجندة.'])->withInput();
+            }
         }
 
         $this->normalizePlanningPayload($data);
