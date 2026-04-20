@@ -280,10 +280,10 @@ class AgendaEventsController extends Controller
 
     public function index(Request $request, AgendaWorkflowPresenter $agendaWorkflowPresenter)
     {
-        $allowedPerPage = [10, 20, 50, 100];
-        $perPage = (int) $request->input('per_page', 20);
+        $allowedPerPage = [8, 16, 24, 50, 100];
+        $perPage = (int) $request->input('per_page', 8);
         if (! in_array($perPage, $allowedPerPage, true)) {
-            $perPage = 20;
+            $perPage = 8;
         }
 
         $filteredBranchId = $this->canUserFilterAgendaBranches($request->user())
@@ -320,6 +320,14 @@ class AgendaEventsController extends Controller
             return $agendaWorkflowPresenter->attach($event, $request->user());
         });
 
+        $calendarEvents = (clone $eventsQuery)
+            ->orderBy('event_date')->orderBy('month')->orderBy('day')
+            ->get();
+
+        $calendarEvents->transform(function (AgendaEvent $event) use ($agendaWorkflowPresenter, $request) {
+            return $agendaWorkflowPresenter->attach($event, $request->user());
+        });
+
         $branchActor = $this->branchActor($request);
         $branches = Branch::query()
             ->when($this->scopedBranchIds($request->user()) !== [] && $this->canUserFilterAgendaBranches($request->user()), function ($query) use ($request) {
@@ -335,7 +343,7 @@ class AgendaEventsController extends Controller
 
         $agendaStatusOptions = $this->agendaStatusOptions((string) $request->input('status'));
 
-        return view('pages.agenda.events.index', compact('events', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
+        return view('pages.agenda.events.index', compact('events', 'calendarEvents', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
     }
 
     protected function currentUserBranchIdForFilters(Request $request): ?int

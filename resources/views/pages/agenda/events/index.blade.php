@@ -39,7 +39,7 @@
             ],
         ]);
 
-    $agendaEvents = $events->getCollection()->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser, $branchesById, $unitsById) {
+    $agendaEvents = collect($calendarEvents ?? $events->getCollection())->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser, $branchesById, $unitsById) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
         $workflowSummary = $event->workflow_summary ?? [];
@@ -171,8 +171,8 @@
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="per_page">
-                        @foreach ([10, 20, 50, 100] as $size)
-                            <option value="{{ $size }}" {{ (int) request('per_page', 20) === $size ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.filters.show_count', ['count' => $size]) }}</option>
+                        @foreach ([8, 16, 24, 50, 100] as $size)
+                            <option value="{{ $size }}" {{ (int) request('per_page', 8) === $size ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.filters.show_count', ['count' => $size]) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -268,110 +268,62 @@
         <div class="agenda-view-pane" data-view-pane="table">
             <div class="card event-card">
                 <div class="card-body">
-                    <div class="event-table-wrap table-responsive">
-                        <table class="table table-sm align-middle event-table">
-                            <thead>
-                                <tr>
-                                    <th>{{ __('app.roles.relations.agenda.table.event_date') }}</th>
-                                    <th>{{ __('app.roles.relations.agenda.table.event_name') }}</th>
-                                    <th>الإصدار</th>
-                                    <th>{{ __('app.roles.relations.agenda.fields_ext.department') }}</th>
-                                    <th>{{ __('app.roles.relations.agenda.fields.event_category') }}</th>
-                                    <th>{{ __('app.roles.relations.agenda.fields_ext.event_type') }}/{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</th>
-                                    <th>{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</th>
-                                    <th>{{ __('app.roles.relations.agenda.fields_ext.participating_branches') }}</th>
-                                    <th class="text-end">{{ __('app.roles.relations.agenda.table.actions') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($events as $event)
-                                    @php($workflowSummary = $event->workflow_summary ?? [])
-                                    <tr>
-                                        <td>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</td>
-                                        <td>{{ $event->event_name }}</td>
-                                        <td>V{{ (int) ($event->version ?? 1) }}</td>
-                                        <td>{{ $event->department?->name ?? '-' }}</td>
-                                        <td>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</td>
-                                        <td>{{ __('app.roles.relations.agenda.types.' . $event->event_type) }} / {{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</td>
-                                        <td>
-                                            <div class="approval-sequence-list">
-                                                <div class="approval-sequence-item">
-                                                    <div class="approval-sequence-role">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</div>
-                                                    <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
-                                                </div>
-                                                <div class="approval-sequence-item">
-                                                    <div class="approval-sequence-role">{{ __('workflow_ui.common.current_step') }}</div>
-                                                    <span>{{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
-                                                </div>
-                                                <div class="approval-sequence-item">
-                                                    <div class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</div>
-                                                    <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>{{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</td>
-                                        <td class="text-end">
-                                            <div class="event-actions">
-                                                <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.agenda.show', $event) }}">{{ __('app.roles.relations.agenda.actions.view') }}</a>
-                                                @if($canManageAgenda)
-                                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
-                                                    <form method="POST" action="{{ route('role.relations.agenda.submit', $event) }}">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
-                                                    </form>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="9" class="text-muted">{{ __('app.roles.relations.agenda.table.empty') }}</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="event-mobile-cards">
-                        @foreach ($events as $event)
+                    <div class="agenda-cards-grid">
+                        @forelse ($events as $event)
                             @php($workflowSummary = $event->workflow_summary ?? [])
-                            <div class="event-mobile-card">
-                                <div class="fw-semibold mb-2">{{ $event->event_name }}</div>
-                                <div class="event-mobile-row"><span class="text-muted">الإصدار</span><span>V{{ (int) ($event->version ?? 1) }}</span></div>
-                                <div class="event-mobile-row"><span class="text-muted">{{ __('app.roles.relations.agenda.table.event_date') }}</span><span>{{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span></div>
-                                <div class="event-mobile-row align-items-start">
-                                    <span class="text-muted">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span>
-                                    <span class="approval-sequence-list">
-                                        <span class="approval-sequence-item">
-                                            <span class="approval-sequence-role">{{ __('app.roles.relations.agenda.fields_ext.review_status') }}</span>
-                                            <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
-                                        </span>
-                                        <span class="approval-sequence-item">
-                                            <span class="approval-sequence-role">{{ __('workflow_ui.common.current_step') }}</span>
-                                            <span>{{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
-                                        </span>
-                                        <span class="approval-sequence-item">
-                                            <span class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</span>
-                                            <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
-                                        </span>
-                                    </span>
+                            <article class="agenda-event-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <h3 class="h6 mb-0">{{ $event->event_name }}</h3>
+                                    <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
                                 </div>
-                                <div class="event-actions mt-2">
+                                <div class="agenda-card-meta">
+                                    <span>📅 {{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span>
+                                    <span>V{{ (int) ($event->version ?? 1) }}</span>
+                                    <span>{{ $event->department?->name ?? '-' }}</span>
+                                    <span>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                    <span class="badge {{ $event->event_type === 'mandatory' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' }}">{{ __('app.roles.relations.agenda.types.' . $event->event_type) }}</span>
+                                    <span class="badge {{ $event->plan_type === 'unified' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info' }}">{{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</span>
+                                    <span class="badge bg-light text-dark border">الفروع المشاركة: {{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</span>
+                                </div>
+                                <div class="approval-sequence-list mt-2">
+                                    <div class="approval-sequence-item">
+                                        <div class="approval-sequence-role">{{ __('workflow_ui.common.current_step') }}</div>
+                                        <span>{{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
+                                    </div>
+                                    <div class="approval-sequence-item">
+                                        <div class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</div>
+                                        <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
+                                    </div>
+                                </div>
+                                <div class="event-actions mt-3">
                                     <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.agenda.show', $event) }}">{{ __('app.roles.relations.agenda.actions.view') }}</a>
                                     @if($canManageAgenda)
                                         <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
+                                        <form method="POST" action="{{ route('role.relations.agenda.submit', $event) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
+                                        </form>
                                     @endif
                                 </div>
-                            </div>
-                        @endforeach
+                            </article>
+                        @empty
+                            <div class="text-muted">{{ __('app.roles.relations.agenda.table.empty') }}</div>
+                        @endforelse
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
                         <small class="text-muted">
                             {{ __('عرض') }} {{ $events->firstItem() ?? 0 }} - {{ $events->lastItem() ?? 0 }} {{ __('من') }} {{ $events->total() }}
                         </small>
-                        {{ $events->links() }}
+                        <div class="d-flex align-items-center gap-2">
+                            {{ $events->links() }}
+                            @if ($events->hasMorePages())
+                                <a class="btn btn-outline-primary btn-sm" href="{{ $events->nextPageUrl() }}">عرض المزيد</a>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -422,6 +374,25 @@
         .approval-sequence-list { display: flex; flex-direction: column; gap: .35rem; }
         .approval-sequence-item { display: flex; flex-direction: column; gap: .15rem; }
         .approval-sequence-role { font-size: .75rem; color: #64748b; font-weight: 600; line-height: 1.2; }
+        .agenda-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .agenda-event-card {
+            border: 1px solid #dbe4ef;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            padding: 1rem;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .agenda-event-card:hover { transform: translateY(-2px); box-shadow: 0 14px 24px rgba(15, 23, 42, .08); }
+        .agenda-card-meta { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .agenda-card-meta > span {
+            font-size: .78rem;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 999px;
+            padding: .18rem .55rem;
+        }
         .agenda-legend-explainer { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; margin: 1rem 0; }
         .agenda-legend-card { display: flex; align-items: center; gap: .85rem; padding: .9rem 1rem; border-radius: 1rem; background: linear-gradient(180deg, #fbfdff 0%, #f4f8fc 100%); border: 1px solid #dce6ef; }
         .agenda-calendar-legend { display: flex; flex-wrap: wrap; gap: .85rem 1rem; margin: .75rem 0 1rem; padding: .9rem 1rem; border: 1px solid #e2e8f0; border-radius: 1rem; }
