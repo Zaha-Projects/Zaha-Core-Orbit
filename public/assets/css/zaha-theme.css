@@ -1,5 +1,7 @@
 :root {
     --primary: #3b5bdb;
+    --primary-soft: #eef2ff;
+    --primary-strong: #2846c7;
     --secondary: #5f6b7a;
     --success: #1f9d65;
     --danger: #c92a2a;
@@ -383,6 +385,72 @@ textarea {
 .dashboard-shell .card {
     border-radius: var(--zaha-radius);
     box-shadow: var(--zaha-card-shadow);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+}
+
+.dashboard-shell .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+    border-color: color-mix(in srgb, var(--primary) 25%, var(--border-soft));
+}
+
+.dashboard-shell .card .card-header {
+    border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 65%, var(--primary-soft));
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.dashboard-shell .card .card-title,
+.dashboard-shell .card h1,
+.dashboard-shell .card h2,
+.dashboard-shell .card h3,
+.dashboard-shell .card h4,
+.dashboard-shell .card h5 {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.dashboard-shell .card .text-muted {
+    color: #64748b !important;
+}
+
+.event-kpi-card,
+.approvals-kpi-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+    border-color: color-mix(in srgb, var(--primary) 12%, var(--border-soft));
+}
+
+.event-kpi-value,
+.approvals-kpi-value {
+    color: #0f172a;
+}
+
+.dashboard-shell .btn-outline-primary {
+    border-color: color-mix(in srgb, var(--primary) 40%, #bcd0ff);
+    color: var(--primary-strong);
+}
+
+.dashboard-shell .btn-outline-primary:hover,
+.dashboard-shell .btn-outline-primary:focus {
+    background: var(--primary-soft);
+    border-color: var(--primary);
+    color: var(--primary-strong);
+}
+
+.dashboard-shell .alert-info {
+    border-color: #cfe1ff;
+    background: #f2f7ff;
+    color: #1e3a8a;
+}
+
+.dashboard-shell .alert-primary {
+    border-color: #c8d9ff;
+    background: #edf3ff;
+    color: #1e40af;
+}
+
+.app-skin-dark .dashboard-shell .card:hover {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.38);
+    border-color: #42506a;
 }
 
 .nxl-navigation-clean .nxl-link {
