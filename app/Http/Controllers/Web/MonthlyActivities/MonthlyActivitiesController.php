@@ -367,7 +367,7 @@ class MonthlyActivitiesController extends Controller
                         });
 
                     if ($selectedEventId) {
-                        $scopedQuery->orWhereKey($selectedEventId);
+                        $scopedQuery->orWhere($scopedQuery->getModel()->getQualifiedKeyName(), $selectedEventId);
                     }
                 });
             })
@@ -506,6 +506,7 @@ class MonthlyActivitiesController extends Controller
             'workflowInstance.logs.step',
         ])
             ->withCount('newerVersions')
+            ->whereDoesntHave('newerVersions')
             ->enterpriseFilter($request->all())
             ->notArchived();
 
@@ -704,9 +705,24 @@ class MonthlyActivitiesController extends Controller
             return false;
         }
 
+        if (! $this->hasManagerOrLaterApproval($monthlyActivity)) {
+            return false;
+        }
+
         return $this->isApprovedVersion($monthlyActivity)
             || $isRescheduled
             || $this->activityHasApprovalTrail($monthlyActivity);
+    }
+
+    protected function hasManagerOrLaterApproval(MonthlyActivity $monthlyActivity): bool
+    {
+        return in_array((string) $monthlyActivity->relations_manager_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->programs_manager_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->liaison_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->hq_relations_manager_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->executive_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->lifecycle_status, ['Branch Relations Manager Approved', 'Primary Relations Manager Approved', 'Executive Manager Approved', 'Exec Director Approved'], true)
+            || $this->isApprovedVersion($monthlyActivity);
     }
 
     public function syncFromAgenda(Request $request)
@@ -1135,8 +1151,14 @@ class MonthlyActivitiesController extends Controller
             ->pluck('name', 'code')
             ->all();
         $executionStatusLabels = $this->executionStatusLabels();
+        $archivedVersions = collect();
+        $cursor = $monthlyActivity->previousVersion;
+        while ($cursor) {
+            $archivedVersions->push($cursor);
+            $cursor = $cursor->previousVersion;
+        }
 
-        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels'));
+        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels', 'archivedVersions'));
     }
 
     public function update(

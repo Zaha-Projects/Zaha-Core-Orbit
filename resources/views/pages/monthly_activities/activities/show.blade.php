@@ -51,6 +51,22 @@
             </div>
         </div>
 
+        @if(($archivedVersions ?? collect())->isNotEmpty())
+            <div class="card event-card mb-4">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">أرشيف الإصدارات السابقة</h2>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($archivedVersions as $archived)
+                            <a class="badge bg-light text-dark border text-decoration-none"
+                               href="{{ route('role.relations.activities.show', $archived) }}">
+                                نسخة {{ (int) ($archived->plan_version ?: 1) }} — {{ $archived->title }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="workflow-ui mb-4">
             <div class="wf-card card">
                 <div class="card-body">
@@ -296,7 +312,6 @@
         </div>
     </div>
 @endsection
-
 
 
 
