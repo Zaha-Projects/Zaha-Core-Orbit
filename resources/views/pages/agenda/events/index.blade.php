@@ -197,8 +197,19 @@
                         @foreach($events as $event)
                             @php
                                 $branchParticipation = $event->participations->where('entity_type', 'branch')->where('entity_id', $authUser?->branch_id)->first();
+                                $linkedMonthlyActivity = \App\Models\MonthlyActivity::query()
+                                    ->where('agenda_event_id', $event->id)
+                                    ->where('branch_id', $authUser?->branch_id)
+                                    ->first();
                                 $baseDate = optional($event->event_date)->format('Y-m-d') ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
                                 $isParticipating = ($branchParticipation?->participation_status ?? 'unspecified') === 'participant' || $event->event_type === 'mandatory';
+                                $isUnifiedPlan = $event->plan_type === 'unified';
+                                $effectiveProposedDate = $isUnifiedPlan
+                                    ? (optional($linkedMonthlyActivity?->proposed_date)->format('Y-m-d') ?: optional($branchParticipation?->proposed_date)->format('Y-m-d') ?: $baseDate)
+                                    : optional($branchParticipation?->proposed_date)->format('Y-m-d');
+                                $effectiveActualDate = $isUnifiedPlan
+                                    ? (optional($linkedMonthlyActivity?->actual_date)->format('Y-m-d') ?: optional($branchParticipation?->actual_execution_date)->format('Y-m-d'))
+                                    : optional($branchParticipation?->actual_execution_date)->format('Y-m-d');
                             @endphp
                             <div class="col-12 col-xl-6">
                                 <div class="border rounded p-3 h-100">
@@ -230,14 +241,14 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label mb-1">📌 {{ __('app.roles.relations.agenda.branch_interaction.proposed_date') }}</label>
-                                            <input type="date" class="form-control" name="proposed_date" value="{{ optional($branchParticipation?->proposed_date)->format('Y-m-d') }}" {{ ! $isParticipating ? 'disabled' : '' }}>
+                                            <input type="date" class="form-control" name="proposed_date" value="{{ $effectiveProposedDate }}" {{ (! $isParticipating || $isUnifiedPlan) ? 'disabled' : '' }}>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label mb-1">✅ {{ __('app.roles.relations.agenda.branch_interaction.actual_execution_date') }}</label>
-                                            <input type="date" class="form-control" name="actual_execution_date" value="{{ optional($branchParticipation?->actual_execution_date)->format('Y-m-d') }}">
+                                            <input type="date" class="form-control" name="actual_execution_date" value="{{ $effectiveActualDate }}" {{ $isUnifiedPlan ? 'disabled' : '' }}>
                                         </div>
-                                        @if($event->plan_type === 'unified')
-                                            <div class="col-12"><div class="alert alert-primary py-2 px-3 mb-0">{{ __('app.roles.relations.agenda.branch_interaction.unified_notice') }}</div></div>
+                                        @if($isUnifiedPlan)
+                                            <div class="col-12"><div class="alert alert-primary py-2 px-3 mb-0">{{ __('app.roles.relations.agenda.branch_interaction.unified_notice') }} يتم مزامنة التاريخ المقترح والتنفيذ الفعلي تلقائياً من الخطة الشهرية.</div></div>
                                         @else
                                             <div class="col-12">
                                                 <label class="form-label mb-1">{{ __('app.roles.relations.agenda.branch_interaction.branch_plan_file') }}</label>
