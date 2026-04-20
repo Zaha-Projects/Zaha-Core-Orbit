@@ -1,4 +1,15 @@
 (function (window) {
+
+    function readJsonScript(id, fallback) {
+        const el = document.getElementById(id);
+        if (!el) return fallback;
+        try {
+            return JSON.parse(el.textContent || '');
+        } catch (error) {
+            return fallback;
+        }
+    }
+
     function initViewToggle(root, initialView = 'table') {
         if (!root) return () => {};
 
@@ -26,4 +37,5 @@
 
     window.ZahaUi = window.ZahaUi || {};
     window.ZahaUi.initViewToggle = initViewToggle;
+    window.ZahaUi.readJsonScript = readJsonScript;
 })(window);

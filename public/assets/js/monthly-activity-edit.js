@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('[name="outside_contact_number"]'),
     document.querySelector('[name="outside_address"]')
   ].filter(Boolean);
-  const oldPartners = JSON.parse(document.getElementById('monthly-edit-old-partners-json')?.textContent ?? '[]');
-  const oldSupplies = JSON.parse(document.getElementById('monthly-edit-old-supplies-json')?.textContent ?? '[]');
-  const oldTeamGroups = JSON.parse(document.getElementById('monthly-edit-old-team-groups-json')?.textContent ?? '[]');
+  const oldPartners = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-edit-old-partners-json', []) : JSON.parse(document.getElementById('monthly-edit-old-partners-json')?.textContent ?? '[]');
+  const oldSupplies = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-edit-old-supplies-json', []) : JSON.parse(document.getElementById('monthly-edit-old-supplies-json')?.textContent ?? '[]');
+  const oldTeamGroups = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-edit-old-team-groups-json', []) : JSON.parse(document.getElementById('monthly-edit-old-team-groups-json')?.textContent ?? '[]');
   const esc = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

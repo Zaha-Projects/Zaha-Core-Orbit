@@ -4,10 +4,10 @@
 
     const isRtl = module.dataset.rtl === '1';
     const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
-    const events = JSON.parse(document.getElementById('agenda-events-json')?.textContent ?? '[]');
-    const weekDayLabels = JSON.parse(document.getElementById('agenda-weekdays-json')?.textContent ?? '[]');
+    const events = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-events-json', []) : JSON.parse(document.getElementById('agenda-events-json')?.textContent ?? '[]');
+    const weekDayLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-weekdays-json', []) : JSON.parse(document.getElementById('agenda-weekdays-json')?.textContent ?? '[]');
 
-    const monthNames = JSON.parse(document.getElementById('agenda-months-json')?.textContent ?? '[]');
+    const monthNames = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-months-json', []) : JSON.parse(document.getElementById('agenda-months-json')?.textContent ?? '[]');
 
     const selectedYear = Number(module.dataset.selectedYear || 0);
     const selectedMonth = Number(module.dataset.selectedMonth || 0);

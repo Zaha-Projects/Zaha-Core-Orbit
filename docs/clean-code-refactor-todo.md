@@ -52,6 +52,7 @@ Move page-specific inline `<style>` and `<script>` blocks from Blade templates i
 ## Shared/UI consolidation (new)
 - [x] Added shared UI stylesheet: `public/assets/css/event-ui-shared.css` for common cards/grids/actions/status badges.
 - [x] Added shared UI script: `public/assets/js/ui-shared.js` for reusable table/calendar view toggle behavior.
+- [x] Added shared `readJsonScript(id, fallback)` helper to avoid repeated JSON parsing boilerplate in page scripts.
 - [x] Wired shared assets into:
   - `resources/views/pages/agenda/events/index.blade.php`
   - `resources/views/pages/monthly_activities/activities/index.blade.php`

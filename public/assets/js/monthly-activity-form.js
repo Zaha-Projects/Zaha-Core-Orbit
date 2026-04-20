@@ -30,9 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const teamGroupsCount = form.querySelector('.js-team-groups-count');
     const teamGroupsContainer = form.querySelector('.js-team-groups-container');
 
-    const oldPartners = JSON.parse(document.getElementById('monthly-form-old-partners-json')?.textContent ?? '[]');
-    const oldSupplies = JSON.parse(document.getElementById('monthly-form-old-supplies-json')?.textContent ?? '[]');
-    const oldTeamGroups = JSON.parse(document.getElementById('monthly-form-old-team-groups-json')?.textContent ?? '[]');
+    const oldPartners = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-partners-json', []) : JSON.parse(document.getElementById('monthly-form-old-partners-json')?.textContent ?? '[]');
+    const oldSupplies = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-supplies-json', []) : JSON.parse(document.getElementById('monthly-form-old-supplies-json')?.textContent ?? '[]');
+    const oldTeamGroups = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-team-groups-json', []) : JSON.parse(document.getElementById('monthly-form-old-team-groups-json')?.textContent ?? '[]');
 
     const esc = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')

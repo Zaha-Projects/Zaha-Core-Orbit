@@ -4,7 +4,7 @@
 
     const isRtl = module.dataset.rtl === '1';
     const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
-    const statusLabels = JSON.parse(document.getElementById('monthly-status-labels-json')?.textContent ?? '{}');
+    const statusLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-status-labels-json', {}) : JSON.parse(document.getElementById('monthly-status-labels-json')?.textContent ?? '{}');
 
     const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
     const gridContainer = module.querySelector('[data-calendar-grid]');
