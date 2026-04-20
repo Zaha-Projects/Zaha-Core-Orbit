@@ -15,12 +15,30 @@
         <div class="card-body">
             <h1 class="wf-page-title mb-1">{{ __('workflow_ui.approvals.title') }}</h1>
             <p class="wf-muted mb-0">{{ __('workflow_ui.approvals.subtitle') }}</p>
+            <div class="approvals-kpi-row mt-3">
+                <div class="approvals-kpi-card">
+                    <div class="approvals-kpi-label">إجمالي المعروض</div>
+                    <div class="approvals-kpi-value">{{ method_exists($activities, 'total') ? $activities->total() : $activities->count() }}</div>
+                </div>
+                <div class="approvals-kpi-card">
+                    <div class="approvals-kpi-label">قيد المراجعة</div>
+                    <div class="approvals-kpi-value">{{ $activities->where('status', 'in_review')->count() }}</div>
+                </div>
+                <div class="approvals-kpi-card">
+                    <div class="approvals-kpi-label">بانتظار قراري</div>
+                    <div class="approvals-kpi-value">{{ $activities->where('can_current_user_decide', true)->count() }}</div>
+                </div>
+            </div>
         </div>
     </div>
 
     @if (session('status'))
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
+
+    <div class="alert alert-info mb-3">
+        الفعاليات الإلزامية المرتبطة بالأجندة السنوية لا تُعرض في شاشة اعتماد الخطط الشهرية لأنها لا تحتاج اعتماد الفرع.
+    </div>
 
     <div class="wf-card card mb-3">
         <div class="card-body d-flex flex-column gap-3">
@@ -74,7 +92,7 @@
                     $requirements[] = __('workflow_ui.approvals.requirements.communications');
                 }
             @endphp
-            <div class="wf-card card">
+            <div class="wf-card card approvals-activity-card">
                 <div class="card-body">
                     <div class="wf-summary mb-3">
                         <div class="w-100">
@@ -283,7 +301,7 @@
         @endforelse
     </div>
 
-    <div class="mt-3">{{ $activities->links() }}</div>
+    <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
 </div>
 
 <div class="modal fade" id="decisionConfirmModal" tabindex="-1" aria-hidden="true">
@@ -341,4 +359,28 @@
         }
     });
 </script>
+@endpush
+
+@push('styles')
+<style>
+    .approvals-kpi-row {
+        display: grid;
+        gap: .75rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+    .approvals-kpi-card {
+        border: 1px solid #dbe4ef;
+        border-radius: .9rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        padding: .75rem .9rem;
+    }
+    .approvals-kpi-label { font-size: .78rem; color: #64748b; }
+    .approvals-kpi-value { font-size: 1.2rem; font-weight: 700; color: #0f172a; }
+    .approvals-activity-card {
+        border: 1px solid #dce6f1;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, .04);
+        border-radius: 1rem;
+    }
+    .approvals-pagination-wrap nav { margin-bottom: 0; }
+</style>
 @endpush
