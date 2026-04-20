@@ -52,7 +52,10 @@
 3. **JSON bootstrapping**: استخدم `ZahaUi.readJsonScript` بدل `JSON.parse(...)` المتكرر.
 4. **View toggle**: استخدم `ZahaUi.initViewToggle` بدل كتابة switchView جديد.
 5. **Update map**: إذا أضفت صفحة/asset جديدة، حدث هذا الملف فورًا.
-6. **Run verification script**: شغّل `scripts/verify_view_assets.sh`.
+6. **Run verification script**: شغّل `scripts/verify_view_assets.sh
+
+# تشغيل فحص شامل (assets + blade + js + runtime availability)
+scripts/validate_refactor.sh`.
 
 ## 4) Duplication Guardrails
 
@@ -65,6 +68,9 @@
 ```bash
 # تأكد من عدم وجود inline style/script في الصفحات المستهدفة
 scripts/verify_view_assets.sh
+
+# تشغيل فحص شامل (assets + blade + js + runtime availability)
+scripts/validate_refactor.sh
 
 # فحص syntax للملفات المهمة
 php -l resources/views/pages/agenda/events/index.blade.php

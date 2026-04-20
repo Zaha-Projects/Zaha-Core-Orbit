@@ -50,6 +50,8 @@ Move page-specific inline `<style>` and `<script>` blocks from Blade templates i
 3. Confirm no `@checked/@selected` leakage where applicable:
    - `rg -n "@checked|@selected" <blade file>`
 4. Visual smoke test for form actions, toggles, and modals.
+5. Optional full guard run:
+   - `scripts/validate_refactor.sh`
 
 ## Shared/UI consolidation (new)
 - [x] Added shared UI stylesheet: `public/assets/css/event-ui-shared.css` for common cards/grids/actions/status badges.
