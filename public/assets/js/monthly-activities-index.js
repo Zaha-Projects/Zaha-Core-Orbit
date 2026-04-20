@@ -15,13 +15,23 @@
     weekdaysContainer.innerHTML = weekdays.map((label) => `<div class="agenda-weekday">${label}</div>`).join('');
 
     const now = new Date();
-    let currentYear = now.getFullYear();
-    let currentMonth = now.getMonth() + 1;
+    const searchParams = new URLSearchParams(window.location.search);
+    const preservedParams = new URLSearchParams(window.location.search);
+    preservedParams.delete('page');
+    preservedParams.delete('year');
+    preservedParams.delete('month');
+
+    let currentYear = Number.parseInt(searchParams.get('year') || '', 10) || now.getFullYear();
+    let currentMonth = Number.parseInt(searchParams.get('month') || '', 10) || (now.getMonth() + 1);
 
     function mapPos(day) { return isRtl ? 6 - day : day; }
 
     async function loadCalendar() {
-        const res = await fetch(`${endpoint}?year=${currentYear}&month=${currentMonth}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const requestParams = new URLSearchParams(preservedParams.toString());
+        requestParams.set('year', String(currentYear));
+        requestParams.set('month', String(currentMonth));
+
+        const res = await fetch(`${endpoint}?${requestParams.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
         const payload = await res.json();
         const items = payload.items || [];
 

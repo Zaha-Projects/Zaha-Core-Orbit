@@ -10,7 +10,6 @@
 
 @php
     $viewer = auth()->user();
-    $currentStatus = request('status');
 @endphp
 
 @section('content')
@@ -48,9 +47,9 @@
         <div class="card-body d-flex flex-column gap-3">
             <div class="wf-tabbar">
                 <a class="wf-tab {{ request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['my_pending' => 1, 'status' => null])) }}">{{ __('workflow_ui.approvals.tabs.my_pending') }}</a>
-                <a class="wf-tab {{ !request('my_pending') && !$currentStatus ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except(['page','status','my_pending']), [])) }}">{{ __('workflow_ui.approvals.tabs.all') }}</a>
-                <a class="wf-tab {{ $currentStatus === 'approved' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['status' => 'approved', 'my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.approved') }}</a>
-                <a class="wf-tab {{ $currentStatus === 'rejected' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['status' => 'rejected', 'my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.rejected') }}</a>
+                <a class="wf-tab {{ !request('my_pending') && !request('status') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except(['page','status','my_pending']), [])) }}">{{ __('workflow_ui.approvals.tabs.all') }}</a>
+                <a class="wf-tab {{ request('status') === 'approved' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['status' => 'approved', 'my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.approved') }}</a>
+                <a class="wf-tab {{ request('status') === 'rejected' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['status' => 'rejected', 'my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.rejected') }}</a>
             </div>
 
             <form method="GET" class="row g-2 align-items-end">
@@ -83,6 +82,9 @@
                 $currentRoleLabel = $workflowSummary['current_role_label'] ?? __('workflow_ui.common.none_option');
                 $requirements = [];
                 $latestChangeRequest = $workflowSummary['latest_change_request'] ?? null;
+                $workflowSteps = collect($workflowSummary['steps'] ?? []);
+                $approvedStepsCount = $workflowSteps->where('state', 'approved')->count();
+                $totalStepsCount = max($workflowSteps->count(), 1);
 
                 if ($activity->requires_programs) {
                     $requirements[] = __('workflow_ui.approvals.requirements.programs');
@@ -126,6 +128,30 @@
                                     <span class="wf-chip wf-chip-soft">{{ $requirement }}</span>
                                 @endforeach
                             </div>
+
+                            <div class="approvals-status-panel mt-3">
+                                <div class="approvals-status-panel-header">
+                                    <h4 class="approvals-status-title mb-0">حالات الاعتماد</h4>
+                                    <span class="wf-chip wf-chip-soft">المعتمد: {{ $approvedStepsCount }}/{{ $workflowSteps->count() }}</span>
+                                </div>
+
+                                <div class="approvals-status-progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $workflowSteps->count() }}" aria-valuenow="{{ $approvedStepsCount }}">
+                                    <span style="width: {{ round(($approvedStepsCount / $totalStepsCount) * 100, 2) }}%"></span>
+                                </div>
+
+                                <div class="approvals-status-grid mt-3">
+                                    @forelse($workflowSteps as $step)
+                                        <div class="approvals-status-item {{ !empty($step['is_current']) ? 'is-current' : '' }}">
+                                            <div class="approvals-status-role">{{ $step['role_label'] }}</div>
+                                            <span class="wf-status-badge wf-status-{{ $step['state'] }}">
+                                                {{ $step['state_label'] }}
+                                            </span>
+                                        </div>
+                                    @empty
+                                        <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
+                                    @endforelse
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -146,7 +172,7 @@
                                                     <span class="wf-kv">{{ $currentRoleLabel }}</span>
                                                 </div>
                                                 <div class="d-flex flex-column gap-2">
-                                                    @foreach($workflowSummary['steps'] ?? [] as $step)
+                                                    @foreach($workflowSteps as $step)
                                                         <div class="border rounded-3 p-3 {{ !empty($step['is_current']) ? 'border-primary-subtle bg-light-subtle' : '' }}">
                                                             <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                                 <div>

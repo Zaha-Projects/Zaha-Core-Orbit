@@ -13,3 +13,12 @@
 .approvals-kpi-value { font-size: 1.2rem; font-weight: 700; color: #0f172a; }
 .approvals-activity-card { border: 1px solid #dce6f1; box-shadow: 0 8px 20px rgba(15, 23, 42, .04); border-radius: 1rem; }
 .approvals-pagination-wrap nav { margin-bottom: 0; }
+.approvals-status-panel { border: 1px solid #e3ebf5; border-radius: .9rem; background: #fff; padding: .9rem; }
+.approvals-status-panel-header { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.approvals-status-title { font-size: .95rem; font-weight: 700; color: #0f172a; }
+.approvals-status-progress { width: 100%; height: .45rem; border-radius: 999px; background: #eaf0f7; overflow: hidden; }
+.approvals-status-progress > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #1f4ba6 0%, #22a06b 100%); }
+.approvals-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .55rem; }
+.approvals-status-item { border: 1px solid #e2e8f0; border-radius: .75rem; padding: .55rem .65rem; background: #f8fafc; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.approvals-status-item.is-current { border-color: #bfd7ff; background: #eef5ff; }
+.approvals-status-role { font-size: .82rem; color: #334155; font-weight: 600; }

@@ -794,20 +794,25 @@ class AgendaEventsController extends Controller
 
         $status = $agendaEvent->event_type === 'mandatory' ? 'participant' : ($data['will_participate'] === 'yes' ? 'participant' : 'not_participant');
         $isParticipating = $status === 'participant';
-
-        if ($isParticipating) {
-            abort_if(empty($data['proposed_date']), 422, 'التاريخ المقترح مطلوب عند المشاركة.');
-            abort_if($data['proposed_date'] < $minDate || $data['proposed_date'] > $maxDate, 422, 'التاريخ المقترح يجب أن يكون ضمن ±7 أيام من تاريخ الأجندة.');
-        }
-
-        if ($agendaEvent->plan_type === 'unified' && $request->hasFile('branch_plan_file')) {
-            abort(422, 'لا يمكن رفع خطة فرع لفعالية موحدة.');
-        }
+        $isUnifiedPlan = $agendaEvent->plan_type === 'unified';
 
         $existing = $agendaEvent->participations()
             ->where('entity_type', 'branch')
             ->where('entity_id', $branchActor->branch_id)
             ->first();
+
+        if ($isParticipating) {
+            if (! $isUnifiedPlan) {
+                abort_if(empty($data['proposed_date']), 422, 'التاريخ المقترح مطلوب عند المشاركة.');
+                abort_if($data['proposed_date'] < $minDate || $data['proposed_date'] > $maxDate, 422, 'التاريخ المقترح يجب أن يكون ضمن ±7 أيام من تاريخ الأجندة.');
+            } else {
+                $data['proposed_date'] = optional($existing?->proposed_date)?->toDateString() ?: $agendaDate;
+            }
+        }
+
+        if ($isUnifiedPlan && $request->hasFile('branch_plan_file')) {
+            abort(422, 'لا يمكن رفع خطة فرع لفعالية موحدة.');
+        }
 
         $planFile = $existing?->branch_plan_file;
         if ($request->hasFile('branch_plan_file')) {
@@ -829,7 +834,7 @@ class AgendaEventsController extends Controller
             [
                 'participation_status' => $status,
                 'proposed_date' => $isParticipating ? $data['proposed_date'] : null,
-                'actual_execution_date' => $data['actual_execution_date'] ?? null,
+                'actual_execution_date' => $isUnifiedPlan ? (optional($existing?->actual_execution_date)?->toDateString()) : ($data['actual_execution_date'] ?? null),
                 'branch_plan_file' => $planFile,
                 'updated_by' => $branchActor->id,
             ]
@@ -845,7 +850,9 @@ class AgendaEventsController extends Controller
                 'month' => (int) Carbon::parse($agendaDate)->format('m'),
                 'day' => (int) Carbon::parse($agendaDate)->format('d'),
                 'title' => $agendaEvent->event_name,
-                'proposed_date' => $data['proposed_date'],
+                'proposed_date' => $isUnifiedPlan
+                    ? (optional($monthlyActivity->proposed_date)->toDateString() ?: $data['proposed_date'])
+                    : $data['proposed_date'],
                 'is_in_agenda' => true,
                 'is_from_agenda' => true,
                 'participation_status' => 'participant',
@@ -857,6 +864,13 @@ class AgendaEventsController extends Controller
                 'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
             ]);
             $monthlyActivity->save();
+
+            if ($isUnifiedPlan) {
+                $participation->forceFill([
+                    'proposed_date' => optional($monthlyActivity->proposed_date)->toDateString() ?: $data['proposed_date'],
+                    'actual_execution_date' => optional($monthlyActivity->actual_date)->toDateString(),
+                ])->save();
+            }
         }
 
         return back()->with('status', 'تم تحديث المشاركة وربط الفعالية بالخطة الشهرية بنجاح.');

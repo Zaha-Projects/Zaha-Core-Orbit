@@ -5,7 +5,7 @@
     $unreadNotifications = auth()->check() ? auth()->user()->inAppNotifications()->whereNull('read_at')->latest()->take(5)->get() : collect();
     $showHeaderSearch = trim($__env->yieldContent('enable_header_search', '0')) === '1';
 @endphp
-<header class="nxl-header nxl-header-clean">
+<header class="nxl-header nxl-header-clean {{ $isArabic ? 'is-rtl-header' : 'is-ltr-header' }}">
     <div class="header-wrapper">
         <div class="header-left d-flex align-items-center gap-3">
             <a href="javascript:void(0);" class="nxl-head-mobile-toggler" id="mobile-collapse">
@@ -36,8 +36,13 @@
 
                 <div class="nxl-h-item nxl-header-language">
                     <div class="lang-toggle" role="group" aria-label="{{ __('app.layout.language_switch') }}">
-                        <form method="POST" action="{{ route('ui.locale', 'ar') }}" class="js-locale-switch" data-locale="ar">@csrf<button class="lang-toggle__btn {{ $isArabic ? 'is-active' : '' }}" type="submit">AR</button></form>
-                        <form method="POST" action="{{ route('ui.locale', 'en') }}" class="js-locale-switch" data-locale="en">@csrf<button class="lang-toggle__btn {{ $isArabic ? '' : 'is-active' }}" type="submit">EN</button></form>
+                        @if($isArabic)
+                            <form method="POST" action="{{ route('ui.locale', 'en') }}" class="js-locale-switch" data-locale="en">@csrf<button class="lang-toggle__btn" type="submit">EN</button></form>
+                            <form method="POST" action="{{ route('ui.locale', 'ar') }}" class="js-locale-switch" data-locale="ar">@csrf<button class="lang-toggle__btn is-active" type="submit">AR</button></form>
+                        @else
+                            <form method="POST" action="{{ route('ui.locale', 'ar') }}" class="js-locale-switch" data-locale="ar">@csrf<button class="lang-toggle__btn" type="submit">AR</button></form>
+                            <form method="POST" action="{{ route('ui.locale', 'en') }}" class="js-locale-switch" data-locale="en">@csrf<button class="lang-toggle__btn is-active" type="submit">EN</button></form>
+                        @endif
                     </div>
                 </div>
 
@@ -82,7 +87,7 @@
                 @auth
                     <div class="dropdown nxl-h-item nxl-user-menu-item">
                         <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false"><img src="{{ asset('assets/images/avatar/1.png') }}" alt="{{ __('app.layout.user_avatar') }}" class="img-fluid user-avtar me-0" /></a>
-                        <div class="dropdown-menu {{ $isArabic ? 'dropdown-menu-start' : 'dropdown-menu-end' }} nxl-h-dropdown nxl-user-dropdown">
+                        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                             <div class="dropdown-header"><h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6></div>
                             <div class="dropdown-divider"></div>
                             <form method="POST" action="{{ route('logout') }}">@csrf<button class="dropdown-item" type="submit"><i class="feather-log-out"></i><span>{{ __('app.common.logout') }}</span></button></form>
@@ -167,12 +172,53 @@
         min-width: 220px;
         max-width: min(92vw, 320px);
     }
+    .nxl-h-item > .dropdown-menu {
+        max-width: min(94vw, 420px);
+    }
     html[dir="rtl"] .nxl-user-menu-item .nxl-user-dropdown {
         text-align: right;
+    }
+    html[dir="rtl"] .nxl-header.is-rtl-header .header-wrapper {
+        direction: ltr;
+    }
+    html[dir="rtl"] .nxl-header.is-rtl-header .header-left {
+        order: 2;
+        margin-left: auto;
+    }
+    html[dir="rtl"] .nxl-header.is-rtl-header .header-right {
+        order: 1;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+    html[dir="rtl"] .nxl-header.is-rtl-header .header-right .d-flex {
+        direction: rtl;
+    }
+    html[dir="rtl"] .nxl-header.is-rtl-header .header-right .dropdown-menu {
+        text-align: right;
+    }
+    html[dir="rtl"] .nxl-header.is-rtl-header .header-right .notification-chat-menu {
+        inset-inline-start: auto !important;
+        inset-inline-end: 0 !important;
     }
     @media (max-width: 767.98px) {
         .nxl-user-menu-item {
             position: static;
+        }
+        .nxl-h-item > .dropdown-menu {
+            min-width: min(92vw, 380px);
+        }
+        html[dir="rtl"] .nxl-header.is-rtl-header .header-left {
+            margin-left: 0;
+        }
+        html[dir="rtl"] .nxl-header.is-rtl-header .header-right .notification-chat-menu {
+            position: fixed;
+            top: 72px !important;
+            inset-inline-start: 12px !important;
+            inset-inline-end: 12px !important;
+            width: auto;
+            transform: none !important;
+            max-height: calc(100vh - 90px);
+            overflow-y: auto;
         }
         .nxl-user-menu-item .nxl-user-dropdown {
             position: fixed;
