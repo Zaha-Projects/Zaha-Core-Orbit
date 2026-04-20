@@ -23,16 +23,16 @@ Move page-specific inline `<style>` and `<script>` blocks from Blade templates i
 ## Remaining pages with inline CSS/JS (next steps)
 ### Agenda module
 ### Monthly activities module
-- [ ] `resources/views/pages/monthly_activities/activities/_form.blade.php`
-  - Extract inline style -> `public/assets/css/monthly-activity-form.css`
-  - Extract inline JS -> `public/assets/js/monthly-activity-form.js`
+- [x] `resources/views/pages/monthly_activities/activities/_form.blade.php`
+  - Moved page CSS to: `public/assets/css/monthly-activity-form.css`
+  - Moved page JS to: `public/assets/js/monthly-activity-form.js`
 - [x] `resources/views/pages/monthly_activities/activities/index.blade.php`
   - Moved page CSS to: `public/assets/css/monthly-activities-index.css`
   - Moved page JS to: `public/assets/js/monthly-activities-index.js`
 - [x] `resources/views/pages/monthly_activities/activities/show.blade.php`
   - Moved page CSS to: `public/assets/css/monthly-activity-show.css`
-- [ ] `resources/views/pages/monthly_activities/activities/edit.blade.php`
-  - Extract inline JS -> `public/assets/js/monthly-activity-edit.js`
+- [x] `resources/views/pages/monthly_activities/activities/edit.blade.php`
+  - Moved page JS to: `public/assets/js/monthly-activity-edit.js`
 
 ## Coding conventions for migration
 - Keep business rules in controllers/services; keep Blade for markup only.
