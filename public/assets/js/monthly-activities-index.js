@@ -2,22 +2,9 @@
     const module = document.querySelector('.monthly-activities-module');
     if (!module) return;
 
-    const toggleButtons = module.querySelectorAll('[data-view-toggle]');
-    const panes = module.querySelectorAll('[data-view-pane]');
     const isRtl = module.dataset.rtl === '1';
+    const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
     const statusLabels = JSON.parse(document.getElementById('monthly-status-labels-json')?.textContent ?? '{}');
-
-    function switchView(nextView) {
-        panes.forEach((pane) => pane.classList.toggle('d-none', pane.dataset.viewPane !== nextView));
-        toggleButtons.forEach((button) => {
-            const active = button.dataset.viewToggle === nextView;
-            button.classList.toggle('btn-primary', active);
-            button.classList.toggle('btn-outline-primary', !active);
-            button.classList.toggle('active', active);
-            button.setAttribute('aria-pressed', active ? 'true' : 'false');
-        });
-    }
-    toggleButtons.forEach((button) => button.addEventListener('click', () => switchView(button.dataset.viewToggle)));
 
     const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
     const gridContainer = module.querySelector('[data-calendar-grid]');

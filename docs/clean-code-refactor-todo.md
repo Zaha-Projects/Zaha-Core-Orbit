@@ -48,3 +48,10 @@ Move page-specific inline `<style>` and `<script>` blocks from Blade templates i
 3. Confirm no `@checked/@selected` leakage where applicable:
    - `rg -n "@checked|@selected" <blade file>`
 4. Visual smoke test for form actions, toggles, and modals.
+
+## Shared/UI consolidation (new)
+- [x] Added shared UI stylesheet: `public/assets/css/event-ui-shared.css` for common cards/grids/actions/status badges.
+- [x] Added shared UI script: `public/assets/js/ui-shared.js` for reusable table/calendar view toggle behavior.
+- [x] Wired shared assets into:
+  - `resources/views/pages/agenda/events/index.blade.php`
+  - `resources/views/pages/monthly_activities/activities/index.blade.php`

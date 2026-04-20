@@ -372,13 +372,15 @@
 
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/agenda-events-index.css') }}"> 
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/agenda-events-index.css') }}">
 @endpush
 
 @push('scripts')
     <script type="application/json" id="agenda-events-json">{!! $agendaEvents->toJson(JSON_UNESCAPED_UNICODE) !!}</script>
     <script type="application/json" id="agenda-weekdays-json">@json(__('app.roles.relations.agenda.calendar.weekdays'))</script>
     <script type="application/json" id="agenda-months-json">@json(__('app.roles.relations.agenda.calendar.months'))</script>
+    <script src="{{ asset('assets/js/ui-shared.js') }}"></script>
     <script src="{{ asset('assets/js/agenda-events-index.js') }}"></script>
 @endpush
 @endsection

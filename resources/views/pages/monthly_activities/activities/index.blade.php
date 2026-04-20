@@ -193,11 +193,13 @@
         </div>
     </div>
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activities-index.css') }}"> 
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activities-index.css') }}">
 @endpush
 
 @push('scripts')
     <script type="application/json" id="monthly-status-labels-json">@json($calendarStatusLabels)</script>
+    <script src="{{ asset('assets/js/ui-shared.js') }}"></script>
     <script src="{{ asset('assets/js/monthly-activities-index.js') }}"></script>
 @endpush
 @endsection
