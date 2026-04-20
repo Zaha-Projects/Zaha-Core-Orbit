@@ -147,6 +147,11 @@ class MonthlyActivitiesController extends Controller
         return max(0, (int) Setting::valueOf('monthly_plan_lock_days', '5'));
     }
 
+    protected function monthlyIndexPerPage(): int
+    {
+        return max(1, min(50, (int) Setting::valueOf('monthly_activities_index_per_page', '10')));
+    }
+
     protected function buildLockAt(string $proposedDate): ?Carbon
     {
         return Carbon::parse($proposedDate)->subDays($this->monthlyLockDays())->endOfDay();
@@ -515,10 +520,20 @@ class MonthlyActivitiesController extends Controller
         }
         $this->applyDraftVisibilityScope($activitiesQuery, $user);
 
+        if ($viewScope === 'all_branches') {
+            $activitiesQuery
+                ->where('status', 'approved')
+                ->where(function ($query) {
+                    $query->where('executive_approval_status', 'approved')
+                        ->orWhereIn('lifecycle_status', ['Exec Director Approved', 'Approved', 'Published'])
+                        ->orWhereHas('workflowInstance', fn ($workflowQuery) => $workflowQuery->where('status', 'approved'));
+                });
+        }
+
         $activities = $activitiesQuery
             ->orderBy('month')
             ->orderBy('day')
-            ->paginate(15)
+            ->paginate($this->monthlyIndexPerPage())
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');

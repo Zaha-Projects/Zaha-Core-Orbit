@@ -874,7 +874,7 @@ return [
                 ],
                 'created' => 'تم إنشاء النشاط الشهري.',
                 'updated' => 'تم تحديث النشاط الشهري :activity.',
-                'submitted' => 'تم إرسال النشاط :activity للاعتماد.',
+                'submitted' => 'Monthly activity submitted: :activity.',
                 'closed' => 'تم إغلاق النشاط :activity.',
             ],
         ],

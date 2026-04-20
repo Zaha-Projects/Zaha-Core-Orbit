@@ -162,7 +162,16 @@
 
         <div class="card event-card">
             <div class="card-body">
-                <div class="row g-3">
+                <div class="monthly-summary-grid mb-4">
+                    <div class="monthly-summary-item"><span>الحالة</span><strong>{{ $statusLabel($monthlyActivity->status) }}</strong></div>
+                    <div class="monthly-summary-item"><span>حالة التنفيذ</span><strong>{{ $executionLabel($monthlyActivity->execution_status) }}</strong></div>
+                    <div class="monthly-summary-item"><span>التاريخ</span><strong>{{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</strong></div>
+                    <div class="monthly-summary-item"><span>الفرع</span><strong>{{ $monthlyActivity->branch?->name ?? '-' }}</strong></div>
+                </div>
+
+                <details class="monthly-full-details">
+                    <summary>عرض التفاصيل الكاملة</summary>
+                    <div class="row g-3 mt-2">
                     <div class="col-12 col-md-4"><strong>عنوان النشاط:</strong> {{ $monthlyActivity->title }}</div>
                     <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</div>
                     <div class="col-12 col-md-4"><strong>التاريخ المقترح:</strong> {{ optional($monthlyActivity->proposed_date)->format('Y-m-d') ?? '-' }}</div>
@@ -308,11 +317,22 @@
                         </div>
                     </div>
                 </div>
+                </details>
             </div>
         </div>
     </div>
 @endsection
 
+@push('styles')
+<style>
+    .monthly-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; }
+    .monthly-summary-item { border: 1px solid #e2e8f0; border-radius: 12px; padding: .75rem; background: #f8fafc; }
+    .monthly-summary-item span { font-size: .8rem; color: #64748b; display: block; }
+    .monthly-summary-item strong { font-size: .95rem; color: #0f172a; display: block; margin-top: .2rem; }
+    .monthly-full-details summary { cursor: pointer; font-weight: 600; color: #1d4ed8; margin-bottom: .25rem; }
+    .monthly-full-details[open] summary { margin-bottom: .75rem; }
+</style>
+@endpush
 
 
 

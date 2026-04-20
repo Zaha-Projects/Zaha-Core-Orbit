@@ -3,7 +3,7 @@
 @php
     $title = __('app.roles.programs.monthly_activities.title');
     $subtitle = ($viewScope ?? 'default') === 'all_branches'
-        ? 'عرض أنشطة جميع الفروع ضمن الخطط الشهرية.'
+        ? 'يتم إظهار الخطط الشهرية المعتمدة بالكامل والمنشورة فقط لبقية الفروع.'
         : __('app.roles.programs.monthly_activities.subtitle');
     $monthlyStatusLabels = collect($monthlyStatusOptions ?? [])->pluck('name', 'code')->all();
     $workflowStatusLabel = function (?string $status) use ($monthlyStatusLabels): string {
@@ -118,7 +118,7 @@
         </div>
 
         <div class="agenda-view-switch mb-3" role="tablist">
-            <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">جدول</button>
+            <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">بطاقات</button>
             <button type="button" class="btn btn-sm btn-outline-primary" data-view-toggle="calendar" aria-pressed="false">تقويم</button>
         </div>
 
@@ -126,49 +126,56 @@
             <div class="card event-card">
                 <div class="card-body">
                     <h2 class="event-section-title">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
-                    <div class="event-table-wrap table-responsive">
-                        <table class="table table-sm align-middle event-table">
-                            <thead><tr><th>{{ __('app.roles.programs.monthly_activities.table.title') }}</th><th>{{ __('app.roles.programs.monthly_activities.table.date') }}</th><th>المصدر</th><th>{{ __('app.roles.programs.monthly_activities.table.branch') }}</th><th>الإصدار</th><th>{{ __('app.roles.programs.monthly_activities.table.status') }}</th><th class="text-end">{{ __('app.roles.programs.monthly_activities.table.actions') }}</th></tr></thead>
-                            <tbody>
-                                @forelse ($activities as $activity)
-                                    @php $isOldVersion = (int) ($activity->newer_versions_count ?? 0) > 0; @endphp
-                                    <tr>
-                                        <td>{{ $activity->title }}</td><td>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</td><td>@if($activity->is_in_agenda)<span class='badge bg-success-subtle text-success'>من الأجندة</span>@else<span class='badge bg-warning-subtle text-warning'>إدخال يدوي</span>@endif</td><td>{{ $activity->branch?->name ?? '-' }}</td><td><div class="d-flex flex-column gap-1"><span class="badge bg-light text-dark border monthly-version-badge">نسخة {{ (int) ($activity->plan_version ?: 1) }}</span>@if($isOldVersion)<span class="badge bg-secondary-subtle text-secondary">نسخة قديمة</span>@endif</div></td><td>
-                                            @php
-                                                $wf = $activity->workflowInstance;
-                                                $steps = $wf?->workflow?->steps?->sortBy([['step_order', 'asc'], ['approval_level', 'asc']]) ?? collect();
-                                                $latestLogsByStep = $wf?->logs?->sortByDesc('acted_at')->groupBy('workflow_step_id') ?? collect();
-                                            @endphp
-                                            @if($steps->isNotEmpty())
-                                                <div class="approval-sequence-list">
-                                                    @foreach($steps as $step)
-                                                        @php
-                                                            $latestStepLog = $latestLogsByStep->get($step->id)?->first();
-                                                            $stepStatus = $latestStepLog?->action ?? 'pending';
-                                                            $stepRole = $step->role?->display_name
-                                                                ?? $roleLabel($step->role?->name);
-                                                        @endphp
-                                                        <div class="approval-sequence-item">
-                                                            <div class="approval-sequence-role">{{ $stepRole ?: ($step->name_ar ?? $step->name_en ?? '-') }}</div>
-                                                            <span class="event-status status-{{ $stepStatus }}">{{ $workflowStatusLabel($stepStatus) }}</span>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            @else
-                                                <span class="event-status status-{{ $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-end"><div class="event-actions justify-content-end"><a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.show', $activity) }}">عرض</a>@unless($isOldVersion)<a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a><a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a><form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">@csrf @method('PATCH')<button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button></form>@endunless</div></td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="7" class="text-muted">{{ __('app.roles.programs.monthly_activities.table.empty') }}</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="monthly-cards-grid">
+                        @forelse ($activities as $activity)
+                            @php
+                                $isOldVersion = (int) ($activity->newer_versions_count ?? 0) > 0;
+                                $isSubmittedOrBeyond = in_array((string) $activity->status, ['submitted', 'in_review', 'approved', 'completed', 'closed'], true);
+                            @endphp
+                            <article class="monthly-activity-card">
+                                <div class="d-flex justify-content-between gap-2 align-items-start flex-wrap">
+                                    <h3 class="h6 mb-1">{{ $activity->title }}</h3>
+                                    <span class="event-status status-{{ $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
+                                </div>
+                                <div class="monthly-activity-meta">
+                                    <span>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</span>
+                                    <span>{{ $activity->branch?->name ?? '-' }}</span>
+                                    <span>{{ $activity->is_in_agenda ? 'من الأجندة' : 'إدخال يدوي' }}</span>
+                                    <span>نسخة {{ (int) ($activity->plan_version ?: 1) }}</span>
+                                </div>
+                                @if($isOldVersion)
+                                    <span class="badge bg-secondary-subtle text-secondary mt-2">نسخة قديمة</span>
+                                @endif
+                                <p class="text-muted small mt-2 mb-3">{{ \Illuminate\Support\Str::limit($activity->short_description ?: $activity->description ?: 'لا يوجد وصف مختصر.', 140) }}</p>
+                                <div class="event-actions">
+                                    <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.show', $activity) }}">عرض</a>
+                                    @unless($isOldVersion)
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a>
+                                        <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a>
+                                        @if (! $isSubmittedOrBeyond)
+                                            <form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button>
+                                            </form>
+                                        @else
+                                            <span class="badge bg-info-subtle text-info">الحالة: {{ $workflowStatusLabel($activity->status) }}</span>
+                                        @endif
+                                    @endunless
+                                </div>
+                            </article>
+                        @empty
+                            <div class="text-muted">{{ __('app.roles.programs.monthly_activities.table.empty') }}</div>
+                        @endforelse
                     </div>
                 </div>
             </div>
-            <div class="mt-3">{{ $activities->links() }}</div>
+            <div class="mt-3 d-flex flex-column align-items-center gap-2">
+                {{ $activities->links() }}
+                @if ($activities->hasMorePages())
+                    <a class="btn btn-outline-primary" href="{{ $activities->nextPageUrl() }}">عرض المزيد</a>
+                @endif
+            </div>
         </div>
 
         <div class="agenda-view-pane d-none" data-view-pane="calendar">
@@ -187,10 +194,10 @@
     </div>
 
     <style>
-        .approval-sequence-list { display: flex; flex-direction: column; gap: .35rem; }
-        .approval-sequence-item { display: flex; flex-direction: column; gap: .15rem; }
-        .approval-sequence-role { font-size: .75rem; color: #64748b; font-weight: 600; line-height: 1.2; }
-        .monthly-version-badge { width: fit-content; }
+        .monthly-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1rem; }
+        .monthly-activity-card { border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem; background: #fff; box-shadow: 0 6px 16px rgba(15, 23, 42, .04); }
+        .monthly-activity-meta { display: flex; flex-wrap: wrap; gap: .45rem; font-size: .8rem; color: #64748b; }
+        .monthly-activity-meta span { background: #f8fafc; border: 1px solid #e2e8f0; padding: .15rem .5rem; border-radius: 999px; }
         .monthly-calendar-badge { border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; width: fit-content; }
         .monthly-calendar-badge--draft { background: #e5e7eb; color: #374151; }
         .monthly-calendar-badge--in-review { background: #fff4e5; color: #a16207; }
