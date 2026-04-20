@@ -39,7 +39,8 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => filter_var(env('APP_DEBUG', false), FILTER_VALIDATE_BOOL)
+        && in_array(env('APP_ENV', 'production'), ['local', 'testing'], true),
 
     /*
     |--------------------------------------------------------------------------
