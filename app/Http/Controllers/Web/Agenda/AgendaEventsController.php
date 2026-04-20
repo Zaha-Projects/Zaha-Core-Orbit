@@ -176,14 +176,14 @@ class AgendaEventsController extends Controller
 
     protected function ensureAgendaVisibleToUser(AgendaEvent $agendaEvent, User $user): void
     {
+        if ((string) $agendaEvent->status === 'draft' && (int) $agendaEvent->created_by !== (int) $user->id) {
+            abort(403);
+        }
+
         $branchIds = $this->scopedBranchIds($user);
 
         if ($branchIds === []) {
             return;
-        }
-
-        if ((string) $agendaEvent->status === 'draft' && (int) $agendaEvent->created_by !== (int) $user->id) {
-            abort(403);
         }
 
         if ((int) $agendaEvent->created_by === (int) $user->id) {
@@ -467,6 +467,11 @@ class AgendaEventsController extends Controller
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
+        $agendaPlanFile = null;
+        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file') {
+            $agendaPlanFile = $request->file('agenda_plan_file')?->store('agenda/plans', 'public');
+        }
+
         $event = AgendaEvent::create([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
@@ -486,7 +491,7 @@ class AgendaEventsController extends Controller
             'executive_approval_status' => 'pending',
             'created_by' => $request->user()->id,
             'notes' => $data['notes'] ?? null,
-            'agenda_plan_file' => $request->file('agenda_plan_file')?->store('agenda/plans', 'public'),
+            'agenda_plan_file' => $agendaPlanFile,
             'version' => 1,
         ]);
 
@@ -590,11 +595,19 @@ class AgendaEventsController extends Controller
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
         $agendaPlanFile = $agendaEvent->agenda_plan_file;
-        if ($request->hasFile('agenda_plan_file')) {
+        $shouldUseUnifiedUpload = ($data['plan_type'] ?? null) === 'unified'
+            && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file';
+
+        if ($shouldUseUnifiedUpload && $request->hasFile('agenda_plan_file')) {
             if ($agendaPlanFile) {
                 Storage::disk('public')->delete($agendaPlanFile);
             }
             $agendaPlanFile = $request->file('agenda_plan_file')->store('agenda/plans', 'public');
+        } elseif (! $shouldUseUnifiedUpload) {
+            if ($agendaPlanFile) {
+                Storage::disk('public')->delete($agendaPlanFile);
+            }
+            $agendaPlanFile = null;
         }
 
         $agendaEvent->update([
