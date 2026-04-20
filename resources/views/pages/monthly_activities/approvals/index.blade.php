@@ -62,8 +62,7 @@
     </div>
 
     <div class="d-flex flex-column gap-3">
-        @if($activities->count())
-            @foreach($activities as $activity)
+        @forelse($activities as $activity)
             @php
                 $viewer = $viewer ?? auth()->user();
                 $wf = $activity->workflowInstance;
@@ -325,10 +324,9 @@
                     </div>
                 </div>
             </div>
-            @endforeach
-        @else
+        @empty
             <div class="wf-card card"><div class="card-body"><p class="wf-muted mb-0">{{ __('workflow_ui.common.no_data') }}</p></div></div>
-        @endif
+        @endforelse
     </div>
 
     <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
