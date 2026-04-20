@@ -141,7 +141,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters'));
+        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer'));
     }
 
     public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycleService, DynamicWorkflowService $dynamicWorkflowService)
