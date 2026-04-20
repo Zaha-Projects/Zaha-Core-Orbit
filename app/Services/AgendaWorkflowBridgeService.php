@@ -153,7 +153,10 @@ class AgendaWorkflowBridgeService
                 'plan_type' => $agendaEvent->plan_type ?? 'non_unified',
                 'description' => $agendaEvent->notes,
                 'location_type' => $monthlyActivity->location_type ?? 'inside_center',
-                'status' => $monthlyActivity->status ?? 'draft',
+                'status' => 'approved',
+                'relations_manager_approval_status' => 'approved',
+                'executive_approval_status' => 'approved',
+                'lifecycle_status' => 'Approved',
                 'center_id' => null,
                 'created_by' => $monthlyActivity->created_by ?: $agendaEvent->created_by,
             ]);

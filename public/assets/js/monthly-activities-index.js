@@ -61,7 +61,7 @@
 
             dayItems.forEach((item) => {
                 const a = document.createElement('a');
-                a.href = item.edit_url;
+                a.href = item.open_url || item.edit_url;
                 a.className = `agenda-event-chip status-${item.status}`;
                 const badgeClass = item.status === 'approved'
                     ? 'monthly-calendar-badge--approved'

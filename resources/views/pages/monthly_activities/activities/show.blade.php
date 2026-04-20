@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
@@ -8,6 +8,11 @@
     $title = 'عرض تفاصيل النشاط';
     $editMirrorMode = $editMirrorMode ?? false;
     $workflowSummary = $monthlyActivity->workflow_summary ?? [];
+    $monthlyStatusLabels = $monthlyStatusLabels ?? [];
+    $executionStatusLabels = $executionStatusLabels ?? [];
+    $isReadOnlyUnified = (bool) $monthlyActivity->is_from_agenda
+        && (string) $monthlyActivity->plan_type === 'unified'
+        && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
     $statusLabel = function (?string $status) use ($monthlyStatusLabels): string {
         if (! $status) {
             return '-';
@@ -42,7 +47,9 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.activities.index') }}">رجوع</a>
-                    @if($editMirrorMode)
+                    @if($isReadOnlyUnified)
+                        <span class="btn btn-outline-success disabled">عرض فقط (موحد معتمد)</span>
+                    @elseif($editMirrorMode)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">فتح نموذج التعديل</a>
                     @else
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">تعديل</a>
