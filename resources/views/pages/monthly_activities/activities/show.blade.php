@@ -321,40 +321,7 @@
             </div>
         </div>
     </div>
-
-    <style>
-        .monthly-summary-grid {
-            display: grid;
-            gap: .75rem;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        }
-        .monthly-summary-item {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: .9rem;
-            background: linear-gradient(180deg, #fff, #f8fbff);
-        }
-        .monthly-summary-item span {
-            display: block;
-            color: #64748b;
-            font-size: .78rem;
-            margin-bottom: .2rem;
-        }
-        .monthly-full-details {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: .9rem;
-            background: #fff;
-        }
-        .monthly-full-details > summary {
-            cursor: pointer;
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: .4rem;
-        }
-        .monthly-details-content strong {
-            color: #334155;
-            margin-inline-end: .35rem;
-        }
-    </style>
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-show.css') }}"> 
+@endpush
 @endsection

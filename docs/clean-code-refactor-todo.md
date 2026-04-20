@@ -26,11 +26,11 @@ Move page-specific inline `<style>` and `<script>` blocks from Blade templates i
 - [ ] `resources/views/pages/monthly_activities/activities/_form.blade.php`
   - Extract inline style -> `public/assets/css/monthly-activity-form.css`
   - Extract inline JS -> `public/assets/js/monthly-activity-form.js`
-- [ ] `resources/views/pages/monthly_activities/activities/index.blade.php`
-  - Extract inline style -> `public/assets/css/monthly-activities-index.css`
-  - Extract inline JS -> `public/assets/js/monthly-activities-index.js`
-- [ ] `resources/views/pages/monthly_activities/activities/show.blade.php`
-  - Extract inline style -> `public/assets/css/monthly-activity-show.css`
+- [x] `resources/views/pages/monthly_activities/activities/index.blade.php`
+  - Moved page CSS to: `public/assets/css/monthly-activities-index.css`
+  - Moved page JS to: `public/assets/js/monthly-activities-index.js`
+- [x] `resources/views/pages/monthly_activities/activities/show.blade.php`
+  - Moved page CSS to: `public/assets/css/monthly-activity-show.css`
 - [ ] `resources/views/pages/monthly_activities/activities/edit.blade.php`
   - Extract inline JS -> `public/assets/js/monthly-activity-edit.js`
 
