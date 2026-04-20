@@ -5,6 +5,7 @@
 @if (file_exists($workflowUiCssPath))
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
 @endif
+<link rel="stylesheet" href="{{ asset('assets/css/monthly-approvals.css') }}">
 @endpush
 
 @php
@@ -325,74 +326,5 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var formToSubmit = null;
-        var modalElement = document.getElementById('decisionConfirmModal');
-        var confirmModal = modalElement ? new bootstrap.Modal(modalElement) : null;
-
-        document.querySelectorAll('.decision-form').forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                var select = form.querySelector('.decision-select');
-                var comment = form.querySelector('.decision-comment');
-
-                if (select && comment && ['changes_requested', 'rejected'].includes(select.value) && !comment.value.trim()) {
-                    event.preventDefault();
-                    alert(form.dataset.commentRequired);
-                    return;
-                }
-
-                if (confirmModal) {
-                    event.preventDefault();
-                    formToSubmit = form;
-                    document.getElementById('decisionConfirmTitle').textContent = form.dataset.confirmTitle;
-                    document.getElementById('decisionConfirmBody').textContent = form.dataset.confirmBody;
-                    confirmModal.show();
-                }
-            });
-        });
-
-        var submitBtn = document.getElementById('decisionConfirmSubmit');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function () {
-                if (formToSubmit) {
-                    formToSubmit.submit();
-                }
-            });
-        }
-    });
-</script>
-@endpush
-
-@push('styles')
-<style>
-    .workflow-ui .wf-card { border-radius: 1rem; border: 1px solid #dde5ef; }
-    .workflow-ui .wf-page-title { font-weight: 700; color: #0f172a; }
-    .workflow-ui .wf-muted { color: #64748b; }
-    .workflow-ui .wf-tabbar { display: flex; gap: .5rem; flex-wrap: wrap; }
-    .workflow-ui .wf-tab { border: 1px solid #dbe4ef; border-radius: 999px; padding: .35rem .75rem; text-decoration: none; color: #334155; }
-    .workflow-ui .wf-tab.active { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-    .workflow-ui .wf-status-badge { border-radius: 999px; padding: .2rem .65rem; font-size: .78rem; font-weight: 600; display: inline-flex; }
-    .workflow-ui .wf-chip-row { display: flex; flex-wrap: wrap; gap: .4rem; }
-    .workflow-ui .wf-chip { border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; padding: .2rem .55rem; font-size: .75rem; }
-    .approvals-kpi-row {
-        display: grid;
-        gap: .75rem;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    }
-    .approvals-kpi-card {
-        border: 1px solid #dbe4ef;
-        border-radius: .9rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-        padding: .75rem .9rem;
-    }
-    .approvals-kpi-label { font-size: .78rem; color: #64748b; }
-    .approvals-kpi-value { font-size: 1.2rem; font-weight: 700; color: #0f172a; }
-    .approvals-activity-card {
-        border: 1px solid #dce6f1;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, .04);
-        border-radius: 1rem;
-    }
-    .approvals-pagination-wrap nav { margin-bottom: 0; }
-</style>
+<script src="{{ asset('assets/js/monthly-approvals.js') }}"></script>
 @endpush

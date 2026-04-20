@@ -7,6 +7,10 @@
     ];
 @endphp
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/lookups-admin.css') }}">
+@endpush
+
 @section('content')
     <div class="event-module">
         <div class="card event-card mb-4">
@@ -487,27 +491,4 @@
         </div>
     </div>
 
-    <style>
-        .lookup-kpis { display: flex; flex-wrap: wrap; gap: .5rem; }
-        .lookup-kpi {
-            background: #eef2ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-            border-radius: 999px;
-            padding: .22rem .7rem;
-            font-size: .8rem;
-            font-weight: 600;
-        }
-        .lookup-create-form {
-            padding: 1rem;
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: .75rem;
-        }
-        .event-card { border-radius: 1rem; border: 1px solid #dde5ef; box-shadow: 0 8px 20px rgba(15, 23, 42, .04); }
-        .table > :not(caption) > * > * { padding: .8rem .65rem; vertical-align: middle; }
-        .lookup-switch { min-width: 120px; }
-        .lookup-switch .form-check-input { cursor: pointer; }
-        .lookup-switch .form-check-label { font-size: .84rem; color: #0f172a; }
-    </style>
 @endsection
