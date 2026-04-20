@@ -154,7 +154,7 @@
                                         </div>
                                         <div class="form-check form-switch m-0">
                                             <input type="hidden" name="branch_participation[{{ $branch->id }}]" value="{{ $isParticipant ? 'participant' : 'not_participant' }}" class="js-branch-status-hidden">
-                                            <input class="form-check-input js-branch-toggle" type="checkbox" role="switch" @checked($isParticipant)>
+                                            <input class="form-check-input js-branch-toggle" type="checkbox" role="switch" {{ $isParticipant ? 'checked' : '' }}>
                                             <label class="form-check-label small">{{ $isParticipant ? __('app.roles.relations.agenda.participation.participant') : __('app.roles.relations.agenda.participation.not_participant') }}</label>
                                         </div>
                                     </div>

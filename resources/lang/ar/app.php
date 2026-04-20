@@ -539,6 +539,17 @@ return [
                     'show_count' => 'عرض :count',
                 ],
                 'branch_interaction_title' => 'تفاعل الفرع مع الأجندة',
+                'branch_interaction' => [
+                    'will_participate' => 'هل ستشارك؟',
+                    'yes' => 'نعم',
+                    'no' => 'لا',
+                    'mandatory_notice' => 'فعالية إجبارية: سيتم اعتبار المشاركة تلقائياً.',
+                    'proposed_date' => 'التاريخ المقترح',
+                    'actual_execution_date' => 'تاريخ التنفيذ الفعلي',
+                    'unified_notice' => 'الخطة موحدة من خلدا ويجب الالتزام بها.',
+                    'branch_plan_file' => 'رفع خطة الفرع',
+                    'save' => 'حفظ التفاعل',
+                ],
                 'types' => [
                     'mandatory' => 'إجباري',
                     'optional' => 'اختياري',

@@ -539,6 +539,17 @@ return [
                     'show_count' => 'Show :count',
                 ],
                 'branch_interaction_title' => 'Branch interaction with agenda',
+                'branch_interaction' => [
+                    'will_participate' => 'Will your branch participate?',
+                    'yes' => 'Yes',
+                    'no' => 'No',
+                    'mandatory_notice' => 'Mandatory event: participation is considered automatic.',
+                    'proposed_date' => 'Proposed date',
+                    'actual_execution_date' => 'Actual execution date',
+                    'unified_notice' => 'This is a unified plan from Khalda and must be followed.',
+                    'branch_plan_file' => 'Upload branch plan',
+                    'save' => 'Save interaction',
+                ],
                 'types' => [
                     'mandatory' => 'Mandatory',
                     'optional' => 'Optional',

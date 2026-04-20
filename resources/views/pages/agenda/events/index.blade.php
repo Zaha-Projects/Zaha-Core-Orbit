@@ -218,34 +218,34 @@
                                         @method('PATCH')
                                         <div class="col-12">
                                             @if($event->event_type === 'optional')
-                                                <label class="form-label mb-1">هل ستشارك؟</label>
+                                                <label class="form-label mb-1">{{ __('app.roles.relations.agenda.branch_interaction.will_participate') }}</label>
                                                 <div class="d-flex gap-3">
-                                                    <label><input type="radio" name="will_participate" value="yes" @checked(($branchParticipation?->participation_status ?? null) === 'participant')> نعم</label>
-                                                    <label><input type="radio" name="will_participate" value="no" @checked(($branchParticipation?->participation_status ?? null) === 'not_participant')> لا</label>
+                                                    <label><input type="radio" name="will_participate" value="yes" {{ (($branchParticipation?->participation_status ?? null) === 'participant') ? 'checked' : '' }}> {{ __('app.roles.relations.agenda.branch_interaction.yes') }}</label>
+                                                    <label><input type="radio" name="will_participate" value="no" {{ (($branchParticipation?->participation_status ?? null) === 'not_participant') ? 'checked' : '' }}> {{ __('app.roles.relations.agenda.branch_interaction.no') }}</label>
                                                 </div>
                                             @else
                                                 <input type="hidden" name="will_participate" value="yes">
-                                                <div class="alert alert-info py-2 px-3 mb-0">فعالية إجبارية: سيتم اعتبار المشاركة تلقائياً.</div>
+                                                <div class="alert alert-info py-2 px-3 mb-0">{{ __('app.roles.relations.agenda.branch_interaction.mandatory_notice') }}</div>
                                             @endif
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label mb-1">📌 التاريخ المقترح</label>
-                                            <input type="date" class="form-control" name="proposed_date" value="{{ optional($branchParticipation?->proposed_date)->format('Y-m-d') }}" @disabled(! $isParticipating)>
+                                            <label class="form-label mb-1">📌 {{ __('app.roles.relations.agenda.branch_interaction.proposed_date') }}</label>
+                                            <input type="date" class="form-control" name="proposed_date" value="{{ optional($branchParticipation?->proposed_date)->format('Y-m-d') }}" {{ ! $isParticipating ? 'disabled' : '' }}>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label mb-1">✅ تاريخ التنفيذ الفعلي</label>
+                                            <label class="form-label mb-1">✅ {{ __('app.roles.relations.agenda.branch_interaction.actual_execution_date') }}</label>
                                             <input type="date" class="form-control" name="actual_execution_date" value="{{ optional($branchParticipation?->actual_execution_date)->format('Y-m-d') }}">
                                         </div>
                                         @if($event->plan_type === 'unified')
-                                            <div class="col-12"><div class="alert alert-primary py-2 px-3 mb-0">الخطة موحدة من خلدا ويجب الالتزام بها.</div></div>
+                                            <div class="col-12"><div class="alert alert-primary py-2 px-3 mb-0">{{ __('app.roles.relations.agenda.branch_interaction.unified_notice') }}</div></div>
                                         @else
                                             <div class="col-12">
-                                                <label class="form-label mb-1">رفع خطة الفرع</label>
-                                                <input type="file" class="form-control" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx" @disabled(! $isParticipating)>
+                                                <label class="form-label mb-1">{{ __('app.roles.relations.agenda.branch_interaction.branch_plan_file') }}</label>
+                                                <input type="file" class="form-control" name="branch_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx" {{ ! $isParticipating ? 'disabled' : '' }}>
                                             </div>
                                         @endif
                                         <div class="col-12 d-flex justify-content-end">
-                                            <button class="btn btn-sm btn-primary">حفظ التفاعل</button>
+                                            <button class="btn btn-sm btn-primary">{{ __('app.roles.relations.agenda.branch_interaction.save') }}</button>
                                         </div>
                                     </form>
                                 </div>
