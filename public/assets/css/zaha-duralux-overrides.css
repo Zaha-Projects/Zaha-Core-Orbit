@@ -103,18 +103,15 @@ body.app-skin-dark .text-muted {
     }
 }
 
-/* RTL ordering for header/page-header groups */
-html[dir='rtl'] .nxl-header .header-wrapper,
+/* RTL ordering for page-header groups */
 html[dir='rtl'] .page-header-clean {
     direction: rtl;
 }
 
-html[dir='rtl'] .nxl-header .header-left,
 html[dir='rtl'] .page-header-clean .page-header-left {
     order: 2;
 }
 
-html[dir='rtl'] .nxl-header .header-right,
 html[dir='rtl'] .page-header-clean .page-header-right {
     order: 1;
     margin-left: 0 !important;
