@@ -40,8 +40,13 @@ class MonthlyActivitiesApprovalsController extends Controller
         }
 
         $activities = MonthlyActivity::query()
-            ->with(['approvals.approver', 'creator', 'branch', 'notes.user', 'attachments.uploader', 'workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
+            ->with(['approvals.approver', 'creator', 'branch', 'agendaEvent', 'notes.user', 'attachments.uploader', 'workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
             ->whereDoesntHave('newerVersions')
+            ->where(function ($query) {
+                $query->where('is_from_agenda', false)
+                    ->orWhereNull('agenda_event_id')
+                    ->orWhereHas('agendaEvent', fn ($agendaQuery) => $agendaQuery->where('event_type', '!=', 'mandatory'));
+            })
             ->when($branchCoordinatorScope !== null, function ($query) use ($branchCoordinatorScope) {
                 if ($branchCoordinatorScope === []) {
                     $query->whereRaw('1 = 0');

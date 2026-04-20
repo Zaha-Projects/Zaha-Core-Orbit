@@ -7,12 +7,23 @@
     ];
 @endphp
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/lookups-admin.css') }}">
+@endpush
+
 @section('content')
     <div class="event-module">
         <div class="card event-card mb-4">
             <div class="card-body">
                 <h1 class="h4 mb-2">إدارة القوائم المرجعية</h1>
                 <p class="text-muted mb-0">كل الخيارات التالية قابلة للإضافة والتعديل والتفعيل أو التعطيل من السوبر أدمن، وتُستخدم في الأجندة والخطة الشهرية.</p>
+                <div class="lookup-kpis mt-3">
+                    <span class="lookup-kpi">الأقسام: {{ $departments->count() }}</span>
+                    <span class="lookup-kpi">الوحدات: {{ $departmentUnits->count() }}</span>
+                    <span class="lookup-kpi">التصنيفات: {{ $eventCategories->count() }}</span>
+                    <span class="lookup-kpi">الحالات: {{ $statusLookups->flatten(1)->count() }}</span>
+                    <span class="lookup-kpi">أسئلة التقييم: {{ $evaluationQuestions->count() }}</span>
+                </div>
             </div>
         </div>
 
@@ -90,10 +101,10 @@
                                                 <td><input class="form-control form-control-color" type="color" name="color_hex" value="{{ $department->color_hex ?? '#2563EB' }}"></td>
                                                 <td><input class="form-control" name="icon" value="{{ $department->icon }}" maxlength="32"></td>
                                                 <td>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" @checked($department->is_active)>
-                                                        <label class="form-check-label">مفعل</label>
-                                                    </div>
+                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" {{ $department->is_active ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ $department->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
+                                                    </label>
                                                 </td>
                                                 <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
@@ -169,10 +180,10 @@
                                                 <td><input class="form-control form-control-color" type="color" name="color_hex" value="{{ $unit->color_hex ?? '#2563EB' }}"></td>
                                                 <td><input class="form-control" name="icon" value="{{ $unit->icon }}" maxlength="32"></td>
                                                 <td>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" @checked($unit->is_active)>
-                                                        <label class="form-check-label">مفعل</label>
-                                                    </div>
+                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" {{ $unit->is_active ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ $unit->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
+                                                    </label>
                                                 </td>
                                                 <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
@@ -238,16 +249,16 @@
                                                 <td>
                                                     <select class="form-select" name="department_id" required>
                                                         @foreach ($departments as $department)
-                                                            <option value="{{ $department->id }}" @selected((int) $category->department_id === (int) $department->id)>{{ $department->name }}</option>
+                                                            <option value="{{ $department->id }}" {{ (int) $category->department_id === (int) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
                                                 <td><input class="form-control" type="number" min="0" name="sort_order" value="{{ $category->sort_order ?? 0 }}"></td>
                                                 <td>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="active" value="1" @checked($category->active)>
-                                                        <label class="form-check-label">مفعل</label>
-                                                    </div>
+                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="active" value="1" {{ $category->active ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ $category->active ? 'مفعّل' : 'غير مفعّل' }}</span>
+                                                    </label>
                                                 </td>
                                                 <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
@@ -304,16 +315,16 @@
                                                 <td><input class="form-control" name="name" value="{{ $group->name }}" required></td>
                                                 <td><input class="form-control" type="number" min="0" name="sort_order" value="{{ $group->sort_order ?? 0 }}"></td>
                                                 <td>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="is_other" value="1" @checked($group->is_other)>
-                                                        <label class="form-check-label">نعم</label>
-                                                    </div>
+                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="is_other" value="1" {{ $group->is_other ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ $group->is_other ? 'نعم' : 'لا' }}</span>
+                                                    </label>
                                                 </td>
                                                 <td>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" @checked($group->is_active)>
-                                                        <label class="form-check-label">مفعل</label>
-                                                    </div>
+                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" {{ $group->is_active ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ $group->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
+                                                    </label>
                                                 </td>
                                                 <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
@@ -388,10 +399,10 @@
                                                                 <td><input class="form-control" name="name" value="{{ $statusLookup->name }}" required></td>
                                                                 <td><input class="form-control" type="number" min="0" name="sort_order" value="{{ $statusLookup->sort_order ?? 0 }}"></td>
                                                                 <td>
-                                                                    <div class="form-check">
-                                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" @checked($statusLookup->is_active)>
-                                                                        <label class="form-check-label">مفعل</label>
-                                                                    </div>
+                                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" {{ $statusLookup->is_active ? 'checked' : '' }}>
+                                                                        <span class="form-check-label">{{ $statusLookup->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
+                                                                    </label>
                                                                 </td>
                                                                 <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                                             </form>
@@ -456,16 +467,16 @@
                                                 <td><input class="form-control" name="question" value="{{ $question->question }}" required></td>
                                                 <td>
                                                     <select class="form-select" name="answer_type" required>
-                                                        <option value="score_5" @selected($question->answer_type === 'score_5')>درجة من 5</option>
-                                                        <option value="text" @selected($question->answer_type === 'text')>نصي</option>
+                                                        <option value="score_5" {{ $question->answer_type === 'score_5' ? 'selected' : '' }}>درجة من 5</option>
+                                                        <option value="text" {{ $question->answer_type === 'text' ? 'selected' : '' }}>نصي</option>
                                                     </select>
                                                 </td>
                                                 <td><input class="form-control" type="number" min="0" name="sort_order" value="{{ $question->sort_order ?? 0 }}"></td>
                                                 <td>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" @checked($question->is_active)>
-                                                        <label class="form-check-label">مفعل</label>
-                                                    </div>
+                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" {{ $question->is_active ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ $question->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
+                                                    </label>
                                                 </td>
                                                 <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
@@ -480,12 +491,4 @@
         </div>
     </div>
 
-    <style>
-        .lookup-create-form {
-            padding: 1rem;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: .75rem;
-        }
-    </style>
 @endsection

@@ -32,7 +32,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data" class="row g-4 agenda-form">
+            <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data" class="row g-4 agenda-form" data-label-participant="{{ __('app.roles.relations.agenda.participation.participant') }}" data-label-not-participant="{{ __('app.roles.relations.agenda.participation.not_participant') }}">
                 @csrf
                 @if (($formMethod ?? 'POST') !== 'POST')
                     @method($formMethod)
@@ -56,11 +56,11 @@
                                 @error('event_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
-                                <label class="form-label">الوحدة/القسم المالك</label>
+                                <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.owner_department') }}</label>
                                 <select class="form-select js-owner-department @error('owner_department_id') is-invalid @enderror" name="owner_department_id" required>
-                                    <option value="">اختر الجهة المالكة</option>
+                                    <option value="">{{ __('app.roles.relations.agenda.placeholders.owner_department') }}</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}" @selected((string) old('owner_department_id', $existingAgendaEvent?->owner_department_id) === (string) $department->id)>{{ $department->name }}</option>
+                                        <option value="{{ $department->id }}" {{ (string) old('owner_department_id', $existingAgendaEvent?->owner_department_id) === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                                     @endforeach
                                 </select>
                                 @error('owner_department_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -68,9 +68,9 @@
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_category') }}</label>
                                 <select class="form-select @error('event_category_id') is-invalid @enderror" name="event_category_id" id="event_category_id">
-                                    <option value="">اختر التصنيف</option>
+                                    <option value="">{{ __('app.roles.relations.agenda.placeholders.event_category') }}</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" @selected((string) old('event_category_id', $existingAgendaEvent?->event_category_id) === (string) $category->id)>{{ $category->name }}</option>
+                                        <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" {{ (string) old('event_category_id', $existingAgendaEvent?->event_category_id) === (string) $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                     @endforeach
                                 </select>
                                 @error('event_category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -78,26 +78,36 @@
                             <div class="col-12 col-md-6 col-xl-2">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.event_type') }}</label>
                                 <select class="form-select @error('event_type') is-invalid @enderror" name="event_type" required>
-                                    <option value="mandatory" @selected(old('event_type', $existingAgendaEvent?->event_type ?? 'mandatory') === 'mandatory')>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
-                                    <option value="optional" @selected(old('event_type', $existingAgendaEvent?->event_type) === 'optional')>{{ __('app.roles.relations.agenda.types.optional') }}</option>
+                                    <option value="mandatory" {{ old('event_type', $existingAgendaEvent?->event_type ?? 'mandatory') === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
+                                    <option value="optional" {{ old('event_type', $existingAgendaEvent?->event_type) === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
                                 </select>
                                 @error('event_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-6 col-xl-2">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</label>
                                 <select class="form-select js-plan-type @error('plan_type') is-invalid @enderror" name="plan_type" required>
-                                    <option value="unified" @selected(old('plan_type', $existingAgendaEvent?->plan_type ?? 'unified') === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
-                                    <option value="non_unified" @selected(old('plan_type', $existingAgendaEvent?->plan_type) === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
+                                    <option value="unified" {{ old('plan_type', $existingAgendaEvent?->plan_type ?? 'unified') === 'unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
+                                    <option value="non_unified" {{ old('plan_type', $existingAgendaEvent?->plan_type) === 'non_unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
                                 </select>
                                 @error('plan_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
+                            <div class="col-12 js-unified-plan-source">
+                                <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.unified_plan_source') }}</label>
+                                <select class="form-select js-unified-plan-source-select @error('unified_plan_source') is-invalid @enderror" name="unified_plan_source">
+                                    <option value="monthly_auto" {{ old('unified_plan_source', 'monthly_auto') === 'monthly_auto' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.unified_plan_sources.monthly_auto') }}</option>
+                                    <option value="upload_file" {{ old('unified_plan_source') === 'upload_file' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.unified_plan_sources.upload_file') }}</option>
+                                </select>
+                                <div class="form-text">{{ __('app.roles.relations.agenda.hints.unified_plan_source') }}</div>
+                                @error('unified_plan_source')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+
                             <div class="col-12 js-agenda-plan-file">
-                                <label class="form-label">ملف الخطة</label>
+                                <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.agenda_plan_file') }}</label>
                                 <input class="form-control @error('agenda_plan_file') is-invalid @enderror" type="file" name="agenda_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
                                 @if ($currentPlanFile)
-                                    <a class="small d-inline-block mt-1" href="{{ asset('storage/' . $currentPlanFile) }}" target="_blank">عرض المرفق الحالي</a>
+                                    <a class="small d-inline-block mt-1" href="{{ asset('storage/' . $currentPlanFile) }}" target="_blank">{{ __('app.roles.relations.agenda.actions.view_current_attachment') }}</a>
                                 @endif
-                                <div class="form-text">يظهر هذا الحقل فقط عندما تكون الخطة غير موحدة.</div>
+                                <div class="form-text">{{ __('app.roles.relations.agenda.hints.agenda_plan_file') }}</div>
                                 @error('agenda_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
@@ -144,7 +154,7 @@
                                         </div>
                                         <div class="form-check form-switch m-0">
                                             <input type="hidden" name="branch_participation[{{ $branch->id }}]" value="{{ $isParticipant ? 'participant' : 'not_participant' }}" class="js-branch-status-hidden">
-                                            <input class="form-check-input js-branch-toggle" type="checkbox" role="switch" @checked($isParticipant)>
+                                            <input class="form-check-input js-branch-toggle" type="checkbox" role="switch" {{ $isParticipant ? 'checked' : '' }}>
                                             <label class="form-check-label small">{{ $isParticipant ? __('app.roles.relations.agenda.participation.participant') : __('app.roles.relations.agenda.participation.not_participant') }}</label>
                                         </div>
                                     </div>
@@ -180,168 +190,11 @@
     </div>
 </div>
 
+
 @push('styles')
-    <style>
-        .agenda-form-page .agenda-form-section {
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            padding: 1rem;
-            background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
-        }
-        .agenda-form-page .agenda-form-section__head {
-            margin-bottom: .9rem;
-        }
-        .agenda-form-page .agenda-form-section__title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin: 0;
-            color: #0f172a;
-        }
-        .agenda-form-page .agenda-form-section__text {
-            margin: .2rem 0 0;
-            color: #64748b;
-            font-size: .9rem;
-        }
-        .agenda-form-page .partner-departments-box {
-            border: 1px solid #dee7f0;
-            border-radius: 14px;
-            padding: .75rem;
-            max-height: 220px;
-            overflow-y: auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-            gap: .65rem;
-            background: #f8fbfe;
-        }
-        .agenda-form-page .partner-department-item {
-            display: inline-flex;
-            align-items: center;
-            gap: .55rem;
-            padding: .6rem .7rem;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            margin: 0;
-        }
-        .agenda-form-page .branch-toggle-item {
-            border: 1px solid #dde7f0;
-            border-radius: 14px;
-            padding: .8rem .95rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: .75rem;
-            background: #f8fbfd;
-            min-height: 100%;
-        }
-        .agenda-form-page .agenda-form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: .75rem;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('assets/css/agenda-events-form.css') }}">
 @endpush
 
 @push('scripts')
-    <script>
-        (function () {
-            const form = document.querySelector('.agenda-form');
-            if (!form) return;
-
-            const categoryEl = form.querySelector('#event_category_id');
-            const planTypeEl = form.querySelector('.js-plan-type');
-            const planFileRows = form.querySelectorAll('.js-agenda-plan-file');
-            const ownerDepartmentEl = form.querySelector('.js-owner-department');
-            const partnerDepartmentEls = Array.from(form.querySelectorAll('.js-partner-department'));
-            const toggleRows = Array.from(form.querySelectorAll('.branch-toggle-item'));
-            const enableAllBtn = form.querySelector('.js-enable-all-participants');
-
-            function filterCategories() {
-                if (!categoryEl) return;
-
-                const selectedDepartments = new Set(
-                    partnerDepartmentEls
-                        .filter((el) => el.checked)
-                        .map((el) => String(el.value))
-                );
-
-                if (ownerDepartmentEl?.value) {
-                    selectedDepartments.add(String(ownerDepartmentEl.value));
-                }
-
-                Array.from(categoryEl.options).forEach((option) => {
-                    const categoryDepartmentId = option.dataset.departmentId;
-                    if (!categoryDepartmentId) {
-                        option.hidden = false;
-                        return;
-                    }
-                    option.hidden = !selectedDepartments.has(String(categoryDepartmentId));
-                });
-
-                if (categoryEl.selectedOptions[0]?.hidden) {
-                    categoryEl.value = '';
-                }
-            }
-
-            function syncOwnerVsPartners() {
-                const ownerId = String(ownerDepartmentEl?.value || '');
-                partnerDepartmentEls.forEach((el) => {
-                    const isOwner = ownerId !== '' && String(el.value) === ownerId;
-                    if (isOwner) {
-                        el.checked = false;
-                    }
-                    el.disabled = isOwner;
-                    el.closest('.partner-department-item')?.classList.toggle('opacity-50', isOwner);
-                });
-            }
-
-            function togglePlanFile() {
-                const isNonUnified = planTypeEl?.value === 'non_unified';
-                planFileRows.forEach((row) => {
-                    row.style.display = isNonUnified ? '' : 'none';
-                });
-            }
-
-            function syncToggleRow(row) {
-                const checkbox = row.querySelector('.js-branch-toggle');
-                const hiddenInput = row.querySelector('.js-branch-status-hidden');
-                const label = row.querySelector('.form-check-label');
-                const isOn = !!checkbox?.checked;
-
-                if (hiddenInput) {
-                    hiddenInput.value = isOn ? 'participant' : 'not_participant';
-                }
-                if (label) {
-                    label.textContent = isOn
-                        ? @json(__('app.roles.relations.agenda.participation.participant'))
-                        : @json(__('app.roles.relations.agenda.participation.not_participant'));
-                }
-            }
-
-            ownerDepartmentEl?.addEventListener('change', () => {
-                syncOwnerVsPartners();
-                filterCategories();
-            });
-            partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
-            planTypeEl?.addEventListener('change', togglePlanFile);
-
-            toggleRows.forEach((row) => {
-                const checkbox = row.querySelector('.js-branch-toggle');
-                checkbox?.addEventListener('change', () => syncToggleRow(row));
-                syncToggleRow(row);
-            });
-
-            enableAllBtn?.addEventListener('click', () => {
-                toggleRows.forEach((row) => {
-                    const checkbox = row.querySelector('.js-branch-toggle');
-                    if (checkbox) checkbox.checked = true;
-                    syncToggleRow(row);
-                });
-            });
-
-            syncOwnerVsPartners();
-            filterCategories();
-            togglePlanFile();
-        })();
-    </script>
+    <script src="{{ asset('assets/js/agenda-events-form.js') }}"></script>
 @endpush

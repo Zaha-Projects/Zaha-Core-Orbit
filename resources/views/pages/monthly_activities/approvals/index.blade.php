@@ -1,7 +1,11 @@
 ﻿@extends('layouts.app')
 
 @push('styles')
+@php($workflowUiCssPath = public_path('assets/css/workflow-ui.css'))
+@if (file_exists($workflowUiCssPath))
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
+@endif
+<link rel="stylesheet" href="{{ asset('assets/css/monthly-approvals.css') }}">
 @endpush
 
 @php
@@ -15,12 +19,30 @@
         <div class="card-body">
             <h1 class="wf-page-title mb-1">{{ __('workflow_ui.approvals.title') }}</h1>
             <p class="wf-muted mb-0">{{ __('workflow_ui.approvals.subtitle') }}</p>
+            <div class="approvals-kpi-row mt-3">
+                <div class="approvals-kpi-card">
+                    <div class="approvals-kpi-label">إجمالي المعروض</div>
+                    <div class="approvals-kpi-value">{{ method_exists($activities, 'total') ? $activities->total() : $activities->count() }}</div>
+                </div>
+                <div class="approvals-kpi-card">
+                    <div class="approvals-kpi-label">قيد المراجعة</div>
+                    <div class="approvals-kpi-value">{{ $activities->where('status', 'in_review')->count() }}</div>
+                </div>
+                <div class="approvals-kpi-card">
+                    <div class="approvals-kpi-label">بانتظار قراري</div>
+                    <div class="approvals-kpi-value">{{ $activities->where('can_current_user_decide', true)->count() }}</div>
+                </div>
+            </div>
         </div>
     </div>
 
     @if (session('status'))
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
+
+    <div class="alert alert-info mb-3">
+        الفعاليات الإلزامية المرتبطة بالأجندة السنوية لا تُعرض في شاشة اعتماد الخطط الشهرية لأنها لا تحتاج اعتماد الفرع.
+    </div>
 
     <div class="wf-card card mb-3">
         <div class="card-body d-flex flex-column gap-3">
@@ -74,7 +96,7 @@
                     $requirements[] = __('workflow_ui.approvals.requirements.communications');
                 }
             @endphp
-            <div class="wf-card card">
+            <div class="wf-card card approvals-activity-card">
                 <div class="card-body">
                     <div class="wf-summary mb-3">
                         <div class="w-100">
@@ -283,7 +305,7 @@
         @endforelse
     </div>
 
-    <div class="mt-3">{{ $activities->links() }}</div>
+    <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
 </div>
 
 <div class="modal fade" id="decisionConfirmModal" tabindex="-1" aria-hidden="true">
@@ -304,41 +326,5 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var formToSubmit = null;
-        var modalElement = document.getElementById('decisionConfirmModal');
-        var confirmModal = modalElement ? new bootstrap.Modal(modalElement) : null;
-
-        document.querySelectorAll('.decision-form').forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                var select = form.querySelector('.decision-select');
-                var comment = form.querySelector('.decision-comment');
-
-                if (select && comment && ['changes_requested', 'rejected'].includes(select.value) && !comment.value.trim()) {
-                    event.preventDefault();
-                    alert(form.dataset.commentRequired);
-                    return;
-                }
-
-                if (confirmModal) {
-                    event.preventDefault();
-                    formToSubmit = form;
-                    document.getElementById('decisionConfirmTitle').textContent = form.dataset.confirmTitle;
-                    document.getElementById('decisionConfirmBody').textContent = form.dataset.confirmBody;
-                    confirmModal.show();
-                }
-            });
-        });
-
-        var submitBtn = document.getElementById('decisionConfirmSubmit');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function () {
-                if (formToSubmit) {
-                    formToSubmit.submit();
-                }
-            });
-        }
-    });
-</script>
+<script src="{{ asset('assets/js/monthly-approvals.js') }}"></script>
 @endpush

@@ -10,6 +10,9 @@
         ($existingMonthlyActivity?->requires_communications ?? false) ? 'relations' : null,
         ($existingMonthlyActivity?->requires_programs ?? false) ? 'programs' : null,
     ]))));
+    $departmentsFromForm = $departments ?? \App\Models\Department::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+    $selectedOwnerDepartmentId = (string) old('owner_department_id', '');
+    $selectedPartnerDepartmentIds = collect(old('partner_department_ids', []))->map(fn ($id) => (string) $id)->all();
     $isInAgendaChecked = (bool) old('is_in_agenda', $existingMonthlyActivity?->is_in_agenda ?? false);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
@@ -82,18 +85,24 @@
                     @method($formMethod)
                 @endif
                 <input type="hidden" name="status" value="draft">
+                <input type="hidden" name="execution_status" value="{{ old('execution_status', $existingMonthlyActivity?->execution_status ?? 'executed') }}">
                 <input type="hidden" class="js-activity-date" name="activity_date" value="{{ old('activity_date', optional($existingMonthlyActivity?->activity_date)->format('Y-m-d') ?: optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}">
 
                 <div class="col-12">
                     <div class="monthly-form-section-head">
                         <h2 class="h6 mb-1">بيانات التخطيط الأساسية</h2>
-                        <p class="text-muted small mb-0">التاريخ الفعلي يبقى مخصصاً لما بعد التنفيذ، لذلك يتم ربطه هنا تلقائياً مع التاريخ المخطط.</p>
+                        <p class="text-muted small mb-0">هذه الشاشة مخصصة للتخطيط قبل التنفيذ، بينما تحديث حالة التنفيذ يتم في وضع إكمال التعبئة بعد التنفيذ.</p>
                     </div>
                 </div>
 
                 <div class="col-12 col-lg-6">
-                    <label class="form-label">الجهة المسؤولة</label>
-                    <input class="form-control" name="responsible_party" value="{{ old('responsible_party', $existingMonthlyActivity?->responsible_party) }}" placeholder="مثال: العلاقات / البرامج / لجنة مشتركة">
+                    <label class="form-label">الجهة المالكة</label>
+                    <select class="form-select" name="owner_department_id">
+                        <option value="">اختر الجهة المالكة</option>
+                        @foreach($departmentsFromForm as $department)
+                            <option value="{{ $department->id }}" {{ $selectedOwnerDepartmentId === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="col-12 col-lg-6">
@@ -109,39 +118,6 @@
                 </div>
 
                 <div class="col-12 col-md-4">
-                    <label class="form-label">التاريخ الفعلي</label>
-                    <input class="form-control" value="يُستكمل بعد التنفيذ" readonly>
-                </div>
-
-                <div class="col-12 col-md-4">
-                    <label class="form-label">حالة النشاط</label>
-                    <select class="form-select js-execution-status @error('execution_status') is-invalid @enderror" name="execution_status">
-                        @foreach(($executionStatusLabels ?? []) as $statusCode => $statusLabel)
-                            <option value="{{ $statusCode }}" @selected($selectedExecutionStatus === $statusCode)>{{ $statusLabel }}</option>
-                        @endforeach
-                    </select>
-                    @error('execution_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 col-md-4 js-postponed-fields">
-                    <label class="form-label">تاريخ التأجيل</label>
-                    <input class="form-control @error('rescheduled_date') is-invalid @enderror" type="date" name="rescheduled_date" value="{{ old('rescheduled_date', optional($existingMonthlyActivity?->rescheduled_date)->format('Y-m-d')) }}">
-                    @error('rescheduled_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 col-md-8 js-postponed-fields">
-                    <label class="form-label">سبب التأجيل</label>
-                    <input class="form-control @error('reschedule_reason') is-invalid @enderror" name="reschedule_reason" value="{{ old('reschedule_reason', $existingMonthlyActivity?->reschedule_reason) }}">
-                    @error('reschedule_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 js-cancelled-fields">
-                    <label class="form-label">سبب الإلغاء</label>
-                    <textarea class="form-control @error('cancellation_reason') is-invalid @enderror" name="cancellation_reason" rows="2">{{ old('cancellation_reason', $existingMonthlyActivity?->cancellation_reason) }}</textarea>
-                    @error('cancellation_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 col-md-4">
                     <label class="form-label">الفرع</label>
                     @if ($isBranchScopedUser && $selectedBranch)
                         <input type="hidden" name="branch_id" value="{{ $selectedBranch->id }}">
@@ -150,7 +126,7 @@
                         <select class="form-select @error('branch_id') is-invalid @enderror" name="branch_id">
                             <option value="">اختر الفرع</option>
                             @foreach ($branches as $branch)
-                                <option value="{{ $branch->id }}" @selected((string) old('branch_id', $existingMonthlyActivity?->branch_id) === (string) $branch->id)>{{ $branch->name }}</option>
+                                <option value="{{ $branch->id }}" {{ (string) old('branch_id', $existingMonthlyActivity?->branch_id) === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
                             @endforeach
                         </select>
                         @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -162,7 +138,7 @@
                     <select class="form-select" name="agenda_event_id">
                         <option value="">اختياري</option>
                         @foreach ($agendaEvents as $event)
-                            <option value="{{ $event->id }}" @selected((string) old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) === (string) $event->id)>{{ $event->event_name }}</option>
+                            <option value="{{ $event->id }}" {{ (string) old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) === (string) $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -177,20 +153,29 @@
                     @error('branch_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12">
-                    <label class="form-label d-block mb-2">الجهات المعنية</label>
+                    <label class="form-label d-block mb-2">الجهات الشركاء</label>
+                    <div class="partner-departments-box mb-3">
+                        @foreach($departmentsFromForm as $department)
+                            <label class="partner-department-item">
+                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
+                                <span>{{ $department->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <label class="form-label d-block mb-2">خيارات إضافية</label>
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="relations" @checked($selectedResponsibleEntities->contains('relations'))>
+                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="relations" {{ $selectedResponsibleEntities->contains('relations') ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>العلاقات</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="programs" @checked($selectedResponsibleEntities->contains('programs'))>
+                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="programs" {{ $selectedResponsibleEntities->contains('programs') ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>البرامج</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="is_in_agenda" value="1" @checked($isInAgendaChecked)>
+                            <input class="form-check-input m-0" type="checkbox" name="is_in_agenda" value="1" {{ $isInAgendaChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>يظهر ضمن الأجندة السنوية</span>
                         </label>
@@ -206,8 +191,8 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">نوع المكان</label>
                     <select class="form-select js-location-type @error('location_type') is-invalid @enderror" name="location_type">
-                        <option value="inside_center" @selected(old('location_type', $existingMonthlyActivity?->location_type ?? 'inside_center') === 'inside_center')>داخل المركز</option>
-                        <option value="outside_center" @selected(old('location_type', $existingMonthlyActivity?->location_type) === 'outside_center')>خارجي</option>
+                        <option value="inside_center" {{ old('location_type', $existingMonthlyActivity?->location_type ?? 'inside_center') === 'inside_center' ? 'selected' : '' }}>داخل المركز (داخل مرافق زها)</option>
+                        <option value="outside_center" {{ old('location_type', $existingMonthlyActivity?->location_type) === 'outside_center' ? 'selected' : '' }}>خارج المركز (موقع خارجي)</option>
                     </select>
                     @error('location_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -298,37 +283,37 @@
                 <div class="col-12">
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" @checked($needsVolunteersChecked)>
+                            <input class="form-check-input m-0 js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" {{ $needsVolunteersChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمتطوعين</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" @checked($needsOfficialCorrespondenceChecked)>
+                            <input class="form-check-input m-0 js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" {{ $needsOfficialCorrespondenceChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمخاطبة الرسمية</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-official-letters" type="checkbox" name="needs_official_letters" value="1" @checked($needsOfficialLettersChecked)>
+                            <input class="form-check-input m-0 js-needs-official-letters" type="checkbox" name="needs_official_letters" value="1" {{ $needsOfficialLettersChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للكتب الرسمية</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-media" type="checkbox" name="needs_media_coverage" value="1" @checked($needsMediaCoverageChecked)>
+                            <input class="form-check-input m-0 js-needs-media" type="checkbox" name="needs_media_coverage" value="1" {{ $needsMediaCoverageChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة لتغطية إعلامية</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-supplies" type="checkbox" name="requires_supplies" value="1" @checked($requiresSuppliesChecked)>
+                            <input class="form-check-input m-0 js-needs-supplies" type="checkbox" name="requires_supplies" value="1" {{ $requiresSuppliesChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمستلزمات</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-has-sponsor" type="checkbox" name="has_sponsor" value="1" @checked($hasSponsorChecked)>
+                            <input class="form-check-input m-0 js-has-sponsor" type="checkbox" name="has_sponsor" value="1" {{ $hasSponsorChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>يوجد راعٍ</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-has-partners" type="checkbox" name="has_partners" value="1" @checked($hasPartnersChecked)>
+                            <input class="form-check-input m-0 js-has-partners" type="checkbox" name="has_partners" value="1" {{ $hasPartnersChecked ? 'checked' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>يوجد شركاء</span>
                         </label>
@@ -475,384 +460,15 @@
     </div>
 </div>
 
+
 @push('styles')
-    <style>
-        .monthly-plan-form-page .monthly-form-section-head {
-            padding-bottom: .5rem;
-            border-bottom: 1px solid #e5e7eb;
-            margin-bottom: .5rem;
-        }
-        .monthly-plan-form-page .monthly-activation-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: .75rem;
-        }
-        .monthly-plan-form-page .monthly-activation-option {
-            display: inline-flex;
-            align-items: center;
-            gap: .55rem;
-            padding: .85rem 1rem;
-            border: 1px solid #d8e1ea;
-            border-radius: 14px;
-            background: #fbfdff;
-            cursor: pointer;
-            transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
-        }
-        .monthly-plan-form-page .monthly-activation-option:hover {
-            border-color: #9fb8d4;
-            background: #f5f9ff;
-        }
-        .monthly-plan-form-page .monthly-activation-option:has(input:checked) {
-            border-color: #3c78b5;
-            background: #eef6ff;
-            box-shadow: 0 0 0 2px rgba(60, 120, 181, .08);
-        }
-        .monthly-plan-form-page .monthly-activation-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 1.5rem;
-            height: 1.5rem;
-            border-radius: 999px;
-            background: #d9e9f8;
-            color: #22598d;
-            font-size: .82rem;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-        .monthly-plan-form-page .monthly-subsection-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            background: #fcfcfd;
-            padding: 1rem;
-        }
-        .monthly-plan-form-page .partner-departments-box {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: .65rem;
-        }
-        .monthly-plan-form-page .partner-department-item {
-            display: inline-flex;
-            align-items: center;
-            gap: .5rem;
-            padding: .75rem .85rem;
-            border-radius: 12px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            cursor: pointer;
-        }
-        .monthly-plan-form-page .monthly-form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: .75rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e5e7eb;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-form.css') }}">
 @endpush
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('.monthly-plan-form');
-            if (!form) return;
-
-            const activityDateInput = form.querySelector('.js-activity-date');
-            const proposedDateInput = form.querySelector('.js-proposed-date');
-            const executionStatusSelect = form.querySelector('.js-execution-status');
-            const postponedFields = form.querySelectorAll('.js-postponed-fields');
-            const cancelledFields = form.querySelectorAll('.js-cancelled-fields');
-            const locationType = form.querySelector('.js-location-type');
-            const insideLocationFields = form.querySelectorAll('.js-inside-location');
-            const outsideLocationFields = form.querySelectorAll('.js-outside-location');
-            const targetGroupCheckboxes = form.querySelectorAll('.js-target-group-checkbox');
-            const targetGroupOtherFields = form.querySelectorAll('.js-target-group-other');
-            const needsVolunteers = form.querySelector('.js-needs-volunteers');
-            const volunteersFields = form.querySelectorAll('.js-volunteers-fields');
-            const needsCorrespondence = form.querySelector('.js-needs-letters');
-            const correspondenceFields = form.querySelectorAll('.js-correspondence-fields');
-            const needsSupplies = form.querySelector('.js-needs-supplies');
-            const suppliesFields = form.querySelectorAll('.js-supplies-fields');
-            const hasSponsor = form.querySelector('.js-has-sponsor');
-            const sponsorFields = form.querySelectorAll('.js-sponsor-fields');
-            const hasPartners = form.querySelector('.js-has-partners');
-            const partnersFields = form.querySelectorAll('.js-partners-fields');
-            const partnersCount = form.querySelector('.js-partners-count');
-            const partnersContainer = form.querySelector('.js-partners-container');
-            const needsOfficialLetters = form.querySelector('.js-needs-official-letters');
-            const officialLettersFields = form.querySelectorAll('.js-official-letters-fields');
-            const needsMedia = form.querySelector('.js-needs-media');
-            const mediaFields = form.querySelectorAll('.js-media-fields');
-            const suppliesCount = form.querySelector('.js-supplies-count');
-            const suppliesContainer = form.querySelector('.js-supplies-container');
-            const teamGroupsCount = form.querySelector('.js-team-groups-count');
-            const teamGroupsContainer = form.querySelector('.js-team-groups-container');
-
-            const oldPartners = @json($oldPartners);
-            const oldSupplies = @json($oldSupplies);
-            const oldTeamGroups = @json($oldTeamGroups);
-
-            const esc = (value) => String(value ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-
-            function syncActivityDate() {
-                if (activityDateInput && proposedDateInput) {
-                    activityDateInput.value = proposedDateInput.value || '';
-                }
-            }
-
-            function toggleElements(elements, isVisible) {
-                elements.forEach((element) => {
-                    element.style.display = isVisible ? '' : 'none';
-                });
-            }
-
-            function setRequiredState(selectors, isRequired) {
-                selectors.forEach((selector) => {
-                    const input = form.querySelector(selector);
-                    if (!input) return;
-                    input.disabled = !isRequired;
-                    input.required = isRequired;
-
-                    if (!isRequired && !['checkbox', 'radio', 'file'].includes(input.type)) {
-                        input.value = '';
-                    }
-                });
-            }
-
-            function toggleExecutionStatus() {
-                const isPostponed = executionStatusSelect?.value === 'postponed';
-                const isCancelled = executionStatusSelect?.value === 'cancelled';
-                toggleElements(postponedFields, isPostponed);
-                toggleElements(cancelledFields, isCancelled);
-                setRequiredState(['[name="rescheduled_date"]', '[name="reschedule_reason"]'], isPostponed);
-                setRequiredState(['[name="cancellation_reason"]'], isCancelled);
-            }
-
-            function toggleLocationFields() {
-                const isOutside = locationType?.value === 'outside_center';
-                toggleElements(insideLocationFields, !isOutside);
-                toggleElements(outsideLocationFields, isOutside);
-                setRequiredState([
-                    '[name="outside_place_name"]',
-                    '[name="outside_google_maps_url"]',
-                    '[name="outside_contact_number"]',
-                    '[name="external_liaison_name"]',
-                    '[name="external_liaison_phone"]',
-                    '[name="outside_address"]'
-                ], isOutside);
-            }
-
-            function toggleTargetGroupOther() {
-                const hasOther = Array.from(targetGroupCheckboxes).some((checkbox) => checkbox.checked && checkbox.dataset.isOther === '1');
-                toggleElements(targetGroupOtherFields, hasOther);
-                setRequiredState(['[name="target_group_other"]'], hasOther);
-            }
-
-            function toggleVolunteers() {
-                const active = !!needsVolunteers?.checked;
-                toggleElements(volunteersFields, active);
-                setRequiredState([
-                    '[name="required_volunteers"]',
-                    '[name="volunteer_age_range"]',
-                    '[name="volunteer_gender"]',
-                    '[name="volunteer_tasks_summary"]'
-                ], active);
-            }
-
-            function toggleCorrespondence() {
-                const active = !!needsCorrespondence?.checked;
-                toggleElements(correspondenceFields, active);
-                setRequiredState([
-                    '[name="official_correspondence_reason"]',
-                    '[name="official_correspondence_target"]',
-                    '[name="official_correspondence_brief"]'
-                ], active);
-            }
-
-            function toggleOfficialLetters() {
-                toggleElements(officialLettersFields, !!needsOfficialLetters?.checked);
-            }
-
-            function toggleMedia() {
-                toggleElements(mediaFields, !!needsMedia?.checked);
-            }
-
-            function toggleSupplies() {
-                const active = !!needsSupplies?.checked;
-                toggleElements(suppliesFields, active);
-                if (suppliesCount) {
-                    suppliesCount.disabled = !active;
-                }
-            }
-
-            function toggleSponsor() {
-                toggleElements(sponsorFields, !!hasSponsor?.checked);
-            }
-
-            function togglePartners() {
-                const active = !!hasPartners?.checked;
-                toggleElements(partnersFields, active);
-                if (partnersCount) {
-                    partnersCount.disabled = !active;
-                }
-            }
-
-            function renderPartners() {
-                if (!partnersContainer) return;
-
-                const count = Math.max(1, Math.min(10, parseInt(partnersCount?.value || '1', 10)));
-                partnersContainer.innerHTML = '';
-
-                for (let i = 0; i < count; i += 1) {
-                    partnersContainer.insertAdjacentHTML('beforeend', `
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">اسم الشريك ${i + 1}</label>
-                            <input class="form-control" name="partners[${i}][name]" value="${esc(oldPartners?.[i]?.name)}">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">دور الشريك ${i + 1}</label>
-                            <input class="form-control" name="partners[${i}][role]" value="${esc(oldPartners?.[i]?.role)}">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">بيانات التواصل</label>
-                            <input class="form-control" name="partners[${i}][contact_info]" value="${esc(oldPartners?.[i]?.contact_info)}">
-                        </div>
-                    `);
-                }
-            }
-
-            function renderSupplies() {
-                if (!suppliesContainer) return;
-
-                const count = Math.max(1, Math.min(20, parseInt(suppliesCount?.value || '1', 10)));
-                suppliesContainer.innerHTML = '';
-
-                for (let i = 0; i < count; i += 1) {
-                    const available = String(oldSupplies?.[i]?.available ?? '1') === '1';
-                    suppliesContainer.insertAdjacentHTML('beforeend', `
-                        <div class="col-12 col-md-4">
-                            <label class="form-label">اسم المستلزم ${i + 1}</label>
-                            <input class="form-control" name="supplies[${i}][item_name]" value="${esc(oldSupplies?.[i]?.item_name)}">
-                        </div>
-                        <div class="col-12 col-md-2">
-                            <label class="form-label">التوفر</label>
-                            <select class="form-select js-supply-available" data-index="${i}" name="supplies[${i}][available]">
-                                <option value="1" ${available ? 'selected' : ''}>متوفر</option>
-                                <option value="0" ${available ? '' : 'selected'}>غير متوفر</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-3 js-supply-provider" data-index="${i}" style="${available ? 'display:none' : ''}">
-                            <label class="form-label">نوع المسؤول</label>
-                            <select class="form-select" name="supplies[${i}][provider_type]">
-                                <option value="">اختر</option>
-                                <option value="volunteer" ${(oldSupplies?.[i]?.provider_type === 'volunteer') ? 'selected' : ''}>متطوع</option>
-                                <option value="person" ${(oldSupplies?.[i]?.provider_type === 'person') ? 'selected' : ''}>شخص</option>
-                                <option value="partner" ${(oldSupplies?.[i]?.provider_type === 'partner') ? 'selected' : ''}>شريك</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-3 js-supply-provider" data-index="${i}" style="${available ? 'display:none' : ''}">
-                            <label class="form-label">اسم المسؤول</label>
-                            <input class="form-control" name="supplies[${i}][provider_name]" value="${esc(oldSupplies?.[i]?.provider_name)}">
-                        </div>
-                    `);
-                }
-
-                suppliesContainer.querySelectorAll('.js-supply-available').forEach((select) => {
-                    select.addEventListener('change', function () {
-                        const providers = suppliesContainer.querySelectorAll(`.js-supply-provider[data-index="${this.dataset.index}"]`);
-                        providers.forEach((provider) => {
-                            provider.style.display = this.value === '1' ? 'none' : '';
-                        });
-                    });
-                });
-            }
-
-            function renderTeamGroups() {
-                if (!teamGroupsContainer) return;
-
-                const count = Math.max(1, Math.min(10, parseInt(teamGroupsCount?.value || '1', 10)));
-                teamGroupsContainer.innerHTML = '';
-
-                for (let g = 0; g < count; g += 1) {
-                    teamGroupsContainer.insertAdjacentHTML('beforeend', `
-                        <div class="border rounded-3 p-3 mb-3 js-team-group" data-group-index="${g}">
-                            <div class="row g-3 align-items-end">
-                                <div class="col-12 col-md-4">
-                                    <label class="form-label">اسم الفريق ${g + 1}</label>
-                                    <input class="form-control" name="team_groups[${g}][team_name]" value="${esc(oldTeamGroups?.[g]?.team_name || ('فريق ' + (g + 1)))}">
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <label class="form-label">عدد الأعضاء</label>
-                                    <input class="form-control js-team-members-count" type="number" min="1" max="20" value="${Math.max(1, oldTeamGroups?.[g]?.members?.length || 1)}">
-                                </div>
-                            </div>
-                            <div class="row g-3 mt-1 js-team-members-container"></div>
-                        </div>
-                    `);
-                }
-
-                teamGroupsContainer.querySelectorAll('.js-team-group').forEach((groupEl) => {
-                    const groupIndex = parseInt(groupEl.dataset.groupIndex || '0', 10);
-                    const countInput = groupEl.querySelector('.js-team-members-count');
-                    const membersContainer = groupEl.querySelector('.js-team-members-container');
-
-                    const renderMembers = () => {
-                        const membersCount = Math.max(1, Math.min(20, parseInt(countInput?.value || '1', 10)));
-                        membersContainer.innerHTML = '';
-
-                        for (let m = 0; m < membersCount; m += 1) {
-                            membersContainer.insertAdjacentHTML('beforeend', `
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label">اسم العضو ${m + 1}</label>
-                                    <input class="form-control" name="team_groups[${groupIndex}][members][${m}][member_name]" value="${esc(oldTeamGroups?.[groupIndex]?.members?.[m]?.member_name)}">
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label">الدور / المهمة</label>
-                                    <input class="form-control" name="team_groups[${groupIndex}][members][${m}][role_desc]" value="${esc(oldTeamGroups?.[groupIndex]?.members?.[m]?.role_desc)}">
-                                </div>
-                            `);
-                        }
-                    };
-
-                    countInput?.addEventListener('input', renderMembers);
-                    renderMembers();
-                });
-            }
-
-            proposedDateInput?.addEventListener('change', syncActivityDate);
-            executionStatusSelect?.addEventListener('change', toggleExecutionStatus);
-            locationType?.addEventListener('change', toggleLocationFields);
-            targetGroupCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', toggleTargetGroupOther));
-            needsVolunteers?.addEventListener('change', toggleVolunteers);
-            needsCorrespondence?.addEventListener('change', toggleCorrespondence);
-            needsOfficialLetters?.addEventListener('change', toggleOfficialLetters);
-            needsMedia?.addEventListener('change', toggleMedia);
-            needsSupplies?.addEventListener('change', toggleSupplies);
-            hasSponsor?.addEventListener('change', toggleSponsor);
-            hasPartners?.addEventListener('change', togglePartners);
-            partnersCount?.addEventListener('input', renderPartners);
-            suppliesCount?.addEventListener('input', renderSupplies);
-            teamGroupsCount?.addEventListener('input', renderTeamGroups);
-
-            syncActivityDate();
-            renderPartners();
-            renderSupplies();
-            renderTeamGroups();
-            toggleExecutionStatus();
-            toggleLocationFields();
-            toggleTargetGroupOther();
-            toggleVolunteers();
-            toggleCorrespondence();
-            toggleOfficialLetters();
-            toggleMedia();
-            toggleSupplies();
-            toggleSponsor();
-            togglePartners();
-        });
-    </script>
+    <script type="application/json" id="monthly-form-old-partners-json">@json($oldPartners)</script>
+    <script type="application/json" id="monthly-form-old-supplies-json">@json($oldSupplies)</script>
+    <script type="application/json" id="monthly-form-old-team-groups-json">@json($oldTeamGroups)</script>
+    <script src="{{ asset('assets/js/monthly-activity-form.js') }}"></script>
 @endpush
+

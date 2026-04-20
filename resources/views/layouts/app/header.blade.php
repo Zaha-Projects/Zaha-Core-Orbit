@@ -13,9 +13,9 @@
                     <div class="hamburger-box"><div class="hamburger-inner"></div></div>
                 </div>
             </a>
-            <div class="nxl-navigation-toggle">
-                <a href="javascript:void(0);" id="menu-mini-button"><i class="feather-align-left"></i></a>
-                <a href="javascript:void(0);" id="menu-expend-button" style="display: none"><i class="feather-{{ $isArabic ? 'arrow-left' : 'arrow-right' }} rtl-flip"></i></a>
+            <div class="nxl-navigation-toggle {{ $isArabic ? 'is-rtl' : '' }}">
+                <a href="javascript:void(0);" id="menu-mini-button" class="nxl-nav-toggle-btn" aria-label="{{ $isArabic ? 'تصغير القائمة' : 'Collapse navigation' }}" title="{{ $isArabic ? 'تصغير القائمة' : 'Collapse navigation' }}"><i class="feather-{{ $isArabic ? 'align-right' : 'align-left' }}"></i></a>
+                <a href="javascript:void(0);" id="menu-expend-button" class="nxl-nav-toggle-btn" style="display: none" aria-label="{{ $isArabic ? 'توسيع القائمة' : 'Expand navigation' }}" title="{{ $isArabic ? 'توسيع القائمة' : 'Expand navigation' }}"><i class="feather-{{ $isArabic ? 'arrow-right' : 'arrow-left' }} rtl-flip"></i></a>
             </div>
         </div>
 
@@ -80,9 +80,9 @@
                 </div>
 
                 @auth
-                    <div class="dropdown nxl-h-item">
-                        <a href="javascript:void(0);" data-bs-toggle="dropdown"><img src="{{ asset('assets/images/avatar/1.png') }}" alt="{{ __('app.layout.user_avatar') }}" class="img-fluid user-avtar me-0" /></a>
-                        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
+                    <div class="dropdown nxl-h-item nxl-user-menu-item">
+                        <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false"><img src="{{ asset('assets/images/avatar/1.png') }}" alt="{{ __('app.layout.user_avatar') }}" class="img-fluid user-avtar me-0" /></a>
+                        <div class="dropdown-menu {{ $isArabic ? 'dropdown-menu-start' : 'dropdown-menu-end' }} nxl-h-dropdown nxl-user-dropdown">
                             <div class="dropdown-header"><h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6></div>
                             <div class="dropdown-divider"></div>
                             <form method="POST" action="{{ route('logout') }}">@csrf<button class="dropdown-item" type="submit"><i class="feather-log-out"></i><span>{{ __('app.common.logout') }}</span></button></form>
@@ -145,4 +145,45 @@
         text-align: center;
         color: #64748b;
     }
+
+    .nxl-navigation-toggle .nxl-nav-toggle-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: #334155;
+        transition: background-color .2s ease, color .2s ease;
+    }
+    .nxl-navigation-toggle .nxl-nav-toggle-btn:hover {
+        background: #eef4fb;
+        color: #0f172a;
+    }
+    .nxl-navigation-toggle.is-rtl {
+        direction: rtl;
+    }
+    .nxl-user-menu-item .nxl-user-dropdown {
+        min-width: 220px;
+        max-width: min(92vw, 320px);
+    }
+    html[dir="rtl"] .nxl-user-menu-item .nxl-user-dropdown {
+        text-align: right;
+    }
+    @media (max-width: 767.98px) {
+        .nxl-user-menu-item {
+            position: static;
+        }
+        .nxl-user-menu-item .nxl-user-dropdown {
+            position: fixed;
+            top: 72px !important;
+            inset-inline-start: 12px !important;
+            inset-inline-end: 12px !important;
+            width: auto;
+            transform: none !important;
+            max-height: calc(100vh - 90px);
+            overflow-y: auto;
+        }
+    }
+
 </style>

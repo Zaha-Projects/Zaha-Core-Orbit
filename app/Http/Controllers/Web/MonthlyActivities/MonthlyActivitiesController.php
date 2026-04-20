@@ -147,6 +147,11 @@ class MonthlyActivitiesController extends Controller
         return max(0, (int) Setting::valueOf('monthly_plan_lock_days', '5'));
     }
 
+    protected function monthlyIndexPerPage(): int
+    {
+        return max(1, min(50, (int) Setting::valueOf('monthly_activities_index_per_page', '10')));
+    }
+
     protected function buildLockAt(string $proposedDate): ?Carbon
     {
         return Carbon::parse($proposedDate)->subDays($this->monthlyLockDays())->endOfDay();
@@ -367,7 +372,7 @@ class MonthlyActivitiesController extends Controller
                         });
 
                     if ($selectedEventId) {
-                        $scopedQuery->orWhereKey($selectedEventId);
+                        $scopedQuery->orWhere($scopedQuery->getModel()->getQualifiedKeyName(), $selectedEventId);
                     }
                 });
             })
@@ -506,6 +511,7 @@ class MonthlyActivitiesController extends Controller
             'workflowInstance.logs.step',
         ])
             ->withCount('newerVersions')
+            ->whereDoesntHave('newerVersions')
             ->enterpriseFilter($request->all())
             ->notArchived();
 
@@ -514,10 +520,20 @@ class MonthlyActivitiesController extends Controller
         }
         $this->applyDraftVisibilityScope($activitiesQuery, $user);
 
+        if ($viewScope === 'all_branches') {
+            $activitiesQuery
+                ->where('status', 'approved')
+                ->where(function ($query) {
+                    $query->where('executive_approval_status', 'approved')
+                        ->orWhereIn('lifecycle_status', ['Exec Director Approved', 'Approved', 'Published'])
+                        ->orWhereHas('workflowInstance', fn ($workflowQuery) => $workflowQuery->where('status', 'approved'));
+                });
+        }
+
         $activities = $activitiesQuery
             ->orderBy('month')
             ->orderBy('day')
-            ->paginate(15)
+            ->paginate($this->monthlyIndexPerPage())
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
@@ -704,9 +720,24 @@ class MonthlyActivitiesController extends Controller
             return false;
         }
 
+        if (! $this->hasManagerOrLaterApproval($monthlyActivity)) {
+            return false;
+        }
+
         return $this->isApprovedVersion($monthlyActivity)
             || $isRescheduled
             || $this->activityHasApprovalTrail($monthlyActivity);
+    }
+
+    protected function hasManagerOrLaterApproval(MonthlyActivity $monthlyActivity): bool
+    {
+        return in_array((string) $monthlyActivity->relations_manager_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->programs_manager_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->liaison_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->hq_relations_manager_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->executive_approval_status, ['approved'], true)
+            || in_array((string) $monthlyActivity->lifecycle_status, ['Branch Relations Manager Approved', 'Primary Relations Manager Approved', 'Executive Manager Approved', 'Exec Director Approved'], true)
+            || $this->isApprovedVersion($monthlyActivity);
     }
 
     public function syncFromAgenda(Request $request)
@@ -914,6 +945,19 @@ class MonthlyActivitiesController extends Controller
 
         if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
+        }
+
+        if (! empty($data['agenda_event_id'])) {
+            $hasActiveForSameAgenda = MonthlyActivity::query()
+                ->where('branch_id', (int) $data['branch_id'])
+                ->where('agenda_event_id', (int) $data['agenda_event_id'])
+                ->where('status', '!=', 'cancelled')
+                ->whereDoesntHave('newerVersions')
+                ->exists();
+
+            if ($hasActiveForSameAgenda) {
+                return back()->withErrors(['agenda_event_id' => 'لا يمكن ربط أكثر من خطة فعالة لنفس الفرع مع نفس فعالية الأجندة.'])->withInput();
+            }
         }
 
         $this->normalizePlanningPayload($data);
@@ -1135,8 +1179,14 @@ class MonthlyActivitiesController extends Controller
             ->pluck('name', 'code')
             ->all();
         $executionStatusLabels = $this->executionStatusLabels();
+        $archivedVersions = collect();
+        $cursor = $monthlyActivity->previousVersion;
+        while ($cursor) {
+            $archivedVersions->push($cursor);
+            $cursor = $cursor->previousVersion;
+        }
 
-        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels'));
+        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels', 'archivedVersions'));
     }
 
     public function update(
@@ -1283,6 +1333,20 @@ class MonthlyActivitiesController extends Controller
 
         if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
+        }
+
+        if (! empty($data['agenda_event_id'])) {
+            $hasActiveForSameAgenda = MonthlyActivity::query()
+                ->where('branch_id', (int) $data['branch_id'])
+                ->where('agenda_event_id', (int) $data['agenda_event_id'])
+                ->where('status', '!=', 'cancelled')
+                ->whereDoesntHave('newerVersions')
+                ->where('id', '!=', $monthlyActivity->id)
+                ->exists();
+
+            if ($hasActiveForSameAgenda) {
+                return back()->withErrors(['agenda_event_id' => 'لا يمكن ربط أكثر من خطة فعالة لنفس الفرع مع نفس فعالية الأجندة.'])->withInput();
+            }
         }
 
         $this->normalizePlanningPayload($data);

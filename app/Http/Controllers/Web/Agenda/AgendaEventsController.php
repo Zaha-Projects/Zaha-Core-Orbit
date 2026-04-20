@@ -146,6 +146,17 @@ class AgendaEventsController extends Controller
         });
     }
 
+    protected function applyDraftVisibilityScope($query, ?User $user)
+    {
+        return $query->where(function ($visibilityQuery) use ($user) {
+            $visibilityQuery->where('status', '!=', 'draft');
+
+            if ($user) {
+                $visibilityQuery->orWhere('created_by', $user->id);
+            }
+        });
+    }
+
     /**
      * @return array<int, int>
      */
@@ -165,6 +176,10 @@ class AgendaEventsController extends Controller
 
     protected function ensureAgendaVisibleToUser(AgendaEvent $agendaEvent, User $user): void
     {
+        if ((string) $agendaEvent->status === 'draft' && (int) $agendaEvent->created_by !== (int) $user->id) {
+            abort(403);
+        }
+
         $branchIds = $this->scopedBranchIds($user);
 
         if ($branchIds === []) {
@@ -232,7 +247,7 @@ class AgendaEventsController extends Controller
                 $query->where('active', true);
 
                 if (filled($selectedCategoryId)) {
-                    $query->orWhereKey($selectedCategoryId);
+                    $query->orWhere($query->getModel()->getQualifiedKeyName(), $selectedCategoryId);
                 }
             })
             ->orderBy('sort_order')
@@ -265,10 +280,10 @@ class AgendaEventsController extends Controller
 
     public function index(Request $request, AgendaWorkflowPresenter $agendaWorkflowPresenter)
     {
-        $allowedPerPage = [10, 20, 50, 100];
-        $perPage = (int) $request->input('per_page', 20);
+        $allowedPerPage = [8, 16, 24, 50, 100];
+        $perPage = (int) $request->input('per_page', 8);
         if (! in_array($perPage, $allowedPerPage, true)) {
-            $perPage = 20;
+            $perPage = 8;
         }
 
         $filteredBranchId = $this->canUserFilterAgendaBranches($request->user())
@@ -294,6 +309,7 @@ class AgendaEventsController extends Controller
             ->notArchived();
 
         $this->applyBranchVisibilityScope($eventsQuery, $request->user());
+        $this->applyDraftVisibilityScope($eventsQuery, $request->user());
 
         $events = $eventsQuery
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
@@ -301,6 +317,14 @@ class AgendaEventsController extends Controller
             ->withQueryString();
 
         $events->getCollection()->transform(function (AgendaEvent $event) use ($agendaWorkflowPresenter, $request) {
+            return $agendaWorkflowPresenter->attach($event, $request->user());
+        });
+
+        $calendarEvents = (clone $eventsQuery)
+            ->orderBy('event_date')->orderBy('month')->orderBy('day')
+            ->get();
+
+        $calendarEvents->transform(function (AgendaEvent $event) use ($agendaWorkflowPresenter, $request) {
             return $agendaWorkflowPresenter->attach($event, $request->user());
         });
 
@@ -319,7 +343,7 @@ class AgendaEventsController extends Controller
 
         $agendaStatusOptions = $this->agendaStatusOptions((string) $request->input('status'));
 
-        return view('pages.agenda.events.index', compact('events', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
+        return view('pages.agenda.events.index', compact('events', 'calendarEvents', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
     }
 
     protected function currentUserBranchIdForFilters(Request $request): ?int
@@ -436,19 +460,25 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
+            'unified_plan_source' => ['nullable', 'in:monthly_auto,upload_file'],
             'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
-        if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file')) {
-            return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file' && ! $request->hasFile('agenda_plan_file')) {
+            return back()->withErrors(['agenda_plan_file' => 'يرجى رفع ملف الخطة الأولية عند اختيار رفع الملف للخطة الموحدة.'])->withInput();
         }
 
         $date = Carbon::parse($data['event_date']);
 
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
+
+        $agendaPlanFile = null;
+        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file') {
+            $agendaPlanFile = $request->file('agenda_plan_file')?->store('agenda/plans', 'public');
+        }
 
         $event = AgendaEvent::create([
             'month' => (int) $date->format('m'),
@@ -469,7 +499,7 @@ class AgendaEventsController extends Controller
             'executive_approval_status' => 'pending',
             'created_by' => $request->user()->id,
             'notes' => $data['notes'] ?? null,
-            'agenda_plan_file' => $request->file('agenda_plan_file')?->store('agenda/plans', 'public'),
+            'agenda_plan_file' => $agendaPlanFile,
             'version' => 1,
         ]);
 
@@ -557,13 +587,14 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
+            'unified_plan_source' => ['nullable', 'in:monthly_auto,upload_file'],
             'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
-        if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
-            return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
+            return back()->withErrors(['agenda_plan_file' => 'يرجى رفع ملف الخطة الأولية عند اختيار رفع الملف للخطة الموحدة.'])->withInput();
         }
 
         $date = Carbon::parse($data['event_date']);
@@ -572,11 +603,19 @@ class AgendaEventsController extends Controller
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
         $agendaPlanFile = $agendaEvent->agenda_plan_file;
-        if ($request->hasFile('agenda_plan_file')) {
+        $shouldUseUnifiedUpload = ($data['plan_type'] ?? null) === 'unified'
+            && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file';
+
+        if ($shouldUseUnifiedUpload && $request->hasFile('agenda_plan_file')) {
             if ($agendaPlanFile) {
                 Storage::disk('public')->delete($agendaPlanFile);
             }
             $agendaPlanFile = $request->file('agenda_plan_file')->store('agenda/plans', 'public');
+        } elseif (! $shouldUseUnifiedUpload) {
+            if ($agendaPlanFile) {
+                Storage::disk('public')->delete($agendaPlanFile);
+            }
+            $agendaPlanFile = null;
         }
 
         $agendaEvent->update([

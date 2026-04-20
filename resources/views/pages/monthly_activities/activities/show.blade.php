@@ -51,6 +51,22 @@
             </div>
         </div>
 
+        @if(($archivedVersions ?? collect())->isNotEmpty())
+            <div class="card event-card mb-4">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">أرشيف الإصدارات السابقة</h2>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($archivedVersions as $archived)
+                            <a class="badge bg-light text-dark border text-decoration-none"
+                               href="{{ route('role.relations.activities.show', $archived) }}">
+                                نسخة {{ (int) ($archived->plan_version ?: 1) }} — {{ $archived->title }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="workflow-ui mb-4">
             <div class="wf-card card">
                 <div class="card-body">
@@ -146,7 +162,16 @@
 
         <div class="card event-card">
             <div class="card-body">
-                <div class="row g-3">
+                <div class="monthly-summary-grid mb-4">
+                    <div class="monthly-summary-item"><span>الحالة</span><strong>{{ $statusLabel($monthlyActivity->status) }}</strong></div>
+                    <div class="monthly-summary-item"><span>حالة التنفيذ</span><strong>{{ $executionLabel($monthlyActivity->execution_status) }}</strong></div>
+                    <div class="monthly-summary-item"><span>التاريخ</span><strong>{{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</strong></div>
+                    <div class="monthly-summary-item"><span>الفرع</span><strong>{{ $monthlyActivity->branch?->name ?? '-' }}</strong></div>
+                </div>
+
+                <details class="monthly-full-details">
+                    <summary>عرض التفاصيل الكاملة</summary>
+                    <div class="row g-3 mt-2 monthly-details-content">
                     <div class="col-12 col-md-4"><strong>عنوان النشاط:</strong> {{ $monthlyActivity->title }}</div>
                     <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</div>
                     <div class="col-12 col-md-4"><strong>التاريخ المقترح:</strong> {{ optional($monthlyActivity->proposed_date)->format('Y-m-d') ?? '-' }}</div>
@@ -292,12 +317,11 @@
                         </div>
                     </div>
                 </div>
+                </details>
             </div>
         </div>
     </div>
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-show.css') }}"> 
+@endpush
 @endsection
-
-
-
-
-

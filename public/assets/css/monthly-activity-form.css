@@ -1,0 +1,71 @@
+.monthly-plan-form-page .monthly-form-section-head {
+    padding-bottom: .5rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: .5rem;
+}
+.monthly-plan-form-page .monthly-activation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: .75rem;
+}
+.monthly-plan-form-page .monthly-activation-option {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .85rem 1rem;
+    border: 1px solid #d8e1ea;
+    border-radius: 14px;
+    background: #fbfdff;
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+.monthly-plan-form-page .monthly-activation-option:hover {
+    border-color: #9fb8d4;
+    background: #f5f9ff;
+}
+.monthly-plan-form-page .monthly-activation-option:has(input:checked) {
+    border-color: #3c78b5;
+    background: #eef6ff;
+    box-shadow: 0 0 0 2px rgba(60, 120, 181, .08);
+}
+.monthly-plan-form-page .monthly-activation-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: #d9e9f8;
+    color: #22598d;
+    font-size: .82rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.monthly-plan-form-page .monthly-subsection-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #fcfcfd;
+    padding: 1rem;
+}
+.monthly-plan-form-page .partner-departments-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: .65rem;
+}
+.monthly-plan-form-page .partner-department-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem .85rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+}
+.monthly-plan-form-page .monthly-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .75rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}

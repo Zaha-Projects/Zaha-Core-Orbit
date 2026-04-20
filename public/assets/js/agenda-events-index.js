@@ -1,0 +1,251 @@
+(function () {
+    const module = document.querySelector('.agenda-module');
+    if (!module) return;
+
+    const isRtl = module.dataset.rtl === '1';
+    const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
+    const events = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-events-json', []) : JSON.parse(document.getElementById('agenda-events-json')?.textContent ?? '[]');
+    const weekDayLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-weekdays-json', []) : JSON.parse(document.getElementById('agenda-weekdays-json')?.textContent ?? '[]');
+
+    const monthNames = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-months-json', []) : JSON.parse(document.getElementById('agenda-months-json')?.textContent ?? '[]');
+
+    const selectedYear = Number(module.dataset.selectedYear || 0);
+    const selectedMonth = Number(module.dataset.selectedMonth || 0);
+    let currentDate = new Date();
+    if (selectedYear > 0 && selectedMonth >= 1 && selectedMonth <= 12) {
+        currentDate = new Date(selectedYear, selectedMonth - 1, 1);
+    } else if (events.length > 0) {
+        currentDate = new Date(events[0].date);
+        currentDate.setDate(1);
+    } else {
+        currentDate.setDate(1);
+    }
+
+    const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
+    const gridContainer = module.querySelector('[data-calendar-grid]');
+    const titleContainer = module.querySelector('[data-calendar-title]');
+    const legendTopContainer = module.querySelector('[data-calendar-legend-top]');
+    const legendBottomContainer = module.querySelector('[data-calendar-legend-bottom]');
+    const palette = ['#E11D48', '#0EA5E9', '#22C55E', '#F59E0B', '#8B5CF6', '#14B8A6', '#F97316', '#3B82F6', '#84CC16', '#EC4899', '#06B6D4', '#A855F7'];
+    const icons = ['🏢', '📍', '⭐', '🧭', '🎯', '🛰️', '🪄', '🛡️', '🔷', '🔶'];
+    let tooltipEl = null;
+
+    function mapDayPosition(jsDayIndex) {
+        return isRtl ? 6 - jsDayIndex : jsDayIndex;
+    }
+
+    function colorForEntity(entity, id = null) {
+        if (entity?.color_hex) return entity.color_hex;
+        const key = Math.abs(Number(id || entity?.id || 0));
+        return palette[key % palette.length];
+    }
+
+    function softenColor(hex) {
+        if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex;
+        const normalized = hex.length === 4
+            ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+            : hex;
+        const r = parseInt(normalized.slice(1, 3), 16);
+        const g = parseInt(normalized.slice(3, 5), 16);
+        const b = parseInt(normalized.slice(5, 7), 16);
+        const mix = (channel) => Math.round(channel + ((255 - channel) * 0.55));
+        return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+    }
+
+    function iconForEntity(entity, id = null) {
+        if (entity?.icon) return entity.icon;
+        const key = Math.abs(Number(id || entity?.id || 0));
+        return icons[key % icons.length];
+    }
+
+    function ensureTooltip() {
+        if (tooltipEl) return tooltipEl;
+        tooltipEl = document.createElement('div');
+        tooltipEl.className = 'agenda-event-tooltip d-none';
+        document.body.appendChild(tooltipEl);
+        return tooltipEl;
+    }
+
+    function setTooltipPosition(evt) {
+        if (!tooltipEl) return;
+        const offset = 16;
+        const maxX = window.innerWidth - tooltipEl.offsetWidth - 12;
+        const maxY = window.innerHeight - tooltipEl.offsetHeight - 12;
+        const left = Math.min(maxX, Math.max(12, evt.clientX + offset));
+        const top = Math.min(maxY, Math.max(12, evt.clientY + offset));
+        tooltipEl.style.left = `${left}px`;
+        tooltipEl.style.top = `${top}px`;
+    }
+
+    function renderLegend(monthEvents) {
+        if (!legendTopContainer || !legendBottomContainer) return;
+        const branches = new Map();
+        const departments = new Map();
+        const units = new Map();
+
+        monthEvents.forEach((event) => {
+            (event.participant_branches ?? []).forEach((branch) => branches.set(branch.id, branch));
+            if (event.department_id && event.department && event.department !== '-') {
+                departments.set(event.department_id, {
+                    id: event.department_id,
+                    name: event.department,
+                    color_hex: event.department_color_hex,
+                    icon: event.department_icon,
+                });
+            }
+            (event.partner_departments ?? []).forEach((department) => departments.set(department.id, department));
+            (event.participant_units ?? []).forEach((unit) => units.set(unit.id, unit));
+        });
+
+        const renderItems = (entries, prefix, shapeClass) => Array.from(entries.entries()).map(([id, value]) => {
+            const entity = typeof value === 'object' ? value : { name: value };
+            return `
+                <span class="legend-item">
+                    <span>${iconForEntity(entity, id)}</span>
+                    <span class="legend-badge ${shapeClass}" style="background:${softenColor(colorForEntity(entity, id))}"></span>
+                    <span>${prefix}${entity.name}</span>
+                </span>
+            `;
+        }).join('');
+
+        legendTopContainer.innerHTML = `
+            ${renderItems(departments, '🏢 ', 'legend-badge--square')}
+            ${renderItems(units, '🧩 ', 'legend-badge--square')}
+        `;
+        legendBottomContainer.innerHTML = `${renderItems(branches, '🏳️ ', 'legend-badge--circle')}`;
+    }
+
+    function renderWeekdays() {
+        weekdaysContainer.innerHTML = '';
+        weekDayLabels.forEach((label) => {
+            const item = document.createElement('div');
+            item.className = 'agenda-weekday';
+            item.textContent = label;
+            weekdaysContainer.appendChild(item);
+        });
+    }
+
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const today = new Date();
+
+        titleContainer.textContent = `${monthNames[month]} ${year}`;
+
+        const monthEvents = events.filter((event) => {
+            const dateObj = new Date(event.date);
+            return dateObj.getFullYear() === year && dateObj.getMonth() === month;
+        });
+        renderLegend(monthEvents);
+
+        const eventsByDay = new Map();
+        monthEvents.forEach((event) => {
+            const day = new Date(event.date).getDate();
+            if (!eventsByDay.has(day)) eventsByDay.set(day, []);
+            eventsByDay.get(day).push(event);
+        });
+
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDayPosition = mapDayPosition(new Date(year, month, 1).getDay());
+
+        gridContainer.innerHTML = '';
+
+        for (let i = 0; i < firstDayPosition; i += 1) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'agenda-calendar-day agenda-calendar-day--empty';
+            gridContainer.appendChild(emptyCell);
+        }
+
+        for (let day = 1; day <= daysInMonth; day += 1) {
+            const dayCell = document.createElement('div');
+            dayCell.className = 'agenda-calendar-day';
+
+            const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+            if (isToday) dayCell.classList.add('agenda-calendar-day--today');
+
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'agenda-calendar-day-number';
+            dayHeader.textContent = String(day);
+            dayCell.appendChild(dayHeader);
+
+            const dayEvents = eventsByDay.get(day) ?? [];
+            dayEvents.forEach((event) => {
+                const eventLink = document.createElement(event.view_url ? 'a' : 'div');
+                if (event.view_url) {
+                    eventLink.href = event.view_url;
+                }
+                eventLink.className = `agenda-event-chip status-${event.status}`;
+                const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => {
+                    return `<span class="agenda-event-chip-dot" style="background:${softenColor(colorForEntity(branch))}" title="${branch.name}"></span>`;
+                }).join('');
+                const unitSquares = [
+                    ...(event.department && event.department !== '-' ? [{
+                        id: event.department_id,
+                        name: event.department,
+                        color_hex: event.department_color_hex,
+                        icon: event.department_icon,
+                    }] : []),
+                    ...(event.partner_departments ?? []),
+                    ...(event.participant_units ?? []),
+                ].slice(0, 5).map((entity) => (
+                    `<span class="agenda-event-chip-square" style="background:${softenColor(colorForEntity(entity))}" title="${entity.name}"></span>`
+                )).join('');
+                eventLink.innerHTML = `
+                    <span class="agenda-event-chip-title">${event.name}</span>
+                    <span class="event-status status-${event.status}">${event.status_label ?? event.status}</span>
+                    <span class="agenda-event-chip-units">${unitSquares}</span>
+                    <span class="agenda-event-chip-branches">${branchDots}</span>
+                `;
+
+                eventLink.addEventListener('mouseenter', (evt) => {
+                    const tooltip = ensureTooltip();
+                    const branchPills = (event.participant_branches ?? []).map((branch) => (
+                        `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge legend-badge--circle" style="background:${softenColor(colorForEntity(branch))}"></span><span>${branch.name}</span></span>`
+                    )).join('');
+                    const partnerDepartmentPills = (event.partner_departments ?? []).map((department) => (
+                        `<span class="tooltip-pill"><span>${iconForEntity(department)}</span><span class="legend-badge legend-badge--square" style="background:${softenColor(colorForEntity(department))}"></span><span>${department.name}</span></span>`
+                    )).join('');
+                    const unitPills = (event.participant_units ?? []).map((unit) => (
+                        `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge legend-badge--square" style="background:${softenColor(colorForEntity(unit))}"></span><span>${unit.name}</span></span>`
+                    )).join('');
+
+                    tooltip.innerHTML = `
+                        <div class="tooltip-title">${event.name}</div>
+                        <div class="tooltip-row">📅 ${event.date}</div>
+                        <div class="tooltip-row">🏢 ${event.department ?? '-'}</div>
+                        <div class="tooltip-row">🏷️ ${event.category ?? '-'}</div>
+                        <div class="tooltip-row">📝 ${(event.event_type ?? '-') + ' / ' + (event.plan_type ?? '-')}</div>
+                        <div class="tooltip-row">✅ ${event.status_label ?? event.status}</div>
+                        <div class="tooltip-row"><strong>الفروع المشاركة:</strong></div>
+                        <div class="tooltip-list">${branchPills || '<span class="text-muted">-</span>'}</div>
+                        <div class="tooltip-row mt-1"><strong>الوحدات/الأقسام الشريكة:</strong></div>
+                        <div class="tooltip-list">${partnerDepartmentPills || '<span class="text-muted">-</span>'}</div>
+                        <div class="tooltip-row mt-1"><strong>الوحدات المشاركة:</strong></div>
+                        <div class="tooltip-list">${unitPills || '<span class="text-muted">-</span>'}</div>
+                    `;
+                    tooltip.classList.remove('d-none');
+                    setTooltipPosition(evt);
+                });
+                eventLink.addEventListener('mousemove', setTooltipPosition);
+                eventLink.addEventListener('mouseleave', () => {
+                    if (tooltipEl) tooltipEl.classList.add('d-none');
+                });
+                dayCell.appendChild(eventLink);
+            });
+
+            gridContainer.appendChild(dayCell);
+        }
+    }
+
+    module.querySelectorAll('[data-calendar-nav]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const delta = button.dataset.calendarNav === 'next' ? 1 : -1;
+            currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1);
+            renderCalendar();
+        });
+    });
+
+    switchView('table');
+    renderWeekdays();
+    renderCalendar();
+})();

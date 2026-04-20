@@ -8,6 +8,10 @@
     $title = __('app.roles.relations.agenda.show_title');
     $subtitle = __('app.roles.relations.agenda.subtitle');
     $workflowSummary = $agendaEvent->workflow_summary ?? [];
+    $viewer = auth()->user();
+    $canViewApprovalStates = (bool) ($workflowSummary['can_current_user_decide'] ?? false)
+        || ($viewer?->can('agenda.approve') ?? false)
+        || ($viewer?->hasRole('super_admin') ?? false);
     $statusLabel = function (?string $status): string {
         if (! $status) {
             return '-';
@@ -58,69 +62,71 @@
                         </div>
                     </div>
 
-                    <details class="wf-advanced-box mt-3" open>
-                        <summary>عرض حالات الاعتماد</summary>
-                        <div class="row g-3 mt-1">
-                            <div class="col-lg-7">
-                                <div class="d-flex flex-column gap-2">
-                                    @forelse($workflowSummary['steps'] ?? [] as $step)
-                                        <div class="border rounded-3 p-3 {{ !empty($step['is_current']) ? 'border-primary-subtle bg-light-subtle' : '' }}">
-                                            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                                                <div>
-                                                    <div class="fw-semibold">{{ $step['label'] }}</div>
-                                                    <div class="wf-kv">{{ $step['role_label'] }}</div>
-                                                    @if(!empty($step['actor_name']) || !empty($step['acted_at']))
-                                                        <div class="wf-kv">{{ $step['actor_name'] ?? '-' }} @if(!empty($step['acted_at'])) | {{ $step['acted_at'] }} @endif</div>
-                                                    @endif
-                                                    @if(!empty($step['comment']))
-                                                        <div class="wf-kv mt-1">{{ $step['comment'] }}</div>
-                                                    @endif
-                                                </div>
-                                                <span class="wf-status-badge wf-status-{{ $step['state'] }}">{{ $step['state_label'] }}</span>
-                                            </div>
-                                        </div>
-                                    @empty
-                                        <div class="wf-kv">-</div>
-                                    @endforelse
-                                </div>
-                            </div>
-                            <div class="col-lg-5">
-                                <div class="border rounded-3 p-3 mb-3">
-                                    <h3 class="h6 mb-2">{{ __('workflow_ui.approvals.change_request_title') }}</h3>
-                                    @if(!empty($workflowSummary['latest_change_request']))
-                                        <div class="wf-kv">{{ __('workflow_ui.approvals.requested_by') }}: {{ $workflowSummary['latest_change_request']['actor_name'] }}</div>
-                                        <div class="wf-kv">{{ __('workflow_ui.approvals.requested_at') }}: {{ $workflowSummary['latest_change_request']['acted_at'] ?? '-' }}</div>
-                                        <div class="wf-kv">{{ __('workflow_ui.common.current_step') }}: {{ $workflowSummary['latest_change_request']['step_label'] }}</div>
-                                        <div class="wf-kv">{{ __('workflow_ui.common.assignee') }}: {{ $workflowSummary['latest_change_request']['role_label'] }}</div>
-                                        <div class="wf-kv mt-2">{{ $workflowSummary['latest_change_request']['comment'] ?: '-' }}</div>
-                                    @else
-                                        <div class="wf-kv">{{ __('workflow_ui.approvals.change_request_empty') }}</div>
-                                    @endif
-                                </div>
-
-                                <details class="wf-advanced-box">
-                                    <summary>{{ __('workflow_ui.approvals.workflow_history') }}</summary>
-                                    <div class="d-flex flex-column gap-2 mt-3">
-                                        @forelse($workflowSummary['timeline'] ?? [] as $entry)
-                                            <div class="border rounded-3 p-3">
+                    @if($canViewApprovalStates)
+                        <details class="wf-advanced-box mt-3" open>
+                            <summary>عرض حالات الاعتماد</summary>
+                            <div class="row g-3 mt-1">
+                                <div class="col-lg-7">
+                                    <div class="d-flex flex-column gap-2">
+                                        @forelse($workflowSummary['steps'] ?? [] as $step)
+                                            <div class="border rounded-3 p-3 {{ !empty($step['is_current']) ? 'border-primary-subtle bg-light-subtle' : '' }}">
                                                 <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                     <div>
-                                                        <div class="fw-semibold">{{ $entry['step_label'] }}</div>
-                                                        <div class="wf-kv">{{ $entry['role_label'] }}</div>
-                                                        <div class="wf-kv">{{ $entry['actor_name'] }} | {{ $entry['acted_at'] ?? '-' }}</div>
-                                                        <div class="wf-kv">{{ $entry['comment'] ?: '-' }}</div>
+                                                        <div class="fw-semibold">{{ $step['label'] }}</div>
+                                                        <div class="wf-kv">{{ $step['role_label'] }}</div>
+                                                        @if(!empty($step['actor_name']) || !empty($step['acted_at']))
+                                                            <div class="wf-kv">{{ $step['actor_name'] ?? '-' }} @if(!empty($step['acted_at'])) | {{ $step['acted_at'] }} @endif</div>
+                                                        @endif
+                                                        @if(!empty($step['comment']))
+                                                            <div class="wf-kv mt-1">{{ $step['comment'] }}</div>
+                                                        @endif
                                                     </div>
-                                                    <span class="wf-status-badge wf-status-{{ $entry['action'] }}">{{ $entry['action_label'] }}</span>
+                                                    <span class="wf-status-badge wf-status-{{ $step['state'] }}">{{ $step['state_label'] }}</span>
                                                 </div>
                                             </div>
                                         @empty
-                                            <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
+                                            <div class="wf-kv">-</div>
                                         @endforelse
                                     </div>
-                                </details>
+                                </div>
+                                <div class="col-lg-5">
+                                    <div class="border rounded-3 p-3 mb-3">
+                                        <h3 class="h6 mb-2">{{ __('workflow_ui.approvals.change_request_title') }}</h3>
+                                        @if(!empty($workflowSummary['latest_change_request']))
+                                            <div class="wf-kv">{{ __('workflow_ui.approvals.requested_by') }}: {{ $workflowSummary['latest_change_request']['actor_name'] }}</div>
+                                            <div class="wf-kv">{{ __('workflow_ui.approvals.requested_at') }}: {{ $workflowSummary['latest_change_request']['acted_at'] ?? '-' }}</div>
+                                            <div class="wf-kv">{{ __('workflow_ui.common.current_step') }}: {{ $workflowSummary['latest_change_request']['step_label'] }}</div>
+                                            <div class="wf-kv">{{ __('workflow_ui.common.assignee') }}: {{ $workflowSummary['latest_change_request']['role_label'] }}</div>
+                                            <div class="wf-kv mt-2">{{ $workflowSummary['latest_change_request']['comment'] ?: '-' }}</div>
+                                        @else
+                                            <div class="wf-kv">{{ __('workflow_ui.approvals.change_request_empty') }}</div>
+                                        @endif
+                                    </div>
+
+                                    <details class="wf-advanced-box">
+                                        <summary>{{ __('workflow_ui.approvals.workflow_history') }}</summary>
+                                        <div class="d-flex flex-column gap-2 mt-3">
+                                            @forelse($workflowSummary['timeline'] ?? [] as $entry)
+                                                <div class="border rounded-3 p-3">
+                                                    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                                        <div>
+                                                            <div class="fw-semibold">{{ $entry['step_label'] }}</div>
+                                                            <div class="wf-kv">{{ $entry['role_label'] }}</div>
+                                                            <div class="wf-kv">{{ $entry['actor_name'] }} | {{ $entry['acted_at'] ?? '-' }}</div>
+                                                            <div class="wf-kv">{{ $entry['comment'] ?: '-' }}</div>
+                                                        </div>
+                                                        <span class="wf-status-badge wf-status-{{ $entry['action'] }}">{{ $entry['action_label'] }}</span>
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
+                                            @endforelse
+                                        </div>
+                                    </details>
+                                </div>
                             </div>
-                        </div>
-                    </details>
+                        </details>
+                    @endif
                 </div>
             </div>
         </div>
