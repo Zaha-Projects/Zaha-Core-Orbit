@@ -85,12 +85,13 @@
                     @method($formMethod)
                 @endif
                 <input type="hidden" name="status" value="draft">
+                <input type="hidden" name="execution_status" value="{{ old('execution_status', $existingMonthlyActivity?->execution_status ?? 'executed') }}">
                 <input type="hidden" class="js-activity-date" name="activity_date" value="{{ old('activity_date', optional($existingMonthlyActivity?->activity_date)->format('Y-m-d') ?: optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}">
 
                 <div class="col-12">
                     <div class="monthly-form-section-head">
                         <h2 class="h6 mb-1">بيانات التخطيط الأساسية</h2>
-                        <p class="text-muted small mb-0">التاريخ الفعلي يبقى مخصصاً لما بعد التنفيذ، لذلك يتم ربطه هنا تلقائياً مع التاريخ المخطط.</p>
+                        <p class="text-muted small mb-0">هذه الشاشة مخصصة للتخطيط قبل التنفيذ، بينما تحديث حالة التنفيذ يتم في وضع إكمال التعبئة بعد التنفيذ.</p>
                     </div>
                 </div>
 
@@ -114,39 +115,6 @@
                     <label class="form-label">تاريخ النشاط المخطط</label>
                     <input class="form-control js-proposed-date @error('proposed_date') is-invalid @enderror" type="date" name="proposed_date" value="{{ old('proposed_date', optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}">
                     @error('proposed_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 col-md-4">
-                    <label class="form-label">التاريخ الفعلي</label>
-                    <input class="form-control" value="يُستكمل بعد التنفيذ" readonly>
-                </div>
-
-                <div class="col-12 col-md-4">
-                    <label class="form-label">حالة النشاط</label>
-                    <select class="form-select js-execution-status @error('execution_status') is-invalid @enderror" name="execution_status">
-                        @foreach(($executionStatusLabels ?? []) as $statusCode => $statusLabel)
-                            <option value="{{ $statusCode }}" {{ $selectedExecutionStatus === $statusCode ? 'selected' : '' }}>{{ $statusLabel }}</option>
-                        @endforeach
-                    </select>
-                    @error('execution_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 col-md-4 js-postponed-fields">
-                    <label class="form-label">تاريخ التأجيل</label>
-                    <input class="form-control @error('rescheduled_date') is-invalid @enderror" type="date" name="rescheduled_date" value="{{ old('rescheduled_date', optional($existingMonthlyActivity?->rescheduled_date)->format('Y-m-d')) }}">
-                    @error('rescheduled_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 col-md-8 js-postponed-fields">
-                    <label class="form-label">سبب التأجيل</label>
-                    <input class="form-control @error('reschedule_reason') is-invalid @enderror" name="reschedule_reason" value="{{ old('reschedule_reason', $existingMonthlyActivity?->reschedule_reason) }}">
-                    @error('reschedule_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-12 js-cancelled-fields">
-                    <label class="form-label">سبب الإلغاء</label>
-                    <textarea class="form-control @error('cancellation_reason') is-invalid @enderror" name="cancellation_reason" rows="2">{{ old('cancellation_reason', $existingMonthlyActivity?->cancellation_reason) }}</textarea>
-                    @error('cancellation_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12 col-md-4">
@@ -576,9 +544,6 @@
 
             const activityDateInput = form.querySelector('.js-activity-date');
             const proposedDateInput = form.querySelector('.js-proposed-date');
-            const executionStatusSelect = form.querySelector('.js-execution-status');
-            const postponedFields = form.querySelectorAll('.js-postponed-fields');
-            const cancelledFields = form.querySelectorAll('.js-cancelled-fields');
             const locationType = form.querySelector('.js-location-type');
             const insideLocationFields = form.querySelectorAll('.js-inside-location');
             const outsideLocationFields = form.querySelectorAll('.js-outside-location');
@@ -639,15 +604,6 @@
                         input.value = '';
                     }
                 });
-            }
-
-            function toggleExecutionStatus() {
-                const isPostponed = executionStatusSelect?.value === 'postponed';
-                const isCancelled = executionStatusSelect?.value === 'cancelled';
-                toggleElements(postponedFields, isPostponed);
-                toggleElements(cancelledFields, isCancelled);
-                setRequiredState(['[name="rescheduled_date"]', '[name="reschedule_reason"]'], isPostponed);
-                setRequiredState(['[name="cancellation_reason"]'], isCancelled);
             }
 
             function toggleLocationFields() {
@@ -842,7 +798,6 @@
             }
 
             proposedDateInput?.addEventListener('change', syncActivityDate);
-            executionStatusSelect?.addEventListener('change', toggleExecutionStatus);
             locationType?.addEventListener('change', toggleLocationFields);
             targetGroupCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', toggleTargetGroupOther));
             needsVolunteers?.addEventListener('change', toggleVolunteers);
@@ -860,7 +815,6 @@
             renderPartners();
             renderSupplies();
             renderTeamGroups();
-            toggleExecutionStatus();
             toggleLocationFields();
             toggleTargetGroupOther();
             toggleVolunteers();
