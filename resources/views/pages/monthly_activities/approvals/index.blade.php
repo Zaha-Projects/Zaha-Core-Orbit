@@ -1,7 +1,10 @@
 ﻿@extends('layouts.app')
 
 @push('styles')
+@php($workflowUiCssPath = public_path('assets/css/workflow-ui.css'))
+@if (file_exists($workflowUiCssPath))
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
+@endif
 @endpush
 
 @php
@@ -363,6 +366,15 @@
 
 @push('styles')
 <style>
+    .workflow-ui .wf-card { border-radius: 1rem; border: 1px solid #dde5ef; }
+    .workflow-ui .wf-page-title { font-weight: 700; color: #0f172a; }
+    .workflow-ui .wf-muted { color: #64748b; }
+    .workflow-ui .wf-tabbar { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .workflow-ui .wf-tab { border: 1px solid #dbe4ef; border-radius: 999px; padding: .35rem .75rem; text-decoration: none; color: #334155; }
+    .workflow-ui .wf-tab.active { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .workflow-ui .wf-status-badge { border-radius: 999px; padding: .2rem .65rem; font-size: .78rem; font-weight: 600; display: inline-flex; }
+    .workflow-ui .wf-chip-row { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .workflow-ui .wf-chip { border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; padding: .2rem .55rem; font-size: .75rem; }
     .approvals-kpi-row {
         display: grid;
         gap: .75rem;
