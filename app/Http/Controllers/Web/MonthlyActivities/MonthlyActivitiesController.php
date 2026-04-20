@@ -740,6 +740,15 @@ class MonthlyActivitiesController extends Controller
             || $this->isApprovedVersion($monthlyActivity);
     }
 
+    protected function isReadOnlyUnifiedAgendaActivity(MonthlyActivity $monthlyActivity): bool
+    {
+        $monthlyActivity->loadMissing('agendaEvent');
+
+        return (bool) $monthlyActivity->is_from_agenda
+            && (string) $monthlyActivity->plan_type === 'unified'
+            && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
+    }
+
     public function syncFromAgenda(Request $request)
     {
         if ($branchId = $this->currentUserBranchId($request->user())) {
@@ -791,6 +800,9 @@ class MonthlyActivitiesController extends Controller
                 continue;
             }
 
+            $isReadOnlyUnified = (string) ($event->plan_type ?? 'non_unified') === 'unified'
+                && (string) ($event->event_type ?? '') === 'mandatory';
+
             MonthlyActivity::create([
                 'month' => (int) $event->month,
                 'day' => (int) $event->day,
@@ -804,8 +816,11 @@ class MonthlyActivitiesController extends Controller
                 'description' => $event->notes,
                 'location_type' => 'inside_center',
                 'location_details' => null,
-                'status' => 'draft',
+                'status' => $isReadOnlyUnified ? 'approved' : 'draft',
                 'execution_status' => 'executed',
+                'relations_manager_approval_status' => $isReadOnlyUnified ? 'approved' : null,
+                'executive_approval_status' => $isReadOnlyUnified ? 'approved' : null,
+                'lifecycle_status' => $isReadOnlyUnified ? 'Approved' : null,
                 'lock_at' => $this->buildLockAt(optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString()),
                 'is_official' => false,
                 'branch_id' => (int) $data['branch_id'],
@@ -1113,6 +1128,12 @@ class MonthlyActivitiesController extends Controller
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
+        if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
+            return redirect()
+                ->route('role.relations.activities.show', $monthlyActivity)
+                ->with('warning', 'هذه فعالية موحدة ومعتمدة ومخصصة للعرض فقط ولا يمكن تعديلها.');
+        }
+
         if (! request()->boolean('form') && request('mode') !== 'post') {
             $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
                 ->loadCount('newerVersions');
@@ -1213,6 +1234,12 @@ class MonthlyActivitiesController extends Controller
         DynamicWorkflowService $dynamicWorkflowService
     )
     {
+        if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
+            return redirect()
+                ->route('role.relations.activities.show', $monthlyActivity)
+                ->with('warning', 'هذه فعالية موحدة ومعتمدة ومخصصة للعرض فقط ولا يمكن تعديلها.');
+        }
+
         if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
             $request->files->set('branch_plan_file', $request->file('planning_attachment'));
         }
@@ -1790,6 +1817,12 @@ class MonthlyActivitiesController extends Controller
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
         $actor = request()->user();
 
+        if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
+            return redirect()
+                ->route('role.relations.activities.show', $monthlyActivity)
+                ->with('warning', 'هذه فعالية موحدة ومعتمدة ولا تحتاج إرسالًا للاعتماد.');
+        }
+
         if ($this->isSupersededVersion($monthlyActivity)) {
             return back()->withErrors([
                 'status' => 'هذه نسخة قديمة من النشاط ولا يمكن إرسالها للاعتماد.',
@@ -1806,6 +1839,12 @@ class MonthlyActivitiesController extends Controller
     public function close(Request $request, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
+        if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
+            return redirect()
+                ->route('role.relations.activities.show', $monthlyActivity)
+                ->with('warning', 'هذه فعالية موحدة ومعتمدة ومخصصة للعرض فقط.');
+        }
 
         if ($this->isSupersededVersion($monthlyActivity)) {
             return back()->withErrors([
@@ -1849,7 +1888,7 @@ class MonthlyActivitiesController extends Controller
         }
 
         $query = MonthlyActivity::query()
-            ->with('branch')
+            ->with(['branch', 'agendaEvent'])
             ->whereDoesntHave('newerVersions')
             ->notArchived();
 
@@ -1889,6 +1928,8 @@ class MonthlyActivitiesController extends Controller
             ->orderBy('proposed_date')
             ->get()
             ->map(function (MonthlyActivity $activity) use ($year) {
+            $isReadOnlyUnified = $this->isReadOnlyUnifiedAgendaActivity($activity);
+
             return [
                 'id' => $activity->id,
                 'title' => $activity->title,
@@ -1899,6 +1940,10 @@ class MonthlyActivitiesController extends Controller
                 'requires_workshops' => (bool) $activity->requires_workshops,
                 'requires_communications' => (bool) $activity->requires_communications,
                 'edit_url' => route('role.relations.activities.edit', $activity),
+                'open_url' => $isReadOnlyUnified
+                    ? route('role.relations.activities.show', $activity)
+                    : route('role.relations.activities.edit', $activity),
+                'read_only_unified' => $isReadOnlyUnified,
             ];
             })->values();
 
