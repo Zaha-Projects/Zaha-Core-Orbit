@@ -283,41 +283,47 @@
                         @forelse ($events as $event)
                             @php($workflowSummary = $event->workflow_summary ?? [])
                             <article class="agenda-event-card">
-                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                                    <h3 class="h6 mb-0">{{ $event->event_name }}</h3>
-                                    <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
-                                </div>
-                                <div class="agenda-card-meta">
-                                    <span>📅 {{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span>
-                                    <span>V{{ (int) ($event->version ?? 1) }}</span>
-                                    <span>{{ $event->department?->name ?? '-' }}</span>
-                                    <span>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</span>
-                                </div>
-                                <div class="d-flex flex-wrap gap-1 mt-2">
-                                    <span class="badge {{ $event->event_type === 'mandatory' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' }}">{{ __('app.roles.relations.agenda.types.' . $event->event_type) }}</span>
-                                    <span class="badge {{ $event->plan_type === 'unified' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info' }}">{{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</span>
-                                    <span class="badge bg-light text-dark border">الفروع المشاركة: {{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</span>
-                                </div>
-                                <div class="approval-sequence-list mt-2">
-                                    <div class="approval-sequence-item">
-                                        <div class="approval-sequence-role">{{ __('workflow_ui.common.current_step') }}</div>
-                                        <span>{{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
-                                    </div>
-                                    <div class="approval-sequence-item">
-                                        <div class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</div>
-                                        <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
+                                <div class="module-card-header">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-0">
+                                        <h3 class="h6 mb-0">{{ $event->event_name }}</h3>
+                                        <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
                                     </div>
                                 </div>
-                                <div class="event-actions mt-3">
-                                    <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.agenda.show', $event) }}">{{ __('app.roles.relations.agenda.actions.view') }}</a>
-                                    @if($canManageAgenda)
-                                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
-                                        <form method="POST" action="{{ route('role.relations.agenda.submit', $event) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
-                                        </form>
-                                    @endif
+                                <div class="module-card-body">
+                                    <div class="agenda-card-meta">
+                                        <span>📅 {{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span>
+                                        <span>V{{ (int) ($event->version ?? 1) }}</span>
+                                        <span>{{ $event->department?->name ?? '-' }}</span>
+                                        <span>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-1 mt-2">
+                                        <span class="badge {{ $event->event_type === 'mandatory' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' }}">{{ __('app.roles.relations.agenda.types.' . $event->event_type) }}</span>
+                                        <span class="badge {{ $event->plan_type === 'unified' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info' }}">{{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</span>
+                                        <span class="badge bg-light text-dark border">الفروع المشاركة: {{ $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count() }}</span>
+                                    </div>
+                                    <div class="approval-sequence-list mt-2">
+                                        <div class="approval-sequence-item">
+                                            <div class="approval-sequence-role">{{ __('workflow_ui.common.current_step') }}</div>
+                                            <span>{{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
+                                        </div>
+                                        <div class="approval-sequence-item">
+                                            <div class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</div>
+                                            <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="module-card-footer">
+                                    <div class="event-actions">
+                                        <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.agenda.show', $event) }}">{{ __('app.roles.relations.agenda.actions.view') }}</a>
+                                        @if($canManageAgenda)
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
+                                            <form method="POST" action="{{ route('role.relations.agenda.submit', $event) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </div>
                             </article>
                         @empty

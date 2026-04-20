@@ -5,7 +5,6 @@
         'partner_department_ids',
         $isEditMode ? $existingAgendaEvent->partnerDepartments->pluck('id')->all() : []
     ));
-    $currentPlanFile = $isEditMode ? $existingAgendaEvent->agenda_plan_file : null;
 @endphp
 
 <div class="event-module agenda-form-page">
@@ -77,7 +76,7 @@
                             </div>
                             <div class="col-12 col-md-6 col-xl-2">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.event_type') }}</label>
-                                <select class="form-select @error('event_type') is-invalid @enderror" name="event_type" required>
+                                <select class="form-select js-event-type @error('event_type') is-invalid @enderror" name="event_type" required>
                                     <option value="mandatory" {{ old('event_type', $existingAgendaEvent?->event_type ?? 'mandatory') === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
                                     <option value="optional" {{ old('event_type', $existingAgendaEvent?->event_type) === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
                                 </select>
@@ -93,22 +92,10 @@
                             </div>
                             <div class="col-12 js-unified-plan-source">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.unified_plan_source') }}</label>
-                                <select class="form-select js-unified-plan-source-select @error('unified_plan_source') is-invalid @enderror" name="unified_plan_source">
-                                    <option value="monthly_auto" {{ old('unified_plan_source', 'monthly_auto') === 'monthly_auto' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.unified_plan_sources.monthly_auto') }}</option>
-                                    <option value="upload_file" {{ old('unified_plan_source') === 'upload_file' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.unified_plan_sources.upload_file') }}</option>
-                                </select>
+                                <input type="hidden" class="js-unified-plan-source-select" name="unified_plan_source" value="monthly_auto">
+                                <input class="form-control" value="{{ __('app.roles.relations.agenda.unified_plan_sources.monthly_auto') }}" disabled>
                                 <div class="form-text">{{ __('app.roles.relations.agenda.hints.unified_plan_source') }}</div>
                                 @error('unified_plan_source')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-
-                            <div class="col-12 js-agenda-plan-file">
-                                <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.agenda_plan_file') }}</label>
-                                <input class="form-control @error('agenda_plan_file') is-invalid @enderror" type="file" name="agenda_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
-                                @if ($currentPlanFile)
-                                    <a class="small d-inline-block mt-1" href="{{ asset('storage/' . $currentPlanFile) }}" target="_blank">{{ __('app.roles.relations.agenda.actions.view_current_attachment') }}</a>
-                                @endif
-                                <div class="form-text">{{ __('app.roles.relations.agenda.hints.agenda_plan_file') }}</div>
-                                @error('agenda_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>
@@ -131,7 +118,7 @@
                     </div>
                 </div>
 
-                <div class="col-12">
+                <div class="col-12 js-branch-participation-section">
                     <div class="agenda-form-section">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
                             <div>

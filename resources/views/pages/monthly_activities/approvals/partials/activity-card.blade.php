@@ -1,23 +1,24 @@
 <div class="wf-card card approvals-activity-card" data-activity-id="{{ $card['id'] }}">
-    <div class="card-body">
+    <div class="card-header approvals-card-header">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+            <div>
+                <h3 class="h6 mb-1">{{ $card['title'] }}</h3>
+                <div class="wf-kv">{{ $card['branch_name'] }} | {{ $card['date_label'] }}</div>
+            </div>
+            <div class="text-end">
+                <span class="wf-status-badge {{ $card['status_class'] }}">{{ $card['status_label'] }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="card-body approvals-card-body">
         <div class="wf-summary mb-3">
             <div class="w-100">
-                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                    <div>
-                        <h3 class="h6 mb-1">{{ $card['title'] }}</h3>
-                        <div class="wf-kv">{{ $card['branch_name'] }} | {{ $card['date_label'] }}</div>
-                        <div class="wf-kv">
-                            {{ __('workflow_ui.common.submitted_by') }}: {{ $card['submitted_by_name'] }}
-                            @if(!empty($card['submitted_at']))
-                                | {{ __('workflow_ui.common.submitted_at') }}: {{ $card['submitted_at'] }}
-                            @endif
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <span class="wf-status-badge {{ $card['status_class'] }}">{{ $card['status_label'] }}</span>
-                    </div>
+                <div class="wf-kv">
+                    {{ __('workflow_ui.common.submitted_by') }}: {{ $card['submitted_by_name'] }}
+                    @if(!empty($card['submitted_at']))
+                        | {{ __('workflow_ui.common.submitted_at') }}: {{ $card['submitted_at'] }}
+                    @endif
                 </div>
-
                 <div class="wf-chip-row mt-3">
                     <span class="wf-chip wf-chip-primary">{{ __('workflow_ui.common.current_step') }}: {{ $card['current_step_label'] }}</span>
                     <span class="wf-chip">{{ __('workflow_ui.common.assignee') }}: {{ $card['current_role_label'] }}</span>
@@ -50,7 +51,9 @@
                 </div>
             </div>
         </div>
+    </div>
 
+    <div class="card-footer approvals-card-footer">
         <div class="accordion" id="approval-accordion-{{ $card['id'] }}">
             <div class="accordion-item border-0">
                 <h2 class="accordion-header" id="heading-{{ $card['id'] }}">

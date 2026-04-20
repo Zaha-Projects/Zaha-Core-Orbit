@@ -6,10 +6,10 @@
     const notParticipantLabel = form.dataset.labelNotParticipant || '';
 
     const categoryEl = form.querySelector('#event_category_id');
+    const eventTypeEl = form.querySelector('.js-event-type');
     const planTypeEl = form.querySelector('.js-plan-type');
-    const unifiedPlanSourceEl = form.querySelector('.js-unified-plan-source-select');
     const unifiedPlanSourceRows = form.querySelectorAll('.js-unified-plan-source');
-    const planFileRows = form.querySelectorAll('.js-agenda-plan-file');
+    const branchParticipationSection = form.querySelector('.js-branch-participation-section');
     const ownerDepartmentEl = form.querySelector('.js-owner-department');
     const partnerDepartmentEls = Array.from(form.querySelectorAll('.js-partner-department'));
     const toggleRows = Array.from(form.querySelectorAll('.branch-toggle-item'));
@@ -56,15 +56,28 @@
 
     function togglePlanFile() {
         const isUnified = planTypeEl?.value === 'unified';
-        const wantsFileUpload = unifiedPlanSourceEl?.value === 'upload_file';
 
         unifiedPlanSourceRows.forEach((row) => {
             row.style.display = isUnified ? '' : 'none';
         });
+    }
 
-        planFileRows.forEach((row) => {
-            row.style.display = (isUnified && wantsFileUpload) ? '' : 'none';
+    function toggleBranchParticipation() {
+        const isOptional = eventTypeEl?.value === 'optional';
+        if (branchParticipationSection) {
+            branchParticipationSection.style.display = isOptional ? 'none' : '';
+        }
+
+        toggleRows.forEach((row) => {
+            const hiddenInput = row.querySelector('.js-branch-status-hidden');
+            const checkbox = row.querySelector('.js-branch-toggle');
+            if (hiddenInput) hiddenInput.disabled = isOptional;
+            if (checkbox) checkbox.disabled = isOptional;
         });
+
+        if (enableAllBtn) {
+            enableAllBtn.disabled = isOptional;
+        }
     }
 
     function syncToggleRow(row) {
@@ -89,7 +102,7 @@
     });
     partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
     planTypeEl?.addEventListener('change', togglePlanFile);
-    unifiedPlanSourceEl?.addEventListener('change', togglePlanFile);
+    eventTypeEl?.addEventListener('change', toggleBranchParticipation);
 
     toggleRows.forEach((row) => {
         const checkbox = row.querySelector('.js-branch-toggle');
@@ -108,4 +121,5 @@
     syncOwnerVsPartners();
     filterCategories();
     togglePlanFile();
+    toggleBranchParticipation();
 })();

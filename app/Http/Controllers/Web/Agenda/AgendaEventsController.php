@@ -460,25 +460,17 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
-            'unified_plan_source' => ['nullable', 'in:monthly_auto,upload_file'],
-            'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
+            'unified_plan_source' => ['nullable', 'in:monthly_auto'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
-        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file' && ! $request->hasFile('agenda_plan_file')) {
-            return back()->withErrors(['agenda_plan_file' => 'يرجى رفع ملف الخطة الأولية عند اختيار رفع الملف للخطة الموحدة.'])->withInput();
-        }
+        $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
 
         $date = Carbon::parse($data['event_date']);
 
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
-
-        $agendaPlanFile = null;
-        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file') {
-            $agendaPlanFile = $request->file('agenda_plan_file')?->store('agenda/plans', 'public');
-        }
 
         $event = AgendaEvent::create([
             'month' => (int) $date->format('m'),
@@ -499,7 +491,7 @@ class AgendaEventsController extends Controller
             'executive_approval_status' => 'pending',
             'created_by' => $request->user()->id,
             'notes' => $data['notes'] ?? null,
-            'agenda_plan_file' => $agendaPlanFile,
+            'agenda_plan_file' => null,
             'version' => 1,
         ]);
 
@@ -587,15 +579,12 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
-            'unified_plan_source' => ['nullable', 'in:monthly_auto,upload_file'],
-            'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
+            'unified_plan_source' => ['nullable', 'in:monthly_auto'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
-        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
-            return back()->withErrors(['agenda_plan_file' => 'يرجى رفع ملف الخطة الأولية عند اختيار رفع الملف للخطة الموحدة.'])->withInput();
-        }
+        $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
 
         $date = Carbon::parse($data['event_date']);
 
@@ -603,20 +592,10 @@ class AgendaEventsController extends Controller
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
         $agendaPlanFile = $agendaEvent->agenda_plan_file;
-        $shouldUseUnifiedUpload = ($data['plan_type'] ?? null) === 'unified'
-            && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file';
-
-        if ($shouldUseUnifiedUpload && $request->hasFile('agenda_plan_file')) {
-            if ($agendaPlanFile) {
-                Storage::disk('public')->delete($agendaPlanFile);
-            }
-            $agendaPlanFile = $request->file('agenda_plan_file')->store('agenda/plans', 'public');
-        } elseif (! $shouldUseUnifiedUpload) {
-            if ($agendaPlanFile) {
-                Storage::disk('public')->delete($agendaPlanFile);
-            }
-            $agendaPlanFile = null;
+        if ($agendaPlanFile) {
+            Storage::disk('public')->delete($agendaPlanFile);
         }
+        $agendaPlanFile = null;
 
         $agendaEvent->update([
             'month' => (int) $date->format('m'),
@@ -671,16 +650,6 @@ class AgendaEventsController extends Controller
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
-
-        if (
-            $agendaEvent->event_type === 'optional'
-            && ! $agendaEvent->participations()
-                ->where('entity_type', 'branch')
-                ->where('participation_status', 'participant')
-                ->exists()
-        ) {
-            return back()->withErrors(['branch_participation' => __('app.roles.relations.agenda.errors.optional_requires_branch_participation')]);
-        }
 
         $instance = $dynamicWorkflowService->forModel('agenda', $agendaEvent);
         abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
