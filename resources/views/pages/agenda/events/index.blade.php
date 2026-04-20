@@ -139,40 +139,40 @@
                 <div class="col-md-2"><input class="form-control" type="number" min="1" max="12" name="month" placeholder="اكتب رقم الشهر" value="{{ request('month') }}"></div>
                 <div class="col-md-2">
                     <select class="form-select" name="status">
-                        <option value="">كل الحالات</option>
+                        <option value="">{{ __('app.roles.relations.agenda.filters.all_statuses') }}</option>
                         @foreach ($agendaStatusOptions as $statusOption)
-                            <option value="{{ $statusOption->code }}" @selected(request('status') === $statusOption->code)>{{ $agendaStatusLabel($statusOption->code) }}</option>
+                            <option value="{{ $statusOption->code }}" {{ request('status') === $statusOption->code ? 'selected' : '' }}>{{ $agendaStatusLabel($statusOption->code) }}</option>
                         @endforeach
                     </select>
                 </div>
                 @if ($canFilterBranches)
                     <div class="col-md-2">
                         <select class="form-select" name="branch_id">
-                            <option value="">كل الفروع</option>
+                            <option value="">{{ __('app.roles.relations.agenda.filters.all_branches') }}</option>
                             @foreach ($branches as $branch)
-                                <option value="{{ $branch->id }}" @selected((string) request('branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
+                                <option value="{{ $branch->id }}" {{ (string) request('branch_id') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 @endif
                 <div class="col-md-2">
                     <select class="form-select" name="event_type">
-                        <option value="">كل أنواع الفعالية</option>
-                        <option value="mandatory" @selected(request('event_type') === 'mandatory')>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
-                        <option value="optional" @selected(request('event_type') === 'optional')>{{ __('app.roles.relations.agenda.types.optional') }}</option>
+                        <option value="">{{ __('app.roles.relations.agenda.filters.all_event_types') }}</option>
+                        <option value="mandatory" {{ request('event_type') === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
+                        <option value="optional" {{ request('event_type') === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="plan_type">
-                        <option value="">كل أنواع الخطة</option>
-                        <option value="unified" @selected(request('plan_type') === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
-                        <option value="non_unified" @selected(request('plan_type') === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
+                        <option value="">{{ __('app.roles.relations.agenda.filters.all_plan_types') }}</option>
+                        <option value="unified" {{ request('plan_type') === 'unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
+                        <option value="non_unified" {{ request('plan_type') === 'non_unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="per_page">
                         @foreach ([10, 20, 50, 100] as $size)
-                            <option value="{{ $size }}" @selected((int) request('per_page', 20) === $size)>عرض {{ $size }}</option>
+                            <option value="{{ $size }}" {{ (int) request('per_page', 20) === $size ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.filters.show_count', ['count' => $size]) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -187,14 +187,12 @@
             </div>
         </div>
 
-        <div class="alert alert-info mt-3">
-            الأجندة السنوية تعرض فعاليات جميع الفروع، بينما التخطيط الشهري يبقى محصوراً بفعاليات الفرع المرتبط بالمستخدم.
-        </div>
+        <div class="alert alert-info mt-3">{{ __('app.roles.relations.agenda.hints.scope_notice') }}</div>
 
         @if($canBranchInteract)
             <div class="card event-card mb-3">
                 <div class="card-body">
-                    <h2 class="h6 mb-3">تفاعل الفرع مع الأجندة</h2>
+                    <h2 class="h6 mb-3">{{ __('app.roles.relations.agenda.branch_interaction_title') }}</h2>
                     <div class="row g-3">
                         @foreach($events as $event)
                             @php

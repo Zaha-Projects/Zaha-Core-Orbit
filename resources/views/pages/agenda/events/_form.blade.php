@@ -56,11 +56,11 @@
                                 @error('event_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
-                                <label class="form-label">الوحدة/القسم المالك</label>
+                                <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.owner_department') }}</label>
                                 <select class="form-select js-owner-department @error('owner_department_id') is-invalid @enderror" name="owner_department_id" required>
-                                    <option value="">اختر الجهة المالكة</option>
+                                    <option value="">{{ __('app.roles.relations.agenda.placeholders.owner_department') }}</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}" @selected((string) old('owner_department_id', $existingAgendaEvent?->owner_department_id) === (string) $department->id)>{{ $department->name }}</option>
+                                        <option value="{{ $department->id }}" {{ (string) old('owner_department_id', $existingAgendaEvent?->owner_department_id) === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                                     @endforeach
                                 </select>
                                 @error('owner_department_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -68,9 +68,9 @@
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_category') }}</label>
                                 <select class="form-select @error('event_category_id') is-invalid @enderror" name="event_category_id" id="event_category_id">
-                                    <option value="">اختر التصنيف</option>
+                                    <option value="">{{ __('app.roles.relations.agenda.placeholders.event_category') }}</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" @selected((string) old('event_category_id', $existingAgendaEvent?->event_category_id) === (string) $category->id)>{{ $category->name }}</option>
+                                        <option value="{{ $category->id }}" data-department-id="{{ $category->department_id }}" {{ (string) old('event_category_id', $existingAgendaEvent?->event_category_id) === (string) $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                     @endforeach
                                 </select>
                                 @error('event_category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -78,36 +78,36 @@
                             <div class="col-12 col-md-6 col-xl-2">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.event_type') }}</label>
                                 <select class="form-select @error('event_type') is-invalid @enderror" name="event_type" required>
-                                    <option value="mandatory" @selected(old('event_type', $existingAgendaEvent?->event_type ?? 'mandatory') === 'mandatory')>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
-                                    <option value="optional" @selected(old('event_type', $existingAgendaEvent?->event_type) === 'optional')>{{ __('app.roles.relations.agenda.types.optional') }}</option>
+                                    <option value="mandatory" {{ old('event_type', $existingAgendaEvent?->event_type ?? 'mandatory') === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
+                                    <option value="optional" {{ old('event_type', $existingAgendaEvent?->event_type) === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
                                 </select>
                                 @error('event_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-6 col-xl-2">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}</label>
                                 <select class="form-select js-plan-type @error('plan_type') is-invalid @enderror" name="plan_type" required>
-                                    <option value="unified" @selected(old('plan_type', $existingAgendaEvent?->plan_type ?? 'unified') === 'unified')>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
-                                    <option value="non_unified" @selected(old('plan_type', $existingAgendaEvent?->plan_type) === 'non_unified')>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
+                                    <option value="unified" {{ old('plan_type', $existingAgendaEvent?->plan_type ?? 'unified') === 'unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
+                                    <option value="non_unified" {{ old('plan_type', $existingAgendaEvent?->plan_type) === 'non_unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
                                 </select>
                                 @error('plan_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 js-unified-plan-source">
-                                <label class="form-label">آلية الخطة الموحدة</label>
+                                <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.unified_plan_source') }}</label>
                                 <select class="form-select js-unified-plan-source-select @error('unified_plan_source') is-invalid @enderror" name="unified_plan_source">
-                                    <option value="monthly_auto" @selected(old('unified_plan_source', 'monthly_auto') === 'monthly_auto')>إضافة الخطة تلقائياً ضمن الخطط الشهرية</option>
-                                    <option value="upload_file" @selected(old('unified_plan_source') === 'upload_file')>رفع خطة أولية كملف</option>
+                                    <option value="monthly_auto" {{ old('unified_plan_source', 'monthly_auto') === 'monthly_auto' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.unified_plan_sources.monthly_auto') }}</option>
+                                    <option value="upload_file" {{ old('unified_plan_source') === 'upload_file' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.unified_plan_sources.upload_file') }}</option>
                                 </select>
-                                <div class="form-text">تظهر هذه الخيارات فقط إذا كانت خطة الفعالية موحدة.</div>
+                                <div class="form-text">{{ __('app.roles.relations.agenda.hints.unified_plan_source') }}</div>
                                 @error('unified_plan_source')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
                             <div class="col-12 js-agenda-plan-file">
-                                <label class="form-label">ملف الخطة الأولية (اختياري)</label>
+                                <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.agenda_plan_file') }}</label>
                                 <input class="form-control @error('agenda_plan_file') is-invalid @enderror" type="file" name="agenda_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
                                 @if ($currentPlanFile)
-                                    <a class="small d-inline-block mt-1" href="{{ asset('storage/' . $currentPlanFile) }}" target="_blank">عرض المرفق الحالي</a>
+                                    <a class="small d-inline-block mt-1" href="{{ asset('storage/' . $currentPlanFile) }}" target="_blank">{{ __('app.roles.relations.agenda.actions.view_current_attachment') }}</a>
                                 @endif
-                                <div class="form-text">يرتبط هذا الملف بالخطة الموحدة عند اختيار "رفع خطة أولية كملف".</div>
+                                <div class="form-text">{{ __('app.roles.relations.agenda.hints.agenda_plan_file') }}</div>
                                 @error('agenda_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
