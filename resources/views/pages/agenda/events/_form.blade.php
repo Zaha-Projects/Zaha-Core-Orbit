@@ -91,13 +91,23 @@
                                 </select>
                                 @error('plan_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
+                            <div class="col-12 js-unified-plan-source">
+                                <label class="form-label">آلية الخطة الموحدة</label>
+                                <select class="form-select js-unified-plan-source-select @error('unified_plan_source') is-invalid @enderror" name="unified_plan_source">
+                                    <option value="monthly_auto" @selected(old('unified_plan_source', 'monthly_auto') === 'monthly_auto')>إضافة الخطة تلقائياً ضمن الخطط الشهرية</option>
+                                    <option value="upload_file" @selected(old('unified_plan_source') === 'upload_file')>رفع خطة أولية كملف</option>
+                                </select>
+                                <div class="form-text">تظهر هذه الخيارات فقط إذا كانت خطة الفعالية موحدة.</div>
+                                @error('unified_plan_source')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+
                             <div class="col-12 js-agenda-plan-file">
-                                <label class="form-label">ملف الخطة</label>
+                                <label class="form-label">ملف الخطة الأولية (اختياري)</label>
                                 <input class="form-control @error('agenda_plan_file') is-invalid @enderror" type="file" name="agenda_plan_file" accept=".pdf,.doc,.docx,.xls,.xlsx">
                                 @if ($currentPlanFile)
                                     <a class="small d-inline-block mt-1" href="{{ asset('storage/' . $currentPlanFile) }}" target="_blank">عرض المرفق الحالي</a>
                                 @endif
-                                <div class="form-text">يظهر هذا الحقل فقط عندما تكون الخطة غير موحدة.</div>
+                                <div class="form-text">يرتبط هذا الملف بالخطة الموحدة عند اختيار "رفع خطة أولية كملف".</div>
                                 @error('agenda_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
@@ -250,6 +260,8 @@
 
             const categoryEl = form.querySelector('#event_category_id');
             const planTypeEl = form.querySelector('.js-plan-type');
+            const unifiedPlanSourceEl = form.querySelector('.js-unified-plan-source-select');
+            const unifiedPlanSourceRows = form.querySelectorAll('.js-unified-plan-source');
             const planFileRows = form.querySelectorAll('.js-agenda-plan-file');
             const ownerDepartmentEl = form.querySelector('.js-owner-department');
             const partnerDepartmentEls = Array.from(form.querySelectorAll('.js-partner-department'));
@@ -296,9 +308,15 @@
             }
 
             function togglePlanFile() {
-                const isNonUnified = planTypeEl?.value === 'non_unified';
+                const isUnified = planTypeEl?.value === 'unified';
+                const wantsFileUpload = unifiedPlanSourceEl?.value === 'upload_file';
+
+                unifiedPlanSourceRows.forEach((row) => {
+                    row.style.display = isUnified ? '' : 'none';
+                });
+
                 planFileRows.forEach((row) => {
-                    row.style.display = isNonUnified ? '' : 'none';
+                    row.style.display = (isUnified && wantsFileUpload) ? '' : 'none';
                 });
             }
 
@@ -324,6 +342,7 @@
             });
             partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
             planTypeEl?.addEventListener('change', togglePlanFile);
+            unifiedPlanSourceEl?.addEventListener('change', togglePlanFile);
 
             toggleRows.forEach((row) => {
                 const checkbox = row.querySelector('.js-branch-toggle');

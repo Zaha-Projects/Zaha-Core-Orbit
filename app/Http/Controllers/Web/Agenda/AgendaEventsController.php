@@ -146,6 +146,17 @@ class AgendaEventsController extends Controller
         });
     }
 
+    protected function applyDraftVisibilityScope($query, ?User $user)
+    {
+        return $query->where(function ($visibilityQuery) use ($user) {
+            $visibilityQuery->where('status', '!=', 'draft');
+
+            if ($user) {
+                $visibilityQuery->orWhere('created_by', $user->id);
+            }
+        });
+    }
+
     /**
      * @return array<int, int>
      */
@@ -169,6 +180,10 @@ class AgendaEventsController extends Controller
 
         if ($branchIds === []) {
             return;
+        }
+
+        if ((string) $agendaEvent->status === 'draft' && (int) $agendaEvent->created_by !== (int) $user->id) {
+            abort(403);
         }
 
         if ((int) $agendaEvent->created_by === (int) $user->id) {
@@ -294,6 +309,7 @@ class AgendaEventsController extends Controller
             ->notArchived();
 
         $this->applyBranchVisibilityScope($eventsQuery, $request->user());
+        $this->applyDraftVisibilityScope($eventsQuery, $request->user());
 
         $events = $eventsQuery
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
@@ -436,13 +452,14 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
+            'unified_plan_source' => ['nullable', 'in:monthly_auto,upload_file'],
             'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
-        if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file')) {
-            return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file' && ! $request->hasFile('agenda_plan_file')) {
+            return back()->withErrors(['agenda_plan_file' => 'يرجى رفع ملف الخطة الأولية عند اختيار رفع الملف للخطة الموحدة.'])->withInput();
         }
 
         $date = Carbon::parse($data['event_date']);
@@ -557,13 +574,14 @@ class AgendaEventsController extends Controller
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
             'notes' => ['nullable', 'string'],
+            'unified_plan_source' => ['nullable', 'in:monthly_auto,upload_file'],
             'agenda_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
-        if (($data['plan_type'] ?? null) === 'non_unified' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
-            return back()->withErrors(['agenda_plan_file' => 'رفع خطة HQ مطلوب للفعاليات غير الموحدة.'])->withInput();
+        if (($data['plan_type'] ?? null) === 'unified' && ($data['unified_plan_source'] ?? 'monthly_auto') === 'upload_file' && ! $request->hasFile('agenda_plan_file') && empty($agendaEvent->agenda_plan_file)) {
+            return back()->withErrors(['agenda_plan_file' => 'يرجى رفع ملف الخطة الأولية عند اختيار رفع الملف للخطة الموحدة.'])->withInput();
         }
 
         $date = Carbon::parse($data['event_date']);
