@@ -6,14 +6,9 @@
         && $formUser->hasBranchScopedMonthlyVisibility()
         && ! empty($formUser->branch_id);
     $selectedBranch = $branches->firstWhere('id', old('branch_id', $existingMonthlyActivity?->branch_id ?? $formUser?->branch_id));
-    $selectedResponsibleEntities = collect(old('responsible_entities', array_values(array_filter([
-        ($existingMonthlyActivity?->requires_communications ?? false) ? 'relations' : null,
-        ($existingMonthlyActivity?->requires_programs ?? false) ? 'programs' : null,
-    ]))));
     $departmentsFromForm = $departments ?? \App\Models\Department::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
     $selectedOwnerDepartmentId = (string) old('owner_department_id', '');
     $selectedPartnerDepartmentIds = collect(old('partner_department_ids', []))->map(fn ($id) => (string) $id)->all();
-    $isInAgendaChecked = (bool) old('is_in_agenda', $existingMonthlyActivity?->is_in_agenda ?? false);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
     $needsOfficialLettersChecked = (bool) old('needs_official_letters', $existingMonthlyActivity?->needs_official_letters ?? false);
@@ -187,24 +182,6 @@
                                 <span>{{ $department->name }}</span>
                             </label>
                         @endforeach
-                    </div>
-                    <label class="form-label d-block mb-2">خيارات إضافية</label>
-                    <div class="monthly-activation-grid">
-                        <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="relations" {{ $selectedResponsibleEntities->contains('relations') ? 'checked' : '' }} {{ $isLockedField('responsible_entities') ? 'disabled' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
-                            <span>العلاقات</span>
-                        </label>
-                        <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="programs" {{ $selectedResponsibleEntities->contains('programs') ? 'checked' : '' }} {{ $isLockedField('responsible_entities') ? 'disabled' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
-                            <span>البرامج</span>
-                        </label>
-                        <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="is_in_agenda" value="1" {{ $isInAgendaChecked ? 'checked' : '' }} {{ $isLockedField('agenda_event_id') ? 'disabled' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
-                            <span>يظهر ضمن الأجندة السنوية</span>
-                        </label>
                     </div>
                 </div>
 
