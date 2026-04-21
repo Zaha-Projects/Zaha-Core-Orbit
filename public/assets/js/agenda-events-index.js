@@ -15,7 +15,7 @@
     if (selectedYear > 0 && selectedMonth >= 1 && selectedMonth <= 12) {
         currentDate = new Date(selectedYear, selectedMonth - 1, 1);
     } else if (events.length > 0) {
-        currentDate = new Date(events[0].date);
+        currentDate = parseDate(events[0].date);
         currentDate.setDate(1);
     } else {
         currentDate.setDate(1);
@@ -29,6 +29,17 @@
     const palette = ['#E11D48', '#0EA5E9', '#22C55E', '#F59E0B', '#8B5CF6', '#14B8A6', '#F97316', '#3B82F6', '#84CC16', '#EC4899', '#06B6D4', '#A855F7'];
     const icons = ['🏢', '📍', '⭐', '🧭', '🎯', '🛰️', '🪄', '🛡️', '🔷', '🔶'];
     let tooltipEl = null;
+
+    function parseDate(value) {
+        if (typeof value === 'string') {
+            const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (match) {
+                return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+            }
+        }
+
+        return new Date(value);
+    }
 
     function mapDayPosition(jsDayIndex) {
         return isRtl ? 6 - jsDayIndex : jsDayIndex;
@@ -145,14 +156,14 @@
         titleContainer.textContent = `${monthNames[month]} ${year}`;
 
         const monthEvents = events.filter((event) => {
-            const dateObj = new Date(event.date);
+            const dateObj = parseDate(event.date);
             return dateObj.getFullYear() === year && dateObj.getMonth() === month;
         });
         renderLegend(monthEvents);
 
         const eventsByDay = new Map();
         monthEvents.forEach((event) => {
-            const day = new Date(event.date).getDate();
+            const day = parseDate(event.date).getDate();
             if (!eventsByDay.has(day)) eventsByDay.set(day, []);
             eventsByDay.get(day).push(event);
         });
