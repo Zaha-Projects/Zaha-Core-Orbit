@@ -39,6 +39,8 @@
         cell.classList.add(`agenda-calendar-day--weekday-${jsDayIndex}`);
         if (jsDayIndex === 5) {
             cell.classList.add('agenda-calendar-day--friday');
+        } else if (jsDayIndex === 6) {
+            cell.classList.add('agenda-calendar-day--saturday');
         }
     }
 
@@ -129,6 +131,7 @@
             const item = document.createElement('div');
             item.className = 'agenda-weekday';
             if (jsDayIndex === 5) item.classList.add('agenda-weekday--friday');
+            if (jsDayIndex === 6) item.classList.add('agenda-weekday--saturday');
             item.textContent = label;
             weekdaysContainer.appendChild(item);
         });
@@ -169,6 +172,8 @@
             const dayCell = document.createElement('div');
             dayCell.className = 'agenda-calendar-day';
             decorateCalendarDayCell(dayCell, year, month, day);
+            const weekIndex = Math.floor((firstDayPosition + day - 1) / 7);
+            dayCell.classList.add(`agenda-calendar-day--week-${weekIndex}`);
 
             const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
             if (isToday) dayCell.classList.add('agenda-calendar-day--today');

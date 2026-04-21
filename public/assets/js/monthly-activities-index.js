@@ -13,7 +13,7 @@
 
     const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     weekdaysContainer.innerHTML = weekdays
-        .map((label, jsDayIndex) => `<div class="agenda-weekday ${jsDayIndex === 5 ? 'agenda-weekday--friday' : ''}">${label}</div>`)
+        .map((label, jsDayIndex) => `<div class="agenda-weekday ${jsDayIndex === 5 ? 'agenda-weekday--friday' : ''} ${jsDayIndex === 6 ? 'agenda-weekday--saturday' : ''}">${label}</div>`)
         .join('');
 
     const now = new Date();
@@ -33,6 +33,8 @@
         cell.classList.add(`agenda-calendar-day--weekday-${jsDayIndex}`);
         if (jsDayIndex === 5) {
             cell.classList.add('agenda-calendar-day--friday');
+        } else if (jsDayIndex === 6) {
+            cell.classList.add('agenda-calendar-day--saturday');
         }
     }
 
@@ -65,6 +67,8 @@
             const cell = document.createElement('div');
             cell.className = 'agenda-calendar-day';
             decorateCalendarDayCell(cell, currentYear, currentMonth, day);
+            const weekIndex = Math.floor((firstOffset + day - 1) / 7);
+            cell.classList.add(`agenda-calendar-day--week-${weekIndex}`);
             if (today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth && today.getDate() === day) {
                 cell.classList.add('agenda-calendar-day--today');
             }
