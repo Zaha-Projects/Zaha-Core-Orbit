@@ -53,11 +53,13 @@
                 </div>
 
                 <div class="dropdown nxl-h-item">
-                    <a class="nxl-head-link me-0" data-bs-toggle="dropdown" href="#"><i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">{{ $unreadNotifications->count() }}</span></a>
+                    <a class="nxl-head-link me-0" data-bs-toggle="dropdown" href="#" aria-label="{{ __('app.layout.notifications') }}">
+                        <i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">{{ $unreadNotifications->count() }}</span>
+                    </a>
                     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown notification-chat-menu">
                         <div class="notification-chat-head">
-                            <div class="fw-semibold">الإشعارات</div>
-                            <div class="small text-muted">{{ $unreadNotifications->count() }} جديدة</div>
+                            <div class="fw-semibold">{{ __('app.layout.notifications') }}</div>
+                            <div class="small text-muted">{{ __('app.layout.new_notifications_count', ['count' => $unreadNotifications->count()]) }}</div>
                         </div>
                         <div class="notification-chat-list">
                             @forelse($unreadNotifications as $notification)
@@ -67,7 +69,7 @@
                                         <div class="text-muted small">{{ $notification->message }}</div>
                                         <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
                                             @if($notification->action_url)
-                                                <a class="small text-decoration-none" href="{{ $notification->action_url }}">فتح الإشعار</a>
+                                                <a class="small text-decoration-none" href="{{ $notification->action_url }}">{{ __('app.layout.open_notification') }}</a>
                                             @endif
                                             <form method="POST" action="{{ route('role.notifications.read', $notification) }}">
                                                 @csrf
@@ -86,7 +88,9 @@
 
                 @auth
                     <div class="dropdown nxl-h-item nxl-user-menu-item">
-                        <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false"><img src="{{ asset('assets/images/avatar/1.png') }}" alt="{{ __('app.layout.user_avatar') }}" class="img-fluid user-avtar me-0" /></a>
+                        <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false" class="user-avatar-trigger" aria-label="{{ __('app.layout.user_avatar') }}">
+                            <span class="user-avatar-icon" aria-hidden="true"><i class="feather-user"></i></span>
+                        </a>
                         <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                             <div class="dropdown-header"><h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6></div>
                             <div class="dropdown-divider"></div>
@@ -172,6 +176,24 @@
         min-width: 220px;
         max-width: min(92vw, 320px);
     }
+    .user-avatar-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+    .user-avatar-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #eff4ff 0%, #e3ecff 100%);
+        border: 1px solid #cedaf7;
+        color: #1d4ed8;
+        font-size: 1rem;
+    }
     .nxl-h-item > .dropdown-menu {
         max-width: min(94vw, 420px);
     }
@@ -179,16 +201,16 @@
         text-align: right;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-wrapper {
-        direction: ltr;
+        direction: rtl;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-left {
-        order: 2;
-        margin-left: auto;
+        order: 1;
+        margin-left: 0;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-right {
-        order: 1;
+        order: 2;
         margin-right: 0 !important;
-        margin-left: 0 !important;
+        margin-left: auto !important;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-right .d-flex {
         direction: rtl;

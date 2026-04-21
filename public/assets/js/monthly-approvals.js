@@ -1,7 +1,23 @@
 document.addEventListener('DOMContentLoaded', function () {
     var formToSubmit = null;
+    var isSubmittingDecision = false;
     var modalElement = document.getElementById('decisionConfirmModal');
-    var confirmModal = modalElement ? new bootstrap.Modal(modalElement) : null;
+    var confirmModal = (modalElement && window.bootstrap && bootstrap.Modal) ? new bootstrap.Modal(modalElement) : null;
+
+    function clearModalArtifacts() {
+        document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
+            backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
+
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            clearModalArtifacts();
+        });
+    }
 
     document.addEventListener('submit', function (event) {
         var form = event.target.closest('.decision-form');
@@ -18,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (confirmModal) {
             event.preventDefault();
+            isSubmittingDecision = false;
             formToSubmit = form;
             var title = document.getElementById('decisionConfirmTitle');
             var body = document.getElementById('decisionConfirmBody');
@@ -30,9 +47,24 @@ document.addEventListener('DOMContentLoaded', function () {
     var submitBtn = document.getElementById('decisionConfirmSubmit');
     if (submitBtn) {
         submitBtn.addEventListener('click', function () {
-            if (formToSubmit) {
-                formToSubmit.submit();
+            if (!formToSubmit || isSubmittingDecision) {
+                return;
             }
+
+            isSubmittingDecision = true;
+            submitBtn.disabled = true;
+
+            if (confirmModal) {
+                modalElement.addEventListener('hidden.bs.modal', function handleHidden() {
+                    modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+                    clearModalArtifacts();
+                    formToSubmit.submit();
+                });
+                confirmModal.hide();
+                return;
+            }
+
+            formToSubmit.submit();
         });
     }
 

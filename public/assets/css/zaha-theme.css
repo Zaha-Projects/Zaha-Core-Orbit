@@ -292,28 +292,40 @@
     color: #0f766e;
     font-weight: 700;
 }
+.agenda-weekday--saturday {
+    color: #6d28d9;
+    font-weight: 700;
+}
 
-.agenda-calendar-day--weekday-0 { background: linear-gradient(180deg, #fff7ed 0%, #ffffff 65%); }
-.agenda-calendar-day--weekday-1 { background: linear-gradient(180deg, #eff6ff 0%, #ffffff 65%); }
-.agenda-calendar-day--weekday-2 { background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 65%); }
-.agenda-calendar-day--weekday-3 { background: linear-gradient(180deg, #faf5ff 0%, #ffffff 65%); }
-.agenda-calendar-day--weekday-4 { background: linear-gradient(180deg, #fefce8 0%, #ffffff 65%); }
-.agenda-calendar-day--weekday-5 { background: linear-gradient(180deg, #ecfeff 0%, #ffffff 65%); }
-.agenda-calendar-day--weekday-6 { background: linear-gradient(180deg, #fdf2f8 0%, #ffffff 65%); }
+.agenda-calendar-day--week-0 { background: linear-gradient(180deg, #f8fbff 0%, #ffffff 70%); }
+.agenda-calendar-day--week-1 { background: linear-gradient(180deg, #f4f9ff 0%, #ffffff 70%); }
+.agenda-calendar-day--week-2 { background: linear-gradient(180deg, #f3fbf8 0%, #ffffff 70%); }
+.agenda-calendar-day--week-3 { background: linear-gradient(180deg, #faf7ff 0%, #ffffff 70%); }
+.agenda-calendar-day--week-4 { background: linear-gradient(180deg, #fffaf3 0%, #ffffff 70%); }
+.agenda-calendar-day--week-5 { background: linear-gradient(180deg, #fef7fb 0%, #ffffff 70%); }
 
 .agenda-calendar-day--friday {
     border-color: #67e8f9;
     box-shadow: inset 0 0 0 1px #cffafe;
+    background-image: linear-gradient(180deg, rgba(236, 254, 255, 0.95) 0%, rgba(255, 255, 255, 0.96) 70%);
+}
+
+.agenda-calendar-day--saturday {
+    border-color: #c4b5fd;
+    box-shadow: inset 0 0 0 1px #e9ddff;
+    background-image: linear-gradient(180deg, rgba(245, 243, 255, 0.95) 0%, rgba(255, 255, 255, 0.96) 70%);
 }
 
 .agenda-calendar-day--friday::after {
     content: '🕌';
     position: absolute;
-    top: 10px;
-    inset-inline-end: 10px;
-    font-size: 1.15rem;
-    opacity: 0.35;
+    inset-block-start: 50%;
+    inset-inline-end: 8px;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    opacity: 0.14;
     z-index: 1;
+    pointer-events: none;
 }
 
 .agenda-event-chip {

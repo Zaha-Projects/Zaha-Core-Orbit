@@ -2,6 +2,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/agenda-event-show.css') }}">
 @endpush
 
 @php
@@ -25,7 +26,7 @@
     <div class="event-module">
         <div class="event-header mb-3 d-flex justify-content-between align-items-start gap-3 flex-wrap">
             <div>
-                <h1 class="h4 mb-1">{{ $title }}</h1>
+                <h1 class="h4 mb-1"><i class="feather-calendar me-1"></i>{{ $title }}</h1>
                 <p class="text-muted mb-0">{{ $subtitle }}</p>
             </div>
             <a class="btn btn-outline-secondary" href="{{ route('role.relations.agenda.index') }}">{{ __('app.common.back') }}</a>
@@ -37,7 +38,7 @@
                     <div class="wf-summary">
                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                             <div>
-                                <h2 class="h6 mb-1">{{ $agendaEvent->event_name }}</h2>
+                                <h2 class="h6 mb-1"><i class="feather-star me-1"></i>{{ $agendaEvent->event_name }}</h2>
                                 <div class="wf-kv">
                                     {{ optional($agendaEvent->event_date)->format('Y-m-d') ?? '-' }}
                                     | {{ $agendaEvent->ownerDepartment?->name ?? $agendaEvent->department?->name ?? '-' }}

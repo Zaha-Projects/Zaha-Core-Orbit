@@ -43,3 +43,29 @@
         </div>
     </div>
 </nav>
+
+<style>
+    .nxl-navigation-clean .nxl-link {
+        border-radius: 12px;
+        margin-inline: .35rem;
+        margin-bottom: .2rem;
+        transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+    .nxl-navigation-clean .nxl-link .nxl-mtext {
+        font-weight: 500;
+    }
+    .nxl-navigation-clean .nxl-link.active {
+        background: #eef4ff;
+        box-shadow: inset 0 0 0 1px #cddcf9;
+    }
+    .nxl-navigation-clean .nxl-caption label {
+        letter-spacing: .2px;
+        font-weight: 700;
+    }
+    html[dir="rtl"] .nxl-navigation-clean .nxl-link {
+        text-align: right;
+    }
+    html[dir="ltr"] .nxl-navigation-clean .nxl-link {
+        text-align: left;
+    }
+</style>

@@ -13,6 +13,13 @@
     $isReadOnlyUnified = (bool) $monthlyActivity->is_from_agenda
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
+    $viewer = auth()->user();
+    $canBranchPartialEditUnified = $isReadOnlyUnified
+        && (bool) config('monthly_activity.unified_branch_edit.enabled', true)
+        && $viewer
+        && method_exists($viewer, 'hasBranchScopedMonthlyVisibility')
+        && $viewer->hasBranchScopedMonthlyVisibility()
+        && ! $viewer->hasRole('super_admin');
     $statusLabel = function (?string $status) use ($monthlyStatusLabels): string {
         if (! $status) {
             return '-';
@@ -36,7 +43,7 @@
         <div class="card event-card mb-4">
             <div class="card-body d-flex justify-content-between align-items-center gap-2 flex-wrap">
                 <div>
-                    <h1 class="h4 mb-1">{{ $title }}</h1>
+                    <h1 class="h4 mb-1"><i class="feather-clipboard me-1"></i>{{ $title }}</h1>
                     <p class="text-muted mb-0">{{ $monthlyActivity->title }}</p>
                     <div class="d-flex gap-2 flex-wrap mt-2">
                         <span class="badge bg-light text-dark border">نسخة {{ (int) ($monthlyActivity->plan_version ?: 1) }}</span>
@@ -47,7 +54,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.activities.index') }}">رجوع</a>
-                    @if($isReadOnlyUnified)
+                    @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                         <span class="btn btn-outline-success disabled">عرض فقط (موحد معتمد)</span>
                     @elseif($editMirrorMode)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">فتح نموذج التعديل</a>
@@ -177,7 +184,7 @@
                 </div>
 
                 <details class="monthly-full-details">
-                    <summary>عرض التفاصيل الكاملة</summary>
+                    <summary><i class="feather-layers me-1"></i>عرض التفاصيل الكاملة</summary>
                     <div class="row g-3 mt-2 monthly-details-content">
                     <div class="col-12 col-md-4"><strong>عنوان النشاط:</strong> {{ $monthlyActivity->title }}</div>
                     <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</div>
