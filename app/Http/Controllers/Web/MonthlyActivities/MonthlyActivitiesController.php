@@ -749,6 +749,67 @@ class MonthlyActivitiesController extends Controller
             && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
     }
 
+    protected function canBranchEditUnifiedNonCoreFields(MonthlyActivity $monthlyActivity, ?User $user): bool
+    {
+        return $this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)
+            && (bool) config('monthly_activity.unified_branch_edit.enabled', true)
+            && $this->shouldScopeToUserBranch($user)
+            && ! $user?->hasRole('super_admin');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function unifiedLockedFields(): array
+    {
+        return collect(config('monthly_activity.unified_branch_edit.locked_fields', []))
+            ->filter(fn ($field) => is_string($field) && $field !== '')
+            ->values()
+            ->all();
+    }
+
+    protected function applyUnifiedLockedFieldValues(MonthlyActivity $monthlyActivity, array &$data, User $user): void
+    {
+        if (! $this->canBranchEditUnifiedNonCoreFields($monthlyActivity, $user)) {
+            return;
+        }
+
+        $lockedFields = $this->unifiedLockedFields();
+        $locked = fn (string $field): bool => in_array($field, $lockedFields, true);
+
+        if ($locked('title')) {
+            $data['title'] = $monthlyActivity->title;
+        }
+        if ($locked('activity_date')) {
+            $data['activity_date'] = optional($monthlyActivity->activity_date)->toDateString()
+                ?: optional($monthlyActivity->proposed_date)->toDateString()
+                ?: ($data['activity_date'] ?? null);
+        }
+        if ($locked('proposed_date')) {
+            $data['proposed_date'] = optional($monthlyActivity->proposed_date)->toDateString() ?: ($data['proposed_date'] ?? null);
+        }
+        if ($locked('branch_id')) {
+            $data['branch_id'] = (int) $monthlyActivity->branch_id;
+        }
+        if ($locked('agenda_event_id')) {
+            $data['agenda_event_id'] = $monthlyActivity->agenda_event_id;
+            $data['is_in_agenda'] = (bool) $monthlyActivity->is_in_agenda;
+        }
+        if ($locked('target_group_ids')) {
+            $data['target_group_ids'] = $monthlyActivity->targetGroups()->pluck('target_groups.id')->map(fn ($id) => (int) $id)->all();
+            $data['target_group_id'] = $monthlyActivity->target_group_id;
+            $data['target_group_other'] = $monthlyActivity->target_group_other;
+        }
+        if ($locked('responsible_entities')) {
+            $data['responsible_entities'] = array_values(array_filter([
+                $monthlyActivity->requires_communications ? 'relations' : null,
+                $monthlyActivity->requires_programs ? 'programs' : null,
+            ]));
+            $data['requires_programs'] = (bool) $monthlyActivity->requires_programs;
+            $data['requires_communications'] = (bool) $monthlyActivity->requires_communications;
+        }
+    }
+
     public function syncFromAgenda(Request $request)
     {
         if ($branchId = $this->currentUserBranchId($request->user())) {
@@ -1128,12 +1189,6 @@ class MonthlyActivitiesController extends Controller
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
-        if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
-            return redirect()
-                ->route('role.relations.activities.show', $monthlyActivity)
-                ->with('warning', 'هذه فعالية موحدة ومعتمدة ومخصصة للعرض فقط ولا يمكن تعديلها.');
-        }
-
         if (! request()->boolean('form') && request('mode') !== 'post') {
             $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
                 ->loadCount('newerVersions');
@@ -1158,7 +1213,7 @@ class MonthlyActivitiesController extends Controller
             ]);
         }
 
-        $monthlyActivity->load(['supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
+        $monthlyActivity->load(['agendaEvent', 'supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
         if (request()->boolean('form')) {
             $this->flashFormPrefill($monthlyActivity);
         }
@@ -1234,12 +1289,6 @@ class MonthlyActivitiesController extends Controller
         DynamicWorkflowService $dynamicWorkflowService
     )
     {
-        if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
-            return redirect()
-                ->route('role.relations.activities.show', $monthlyActivity)
-                ->with('warning', 'هذه فعالية موحدة ومعتمدة ومخصصة للعرض فقط ولا يمكن تعديلها.');
-        }
-
         if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
             $request->files->set('branch_plan_file', $request->file('planning_attachment'));
         }
@@ -1372,6 +1421,8 @@ class MonthlyActivitiesController extends Controller
             'description' => ['required', 'string', 'max:2000'],
         ]);
 
+        $this->applyUnifiedLockedFieldValues($monthlyActivity, $data, $request->user());
+
         if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
         }
@@ -1398,7 +1449,9 @@ class MonthlyActivitiesController extends Controller
         $isFromAgenda = ! empty($data['agenda_event_id']);
         $planType = $isFromAgenda ? optional(AgendaEvent::find($data['agenda_event_id']))->plan_type : 'non_unified';
         $branchPlanFile = $monthlyActivity->branch_plan_file;
-        if ($request->hasFile('branch_plan_file')) {
+        $branchPlanLocked = $this->canBranchEditUnifiedNonCoreFields($monthlyActivity, $request->user())
+            && in_array('planning_attachment', $this->unifiedLockedFields(), true);
+        if ($request->hasFile('branch_plan_file') && ! $branchPlanLocked) {
             if ($branchPlanFile) {
                 Storage::disk('public')->delete($branchPlanFile);
             }
