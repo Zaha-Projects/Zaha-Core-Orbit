@@ -88,7 +88,9 @@
 
                 @auth
                     <div class="dropdown nxl-h-item nxl-user-menu-item">
-                        <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false"><img src="{{ asset('assets/images/avatar/1.png') }}" alt="{{ __('app.layout.user_avatar') }}" class="img-fluid user-avtar me-0" /></a>
+                        <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false" class="user-avatar-trigger" aria-label="{{ __('app.layout.user_avatar') }}">
+                            <span class="user-avatar-icon" aria-hidden="true"><i class="feather-user"></i></span>
+                        </a>
                         <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                             <div class="dropdown-header"><h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6></div>
                             <div class="dropdown-divider"></div>
@@ -173,6 +175,24 @@
     .nxl-user-menu-item .nxl-user-dropdown {
         min-width: 220px;
         max-width: min(92vw, 320px);
+    }
+    .user-avatar-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+    .user-avatar-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #eff4ff 0%, #e3ecff 100%);
+        border: 1px solid #cedaf7;
+        color: #1d4ed8;
+        font-size: 1rem;
     }
     .nxl-h-item > .dropdown-menu {
         max-width: min(94vw, 420px);
