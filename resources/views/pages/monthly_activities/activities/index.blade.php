@@ -40,6 +40,12 @@
         'closed' => $workflowStatusLabel('closed'),
         'completed' => $workflowStatusLabel('completed'),
     ];
+    $versionedAsset = static function (string $path): string {
+        $absolutePath = public_path($path);
+        $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
+
+        return asset($path) . '?v=' . $version;
+    };
 @endphp
 
 @section('content')
@@ -215,13 +221,13 @@
         </div>
     </div>
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activities-index.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/event-ui-shared.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-activities-index.css') }}">
 @endpush
 
 @push('scripts')
     <script type="application/json" id="monthly-status-labels-json">@json($calendarStatusLabels)</script>
-    <script src="{{ asset('assets/js/ui-shared.js') }}"></script>
-    <script src="{{ asset('assets/js/monthly-activities-index.js') }}"></script>
+    <script src="{{ $versionedAsset('assets/js/ui-shared.js') }}"></script>
+    <script src="{{ $versionedAsset('assets/js/monthly-activities-index.js') }}"></script>
 @endpush
 @endsection

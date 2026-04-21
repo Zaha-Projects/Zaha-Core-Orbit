@@ -43,16 +43,24 @@
         requestParams.set('year', String(currentYear));
         requestParams.set('month', String(currentMonth));
 
-        const res = await fetch(`${endpoint}?${requestParams.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        const payload = await res.json();
-        const items = payload.items || [];
-
         const firstDay = new Date(currentYear, currentMonth - 1, 1);
         const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
         const firstOffset = mapPos(firstDay.getDay());
         const today = new Date();
+        let items = [];
 
         titleContainer.textContent = `${firstDay.toLocaleString(undefined, { month: 'long' })} ${currentYear}`;
+
+        try {
+            const res = await fetch(`${endpoint}?${requestParams.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } });
+            if (!res.ok) {
+                throw new Error(`Calendar request failed with status ${res.status}`);
+            }
+            const payload = await res.json();
+            items = payload.items || [];
+        } catch (error) {
+            console.error('Monthly calendar load failed:', error);
+        }
 
         gridContainer.innerHTML = '';
         for (let i = 0; i < firstOffset; i++) {

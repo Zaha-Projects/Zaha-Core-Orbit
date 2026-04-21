@@ -111,6 +111,12 @@
             'branch_actual_execution_date' => optional($branchParticipation?->actual_execution_date)?->format('Y-m-d'),
         ];
     })->values();
+    $versionedAsset = static function (string $path): string {
+        $absolutePath = public_path($path);
+        $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
+
+        return asset($path) . '?v=' . $version;
+    };
 @endphp
 
 @section('content')
@@ -389,15 +395,15 @@
 
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/agenda-events-index.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/event-ui-shared.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/agenda-events-index.css') }}">
 @endpush
 
 @push('scripts')
     <script type="application/json" id="agenda-events-json">{!! $agendaEvents->toJson(JSON_UNESCAPED_UNICODE) !!}</script>
     <script type="application/json" id="agenda-weekdays-json">@json(__('app.roles.relations.agenda.calendar.weekdays'))</script>
     <script type="application/json" id="agenda-months-json">@json(__('app.roles.relations.agenda.calendar.months'))</script>
-    <script src="{{ asset('assets/js/ui-shared.js') }}"></script>
-    <script src="{{ asset('assets/js/agenda-events-index.js') }}"></script>
+    <script src="{{ $versionedAsset('assets/js/ui-shared.js') }}"></script>
+    <script src="{{ $versionedAsset('assets/js/agenda-events-index.js') }}"></script>
 @endpush
 @endsection
