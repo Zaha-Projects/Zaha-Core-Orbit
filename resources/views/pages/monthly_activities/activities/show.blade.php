@@ -13,6 +13,13 @@
     $isReadOnlyUnified = (bool) $monthlyActivity->is_from_agenda
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
+    $viewer = auth()->user();
+    $canBranchPartialEditUnified = $isReadOnlyUnified
+        && (bool) config('monthly_activity.unified_branch_edit.enabled', true)
+        && $viewer
+        && method_exists($viewer, 'hasBranchScopedMonthlyVisibility')
+        && $viewer->hasBranchScopedMonthlyVisibility()
+        && ! $viewer->hasRole('super_admin');
     $statusLabel = function (?string $status) use ($monthlyStatusLabels): string {
         if (! $status) {
             return '-';
@@ -47,7 +54,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.activities.index') }}">رجوع</a>
-                    @if($isReadOnlyUnified)
+                    @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                         <span class="btn btn-outline-success disabled">عرض فقط (موحد معتمد)</span>
                     @elseif($editMirrorMode)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">فتح نموذج التعديل</a>

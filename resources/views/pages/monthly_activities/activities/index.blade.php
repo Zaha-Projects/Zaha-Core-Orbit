@@ -132,10 +132,17 @@
                     <div class="monthly-cards-grid">
                         @forelse ($activities as $activity)
                             @php
+                                $viewer = auth()->user();
                                 $isSubmittedOrBeyond = in_array((string) $activity->status, ['submitted', 'in_review', 'approved', 'completed', 'closed'], true);
                                 $isReadOnlyUnified = (bool) $activity->is_from_agenda
                                     && (string) $activity->plan_type === 'unified'
                                     && (string) optional($activity->agendaEvent)->event_type === 'mandatory';
+                                $canBranchPartialEditUnified = $isReadOnlyUnified
+                                    && (bool) config('monthly_activity.unified_branch_edit.enabled', true)
+                                    && $viewer
+                                    && method_exists($viewer, 'hasBranchScopedMonthlyVisibility')
+                                    && $viewer->hasBranchScopedMonthlyVisibility()
+                                    && ! $viewer->hasRole('super_admin');
                             @endphp
                             <article class="monthly-activity-card">
                                 <div class="module-card-header">
@@ -159,19 +166,21 @@
                                 <div class="module-card-footer">
                                     <div class="event-actions">
                                     <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.show', $activity) }}">عرض</a>
-                                    @if($isReadOnlyUnified)
+                                    @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                                         <span class="badge bg-success-subtle text-success">موحد معتمد — عرض فقط</span>
                                     @else
                                         <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a>
                                         <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a>
-                                        @if (! $isSubmittedOrBeyond)
+                                        @if (! $isSubmittedOrBeyond && ! $isReadOnlyUnified)
                                             <form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.programs.monthly_activities.actions.submit') }}</button>
                                             </form>
                                         @else
-                                            <span class="badge bg-info-subtle text-info">الحالة: {{ $workflowStatusLabel($activity->status) }}</span>
+                                            <span class="badge {{ $isReadOnlyUnified ? 'bg-success-subtle text-success' : 'bg-info-subtle text-info' }}">
+                                                {{ $isReadOnlyUnified ? 'موحد معتمد — قفل جزئي' : 'الحالة: ' . $workflowStatusLabel($activity->status) }}
+                                            </span>
                                         @endif
                                     @endif
                                     </div>

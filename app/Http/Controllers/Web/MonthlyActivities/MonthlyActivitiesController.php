@@ -1980,8 +1980,9 @@ class MonthlyActivitiesController extends Controller
             ->orderBy('day')
             ->orderBy('proposed_date')
             ->get()
-            ->map(function (MonthlyActivity $activity) use ($year) {
+            ->map(function (MonthlyActivity $activity) use ($year, $request) {
             $isReadOnlyUnified = $this->isReadOnlyUnifiedAgendaActivity($activity);
+            $canBranchPartialEditUnified = $this->canBranchEditUnifiedNonCoreFields($activity, $request->user());
 
             return [
                 'id' => $activity->id,
@@ -1993,10 +1994,10 @@ class MonthlyActivitiesController extends Controller
                 'requires_workshops' => (bool) $activity->requires_workshops,
                 'requires_communications' => (bool) $activity->requires_communications,
                 'edit_url' => route('role.relations.activities.edit', $activity),
-                'open_url' => $isReadOnlyUnified
+                'open_url' => ($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                     ? route('role.relations.activities.show', $activity)
                     : route('role.relations.activities.edit', $activity),
-                'read_only_unified' => $isReadOnlyUnified,
+                'read_only_unified' => $isReadOnlyUnified && ! $canBranchPartialEditUnified,
             ];
             })->values();
 
