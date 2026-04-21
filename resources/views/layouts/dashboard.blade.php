@@ -3,6 +3,12 @@
     $isRtl = $locale === 'ar';
     $theme = session('ui.theme', 'light');
     $skinClass = $theme === 'dark' ? 'app-skin-dark' : 'app-skin-light';
+    $versionedAsset = static function (string $path): string {
+        $absolutePath = public_path($path);
+        $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
+
+        return asset($path) . '?v=' . $version;
+    };
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
@@ -12,12 +18,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{ config('app.name', __('app.common.app_name')) }}</title>
 
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.ico') }}" />
-    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}" />
-    <link rel="stylesheet" href="{{ asset('assets/vendors/css/vendors.min.css') }}" />
-    <link rel="stylesheet" href="{{ asset('assets/css/theme.min.css') }}" />
-    <link rel="stylesheet" href="{{ asset('assets/css/zaha-duralux-overrides.css') }}" />
-    <link rel="stylesheet" href="{{ asset('assets/css/zaha-theme.css') }}" />
+    <link rel="shortcut icon" type="image/x-icon" href="{{ $versionedAsset('assets/images/favicon.ico') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/vendors/css/vendors.min.css') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/theme.min.css') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/zaha-duralux-overrides.css') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/zaha-theme.css') }}" />
     @stack('styles')
 </head>
 <body class="{{ $skinClass }} dashboard-shell {{ $isRtl ? 'rtl-active' : '' }}" data-locale="{{ $locale }}">
@@ -43,8 +49,8 @@
         @include('layouts.app.footer')
     </main>
 
-    <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
-    <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
+    <script src="{{ $versionedAsset('assets/vendors/js/vendors.min.js') }}"></script>
+    <script src="{{ $versionedAsset('assets/js/common-init.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.js-locale-switch').forEach(function (form) {

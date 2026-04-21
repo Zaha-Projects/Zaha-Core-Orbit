@@ -1,11 +1,19 @@
 @extends('layouts.app')
 
 @push('styles')
-@php($workflowUiCssPath = public_path('assets/css/workflow-ui.css'))
+@php
+    $workflowUiCssPath = public_path('assets/css/workflow-ui.css');
+    $versionedAsset = static function (string $path): string {
+        $absolutePath = public_path($path);
+        $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
+
+        return asset($path) . '?v=' . $version;
+    };
+@endphp
 @if (file_exists($workflowUiCssPath))
-<link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/workflow-ui.css') }}">
 @endif
-<link rel="stylesheet" href="{{ asset('assets/css/monthly-approvals.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-approvals.css') }}">
 @endpush
 
 @section('content')
@@ -100,5 +108,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/monthly-approvals.js') }}"></script>
+<script src="{{ $versionedAsset('assets/js/monthly-approvals.js') }}"></script>
 @endpush

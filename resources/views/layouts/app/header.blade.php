@@ -53,11 +53,13 @@
                 </div>
 
                 <div class="dropdown nxl-h-item">
-                    <a class="nxl-head-link me-0" data-bs-toggle="dropdown" href="#"><i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">{{ $unreadNotifications->count() }}</span></a>
+                    <a class="nxl-head-link me-0" data-bs-toggle="dropdown" href="#" aria-label="{{ __('app.layout.notifications') }}">
+                        <i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">{{ $unreadNotifications->count() }}</span>
+                    </a>
                     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown notification-chat-menu">
                         <div class="notification-chat-head">
-                            <div class="fw-semibold">الإشعارات</div>
-                            <div class="small text-muted">{{ $unreadNotifications->count() }} جديدة</div>
+                            <div class="fw-semibold">{{ __('app.layout.notifications') }}</div>
+                            <div class="small text-muted">{{ __('app.layout.new_notifications_count', ['count' => $unreadNotifications->count()]) }}</div>
                         </div>
                         <div class="notification-chat-list">
                             @forelse($unreadNotifications as $notification)
@@ -67,7 +69,7 @@
                                         <div class="text-muted small">{{ $notification->message }}</div>
                                         <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
                                             @if($notification->action_url)
-                                                <a class="small text-decoration-none" href="{{ $notification->action_url }}">فتح الإشعار</a>
+                                                <a class="small text-decoration-none" href="{{ $notification->action_url }}">{{ __('app.layout.open_notification') }}</a>
                                             @endif
                                             <form method="POST" action="{{ route('role.notifications.read', $notification) }}">
                                                 @csrf
@@ -179,16 +181,16 @@
         text-align: right;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-wrapper {
-        direction: ltr;
+        direction: rtl;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-left {
-        order: 2;
-        margin-left: auto;
+        order: 1;
+        margin-left: 0;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-right {
-        order: 1;
+        order: 2;
         margin-right: 0 !important;
-        margin-left: 0 !important;
+        margin-left: auto !important;
     }
     html[dir="rtl"] .nxl-header.is-rtl-header .header-right .d-flex {
         direction: rtl;
