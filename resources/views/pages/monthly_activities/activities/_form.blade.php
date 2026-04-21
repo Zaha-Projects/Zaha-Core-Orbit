@@ -60,6 +60,16 @@
     $partnersCount = max(1, count($oldPartners));
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
+    $isUnifiedMandatory = $existingMonthlyActivity
+        && (bool) $existingMonthlyActivity->is_from_agenda
+        && (string) $existingMonthlyActivity->plan_type === 'unified'
+        && (string) optional($existingMonthlyActivity->agendaEvent)->event_type === 'mandatory';
+    $unifiedLockedFields = collect(config('monthly_activity.unified_branch_edit.locked_fields', []))
+        ->filter(fn ($field) => is_string($field) && $field !== '')
+        ->values()
+        ->all();
+    $isUnifiedBranchEditMode = $isUnifiedMandatory && $isBranchScopedUser && (bool) config('monthly_activity.unified_branch_edit.enabled', true);
+    $isLockedField = fn (string $field): bool => $isUnifiedBranchEditMode && in_array($field, $unifiedLockedFields, true);
 @endphp
 
 <div class="event-module monthly-plan-form-page">
@@ -87,6 +97,13 @@
                 <input type="hidden" name="status" value="draft">
                 <input type="hidden" name="execution_status" value="{{ old('execution_status', $existingMonthlyActivity?->execution_status ?? 'executed') }}">
                 <input type="hidden" class="js-activity-date" name="activity_date" value="{{ old('activity_date', optional($existingMonthlyActivity?->activity_date)->format('Y-m-d') ?: optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}">
+                @if ($isUnifiedBranchEditMode)
+                    <div class="col-12">
+                        <div class="alert alert-primary py-2 px-3 mb-0">
+                            هذه الفعالية موحدة: تبقى بيانات التخطيط الأساسية موحدة من الإدارة العامة، بينما يمكن للفرع تعديل بيانات التنفيذ المحلية.
+                        </div>
+                    </div>
+                @endif
 
                 <div class="col-12">
                     <div class="monthly-form-section-head">
@@ -97,23 +114,26 @@
 
                 <div class="col-12 col-lg-6">
                     <label class="form-label">الجهة المالكة</label>
-                    <select class="form-select" name="owner_department_id">
+                    <select class="form-select" name="owner_department_id" {{ $isLockedField('owner_department_id') ? 'disabled' : '' }}>
                         <option value="">اختر الجهة المالكة</option>
                         @foreach($departmentsFromForm as $department)
                             <option value="{{ $department->id }}" {{ $selectedOwnerDepartmentId === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                         @endforeach
                     </select>
+                    @if ($isLockedField('owner_department_id'))
+                        <input type="hidden" name="owner_department_id" value="{{ $selectedOwnerDepartmentId }}">
+                    @endif
                 </div>
 
                 <div class="col-12 col-lg-6">
                     <label class="form-label">عنوان النشاط</label>
-                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title', $existingMonthlyActivity?->title) }}">
+                    <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title', $existingMonthlyActivity?->title) }}" {{ $isLockedField('title') ? 'readonly' : '' }}>
                     @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">تاريخ النشاط المخطط</label>
-                    <input class="form-control js-proposed-date @error('proposed_date') is-invalid @enderror" type="date" name="proposed_date" value="{{ old('proposed_date', optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}">
+                    <input class="form-control js-proposed-date @error('proposed_date') is-invalid @enderror" type="date" name="proposed_date" value="{{ old('proposed_date', optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}" {{ $isLockedField('proposed_date') ? 'readonly' : '' }}>
                     @error('proposed_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
@@ -123,29 +143,35 @@
                         <input type="hidden" name="branch_id" value="{{ $selectedBranch->id }}">
                         <input class="form-control" value="{{ $selectedBranch->name }}" readonly>
                     @else
-                        <select class="form-select @error('branch_id') is-invalid @enderror" name="branch_id">
+                        <select class="form-select @error('branch_id') is-invalid @enderror" name="branch_id" {{ $isLockedField('branch_id') ? 'disabled' : '' }}>
                             <option value="">اختر الفرع</option>
                             @foreach ($branches as $branch)
                                 <option value="{{ $branch->id }}" {{ (string) old('branch_id', $existingMonthlyActivity?->branch_id) === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
                             @endforeach
                         </select>
+                        @if ($isLockedField('branch_id'))
+                            <input type="hidden" name="branch_id" value="{{ old('branch_id', $existingMonthlyActivity?->branch_id) }}">
+                        @endif
                         @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     @endif
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">فعالية الأجندة السنوية المرتبطة</label>
-                    <select class="form-select" name="agenda_event_id">
+                    <select class="form-select" name="agenda_event_id" {{ $isLockedField('agenda_event_id') ? 'disabled' : '' }}>
                         <option value="">اختياري</option>
                         @foreach ($agendaEvents as $event)
                             <option value="{{ $event->id }}" {{ (string) old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) === (string) $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
                         @endforeach
                     </select>
+                    @if ($isLockedField('agenda_event_id'))
+                        <input type="hidden" name="agenda_event_id" value="{{ old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) }}">
+                    @endif
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">أجندة الحفل (إن وجدت)</label>
-                    <input class="form-control @error('planning_attachment') is-invalid @enderror @error('branch_plan_file') is-invalid @enderror" type="file" name="planning_attachment" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                    <input class="form-control @error('planning_attachment') is-invalid @enderror @error('branch_plan_file') is-invalid @enderror" type="file" name="planning_attachment" accept=".pdf,.doc,.docx,.xls,.xlsx" {{ $isLockedField('planning_attachment') ? 'disabled' : '' }}>
                     @if (old('planning_attachment', $existingMonthlyActivity?->planning_attachment))
                         <a class="small d-inline-block mt-1" href="{{ asset('storage/' . old('planning_attachment', $existingMonthlyActivity?->planning_attachment)) }}" target="_blank">عرض المرفق الحالي</a>
                     @endif
@@ -157,7 +183,7 @@
                     <div class="partner-departments-box mb-3">
                         @foreach($departmentsFromForm as $department)
                             <label class="partner-department-item">
-                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }}>
+                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }} {{ $isLockedField('partner_department_ids') ? 'disabled' : '' }}>
                                 <span>{{ $department->name }}</span>
                             </label>
                         @endforeach
@@ -165,17 +191,17 @@
                     <label class="form-label d-block mb-2">خيارات إضافية</label>
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="relations" {{ $selectedResponsibleEntities->contains('relations') ? 'checked' : '' }}>
+                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="relations" {{ $selectedResponsibleEntities->contains('relations') ? 'checked' : '' }} {{ $isLockedField('responsible_entities') ? 'disabled' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>العلاقات</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="programs" {{ $selectedResponsibleEntities->contains('programs') ? 'checked' : '' }}>
+                            <input class="form-check-input m-0" type="checkbox" name="responsible_entities[]" value="programs" {{ $selectedResponsibleEntities->contains('programs') ? 'checked' : '' }} {{ $isLockedField('responsible_entities') ? 'disabled' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>البرامج</span>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0" type="checkbox" name="is_in_agenda" value="1" {{ $isInAgendaChecked ? 'checked' : '' }}>
+                            <input class="form-check-input m-0" type="checkbox" name="is_in_agenda" value="1" {{ $isInAgendaChecked ? 'checked' : '' }} {{ $isLockedField('agenda_event_id') ? 'disabled' : '' }}>
                             <span class="monthly-activation-icon">✓</span>
                             <span>يظهر ضمن الأجندة السنوية</span>
                         </label>
@@ -257,7 +283,7 @@
                     <div class="partner-departments-box">
                         @foreach($targetGroups as $group)
                             <label class="partner-department-item">
-                                <input class="form-check-input m-0 js-target-group-checkbox" type="checkbox" name="target_group_ids[]" value="{{ $group->id }}" data-is-other="{{ $group->is_other ? 1 : 0 }}" {{ in_array((int) $group->id, $selectedTargetGroupIds, true) ? 'checked' : '' }}>
+                                <input class="form-check-input m-0 js-target-group-checkbox" type="checkbox" name="target_group_ids[]" value="{{ $group->id }}" data-is-other="{{ $group->is_other ? 1 : 0 }}" {{ in_array((int) $group->id, $selectedTargetGroupIds, true) ? 'checked' : '' }} {{ $isLockedField('target_group_ids') ? 'disabled' : '' }}>
                                 <span>{{ $group->name }}</span>
                             </label>
                         @endforeach
@@ -266,7 +292,7 @@
 
                 <div class="col-12 col-md-6 js-target-group-other">
                     <label class="form-label">أخرى (توضيح)</label>
-                    <input class="form-control" name="target_group_other" value="{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) }}">
+                    <input class="form-control" name="target_group_other" value="{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) }}" {{ $isLockedField('target_group_ids') ? 'readonly' : '' }}>
                 </div>
 
                 <div class="col-12 col-md-6">
@@ -471,4 +497,3 @@
     <script type="application/json" id="monthly-form-old-team-groups-json">@json($oldTeamGroups)</script>
     <script src="{{ asset('assets/js/monthly-activity-form.js') }}"></script>
 @endpush
-
