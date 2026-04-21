@@ -90,21 +90,6 @@
     <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
 </div>
 
-<div class="modal fade" id="decisionConfirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="decisionConfirmTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="decisionConfirmBody"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ __('workflow_ui.common.cancel') }}</button>
-                <button type="button" class="btn btn-primary" id="decisionConfirmSubmit">{{ __('workflow_ui.common.confirm') }}</button>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
