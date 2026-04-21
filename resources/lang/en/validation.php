@@ -142,8 +142,11 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'supplies.*.provider_name' => [
+            'required_if' => 'Please fill in the provider name when the supply is marked as unavailable.',
+        ],
+        'supplies.*.provider_type' => [
+            'required_if' => 'Please select the provider type when the supply is marked as unavailable.',
         ],
     ],
 
@@ -158,6 +161,11 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'supplies.*.item_name' => 'supply name',
+        'supplies.*.available' => 'availability status',
+        'supplies.*.provider_type' => 'provider type',
+        'supplies.*.provider_name' => 'provider name',
+    ],
 
 ];

@@ -948,7 +948,7 @@ class MonthlyActivitiesController extends Controller
             'supplies' => ['nullable', 'array'],
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.available' => ['nullable', 'boolean'],
-            'supplies.*.provider_type' => ['nullable', 'string', 'max:255'],
+            'supplies.*.provider_type' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,false'],
             'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,false'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
