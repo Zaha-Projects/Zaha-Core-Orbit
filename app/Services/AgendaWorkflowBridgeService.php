@@ -157,7 +157,6 @@ class AgendaWorkflowBridgeService
                 'relations_manager_approval_status' => 'approved',
                 'executive_approval_status' => 'approved',
                 'lifecycle_status' => 'Approved',
-                'center_id' => null,
                 'created_by' => $monthlyActivity->created_by ?: $agendaEvent->created_by,
             ]);
 

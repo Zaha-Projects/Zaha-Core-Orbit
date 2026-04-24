@@ -829,7 +829,6 @@ class AgendaEventsController extends Controller
                 'description' => $agendaEvent->notes,
                 'location_type' => $monthlyActivity->location_type ?? 'inside_center',
                 'status' => $monthlyActivity->status ?? 'draft',
-                'center_id' => null,
                 'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
             ]);
             $monthlyActivity->save();

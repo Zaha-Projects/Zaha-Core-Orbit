@@ -818,7 +818,6 @@ class MonthlyActivitiesController extends Controller
 
         $data = $request->validate([
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['nullable'],
             'month' => ['required', 'integer', 'between:1,12'],
             'year' => ['required', 'integer', 'min:2020', 'max:2100'],
         ]);
@@ -885,7 +884,6 @@ class MonthlyActivitiesController extends Controller
                 'lock_at' => $this->buildLockAt(optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString()),
                 'is_official' => false,
                 'branch_id' => (int) $data['branch_id'],
-                'center_id' => null,
                 'created_by' => $request->user()->id,
             ]);
 
@@ -919,7 +917,6 @@ class MonthlyActivitiesController extends Controller
             'activity_date' => ['required', 'date'],
             'proposed_date' => ['required', 'date'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'is_in_agenda' => ['nullable', 'boolean'],
             'status' => ['nullable', 'string', 'max:50'],
@@ -1113,7 +1110,6 @@ class MonthlyActivitiesController extends Controller
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
             'branch_id' => $data['branch_id'],
-            'center_id' => null,
             'created_by' => $request->user()->id,
         ]);
 
@@ -1339,7 +1335,6 @@ class MonthlyActivitiesController extends Controller
             'activity_date' => ['required', 'date'],
             'proposed_date' => ['required', 'date'],
             'branch_id' => ['required', 'exists:branches,id'],
-            'center_id' => ['nullable'],
             'agenda_event_id' => ['nullable', 'exists:agenda_events,id'],
             'is_in_agenda' => ['nullable', 'boolean'],
             'status' => ['nullable', 'string', 'max:50'],
@@ -1616,7 +1611,6 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
             'branch_id' => $data['branch_id'],
-            'center_id' => null,
             'lifecycle_status' => $newLifecycleStatus,
             'relations_officer_approval_status' => $monthlyActivity->relations_officer_approval_status,
             'relations_manager_approval_status' => $monthlyActivity->relations_manager_approval_status,
@@ -1724,7 +1718,6 @@ class MonthlyActivitiesController extends Controller
                 'requires_workshops' => $newValues['requires_workshops'],
                 'requires_communications' => $newValues['requires_communications'],
                 'branch_id' => $newValues['branch_id'],
-                'center_id' => null,
                 'lifecycle_status' => $newValues['lifecycle_status'],
                 'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],
                 'relations_manager_approval_status' => $newValues['relations_manager_approval_status'],
@@ -1818,7 +1811,6 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops' => $newValues['requires_workshops'],
             'requires_communications' => $newValues['requires_communications'],
             'branch_id' => $newValues['branch_id'],
-            'center_id' => null,
             'lifecycle_status' => $newValues['lifecycle_status'],
             'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],
             'relations_manager_approval_status' => $newValues['relations_manager_approval_status'],
