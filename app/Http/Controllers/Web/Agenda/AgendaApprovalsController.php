@@ -10,6 +10,7 @@ use App\Services\AgendaWorkflowPresenter;
 use App\Services\AgendaWorkflowBridgeService;
 use App\Services\DynamicWorkflowService;
 use App\Services\NotificationService;
+use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 
 class AgendaApprovalsController extends Controller
@@ -21,6 +22,10 @@ class AgendaApprovalsController extends Controller
             $dynamicWorkflowService->userMayParticipateInWorkflow('agenda', $viewer) || $viewer->can('agenda.approve'),
             403
         );
+        $filters = $request->validate([
+            'approval_status' => ['nullable', 'string'],
+            'current_step' => ['nullable', 'string'],
+        ]);
 
         $events = AgendaEvent::query()
             ->with([
@@ -28,7 +33,9 @@ class AgendaApprovalsController extends Controller
                 'creator',
                 'ownerDepartment',
                 'workflowInstance.currentStep.role',
+                'workflowInstance.currentStep.permission',
                 'workflowInstance.logs.step.role',
+                'workflowInstance.logs.step.permission',
                 'workflowInstance.logs.actor',
             ])
             ->orderBy('month')
@@ -42,7 +49,7 @@ class AgendaApprovalsController extends Controller
             return $event;
         });
 
-        $events->load('workflowInstance.currentStep.role', 'workflowInstance.logs.step.role', 'workflowInstance.logs.actor');
+        $events->load('workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step.role', 'workflowInstance.logs.step.permission', 'workflowInstance.logs.actor');
 
         $events->transform(function (AgendaEvent $event) use ($dynamicWorkflowService, $viewer) {
             $instance = $event->workflowInstance;
@@ -50,7 +57,11 @@ class AgendaApprovalsController extends Controller
 
             $event->setAttribute('workflow_state', $instance?->status ?? 'pending');
             $event->setAttribute('current_step_label', $currentStep?->name_ar ?: ($currentStep?->name_en ?: __('app.common.na')));
-            $event->setAttribute('current_role_label', $currentStep?->role?->display_name ?: ($currentStep?->role?->name ?: __('app.common.na')));
+            $event->setAttribute(
+                'current_role_label',
+                $currentStep?->role?->display_name
+                    ?: ($currentStep?->permission?->name ?: ($currentStep?->role?->name ?: __('app.common.na')))
+            );
             $event->setAttribute(
                 'can_current_user_decide',
                 $instance
@@ -65,7 +76,24 @@ class AgendaApprovalsController extends Controller
             return $agendaWorkflowPresenter->attach($event, $viewer);
         });
 
-        return view('pages.agenda.approvals.index', compact('events'));
+        $workflow = $dynamicWorkflowService->findActiveWorkflow('agenda');
+        $workflow?->loadMissing('steps.role', 'steps.permission');
+        $statusOptions = $this->buildStatusFilterOptions();
+        $currentStepOptions = $this->buildCurrentStepOptions(collect($workflow?->steps ?? []));
+
+        if (! empty($filters['approval_status'])) {
+            $events = $events
+                ->filter(fn (AgendaEvent $event): bool => $this->resolveStatusFilterValue($event) === (string) $filters['approval_status'])
+                ->values();
+        }
+
+        if (! empty($filters['current_step'])) {
+            $events = $events
+                ->filter(fn (AgendaEvent $event): bool => (string) data_get($event, 'workflow_summary.current_step_key') === (string) $filters['current_step'])
+                ->values();
+        }
+
+        return view('pages.agenda.approvals.index', compact('events', 'filters', 'statusOptions', 'currentStepOptions'));
     }
 
     public function update(
@@ -137,5 +165,52 @@ class AgendaApprovalsController extends Controller
         return redirect()
             ->route('role.relations.approvals.index')
             ->with('status', __('app.roles.relations.approvals.updated', ['event' => $agendaEvent->event_name]));
+    }
+
+    protected function buildStatusFilterOptions(): Collection
+    {
+        return collect([
+            [
+                'value' => 'draft',
+                'label' => __('app.roles.relations.agenda.status_labels.draft'),
+            ],
+            [
+                'value' => 'submitted',
+                'label' => __('app.roles.relations.agenda.status_labels.submitted'),
+            ],
+            [
+                'value' => 'published',
+                'label' => __('app.roles.relations.agenda.status_labels.published'),
+            ],
+        ]);
+    }
+
+    protected function buildCurrentStepOptions(Collection $steps): Collection
+    {
+        return $steps
+            ->map(function ($step): ?array {
+                $value = (string) ($step->step_key ?? '');
+                $label = (string) ($step->name_ar ?: ($step->name_en ?: ''));
+
+                if ($value === '' || $label === '') {
+                    return null;
+                }
+
+                return ['value' => $value, 'label' => $label];
+            })
+            ->filter()
+            ->unique('value')
+            ->values();
+    }
+
+    protected function resolveStatusFilterValue(AgendaEvent $event): string
+    {
+        $status = (string) data_get($event, 'workflow_summary.status_key', $event->status ?? 'draft');
+
+        return match ($status) {
+            'draft' => 'draft',
+            'published' => 'published',
+            default => 'submitted',
+        };
     }
 }

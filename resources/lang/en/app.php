@@ -17,6 +17,8 @@ return [
         'back' => 'Back',
         'mark_as_read' => 'Mark as read',
         'no_new_notifications' => 'No new notifications',
+        'all_months' => 'All months',
+        'all_years' => 'All years',
         'na' => 'N/A',
     ],
     'layout' => [
@@ -604,6 +606,13 @@ return [
             'approvals' => [
                 'title' => 'Agenda approvals',
                 'subtitle' => 'Review agenda events and submit decisions.',
+                'filters' => [
+                    'status' => 'Filter by status',
+                    'all' => 'All statuses',
+                    'apply' => 'Apply',
+                    'reset' => 'Reset',
+                    'pending_role' => 'Pending approval - :role',
+                ],
                 'fields' => [
                     'decision' => 'Decision',
                     'comment' => 'Comment',

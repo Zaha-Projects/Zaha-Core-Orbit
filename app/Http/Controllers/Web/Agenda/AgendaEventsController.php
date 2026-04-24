@@ -24,6 +24,7 @@ use App\Services\DynamicWorkflowService;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
 
 class AgendaEventsController extends Controller
 {
@@ -285,11 +286,12 @@ class AgendaEventsController extends Controller
         if (! in_array($perPage, $allowedPerPage, true)) {
             $perPage = 8;
         }
+        $selectedStatus = trim((string) $request->input('status', ''));
 
         $filteredBranchId = $this->canUserFilterAgendaBranches($request->user())
             ? $request->input('branch_id')
             : null;
-        $agendaFilters = array_merge($request->all(), [
+        $agendaFilters = array_merge($request->except('status'), [
             'branch_id' => $filteredBranchId,
         ]);
 
@@ -310,6 +312,7 @@ class AgendaEventsController extends Controller
 
         $this->applyBranchVisibilityScope($eventsQuery, $request->user());
         $this->applyDraftVisibilityScope($eventsQuery, $request->user());
+        $this->applyAgendaPageStatusFilter($eventsQuery, $selectedStatus);
 
         $events = $eventsQuery
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
@@ -338,12 +341,40 @@ class AgendaEventsController extends Controller
         $canFilterBranches = $this->canUserFilterAgendaBranches($request->user());
 
         $filters = array_merge($agendaFilters, [
+            'status' => $selectedStatus,
             'per_page' => $perPage,
         ]);
 
-        $agendaStatusOptions = $this->agendaStatusOptions((string) $request->input('status'));
+        $agendaStatusOptions = $this->agendaPageStatusOptions();
 
         return view('pages.agenda.events.index', compact('events', 'calendarEvents', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
+    }
+
+    protected function agendaPageStatusOptions(): Collection
+    {
+        return collect([
+            (object) ['code' => 'draft', 'name' => __('app.roles.relations.agenda.status_labels.draft')],
+            (object) ['code' => 'submitted', 'name' => __('app.roles.relations.agenda.status_labels.submitted')],
+            (object) ['code' => 'approved', 'name' => __('app.roles.relations.agenda.status_labels.approved')],
+        ]);
+    }
+
+    protected function applyAgendaPageStatusFilter($query, ?string $status): void
+    {
+        $status = trim((string) $status);
+
+        if ($status === '') {
+            return;
+        }
+
+        $query->where(function ($statusQuery) use ($status) {
+            match ($status) {
+                'draft' => $statusQuery->where('status', 'draft'),
+                'approved' => $statusQuery->whereIn('status', ['approved', 'relations_approved', 'published']),
+                'submitted' => $statusQuery->whereIn('status', ['submitted', 'pending', 'in_review', 'changes_requested', 'rejected']),
+                default => $statusQuery->where('status', $status),
+            };
+        });
     }
 
     protected function currentUserBranchIdForFilters(Request $request): ?int

@@ -94,10 +94,17 @@ class MonthlyWorkflowPresenter
         })->values();
 
         $businessStatus = $this->resolveBusinessStatus($activity, $instance, $submitLog);
+        $mainApprovedStepsCount = $logs->filter(fn (WorkflowLog $log): bool =>
+            (string) $log->step?->step_type !== 'sub'
+            && (string) $log->action === DynamicWorkflowService::DECISION_APPROVED
+        )->count();
+        $approvalFilter = $this->resolveApprovalFilter($businessStatus, $instance, $currentStep, $mainApprovedStepsCount);
 
         return [
             'status_key' => $businessStatus,
             'status_label' => $this->businessStatusLabel($businessStatus),
+            'approval_filter_key' => $approvalFilter['key'],
+            'approval_filter_label' => $approvalFilter['label'],
             'workflow_state' => (string) ($instance?->status ?? 'pending'),
             'workflow_state_label' => $this->workflowStateLabel((string) ($instance?->status ?? 'pending')),
             'current_step_key' => $currentStep?->step_key,
@@ -193,6 +200,64 @@ class MonthlyWorkflowPresenter
         }
 
         return 'pending';
+    }
+
+    protected function resolveApprovalFilter(
+        string $businessStatus,
+        ?WorkflowInstance $instance,
+        ?WorkflowStep $currentStep,
+        int $mainApprovedStepsCount
+    ): array {
+        if ($businessStatus === 'draft') {
+            return [
+                'key' => 'draft',
+                'label' => $this->businessStatusLabel('draft'),
+            ];
+        }
+
+        if ($businessStatus === 'approved') {
+            return [
+                'key' => 'approved',
+                'label' => $this->businessStatusLabel('approved'),
+            ];
+        }
+
+        if (in_array($businessStatus, ['rejected', 'changes_requested'], true)) {
+            return [
+                'key' => $businessStatus,
+                'label' => $this->businessStatusLabel($businessStatus),
+            ];
+        }
+
+        $isWaitingApproval = $currentStep !== null
+            && (string) $currentStep->step_type !== 'sub'
+            && ! in_array((string) ($instance?->status ?? ''), [
+                DynamicWorkflowService::DECISION_APPROVED,
+                DynamicWorkflowService::DECISION_REJECTED,
+                DynamicWorkflowService::DECISION_CHANGES_REQUESTED,
+            ], true);
+
+        if ($isWaitingApproval && $mainApprovedStepsCount > 0) {
+            $roleLabel = $currentStep->role?->display_name
+                ?: ($currentStep->permission?->name ? $this->fallbackLabel($currentStep->permission->name) : ($currentStep->role?->name ? $this->fallbackLabel($currentStep->role->name) : __('workflow_ui.common.none_option')));
+
+            return [
+                'key' => 'pending_approval:' . ((string) $currentStep->id),
+                'label' => __('workflow_ui.approvals.filters.pending_role', ['role' => $roleLabel]),
+            ];
+        }
+
+        if ($businessStatus === 'submitted' || $isWaitingApproval) {
+            return [
+                'key' => 'submitted',
+                'label' => $this->businessStatusLabel('submitted'),
+            ];
+        }
+
+        return [
+            'key' => $businessStatus,
+            'label' => $this->businessStatusLabel($businessStatus),
+        ];
     }
 
     protected function stepAppliesToActivity(WorkflowStep $step, MonthlyActivity $activity): bool

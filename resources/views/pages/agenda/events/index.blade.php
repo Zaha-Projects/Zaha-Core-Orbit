@@ -10,15 +10,39 @@
     $canManageAgenda = $authUser?->can('agenda.create') ?? false;
     $canBranchInteract = ($authUser?->can('agenda.participation.update') ?? false) && ! $isKhaldaHq;
 
+    $normalizeAgendaPageStatus = function (?string $status): ?string {
+        return match ((string) $status) {
+            'approved', 'relations_approved', 'published' => 'approved',
+            'draft' => 'draft',
+            default => filled($status) ? 'submitted' : null,
+        };
+    };
+
     $agendaStatusLabels = collect($agendaStatusOptions ?? [])->pluck('name', 'code')->all();
-    $agendaStatusLabel = function (?string $status) use ($agendaStatusLabels): string {
+    $agendaStatusLabel = function (?string $status) use ($agendaStatusLabels, $normalizeAgendaPageStatus): string {
         if (! $status) {
             return '-';
         }
 
-        return $agendaStatusLabels[$status]
+        $normalizedStatus = $normalizeAgendaPageStatus($status);
+
+        return $agendaStatusLabels[$normalizedStatus]
+            ?? \App\Models\EventStatusLookup::labelFor('agenda', $normalizedStatus ?: $status)
             ?? \App\Models\EventStatusLookup::labelFor('agenda', $status);
     };
+    $eventTypeFilterOptions = [
+        ['value' => 'mandatory', 'label' => __('app.roles.relations.agenda.types.mandatory')],
+        ['value' => 'optional', 'label' => __('app.roles.relations.agenda.types.optional')],
+    ];
+    $planTypeFilterOptions = [
+        ['value' => 'unified', 'label' => __('app.roles.relations.agenda.plans.unified')],
+        ['value' => 'non_unified', 'label' => __('app.roles.relations.agenda.plans.non_unified')],
+    ];
+    $perPageFilterOptions = collect([8, 16, 24, 50, 100])
+        ->map(fn (int $size): array => [
+            'value' => (string) $size,
+            'label' => __('app.roles.relations.agenda.filters.show_count', ['count' => $size]),
+        ]);
 
     $branchesById = \App\Models\Branch::query()
         ->get()
@@ -39,7 +63,7 @@
             ],
         ]);
 
-    $agendaEvents = collect($calendarEvents ?? $events->getCollection())->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $authUser, $branchesById, $unitsById) {
+    $agendaEvents = collect($calendarEvents ?? $events->getCollection())->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $normalizeAgendaPageStatus, $authUser, $branchesById, $unitsById) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
         $workflowSummary = $event->workflow_summary ?? [];
@@ -94,8 +118,8 @@
             'partner_departments' => $partnerDepartments,
             'participant_units' => $participantUnits,
             'category' => $event->eventCategory?->name ?? $event->event_category ?? '-',
-            'status' => $workflowSummary['status_key'] ?? $event->status,
-            'status_label' => $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status),
+            'status' => $normalizeAgendaPageStatus($workflowSummary['status_key'] ?? $event->status),
+            'status_label' => $agendaStatusLabel($workflowSummary['status_key'] ?? $event->status),
             'workflow_state' => $workflowSummary['workflow_state_label'] ?? __('app.common.na'),
             'current_step_label' => $workflowSummary['current_step_label'] ?? __('app.common.na'),
             'current_role_label' => $workflowSummary['current_role_label'] ?? __('app.common.na'),
@@ -141,47 +165,50 @@
 
         <form method="GET" class="card card-body mb-3">
             <div class="row g-2">
-                <div class="col-md-2"><input class="form-control" type="text" inputmode="numeric" pattern="[0-9]*" name="year" placeholder="اكتب السنة" value="{{ request('year') }}"></div>
-                <div class="col-md-2"><input class="form-control" type="number" min="1" max="12" name="month" placeholder="اكتب رقم الشهر" value="{{ request('month') }}"></div>
-                <div class="col-md-2">
-                    <select class="form-select" name="status">
-                        <option value="">{{ __('app.roles.relations.agenda.filters.all_statuses') }}</option>
-                        @foreach ($agendaStatusOptions as $statusOption)
-                            <option value="{{ $statusOption->code }}" {{ request('status') === $statusOption->code ? 'selected' : '' }}>{{ $agendaStatusLabel($statusOption->code) }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                @include('pages.shared.filters.month-and-year-select', [
+                    'monthColumnClass' => 'col-md-2',
+                    'yearColumnClass' => 'col-md-2',
+                    'selectedMonth' => request('month'),
+                    'selectedYear' => request('year'),
+                ])
+                @include('pages.shared.filters.status-select', [
+                    'columnClass' => 'col-md-2',
+                    'fieldName' => 'status',
+                    'placeholder' => __('app.roles.relations.agenda.filters.all_statuses'),
+                    'options' => $agendaStatusOptions,
+                    'selectedValue' => request('status'),
+                ])
                 @if ($canFilterBranches)
-                    <div class="col-md-2">
-                        <select class="form-select" name="branch_id">
-                            <option value="">{{ __('app.roles.relations.agenda.filters.all_branches') }}</option>
-                            @foreach ($branches as $branch)
-                                <option value="{{ $branch->id }}" {{ (string) request('branch_id') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @include('pages.shared.filters.select-field', [
+                        'columnClass' => 'col-md-2',
+                        'fieldName' => 'branch_id',
+                        'placeholder' => __('app.roles.relations.agenda.filters.all_branches'),
+                        'options' => $branches,
+                        'selectedValue' => request('branch_id'),
+                        'optionValueKey' => 'id',
+                        'optionLabelKey' => 'name',
+                    ])
                 @endif
-                <div class="col-md-2">
-                    <select class="form-select" name="event_type">
-                        <option value="">{{ __('app.roles.relations.agenda.filters.all_event_types') }}</option>
-                        <option value="mandatory" {{ request('event_type') === 'mandatory' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.mandatory') }}</option>
-                        <option value="optional" {{ request('event_type') === 'optional' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.types.optional') }}</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" name="plan_type">
-                        <option value="">{{ __('app.roles.relations.agenda.filters.all_plan_types') }}</option>
-                        <option value="unified" {{ request('plan_type') === 'unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.unified') }}</option>
-                        <option value="non_unified" {{ request('plan_type') === 'non_unified' ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.plans.non_unified') }}</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" name="per_page">
-                        @foreach ([8, 16, 24, 50, 100] as $size)
-                            <option value="{{ $size }}" {{ (int) request('per_page', 8) === $size ? 'selected' : '' }}>{{ __('app.roles.relations.agenda.filters.show_count', ['count' => $size]) }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                @include('pages.shared.filters.select-field', [
+                    'columnClass' => 'col-md-2',
+                    'fieldName' => 'event_type',
+                    'placeholder' => __('app.roles.relations.agenda.filters.all_event_types'),
+                    'options' => $eventTypeFilterOptions,
+                    'selectedValue' => request('event_type'),
+                ])
+                @include('pages.shared.filters.select-field', [
+                    'columnClass' => 'col-md-2',
+                    'fieldName' => 'plan_type',
+                    'placeholder' => __('app.roles.relations.agenda.filters.all_plan_types'),
+                    'options' => $planTypeFilterOptions,
+                    'selectedValue' => request('plan_type'),
+                ])
+                @include('pages.shared.filters.select-field', [
+                    'columnClass' => 'col-md-2',
+                    'fieldName' => 'per_page',
+                    'options' => $perPageFilterOptions,
+                    'selectedValue' => request('per_page', 8),
+                ])
                 <div class="col-md-2"><button class="btn btn-outline-primary w-100">{{ __('app.common.filter') }}</button></div>
             </div>
         </form>
@@ -292,7 +319,8 @@
                                 <div class="module-card-header">
                                     <div class="d-flex justify-content-between align-items-start gap-2 mb-0">
                                         <h3 class="h6 mb-0">{{ $event->event_name }}</h3>
-                                        <span class="event-status status-{{ $workflowSummary['status_key'] ?? $event->status }}">{{ $workflowSummary['status_label'] ?? $agendaStatusLabel($event->status) }}</span>
+                                        @php($pageStatusKey = $normalizeAgendaPageStatus($workflowSummary['status_key'] ?? $event->status))
+                                        <span class="event-status status-{{ $pageStatusKey ?? ($workflowSummary['status_key'] ?? $event->status) }}">{{ $agendaStatusLabel($workflowSummary['status_key'] ?? $event->status) }}</span>
                                     </div>
                                 </div>
                                 <div class="module-card-body">

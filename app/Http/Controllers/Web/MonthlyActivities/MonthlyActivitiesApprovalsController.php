@@ -15,6 +15,7 @@ use App\Services\MonthlyWorkflowPresenter;
 use App\Services\NotificationService;
 use App\Services\MonthlyActivityLifecycleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
@@ -27,9 +28,8 @@ class MonthlyActivitiesApprovalsController extends Controller
         );
         $branchCoordinatorScope = $this->branchCoordinatorApprovalScope($viewer);
         $filters = $request->validate([
-            'status' => ['nullable', 'string', 'in:draft,submitted,in_review,pending,in_progress,approved,changes_requested,rejected'],
+            'approval_status' => ['nullable', 'string'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
-            'assignee' => ['nullable', 'string'],
             'current_step' => ['nullable', 'string'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -95,20 +95,14 @@ class MonthlyActivitiesApprovalsController extends Controller
             $collection = $collection->where('requires_communications', true)->values();
         }
 
-        if (! empty($filters['status'])) {
+        $workflow = $dynamicWorkflowService->findActiveWorkflow('monthly_activities');
+        $workflow?->loadMissing('steps.role', 'steps.permission');
+        $statusOptions = $this->buildStatusFilterOptions();
+        $currentStepOptions = $this->buildCurrentStepOptions(collect($workflow?->steps ?? []));
+
+        if (! empty($filters['approval_status'])) {
             $collection = $collection->filter(function (MonthlyActivity $activity) use ($filters) {
-                $summary = $activity->workflow_summary ?? [];
-
-                return ($summary['status_key'] ?? optional($activity->workflowInstance)->status) === $filters['status'];
-            })->values();
-        }
-
-        if (! empty($filters['assignee'])) {
-            $collection = $collection->filter(function (MonthlyActivity $activity) use ($filters) {
-                $step = optional($activity->workflowInstance)->currentStep;
-                $candidate = $step?->role?->name ?? $step?->permission?->name;
-
-                return $candidate === $filters['assignee'];
+                return $this->resolveStatusFilterValue($activity) === (string) $filters['approval_status'];
             })->values();
         }
 
@@ -152,7 +146,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'my_pending' => $activityCards->where('can_current_user_decide', true)->count(),
         ];
 
-        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis'));
+        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions'));
     }
 
     public function details(
@@ -355,6 +349,53 @@ class MonthlyActivitiesApprovalsController extends Controller
         return method_exists($user, 'approvalBranchIds')
             ? $user->approvalBranchIds()
             : (filled($user->branch_id) ? [(int) $user->branch_id] : []);
+    }
+
+    protected function buildStatusFilterOptions(): Collection
+    {
+        return collect([
+            [
+                'value' => 'draft',
+                'label' => __('app.roles.programs.monthly_activities.statuses.draft'),
+            ],
+            [
+                'value' => 'submitted',
+                'label' => __('app.roles.programs.monthly_activities.statuses.submitted'),
+            ],
+            [
+                'value' => 'approved',
+                'label' => __('app.roles.programs.monthly_activities.statuses.approved'),
+            ],
+        ]);
+    }
+
+    protected function buildCurrentStepOptions(Collection $steps): Collection
+    {
+        return $steps
+            ->map(function ($step): ?array {
+                $value = (string) ($step->step_key ?? '');
+                $label = (string) ($step->name_ar ?: ($step->name_en ?: ''));
+
+                if ($value === '' || $label === '') {
+                    return null;
+                }
+
+                return ['value' => $value, 'label' => $label];
+            })
+            ->filter()
+            ->unique('value')
+            ->values();
+    }
+
+    protected function resolveStatusFilterValue(MonthlyActivity $activity): string
+    {
+        $status = (string) data_get($activity, 'workflow_summary.status_key', $activity->status ?? 'draft');
+
+        return match ($status) {
+            'draft' => 'draft',
+            'approved' => 'approved',
+            default => 'submitted',
+        };
     }
 
     protected function buildActivityCard(MonthlyActivity $activity, $viewer): array

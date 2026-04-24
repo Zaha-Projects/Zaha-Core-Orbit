@@ -78,10 +78,14 @@ return [
             'rejected' => 'Rejected',
         ],
         'filters' => [
+            'status_type' => 'Approval status',
+            'all_statuses' => 'All statuses',
             'from' => 'From date',
             'to' => 'To date',
             'branch' => 'Branch',
             'apply' => 'Apply filters',
+            'reset' => 'Reset',
+            'pending_role' => 'Pending approval - :role',
         ],
         'timeline' => [
             'title' => 'Decision timeline',

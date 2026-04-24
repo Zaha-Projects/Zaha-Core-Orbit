@@ -76,10 +76,14 @@ return [
             'rejected' => 'المرفوضة',
         ],
         'filters' => [
+            'status_type' => 'حالة الاعتماد',
+            'all_statuses' => 'كل الحالات',
             'from' => 'من تاريخ',
             'to' => 'إلى تاريخ',
             'branch' => 'الفرع',
             'apply' => 'تطبيق الفلاتر',
+            'reset' => 'إعادة ضبط',
+            'pending_role' => 'قيد اعتماد - :role',
         ],
         'timeline' => [
             'title' => 'التسلسل الزمني للقرارات',

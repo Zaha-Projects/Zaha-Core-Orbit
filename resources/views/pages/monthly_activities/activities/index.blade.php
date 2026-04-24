@@ -5,13 +5,23 @@
     $subtitle = ($viewScope ?? 'default') === 'all_branches'
         ? 'يتم إظهار الخطط الشهرية المعتمدة بالكامل والمنشورة فقط لبقية الفروع.'
         : __('app.roles.programs.monthly_activities.subtitle');
+    $normalizeMonthlyPageStatus = function (?string $status): ?string {
+        return match ((string) $status) {
+            'approved' => 'approved',
+            'draft' => 'draft',
+            default => filled($status) ? 'submitted' : null,
+        };
+    };
     $monthlyStatusLabels = collect($monthlyStatusOptions ?? [])->pluck('name', 'code')->all();
-    $workflowStatusLabel = function (?string $status) use ($monthlyStatusLabels): string {
+    $workflowStatusLabel = function (?string $status) use ($monthlyStatusLabels, $normalizeMonthlyPageStatus): string {
         if (! $status) {
             return '-';
         }
 
-        return $monthlyStatusLabels[$status]
+        $normalizedStatus = $normalizeMonthlyPageStatus($status);
+
+        return $monthlyStatusLabels[$normalizedStatus]
+            ?? \App\Models\EventStatusLookup::labelFor('monthly_activities', $normalizedStatus ?: $status)
             ?? \App\Models\EventStatusLookup::labelFor('monthly_activities', $status);
     };
 
@@ -31,15 +41,9 @@
     $calendarStatusLabels = [
         'draft' => $workflowStatusLabel('draft'),
         'submitted' => $workflowStatusLabel('submitted'),
-        'in_review' => $workflowStatusLabel('in_review'),
         'approved' => $workflowStatusLabel('approved'),
-        'changes_requested' => $workflowStatusLabel('changes_requested'),
-        'rejected' => $workflowStatusLabel('rejected'),
-        'postponed' => $workflowStatusLabel('postponed'),
-        'cancelled' => $workflowStatusLabel('cancelled'),
-        'closed' => $workflowStatusLabel('closed'),
-        'completed' => $workflowStatusLabel('completed'),
     ];
+    $branchFilterSelected = $filters['branch_id'] ?? '';
     $versionedAsset = static function (string $path): string {
         $absolutePath = public_path($path);
         $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
@@ -75,8 +79,22 @@
         @endif
 
         <div class="event-kpi-grid">
-            <div class="event-kpi-card"><div class="text-muted small">{{ __('app.roles.programs.monthly_activities.list_title') }}</div><div class="event-kpi-value">{{ method_exists($activities, 'total') ? $activities->total() : $activities->count() }}</div></div>
-            <div class="event-kpi-card"><div class="text-muted small">{{ __('app.roles.programs.monthly_activities.statuses.approved') }}</div><div class="event-kpi-value">{{ $activities->where('status','approved')->count() }}</div></div>
+            @foreach (($summaryCards ?? collect()) as $card)
+                @php
+                    $summaryFilterKey = (string) ($card['filter_key'] ?? '');
+                    $isActiveSummaryCard = (string) ($filters['summary_filter'] ?? '') === $summaryFilterKey;
+                    $summaryQuery = collect(request()->except(['page', 'summary_filter', 'status']))
+                        ->when($summaryFilterKey !== '', fn ($query) => $query->put('summary_filter', $summaryFilterKey))
+                        ->all();
+                @endphp
+                <a
+                    href="{{ route('role.relations.activities.index', $summaryQuery) }}"
+                    class="event-kpi-card d-block text-decoration-none text-reset {{ $isActiveSummaryCard ? 'border-primary shadow-sm' : '' }}"
+                >
+                    <div class="text-muted small">{{ $card['label'] }}</div>
+                    <div class="event-kpi-value">{{ $card['count'] }}</div>
+                </a>
+            @endforeach
         </div>
 
         <div class="card event-card mb-4">
@@ -86,28 +104,37 @@
                     @if (($viewScope ?? 'default') === 'all_branches')
                         <input type="hidden" name="scope" value="all_branches">
                     @endif
-                    @if ($canFilterBranches)
-                        <div class="col-12 col-md-6 col-xl-3">
-                            <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.branch') }}</label>
-                            <select class="form-select" name="branch_id">
-                                <option value="">{{ __('app.roles.programs.monthly_activities.fields.branch_placeholder') }}</option>
-                                @foreach ($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ (string) ($filters['branch_id'] ?? '') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    @if (!empty($filters['summary_filter']))
+                        <input type="hidden" name="summary_filter" value="{{ $filters['summary_filter'] }}">
                     @endif
-                    <div class="col-6 col-xl-2"><label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.month') }}</label><input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control" name="month" value="{{ $filters['month'] ?? '' }}" placeholder="اكتب رقم الشهر"></div>
-                    <div class="col-6 col-xl-2"><label class="form-label">{{ __('app.roles.programs.monthly_activities.sync.year') }}</label><input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control" name="year" value="{{ $filters['year'] ?? '' }}" placeholder="اكتب السنة"></div>
-                    <div class="col-12 col-md-6 col-xl-3">
-                        <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>
-                        <select class="form-select" name="status">
-                            <option value="">كل الحالات</option>
-                            @foreach ($monthlyStatusOptions as $statusOption)
-                                <option value="{{ $statusOption->code }}" {{ ($filters['status'] ?? '') === $statusOption->code ? 'selected' : '' }}>{{ $workflowStatusLabel($statusOption->code) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @if ($canFilterBranches)
+                        @include('pages.shared.filters.select-field', [
+                            'columnClass' => 'col-12 col-md-6 col-xl-3',
+                            'fieldName' => 'branch_id',
+                            'label' => __('app.roles.programs.monthly_activities.fields.branch'),
+                            'placeholder' => __('app.roles.programs.monthly_activities.fields.branch_placeholder'),
+                            'options' => $branches,
+                            'selectedValue' => $branchFilterSelected,
+                            'optionValueKey' => 'id',
+                            'optionLabelKey' => 'name',
+                        ])
+                    @endif
+                    @include('pages.shared.filters.month-and-year-select', [
+                        'monthColumnClass' => 'col-6 col-xl-2',
+                        'yearColumnClass' => 'col-6 col-xl-2',
+                        'monthLabel' => __('app.roles.programs.monthly_activities.sync.month'),
+                        'yearLabel' => __('app.roles.programs.monthly_activities.sync.year'),
+                        'selectedMonth' => $filters['month'] ?? '',
+                        'selectedYear' => $filters['year'] ?? '',
+                    ])
+                    @include('pages.shared.filters.status-select', [
+                        'columnClass' => 'col-12 col-md-6 col-xl-3',
+                        'fieldName' => 'status',
+                        'label' => __('app.roles.programs.monthly_activities.fields.status'),
+                        'placeholder' => 'كل الحالات',
+                        'options' => $monthlyStatusOptions,
+                        'selectedValue' => $filters['status'] ?? '',
+                    ])
                     <div class="col-12 col-xl-2 event-actions"><button class="btn btn-outline-primary" type="submit">{{ __('app.common.filter') }}</button></div>
                 </form>
             </div>
@@ -154,7 +181,8 @@
                                 <div class="module-card-header">
                                     <div class="d-flex justify-content-between gap-2 align-items-start flex-wrap mb-0">
                                         <h3 class="h6 mb-1">{{ $activity->title }}</h3>
-                                        <span class="event-status status-{{ $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
+                                        @php($pageStatusKey = $normalizeMonthlyPageStatus($activity->status))
+                                        <span class="event-status status-{{ $pageStatusKey ?? $activity->status }}">{{ $workflowStatusLabel($activity->status) }}</span>
                                     </div>
                                 </div>
                                 <div class="module-card-body">

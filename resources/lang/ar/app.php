@@ -17,6 +17,8 @@ return [
         'back' => 'رجوع',
         'mark_as_read' => 'تحديد كمقروء',
         'no_new_notifications' => 'لا توجد إشعارات جديدة',
+        'all_months' => 'كل الأشهر',
+        'all_years' => 'كل السنوات',
         'na' => 'غير متاح',
     ],
     'layout' => [
@@ -604,6 +606,13 @@ return [
             'approvals' => [
                 'title' => 'اعتمادات الأجندة',
                 'subtitle' => 'مراجعة فعاليات الأجندة وتسجيل القرار.',
+                'filters' => [
+                    'status' => 'فلترة حسب الحالة',
+                    'all' => 'كل الحالات',
+                    'apply' => 'تطبيق',
+                    'reset' => 'إعادة ضبط',
+                    'pending_role' => 'قيد اعتماد - :role',
+                ],
                 'fields' => [
                     'decision' => 'القرار',
                     'comment' => 'ملاحظة',

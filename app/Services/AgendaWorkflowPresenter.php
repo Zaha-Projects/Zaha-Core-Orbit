@@ -34,14 +34,17 @@ class AgendaWorkflowPresenter
         if ($instance) {
             $instance->loadMissing(
                 'workflow.steps.role',
+                'workflow.steps.permission',
                 'currentStep.role',
+                'currentStep.permission',
                 'logs.step.role',
+                'logs.step.permission',
                 'logs.actor'
             );
         }
 
         $workflow = $instance?->workflow ?? $this->dynamicWorkflowService->findActiveWorkflow('agenda');
-        $workflow?->loadMissing('steps.role');
+        $workflow?->loadMissing('steps.role', 'steps.permission');
 
         $steps = collect($workflow?->steps ?? [])->values();
 
@@ -76,7 +79,8 @@ class AgendaWorkflowPresenter
             return [
                 'key' => $step->step_key,
                 'label' => $step->name_ar ?: ($step->name_en ?: $this->fallbackLabel($step->step_key)),
-                'role_label' => $step->role?->display_name ?: ($step->role?->name ? $this->fallbackLabel($step->role->name) : __('app.common.na')),
+                'role_label' => $step->role?->display_name
+                    ?: ($step->permission?->name ? $this->fallbackLabel($step->permission->name) : ($step->role?->name ? $this->fallbackLabel($step->role->name) : __('app.common.na'))),
                 'step_type' => $step->step_type,
                 'applies' => $applies,
                 'state' => $state,
@@ -89,22 +93,31 @@ class AgendaWorkflowPresenter
         })->values();
 
         $approvedSteps = $presentedSteps->whereIn('state', ['submitted', DynamicWorkflowService::DECISION_APPROVED])->count();
+        $mainApprovedStepsCount = $logs->filter(fn (WorkflowLog $log): bool =>
+            (string) $log->step?->step_type !== 'sub'
+            && (string) $log->action === DynamicWorkflowService::DECISION_APPROVED
+        )->count();
+        $approvalFilter = $this->resolveApprovalFilter($businessStatus, $instance, $currentStep, $mainApprovedStepsCount);
 
         return [
             'status_key' => $businessStatus,
             'status_label' => $this->agendaStatusLabel($businessStatus),
+            'approval_filter_key' => $approvalFilter['key'],
+            'approval_filter_label' => $approvalFilter['label'],
             'workflow_state' => $workflowState,
             'workflow_state_label' => $this->workflowStateLabel($workflowState),
             'current_step_key' => $currentStep?->step_key,
             'current_step_label' => $currentStep?->name_ar ?: ($currentStep?->name_en ?: __('app.common.na')),
-            'current_role_label' => $currentStep?->role?->display_name ?: ($currentStep?->role?->name ? $this->fallbackLabel($currentStep->role->name) : __('app.common.na')),
+            'current_role_label' => $currentStep?->role?->display_name
+                ?: ($currentStep?->permission?->name ? $this->fallbackLabel($currentStep->permission->name) : ($currentStep?->role?->name ? $this->fallbackLabel($currentStep->role->name) : __('app.common.na'))),
             'completed_steps_count' => $approvedSteps,
             'total_steps_count' => $presentedSteps->where('applies', true)->count(),
             'submitted_by_name' => $submitLog?->actor?->name,
             'submitted_at' => $submitLog?->acted_at?->format('Y-m-d H:i'),
             'latest_change_request' => $latestChangeRequest ? [
                 'step_label' => $latestChangeRequest->step?->name_ar ?: ($latestChangeRequest->step?->name_en ?: __('app.common.na')),
-                'role_label' => $latestChangeRequest->step?->role?->display_name ?: ($latestChangeRequest->step?->role?->name ? $this->fallbackLabel($latestChangeRequest->step->role->name) : __('app.common.na')),
+                'role_label' => $latestChangeRequest->step?->role?->display_name
+                    ?: ($latestChangeRequest->step?->permission?->name ? $this->fallbackLabel($latestChangeRequest->step->permission->name) : ($latestChangeRequest->step?->role?->name ? $this->fallbackLabel($latestChangeRequest->step->role->name) : __('app.common.na'))),
                 'actor_name' => $latestChangeRequest->actor?->name ?? __('app.common.na'),
                 'comment' => $latestChangeRequest->comment,
                 'acted_at' => $latestChangeRequest->acted_at?->format('Y-m-d H:i'),
@@ -123,7 +136,8 @@ class AgendaWorkflowPresenter
                 return [
                     'step_key' => $log->step?->step_key,
                     'step_label' => $log->step?->name_ar ?: ($log->step?->name_en ?: __('app.common.na')),
-                    'role_label' => $log->step?->role?->display_name ?: ($log->step?->role?->name ? $this->fallbackLabel($log->step->role->name) : __('app.common.na')),
+                    'role_label' => $log->step?->role?->display_name
+                        ?: ($log->step?->permission?->name ? $this->fallbackLabel($log->step->permission->name) : ($log->step?->role?->name ? $this->fallbackLabel($log->step->role->name) : __('app.common.na'))),
                     'actor_name' => $log->actor?->name ?? __('app.common.na'),
                     'action' => $action,
                     'action_label' => $this->stepStateLabel($action),
@@ -172,6 +186,57 @@ class AgendaWorkflowPresenter
         }
 
         return 'pending';
+    }
+
+    protected function resolveApprovalFilter(
+        string $businessStatus,
+        ?WorkflowInstance $instance,
+        ?WorkflowStep $currentStep,
+        int $mainApprovedStepsCount
+    ): array {
+        if ($businessStatus === 'draft') {
+            return [
+                'key' => 'draft',
+                'label' => $this->agendaStatusLabel('draft'),
+            ];
+        }
+
+        if ($businessStatus === 'published') {
+            return [
+                'key' => 'published',
+                'label' => $this->agendaStatusLabel('published'),
+            ];
+        }
+
+        $isWaitingApproval = $currentStep !== null
+            && (string) $currentStep->step_type !== 'sub'
+            && ! in_array((string) ($instance?->status ?? ''), [
+                DynamicWorkflowService::DECISION_APPROVED,
+                DynamicWorkflowService::DECISION_REJECTED,
+                DynamicWorkflowService::DECISION_CHANGES_REQUESTED,
+            ], true);
+
+        if ($isWaitingApproval && $mainApprovedStepsCount > 0) {
+            $roleLabel = $currentStep->role?->display_name
+                ?: ($currentStep->permission?->name ? $this->fallbackLabel($currentStep->permission->name) : ($currentStep->role?->name ? $this->fallbackLabel($currentStep->role->name) : __('app.common.na')));
+
+            return [
+                'key' => 'pending_approval:' . ((string) $currentStep->id),
+                'label' => __('app.roles.relations.approvals.filters.pending_role', ['role' => $roleLabel]),
+            ];
+        }
+
+        if ($businessStatus === 'submitted' || $isWaitingApproval) {
+            return [
+                'key' => 'submitted',
+                'label' => $this->agendaStatusLabel('submitted'),
+            ];
+        }
+
+        return [
+            'key' => $businessStatus,
+            'label' => $this->agendaStatusLabel($businessStatus),
+        ];
     }
 
     protected function stepAppliesToAgendaEvent(WorkflowStep $step, AgendaEvent $agendaEvent): bool

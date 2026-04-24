@@ -58,20 +58,43 @@
         </div>
         <div class="card-body d-flex flex-column gap-3">
             <div class="wf-tabbar">
-                <a class="wf-tab {{ request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['my_pending' => 1, 'status' => null])) }}">{{ __('workflow_ui.approvals.tabs.my_pending') }}</a>
-                <a class="wf-tab {{ !request('my_pending') && !request('status') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except(['page','status','my_pending']), [])) }}">{{ __('workflow_ui.approvals.tabs.all') }}</a>
-                <a class="wf-tab {{ request('status') === 'approved' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['status' => 'approved', 'my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.approved') }}</a>
-                <a class="wf-tab {{ request('status') === 'rejected' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['status' => 'rejected', 'my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.rejected') }}</a>
+                <a class="wf-tab {{ request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['my_pending' => 1])) }}">{{ __('workflow_ui.approvals.tabs.my_pending') }}</a>
+                <a class="wf-tab {{ !request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except(['page','my_pending']), ['my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.all') }}</a>
             </div>
 
             <form method="GET" class="row g-2 align-items-end">
-                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.common.status') }}</label><input class="form-control" name="status" value="{{ $filters['status'] ?? '' }}"></div>
-                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.common.current_step') }}</label><input class="form-control" name="current_step" value="{{ $filters['current_step'] ?? '' }}"></div>
-                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.common.assignee') }}</label><input class="form-control" name="assignee" value="{{ $filters['assignee'] ?? '' }}"></div>
-                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.branch') }}</label><select class="form-select" name="branch_id"><option value="">{{ __('workflow_ui.common.none_option') }}</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" {{ (string) ($filters['branch_id'] ?? '') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>@endforeach</select></div>
+                @include('pages.shared.filters.workflow-status-and-step', [
+                    'statusFieldName' => 'approval_status',
+                    'statusLabel' => __('workflow_ui.approvals.filters.status_type'),
+                    'statusPlaceholder' => __('workflow_ui.approvals.filters.all_statuses'),
+                    'statusOptions' => $statusOptions,
+                    'selectedStatus' => $filters['approval_status'] ?? '',
+                    'statusColumnClass' => 'col-md-3',
+                    'stepFieldName' => 'current_step',
+                    'stepLabel' => __('workflow_ui.common.current_step'),
+                    'stepPlaceholder' => __('workflow_ui.common.none_option'),
+                    'currentStepOptions' => $currentStepOptions,
+                    'selectedStep' => $filters['current_step'] ?? '',
+                    'stepColumnClass' => 'col-md-2',
+                ])
+                @include('pages.shared.filters.select-field', [
+                    'columnClass' => 'col-md-2',
+                    'fieldName' => 'branch_id',
+                    'label' => __('workflow_ui.approvals.filters.branch'),
+                    'placeholder' => __('workflow_ui.common.none_option'),
+                    'options' => $branches,
+                    'selectedValue' => $filters['branch_id'] ?? '',
+                    'optionValueKey' => 'id',
+                    'optionLabelKey' => 'name',
+                ])
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.from') }}</label><input class="form-control" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
                 <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.to') }}</label><input class="form-control" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
-                <div class="col-12 d-flex justify-content-end"><button class="btn btn-outline-primary btn-sm">{{ __('workflow_ui.approvals.filters.apply') }}</button></div>
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <button class="btn btn-outline-primary btn-sm">{{ __('workflow_ui.approvals.filters.apply') }}</button>
+                    @if(!empty($filters['approval_status']) || !empty($filters['branch_id']) || !empty($filters['current_step']) || !empty($filters['date_from']) || !empty($filters['date_to']) || !empty($filters['my_pending']))
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ route('role.programs.approvals.index') }}">{{ __('workflow_ui.approvals.filters.reset') }}</a>
+                    @endif
+                </div>
             </form>
         </div>
         <div class="card-footer approvals-card-footer small text-muted">

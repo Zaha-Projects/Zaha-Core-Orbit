@@ -32,6 +32,9 @@ use App\Services\MonthlyWorkflowPresenter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class MonthlyActivitiesController extends Controller
@@ -498,30 +501,27 @@ class MonthlyActivitiesController extends Controller
     {
         $user = $request->user();
         $viewScope = $request->input('scope', 'default');
+        $selectedStatus = trim((string) $request->input('status', ''));
+        $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);
         }
 
-        $activitiesQuery = MonthlyActivity::with([
-            'branch',
-            'agendaEvent',
-            'creator',
-            'workflowInstance.workflow.steps.role',
-            'workflowInstance.logs.step',
-        ])
+        $activitiesBaseQuery = MonthlyActivity::query()
             ->withCount('newerVersions')
             ->whereDoesntHave('newerVersions')
-            ->enterpriseFilter($request->all())
+            ->enterpriseFilter($request->except('status'))
             ->notArchived();
 
         if ($viewScope !== 'all_branches') {
-            $this->applyBranchVisibilityScope($activitiesQuery, $user);
+            $this->applyBranchVisibilityScope($activitiesBaseQuery, $user);
         }
-        $this->applyDraftVisibilityScope($activitiesQuery, $user);
+        $this->applyDraftVisibilityScope($activitiesBaseQuery, $user);
+        $this->applyMonthlyPageStatusFilter($activitiesBaseQuery, $selectedStatus);
 
         if ($viewScope === 'all_branches') {
-            $activitiesQuery
+            $activitiesBaseQuery
                 ->where('status', 'approved')
                 ->where(function ($query) {
                     $query->where('executive_approval_status', 'approved')
@@ -530,7 +530,15 @@ class MonthlyActivitiesController extends Controller
                 });
         }
 
-        $activities = $activitiesQuery
+        $summaryCards = $this->buildMonthlyIndexSummaryCards($activitiesBaseQuery);
+        $this->applyMonthlyIndexSummaryFilter($activitiesBaseQuery, $selectedSummaryFilter);
+
+        $activities = (clone $activitiesBaseQuery)
+            ->with([
+                'branch',
+                'agendaEvent',
+                'creator',
+            ])
             ->orderBy('month')
             ->orderBy('day')
             ->paginate($this->monthlyIndexPerPage())
@@ -546,14 +554,15 @@ class MonthlyActivitiesController extends Controller
         $filters = [
             'year' => $request->input('year'),
             'month' => $request->input('month'),
-            'status' => $request->input('status'),
+            'status' => $selectedStatus,
             'branch_id' => $request->input('branch_id'),
+            'summary_filter' => $selectedSummaryFilter,
         ];
         $canFilterBranches = $viewScope === 'all_branches'
             ? $this->canViewOtherBranches($user)
             : ($scopedBranchIds === [] || count($scopedBranchIds) > 1);
 
-        $monthlyStatusOptions = $this->statusLookupOptions('monthly_activities', [], (string) $request->input('status'));
+        $monthlyStatusOptions = $this->monthlyPageStatusOptions();
 
         return view('pages.monthly_activities.activities.index', compact(
             'activities',
@@ -563,7 +572,157 @@ class MonthlyActivitiesController extends Controller
             'canFilterBranches',
             'viewScope',
             'monthlyStatusOptions',
+            'summaryCards',
         ));
+    }
+
+    protected function buildMonthlyIndexSummaryCards(Builder $baseQuery): Collection
+    {
+        $cards = collect([
+            [
+                'key' => 'total',
+                'filter_key' => '',
+                'label' => __('app.roles.programs.monthly_activities.list_title'),
+                'count' => (clone $baseQuery)->count(),
+            ],
+            [
+                'key' => 'approved',
+                'filter_key' => 'approved',
+                'label' => __('app.roles.programs.monthly_activities.statuses.approved'),
+                'count' => (clone $baseQuery)->where('status', 'approved')->count(),
+            ],
+        ]);
+
+        // Group pending activities by the live workflow step that is currently waiting for approval.
+        $pendingApprovalCards = (clone $baseQuery)
+            ->with([
+                'workflowInstance.currentStep.role',
+                'workflowInstance.currentStep.permission',
+            ])
+            ->get()
+            ->map(fn (MonthlyActivity $activity): ?array => $this->resolvePendingApprovalCardSnapshot($activity))
+            ->filter()
+            ->groupBy('step_id')
+            ->map(function (Collection $group): array {
+                $first = $group->first();
+
+                return [
+                    'key' => 'pending-step-' . $first['step_id'],
+                    'filter_key' => 'pending_step:' . $first['step_id'],
+                    'label' => $first['label'],
+                    'count' => $group->count(),
+                    'sort_order' => $first['sort_order'],
+                ];
+            })
+            ->sortBy('sort_order')
+            ->values()
+            ->map(fn (array $card): array => Arr::except($card, ['sort_order']));
+
+        return $cards->merge($pendingApprovalCards)->values();
+    }
+
+    protected function applyMonthlyIndexSummaryFilter(Builder $query, ?string $summaryFilter): void
+    {
+        $summaryFilter = trim((string) $summaryFilter);
+
+        if ($summaryFilter === '') {
+            return;
+        }
+
+        if ($summaryFilter === 'approved') {
+            $query->where('status', 'approved');
+
+            return;
+        }
+
+        if (preg_match('/^pending_step:(\d+)$/', $summaryFilter, $matches) === 1) {
+            $stepId = (int) ($matches[1] ?? 0);
+
+            if ($stepId <= 0) {
+                return;
+            }
+
+            $query->whereHas('workflowInstance', function ($workflowQuery) use ($stepId) {
+                $workflowQuery
+                    ->where('current_step_id', $stepId)
+                    ->whereNotIn('status', [
+                        DynamicWorkflowService::DECISION_APPROVED,
+                        DynamicWorkflowService::DECISION_REJECTED,
+                        DynamicWorkflowService::DECISION_CHANGES_REQUESTED,
+                    ]);
+            });
+        }
+    }
+
+    protected function resolvePendingApprovalCardSnapshot(MonthlyActivity $activity): ?array
+    {
+        $instance = $activity->workflowInstance;
+        $currentStep = $instance?->currentStep;
+
+        if (! $currentStep || (string) $currentStep->step_type === 'sub') {
+            return null;
+        }
+
+        if (in_array((string) ($instance?->status ?? ''), [
+            DynamicWorkflowService::DECISION_APPROVED,
+            DynamicWorkflowService::DECISION_REJECTED,
+            DynamicWorkflowService::DECISION_CHANGES_REQUESTED,
+        ], true)) {
+            return null;
+        }
+
+        $roleLabel = $currentStep->role?->display_name
+            ?: ($currentStep->permission?->name
+                ? $this->fallbackWorkflowFilterLabel($currentStep->permission->name)
+                : ($currentStep->role?->name
+                    ? $this->fallbackWorkflowFilterLabel($currentStep->role->name)
+                    : null));
+
+        if (! filled($roleLabel)) {
+            return null;
+        }
+
+        return [
+            'step_id' => (int) $currentStep->id,
+            'label' => __('workflow_ui.approvals.filters.pending_role', ['role' => $roleLabel]),
+            'sort_order' => ((int) $currentStep->step_order * 1000) + (int) ($currentStep->approval_level ?? 0),
+        ];
+    }
+
+    protected function fallbackWorkflowFilterLabel(?string $value): string
+    {
+        if (! filled($value)) {
+            return __('app.common.na');
+        }
+
+        return (string) Str::of($value)->replace('_', ' ')->title();
+    }
+
+    protected function monthlyPageStatusOptions(): Collection
+    {
+        return collect([
+            (object) ['code' => 'draft', 'name' => __('app.roles.programs.monthly_activities.statuses.draft')],
+            (object) ['code' => 'submitted', 'name' => __('app.roles.programs.monthly_activities.statuses.submitted')],
+            (object) ['code' => 'approved', 'name' => __('app.roles.programs.monthly_activities.statuses.approved')],
+        ]);
+    }
+
+    protected function applyMonthlyPageStatusFilter($query, ?string $status): void
+    {
+        $status = trim((string) $status);
+
+        if ($status === '') {
+            return;
+        }
+
+        $query->where(function ($statusQuery) use ($status) {
+            match ($status) {
+                'draft' => $statusQuery->where('status', 'draft'),
+                'approved' => $statusQuery->whereIn('status', ['approved']),
+                'submitted' => $statusQuery->whereIn('status', ['submitted', 'pending', 'in_review', 'changes_requested', 'rejected', 'postponed', 'cancelled', 'closed', 'completed', 'executed']),
+                default => $statusQuery->where('status', $status),
+            };
+        });
     }
 
     public function create()

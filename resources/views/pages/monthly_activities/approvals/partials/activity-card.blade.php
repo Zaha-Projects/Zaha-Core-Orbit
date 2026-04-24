@@ -21,7 +21,6 @@
                 </div>
                 <div class="wf-chip-row mt-3">
                     <span class="wf-chip wf-chip-primary">{{ __('workflow_ui.common.current_step') }}: {{ $card['current_step_label'] }}</span>
-                    <span class="wf-chip">{{ __('workflow_ui.common.assignee') }}: {{ $card['current_role_label'] }}</span>
                     <span class="wf-chip wf-chip-soft">التقدم: {{ $card['completed_steps_count'] }}/{{ $card['total_steps_count'] }}</span>
                     @foreach($card['requirements'] as $requirement)
                         <span class="wf-chip wf-chip-soft">{{ $requirement }}</span>
