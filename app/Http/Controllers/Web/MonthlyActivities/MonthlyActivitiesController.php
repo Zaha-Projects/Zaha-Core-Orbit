@@ -361,6 +361,15 @@ class MonthlyActivitiesController extends Controller
     protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
     {
         $selectedEventId = $monthlyActivity?->agenda_event_id;
+
+        return $this->agendaEventsQueryForUser($user, $selectedEventId)
+            ->orderBy('month')
+            ->orderBy('day')
+            ->get();
+    }
+
+    protected function agendaEventsQueryForUser(?User $user, ?int $selectedEventId = null)
+    {
         $scopedBranchIds = $this->scopedBranchIds($user);
 
         return AgendaEvent::query()
@@ -378,10 +387,62 @@ class MonthlyActivitiesController extends Controller
                         $scopedQuery->orWhere($scopedQuery->getModel()->getQualifiedKeyName(), $selectedEventId);
                     }
                 });
-            })
-            ->orderBy('month')
-            ->orderBy('day')
-            ->get();
+            });
+    }
+
+    protected function findAgendaEventForUser(?User $user, int $agendaEventId): ?AgendaEvent
+    {
+        return $this->agendaEventsQueryForUser($user, $agendaEventId)
+            ->whereKey($agendaEventId)
+            ->first();
+    }
+
+    protected function flashCreatePrefill(Request $request): void
+    {
+        if ($request->session()->hasOldInput()) {
+            return;
+        }
+
+        // نجهز تعبئة مبدئية ذكية حسب التاريخ أو الفرع أو فعالية الأجندة القادمة من الواجهة.
+        $user = $request->user();
+        $prefill = [];
+        $date = trim((string) $request->query('date', ''));
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $prefill['activity_date'] = $date;
+            $prefill['proposed_date'] = $date;
+        }
+
+        $branchId = (int) $request->query('branch_id', 0);
+        if ($branchId > 0 && $this->canAccessScopedBranch($user, $branchId)) {
+            $prefill['branch_id'] = $branchId;
+        }
+
+        $agendaEventId = (int) $request->query('agenda_event_id', 0);
+        if ($agendaEventId > 0) {
+            $agendaEvent = $this->findAgendaEventForUser($user, $agendaEventId);
+
+            if ($agendaEvent) {
+                $resolvedDate = $prefill['proposed_date'] ?? (
+                    optional($agendaEvent->event_date)?->toDateString()
+                    ?? Carbon::create(now()->year, (int) $agendaEvent->month, (int) $agendaEvent->day)->toDateString()
+                );
+
+                $prefill = array_merge($prefill, [
+                    'activity_date' => $prefill['activity_date'] ?? $resolvedDate,
+                    'proposed_date' => $resolvedDate,
+                    'agenda_event_id' => $agendaEvent->id,
+                    'title' => $agendaEvent->event_name,
+                    'description' => $agendaEvent->notes,
+                    'short_description' => Str::limit(trim((string) $agendaEvent->notes), 255, ''),
+                    'is_in_agenda' => 1,
+                ]);
+            }
+        }
+
+        if ($prefill !== []) {
+            $request->session()->flash('_old_input', $prefill);
+        }
     }
 
     protected function normalizePlanningPayload(array &$data): void
@@ -725,9 +786,11 @@ class MonthlyActivitiesController extends Controller
         });
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $user = request()->user();
+        $this->flashCreatePrefill($request);
+
+        $user = $request->user();
         $branches = Branch::query()->orderBy('name');
         $scopedBranchIds = $this->scopedBranchIds($user);
         if ($scopedBranchIds !== []) {

@@ -63,7 +63,7 @@
             ],
         ]);
 
-    $agendaEvents = collect($calendarEvents ?? $events->getCollection())->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $normalizeAgendaPageStatus, $authUser, $branchesById, $unitsById) {
+    $agendaEvents = collect($calendarEvents ?? $events->getCollection())->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $normalizeAgendaPageStatus, $authUser, $branchesById, $unitsById, $canBranchInteract) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
         $workflowSummary = $event->workflow_summary ?? [];
@@ -71,6 +71,9 @@
             ->where('entity_type', 'branch')
             ->where('entity_id', $authUser?->branch_id)
             ->first();
+        $linkedMonthlyActivity = $authUser?->branch_id
+            ? $event->monthlyActivities->firstWhere('branch_id', $authUser->branch_id)
+            : null;
         $participantBranches = $event->participations
             ->where('entity_type', 'branch')
             ->where('participation_status', 'participant')
@@ -133,6 +136,13 @@
             'branch_participation_status' => $branchParticipation?->participation_status,
             'branch_proposed_date' => optional($branchParticipation?->proposed_date)?->format('Y-m-d'),
             'branch_actual_execution_date' => optional($branchParticipation?->actual_execution_date)?->format('Y-m-d'),
+            'can_quick_subscribe' => $canBranchInteract && (string) $event->event_type === 'optional',
+            'quick_subscribe_url' => $canBranchInteract && (string) $event->event_type === 'optional'
+                ? route('role.relations.agenda.quick_subscribe', $event)
+                : null,
+            'branch_monthly_activity_edit_url' => $linkedMonthlyActivity
+                ? route('role.relations.activities.edit', ['monthlyActivity' => $linkedMonthlyActivity, 'form' => 1])
+                : null,
         ];
     })->values();
     $versionedAsset = static function (string $path): string {
@@ -144,7 +154,14 @@
 @endphp
 
 @section('content')
-    <div class="event-module agenda-module" data-rtl="{{ $isRtl ? '1' : '0' }}" data-selected-year="{{ (int) request('year', 0) }}" data-selected-month="{{ (int) request('month', 0) }}">
+    <div
+        class="event-module agenda-module"
+        data-rtl="{{ $isRtl ? '1' : '0' }}"
+        data-selected-year="{{ (int) request('year', 0) }}"
+        data-selected-month="{{ (int) request('month', 0) }}"
+        data-create-url="{{ $canManageAgenda ? route('role.relations.agenda.create') : '' }}"
+        data-branch-interact="{{ $canBranchInteract ? '1' : '0' }}"
+    >
         <div class="event-header">
             <div>
                 <h1 class="h4 mb-1">{{ $title }}</h1>
@@ -230,10 +247,7 @@
                         @foreach($events as $event)
                             @php
                                 $branchParticipation = $event->participations->where('entity_type', 'branch')->where('entity_id', $authUser?->branch_id)->first();
-                                $linkedMonthlyActivity = \App\Models\MonthlyActivity::query()
-                                    ->where('agenda_event_id', $event->id)
-                                    ->where('branch_id', $authUser?->branch_id)
-                                    ->first();
+                                $linkedMonthlyActivity = $event->monthlyActivities->firstWhere('branch_id', $authUser?->branch_id);
                                 $baseDate = optional($event->event_date)->format('Y-m-d') ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
                                 $isParticipating = ($branchParticipation?->participation_status ?? 'unspecified') === 'participant' || $event->event_type === 'mandatory';
                                 $isUnifiedPlan = $event->plan_type === 'unified';
@@ -416,6 +430,33 @@
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
                     <div class="agenda-calendar-grid" data-calendar-grid></div>
                     <div class="agenda-calendar-legend agenda-calendar-legend--bottom" data-calendar-legend-bottom></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" class="d-none" data-quick-subscribe-form>
+        @csrf
+    </form>
+
+    <div class="modal fade" id="agendaQuickSubscribeModal" tabindex="-1" aria-labelledby="agendaQuickSubscribeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title fs-5" id="agendaQuickSubscribeModalLabel">ربط الفعالية بالخطة الشهرية</h2>
+                        <p class="text-muted small mb-0" data-quick-subscribe-date></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="fw-semibold mb-2" data-quick-subscribe-event-name></div>
+                    <p class="mb-0" data-quick-subscribe-message></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <a href="#" class="btn btn-outline-dark" data-quick-subscribe-view>عرض الفعالية</a>
+                    <button type="button" class="btn btn-primary" data-quick-subscribe-confirm>اشتراك وإضافة للخطة</button>
                 </div>
             </div>
         </div>

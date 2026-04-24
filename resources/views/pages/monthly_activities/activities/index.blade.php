@@ -44,6 +44,11 @@
         'approved' => $workflowStatusLabel('approved'),
     ];
     $branchFilterSelected = $filters['branch_id'] ?? '';
+    $calendarCreateBranchId = filled($branchFilterSelected)
+        ? (int) $branchFilterSelected
+        : (method_exists(auth()->user(), 'primaryScopedBranchId')
+            ? auth()->user()?->primaryScopedBranchId()
+            : auth()->user()?->branch_id);
     $versionedAsset = static function (string $path): string {
         $absolutePath = public_path($path);
         $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
@@ -53,7 +58,13 @@
 @endphp
 
 @section('content')
-    <div class="event-module monthly-activities-module" data-calendar-endpoint="{{ route('role.relations.activities.calendar') }}" data-rtl="{{ app()->getLocale() === 'ar' ? '1' : '0' }}">
+    <div
+        class="event-module monthly-activities-module"
+        data-calendar-endpoint="{{ route('role.relations.activities.calendar') }}"
+        data-rtl="{{ app()->getLocale() === 'ar' ? '1' : '0' }}"
+        data-create-url="{{ route('role.relations.activities.create') }}"
+        data-default-branch-id="{{ $calendarCreateBranchId ?: '' }}"
+    >
         <div class="card event-card mb-4">
             <div class="card-body">
                 <h1 class="h4 mb-2">{{ $title }}</h1>

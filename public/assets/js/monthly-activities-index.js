@@ -5,16 +5,24 @@
     const isRtl = module.dataset.rtl === '1';
     const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
     const statusLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-status-labels-json', {}) : JSON.parse(document.getElementById('monthly-status-labels-json')?.textContent ?? '{}');
+    const createCalendarDayHeader = window.ZahaUi?.createCalendarDayHeader;
+    const renderCalendarWeekdays = window.ZahaUi?.renderCalendarWeekdays;
+    const createUrl = module.dataset.createUrl || '';
+    const defaultBranchId = module.dataset.defaultBranchId || '';
 
     const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
     const gridContainer = module.querySelector('[data-calendar-grid]');
     const titleContainer = module.querySelector('[data-calendar-title]');
     const endpoint = module.dataset.calendarEndpoint;
 
-    const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    weekdaysContainer.innerHTML = weekdays
-        .map((label, jsDayIndex) => `<div class="agenda-weekday ${jsDayIndex === 5 ? 'agenda-weekday--friday' : ''} ${jsDayIndex === 6 ? 'agenda-weekday--saturday' : ''}">${label}</div>`)
-        .join('');
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    if (renderCalendarWeekdays) {
+        renderCalendarWeekdays(weekdaysContainer, weekdays);
+    } else {
+        weekdaysContainer.innerHTML = weekdays
+            .map((label, jsDayIndex) => `<div class="agenda-weekday ${jsDayIndex === 5 ? 'agenda-weekday--friday' : ''} ${jsDayIndex === 6 ? 'agenda-weekday--saturday' : ''}">${label}</div>`)
+            .join('');
+    }
 
     const now = new Date();
     const searchParams = new URLSearchParams(window.location.search);
@@ -27,6 +35,21 @@
     let currentMonth = Number.parseInt(searchParams.get('month') || '', 10) || (now.getMonth() + 1);
 
     function mapPos(day) { return isRtl ? 6 - day : day; }
+
+    function createDayHeader(day, dateStr) {
+        if (createCalendarDayHeader) {
+            return createCalendarDayHeader(day, dateStr, {
+                createUrl,
+                createLabel: `إضافة نشاط جديد بتاريخ ${dateStr}`,
+                extraParams: { branch_id: defaultBranchId },
+            });
+        }
+
+        const fallback = document.createElement('div');
+        fallback.className = 'agenda-calendar-day-head';
+        fallback.innerHTML = `<div class="agenda-calendar-day-number">${day}</div>`;
+        return fallback;
+    }
 
     function decorateCalendarDayCell(cell, year, month, day) {
         const jsDayIndex = new Date(year, month - 1, day).getDay();
@@ -80,12 +103,13 @@
             if (today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth && today.getDate() === day) {
                 cell.classList.add('agenda-calendar-day--today');
             }
-            cell.innerHTML = `<div class="agenda-calendar-day-number">${day}</div>`;
+
+            cell.appendChild(createDayHeader(day, dateStr));
 
             dayItems.forEach((item) => {
-                const a = document.createElement('a');
-                a.href = item.open_url || item.edit_url;
-                a.className = `agenda-event-chip status-${item.status}`;
+                const activityLink = document.createElement('a');
+                activityLink.href = item.open_url || item.edit_url;
+                activityLink.className = `agenda-event-chip status-${item.status}`;
                 const badgeClass = item.status === 'approved'
                     ? 'monthly-calendar-badge--approved'
                     : (item.status === 'rejected'
@@ -93,7 +117,7 @@
                         : (item.status === 'in_review'
                             ? 'monthly-calendar-badge--in-review'
                             : 'monthly-calendar-badge--draft'));
-                a.innerHTML = `
+                activityLink.innerHTML = `
                     <span class="agenda-event-chip-title">${item.title}</span>
                     <span class="monthly-calendar-branch">${item.branch || ''}</span>
                     <div class="monthly-calendar-meta">
@@ -101,7 +125,7 @@
                         <span class="monthly-calendar-icons">${item.requires_workshops ? '🛠️' : ''}${item.requires_communications ? '📣' : ''}</span>
                     </div>
                 `;
-                cell.appendChild(a);
+                cell.appendChild(activityLink);
             });
 
             gridContainer.appendChild(cell);
@@ -117,5 +141,6 @@
         });
     });
 
+    switchView('table');
     loadCalendar();
 })();

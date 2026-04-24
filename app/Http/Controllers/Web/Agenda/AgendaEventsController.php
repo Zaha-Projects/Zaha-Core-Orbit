@@ -130,6 +130,88 @@ class AgendaEventsController extends Controller
         return null;
     }
 
+    protected function resolveAgendaEventDate(AgendaEvent $agendaEvent): string
+    {
+        // نوحد استخراج التاريخ حتى يبقى fallback في مكان واحد فقط.
+        return optional($agendaEvent->event_date)?->toDateString()
+            ?? Carbon::create(now()->year, $agendaEvent->month, $agendaEvent->day)->toDateString();
+    }
+
+    protected function flashAgendaCreatePrefill(Request $request): void
+    {
+        if ($request->session()->hasOldInput()) {
+            return;
+        }
+
+        $date = trim((string) $request->query('date', ''));
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return;
+        }
+
+        $request->session()->flash('_old_input', [
+            'event_date' => $date,
+        ]);
+    }
+
+    protected function upsertBranchParticipation(
+        AgendaEvent $agendaEvent,
+        User $branchActor,
+        string $status,
+        ?string $proposedDate = null,
+        ?string $actualExecutionDate = null,
+        ?string $branchPlanFile = null
+    ): AgendaParticipation {
+        return $agendaEvent->participations()->updateOrCreate(
+            [
+                'entity_type' => 'branch',
+                'entity_id' => $branchActor->branch_id,
+            ],
+            [
+                'participation_status' => $status,
+                'proposed_date' => $status === 'participant' ? $proposedDate : null,
+                'actual_execution_date' => $status === 'participant' ? $actualExecutionDate : null,
+                'branch_plan_file' => $branchPlanFile,
+                'updated_by' => $branchActor->id,
+            ]
+        );
+    }
+
+    protected function upsertBranchMonthlyActivityFromAgenda(
+        AgendaEvent $agendaEvent,
+        User $branchActor,
+        string $proposedDate
+    ): MonthlyActivity {
+        // هذه هي نقطة الربط الموحدة بين فعالية الأجندة وسجل الخطة الشهرية للفرع.
+        $agendaDate = $this->resolveAgendaEventDate($agendaEvent);
+        $isUnifiedPlan = (string) ($agendaEvent->plan_type ?? 'non_unified') === 'unified';
+
+        $monthlyActivity = MonthlyActivity::firstOrNew([
+            'agenda_event_id' => $agendaEvent->id,
+            'branch_id' => $branchActor->branch_id,
+        ]);
+
+        $monthlyActivity->fill([
+            'month' => (int) Carbon::parse($agendaDate)->format('m'),
+            'day' => (int) Carbon::parse($agendaDate)->format('d'),
+            'title' => $agendaEvent->event_name,
+            'proposed_date' => $isUnifiedPlan
+                ? (optional($monthlyActivity->proposed_date)->toDateString() ?: $proposedDate)
+                : $proposedDate,
+            'is_in_agenda' => true,
+            'is_from_agenda' => true,
+            'participation_status' => 'participant',
+            'plan_type' => $agendaEvent->plan_type ?? 'non_unified',
+            'description' => $agendaEvent->notes,
+            'location_type' => $monthlyActivity->location_type ?? 'inside_center',
+            'status' => $monthlyActivity->status ?? 'draft',
+            'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
+        ]);
+
+        $monthlyActivity->save();
+
+        return $monthlyActivity;
+    }
+
 
     protected function applyBranchVisibilityScope($query, User $user)
     {
@@ -301,6 +383,7 @@ class AgendaEventsController extends Controller
             'ownerDepartment',
             'partnerDepartments',
             'eventCategory',
+            'monthlyActivities',
             'participations',
             'workflowInstance.workflow.steps.role',
             'workflowInstance.currentStep.role',
@@ -448,9 +531,10 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.show', compact('agendaEvent', 'branchParticipations', 'unitParticipations'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $this->assertKhaldaHqAgendaAuthority(request());
+        $this->assertKhaldaHqAgendaAuthority($request);
+        $this->flashAgendaCreatePrefill($request);
 
         $departments = $this->agendaDepartmentsForForm();
         $categories = $this->agendaCategoriesForForm();
@@ -787,8 +871,7 @@ class AgendaEventsController extends Controller
             'branch_plan_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xlsx,xls', 'max:5120'],
         ]);
 
-        $agendaDate = optional($agendaEvent->event_date)?->toDateString()
-            ?? Carbon::create(now()->year, $agendaEvent->month, $agendaEvent->day)->toDateString();
+        $agendaDate = $this->resolveAgendaEventDate($agendaEvent);
         $minDate = Carbon::parse($agendaDate)->subDays(7)->toDateString();
         $maxDate = Carbon::parse($agendaDate)->addDays(7)->toDateString();
 
@@ -826,43 +909,17 @@ class AgendaEventsController extends Controller
             abort(422, 'رفع خطة الفرع مطلوب للفعالية غير الموحدة.');
         }
 
-        $participation = $agendaEvent->participations()->updateOrCreate(
-            [
-                'entity_type' => 'branch',
-                'entity_id' => $branchActor->branch_id,
-            ],
-            [
-                'participation_status' => $status,
-                'proposed_date' => $isParticipating ? $data['proposed_date'] : null,
-                'actual_execution_date' => $isUnifiedPlan ? (optional($existing?->actual_execution_date)?->toDateString()) : ($data['actual_execution_date'] ?? null),
-                'branch_plan_file' => $planFile,
-                'updated_by' => $branchActor->id,
-            ]
+        $participation = $this->upsertBranchParticipation(
+            $agendaEvent,
+            $branchActor,
+            $status,
+            $data['proposed_date'] ?? null,
+            $isUnifiedPlan ? optional($existing?->actual_execution_date)?->toDateString() : ($data['actual_execution_date'] ?? null),
+            $planFile
         );
 
         if ($isParticipating) {
-            $monthlyActivity = MonthlyActivity::firstOrNew([
-                'agenda_event_id' => $agendaEvent->id,
-                'branch_id' => $branchActor->branch_id,
-            ]);
-
-            $monthlyActivity->fill([
-                'month' => (int) Carbon::parse($agendaDate)->format('m'),
-                'day' => (int) Carbon::parse($agendaDate)->format('d'),
-                'title' => $agendaEvent->event_name,
-                'proposed_date' => $isUnifiedPlan
-                    ? (optional($monthlyActivity->proposed_date)->toDateString() ?: $data['proposed_date'])
-                    : $data['proposed_date'],
-                'is_in_agenda' => true,
-                'is_from_agenda' => true,
-                'participation_status' => 'participant',
-                'plan_type' => $agendaEvent->plan_type ?? 'non_unified',
-                'description' => $agendaEvent->notes,
-                'location_type' => $monthlyActivity->location_type ?? 'inside_center',
-                'status' => $monthlyActivity->status ?? 'draft',
-                'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
-            ]);
-            $monthlyActivity->save();
+            $monthlyActivity = $this->upsertBranchMonthlyActivityFromAgenda($agendaEvent, $branchActor, $data['proposed_date']);
 
             if ($isUnifiedPlan) {
                 $participation->forceFill([
@@ -873,5 +930,36 @@ class AgendaEventsController extends Controller
         }
 
         return back()->with('status', 'تم تحديث المشاركة وربط الفعالية بالخطة الشهرية بنجاح.');
+    }
+
+    public function quickSubscribeBranchToPlan(Request $request, AgendaEvent $agendaEvent)
+    {
+        $branchActor = $this->branchActor($request);
+        abort_unless($branchActor !== null, 403);
+        abort_if(empty($branchActor->branch_id), 422, 'Branch is required for branch participation.');
+
+        $this->ensureAgendaVisibleToUser($agendaEvent, $branchActor);
+        abort_if((string) $agendaEvent->event_type !== 'optional', 422, 'Quick subscription is available for optional agenda events only.');
+
+        $existingPlanFile = $agendaEvent->participations()
+            ->where('entity_type', 'branch')
+            ->where('entity_id', $branchActor->branch_id)
+            ->value('branch_plan_file');
+
+        $agendaDate = $this->resolveAgendaEventDate($agendaEvent);
+        $monthlyActivity = $this->upsertBranchMonthlyActivityFromAgenda($agendaEvent, $branchActor, $agendaDate);
+
+        $this->upsertBranchParticipation(
+            $agendaEvent,
+            $branchActor,
+            'participant',
+            optional($monthlyActivity->proposed_date)->toDateString() ?: $agendaDate,
+            optional($monthlyActivity->actual_date)->toDateString(),
+            $existingPlanFile
+        );
+
+        return redirect()
+            ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1])
+            ->with('status', 'تم اشتراك الفرع وربط الفعالية بالخطة الشهرية. يمكنك الآن استكمال تعبئة الخطة.');
     }
 }

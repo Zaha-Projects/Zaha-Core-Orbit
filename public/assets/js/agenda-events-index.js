@@ -3,11 +3,14 @@
     if (!module) return;
 
     const isRtl = module.dataset.rtl === '1';
+    const createUrl = module.dataset.createUrl || '';
+    const canBranchInteract = module.dataset.branchInteract === '1';
     const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
     const events = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-events-json', []) : JSON.parse(document.getElementById('agenda-events-json')?.textContent ?? '[]');
     const weekDayLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-weekdays-json', []) : JSON.parse(document.getElementById('agenda-weekdays-json')?.textContent ?? '[]');
-
     const monthNames = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-months-json', []) : JSON.parse(document.getElementById('agenda-months-json')?.textContent ?? '[]');
+    const createCalendarDayHeader = window.ZahaUi?.createCalendarDayHeader;
+    const renderCalendarWeekdays = window.ZahaUi?.renderCalendarWeekdays;
 
     const selectedYear = Number(module.dataset.selectedYear || 0);
     const selectedMonth = Number(module.dataset.selectedMonth || 0);
@@ -26,9 +29,21 @@
     const titleContainer = module.querySelector('[data-calendar-title]');
     const legendTopContainer = module.querySelector('[data-calendar-legend-top]');
     const legendBottomContainer = module.querySelector('[data-calendar-legend-bottom]');
+    const quickSubscribeForm = document.querySelector('[data-quick-subscribe-form]');
+    const quickSubscribeModalEl = document.getElementById('agendaQuickSubscribeModal');
+    const quickSubscribeTitleEl = quickSubscribeModalEl?.querySelector('#agendaQuickSubscribeModalLabel');
+    const quickSubscribeEventNameEl = quickSubscribeModalEl?.querySelector('[data-quick-subscribe-event-name]');
+    const quickSubscribeDateEl = quickSubscribeModalEl?.querySelector('[data-quick-subscribe-date]');
+    const quickSubscribeMessageEl = quickSubscribeModalEl?.querySelector('[data-quick-subscribe-message]');
+    const quickSubscribeConfirmButton = quickSubscribeModalEl?.querySelector('[data-quick-subscribe-confirm]');
+    const quickSubscribeViewButton = quickSubscribeModalEl?.querySelector('[data-quick-subscribe-view]');
+    const quickSubscribeModal = quickSubscribeModalEl && window.bootstrap?.Modal
+        ? new window.bootstrap.Modal(quickSubscribeModalEl)
+        : null;
     const palette = ['#E11D48', '#0EA5E9', '#22C55E', '#F59E0B', '#8B5CF6', '#14B8A6', '#F97316', '#3B82F6', '#84CC16', '#EC4899', '#06B6D4', '#A855F7'];
     const icons = ['🏢', '📍', '⭐', '🧭', '🎯', '🛰️', '🪄', '🛡️', '🔷', '🔶'];
     let tooltipEl = null;
+    let quickSubscribeAction = null;
 
     function parseDate(value) {
         if (typeof value === 'string') {
@@ -43,6 +58,20 @@
 
     function mapDayPosition(jsDayIndex) {
         return isRtl ? 6 - jsDayIndex : jsDayIndex;
+    }
+
+    function createDayHeader(day, dateStr) {
+        if (createCalendarDayHeader) {
+            return createCalendarDayHeader(day, dateStr, {
+                createUrl,
+                createLabel: `إضافة فعالية جديدة بتاريخ ${dateStr}`,
+            });
+        }
+
+        const fallback = document.createElement('div');
+        fallback.className = 'agenda-calendar-day-head';
+        fallback.innerHTML = `<div class="agenda-calendar-day-number">${day}</div>`;
+        return fallback;
     }
 
     function decorateCalendarDayCell(cell, year, month, day) {
@@ -98,6 +127,64 @@
         tooltipEl.style.top = `${top}px`;
     }
 
+    function openLink(url) {
+        if (!url) return;
+        window.location.href = url;
+    }
+
+    function resolveQuickSubscribePresentation(event) {
+        if (event.branch_monthly_activity_edit_url) {
+            return {
+                title: 'فتح الخطة المرتبطة',
+                message: 'هذه الفعالية مرتبطة أصلًا بخطة فرعك الشهرية. يمكنك فتحها مباشرة ومتابعة تعبئتها أو مراجعتها.',
+                confirmLabel: 'فتح الخطة',
+                action: { type: 'open', url: event.branch_monthly_activity_edit_url },
+            };
+        }
+
+        if (event.branch_participation_status === 'participant') {
+            return {
+                title: 'إكمال الخطة الشهرية',
+                message: 'تم تسجيل مشاركة فرعك في هذه الفعالية. سنفتح الآن الخطة الشهرية المرتبطة بها لتكملي تعبئتها.',
+                confirmLabel: 'إكمال الخطة',
+                action: { type: 'submit', url: event.quick_subscribe_url },
+            };
+        }
+
+        return {
+            title: 'اشتراك وإضافة للخطة',
+            message: 'هل تريدين اشتراك الفرع في هذه الفعالية وإضافتها مباشرة إلى الخطة الشهرية؟',
+            confirmLabel: 'اشتراك وإضافة للخطة',
+            action: { type: 'submit', url: event.quick_subscribe_url },
+        };
+    }
+
+    function promptQuickSubscribe(event) {
+        const presentation = resolveQuickSubscribePresentation(event);
+        quickSubscribeAction = presentation.action;
+
+        if (quickSubscribeModal && quickSubscribeTitleEl && quickSubscribeEventNameEl && quickSubscribeDateEl && quickSubscribeMessageEl && quickSubscribeConfirmButton && quickSubscribeViewButton) {
+            quickSubscribeTitleEl.textContent = presentation.title;
+            quickSubscribeEventNameEl.textContent = event.name || '';
+            quickSubscribeDateEl.textContent = event.date || '';
+            quickSubscribeMessageEl.textContent = presentation.message;
+            quickSubscribeConfirmButton.textContent = presentation.confirmLabel;
+            quickSubscribeViewButton.href = event.view_url || '#';
+            quickSubscribeModal.show();
+            return;
+        }
+
+        if (presentation.action.type === 'open') {
+            openLink(presentation.action.url);
+            return;
+        }
+
+        if (window.confirm(`${event.name}\n\n${presentation.message}`) && quickSubscribeForm) {
+            quickSubscribeForm.action = presentation.action.url;
+            quickSubscribeForm.submit();
+        }
+    }
+
     function renderLegend(monthEvents) {
         if (!legendTopContainer || !legendBottomContainer) return;
         const branches = new Map();
@@ -137,6 +224,11 @@
     }
 
     function renderWeekdays() {
+        if (renderCalendarWeekdays) {
+            renderCalendarWeekdays(weekdaysContainer, weekDayLabels);
+            return;
+        }
+
         weekdaysContainer.innerHTML = '';
         weekDayLabels.forEach((label, jsDayIndex) => {
             const item = document.createElement('div');
@@ -180,6 +272,7 @@
         }
 
         for (let day = 1; day <= daysInMonth; day += 1) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dayCell = document.createElement('div');
             dayCell.className = 'agenda-calendar-day';
             decorateCalendarDayCell(dayCell, year, month, day);
@@ -189,10 +282,7 @@
             const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
             if (isToday) dayCell.classList.add('agenda-calendar-day--today');
 
-            const dayHeader = document.createElement('div');
-            dayHeader.className = 'agenda-calendar-day-number';
-            dayHeader.textContent = String(day);
-            dayCell.appendChild(dayHeader);
+            dayCell.appendChild(createDayHeader(day, dateStr));
 
             const dayEvents = eventsByDay.get(day) ?? [];
             dayEvents.forEach((event) => {
@@ -201,9 +291,9 @@
                     eventLink.href = event.view_url;
                 }
                 eventLink.className = `agenda-event-chip status-${event.status}`;
-                const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => {
-                    return `<span class="agenda-event-chip-dot" style="background:${softenColor(colorForEntity(branch))}" title="${branch.name}"></span>`;
-                }).join('');
+                const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => (
+                    `<span class="agenda-event-chip-dot" style="background:${softenColor(colorForEntity(branch))}" title="${branch.name}"></span>`
+                )).join('');
                 const unitSquares = [
                     ...(event.department && event.department !== '-' ? [{
                         id: event.department_id,
@@ -222,6 +312,13 @@
                     <span class="agenda-event-chip-units">${unitSquares}</span>
                     <span class="agenda-event-chip-branches">${branchDots}</span>
                 `;
+
+                if (canBranchInteract && event.can_quick_subscribe) {
+                    eventLink.addEventListener('click', (evt) => {
+                        evt.preventDefault();
+                        promptQuickSubscribe(event);
+                    });
+                }
 
                 eventLink.addEventListener('mouseenter', (evt) => {
                     const tooltip = ensureTooltip();
@@ -244,7 +341,7 @@
                         <div class="tooltip-row">✅ ${event.status_label ?? event.status}</div>
                         <div class="tooltip-row"><strong>الفروع المشاركة:</strong></div>
                         <div class="tooltip-list">${branchPills || '<span class="text-muted">-</span>'}</div>
-                        <div class="tooltip-row mt-1"><strong>الوحدات/الأقسام الشريكة:</strong></div>
+                        <div class="tooltip-row mt-1"><strong>الأقسام الشريكة:</strong></div>
                         <div class="tooltip-list">${partnerDepartmentPills || '<span class="text-muted">-</span>'}</div>
                         <div class="tooltip-row mt-1"><strong>الوحدات المشاركة:</strong></div>
                         <div class="tooltip-list">${unitPills || '<span class="text-muted">-</span>'}</div>
@@ -270,6 +367,22 @@
             renderCalendar();
         });
     });
+
+    if (quickSubscribeConfirmButton) {
+        quickSubscribeConfirmButton.addEventListener('click', () => {
+            if (!quickSubscribeAction) return;
+
+            if (quickSubscribeAction.type === 'open') {
+                openLink(quickSubscribeAction.url);
+                return;
+            }
+
+            if (quickSubscribeAction.type === 'submit' && quickSubscribeForm) {
+                quickSubscribeForm.action = quickSubscribeAction.url;
+                quickSubscribeForm.submit();
+            }
+        });
+    }
 
     switchView('table');
     renderWeekdays();
