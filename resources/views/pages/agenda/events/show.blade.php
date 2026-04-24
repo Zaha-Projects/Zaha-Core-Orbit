@@ -57,9 +57,7 @@
 
                         <div class="wf-chip-row mt-3">
                             <span class="wf-chip wf-chip-primary">{{ __('workflow_ui.common.current_step') }}: {{ $workflowSummary['current_step_label'] ?? __('app.common.na') }}</span>
-                            <span class="wf-chip">{{ __('workflow_ui.common.assignee') }}: {{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
                             <span class="wf-chip wf-chip-soft">التقدم: {{ $workflowSummary['completed_steps_count'] ?? 0 }}/{{ $workflowSummary['total_steps_count'] ?? 0 }}</span>
-                            <span class="wf-chip wf-chip-soft">{{ __('workflow_ui.common.status') }}: {{ $workflowSummary['workflow_state_label'] ?? __('app.common.na') }}</span>
                         </div>
                     </div>
 
