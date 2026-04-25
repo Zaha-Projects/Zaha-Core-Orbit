@@ -1,140 +1,149 @@
-# خطة انتقال مشروع Zaha إلى الثيم العربي/الإنجليزي الجديد
+# الخطة المحسّنة لاعتماد الثيم الجديد بالكامل (Arabic Theme First)
 
-## 1) دراسة سريعة للكوميت الأخير (Arabic Theame)
+## قرار معماري نهائي (حسب طلبك)
 
-### ما يقدمه الثيم الجديد فعليًا
-- يدعم **RTL/LTR** بشكل ديناميكي عبر تبديل `lang` و`dir` وتبديل ملف Bootstrap (نسخة RTL مقابل LTR).
-- يدعم **Dark/Light mode** عبر CSS Variables في `Theme.css`.
-- يحتوي صفحات مرجعية عملية للمكوّنات المطلوبة: Dashboard, Forms, Cards, Notifications, Calendar, DateTime, Sidebar, Toast, Pagination.
-- يحتوي نظام ترجمة مبني على ملفات JSON (`locales/ar/common.json`, `locales/en/common.json`) مع fallback داخل JavaScript.
-- يدمج مكونات UI تفاعلية مهمة: FullCalendar, Flatpickr, Toastr, SweetAlert2.
-
-### أهم الملفات المرجعية في الثيم
-- أسس الألوان والثيمين: `Arabic Theame/css/Theme.css`
-- سلوك layout + sidebar + responsive + RTL/LTR: `Arabic Theame/css/Style.css`
-- منطق التبديل (لغة/ثيم/سايدبار) + i18n + مكونات التنبيه/التقويم: `Arabic Theame/js/app.js`
-- قاموس الترجمة: `Arabic Theame/locales/ar/common.json` و`Arabic Theame/locales/en/common.json`
+- **الاعتماد 100% على الثيم الجديد** كمرجع وحيد للواجهة (Styles + JS + Components + Pages).
+- **عدم استخدام Vite** في خطة الدمج الحالية.
+- **اللغة العربية هي الافتراضية** على مستوى النظام.
+- المحافظة على الإنجليزية كلغة ثانية متكاملة بدون أي كسر RTL/LTR أو ترجمة.
+- تفعيل جميع عناصر الثيم الجديدة تدريجيًا: **Cards / Tabs / Alerts / Toast / Notifications / Pagination / Calendar / DateTime / Sidebar / Auth pages**.
 
 ---
 
-## 2) الفجوة الحالية في المشروع مقارنة بالثيم الجديد
+## 1) ما سيتم اعتماده من الثيم الجديد بشكل مباشر
 
-> الهدف هنا تحديد سبب المشاكل المتوقعة (ترجمة، RTL/LTR، dark/light) قبل البدء بالتنفيذ.
+### الأصول الأساسية (Core Assets)
+- `Arabic Theame/css/Theme.css` (ألوان + dark/light tokens)
+- `Arabic Theame/css/Style.css` (layout + sidebar + responsive + RTL/LTR)
+- `Arabic Theame/js/app.js` (تبديل اللغة/الثيم + calendar/date + notifications)
+- `Arabic Theame/locales/ar/common.json`
+- `Arabic Theame/locales/en/common.json`
+- صفحات المثال المرجعية: `index.html`, `card.html`, `pagination.html`, `notifications.html`, `calendar.html`, `datetime.html`, `Input.html`, `toast.htm`, `sidebar.html`, `Login.html`, `forgot-password.html`.
 
-- في المشروع الحالي يوجد بداية تحديد للغة والاتجاه في layout الأساسي فقط (`resources/views/layouts new/app.blade.php`) بدون دمج كامل لنظام ثيم/JS/Assets.
-- ملفات CSS/JS الأساسية للتطبيق الحالي شبه فارغة أو غير مفعلة (`resources/css/app.css`, `resources/js/app.js`) بالنسبة لمنطق الثيم الجديد.
-- المشروع يحتوي ترجمة Laravel واسعة (`resources/lang/ar`, `resources/lang/en`) بينما الثيم الجديد يستخدم JSON مستقل داخل مسار آخر؛ يلزم توحيد الاستراتيجية.
-- المكوّنات المطلوبة (Tabs/Alerts/Notifications/Calendars) موجودة كنماذج static في الثيم الجديد، لكنها ليست بعد جزءًا من صفحات Blade التشغيلية.
-
----
-
-## 3) To-Do List تنفيذية (Actionable)
-
-## A) تأسيس معماري (Design System + Layout)
-- [ ] إنشاء **Base Layout موحد** (Blade) مبني على الثيم الجديد (Topbar + Sidebar + Content shell).
-- [ ] استخراج CSS الجديد إلى ملفات أصول المشروع الرسمية (يفضل عبر Vite) بدل الاعتماد على ملفات static منفصلة.
-- [ ] تعريف متغيرات الألوان رسميًا (tokens) مع توثيقها وربطها بــ dark/light.
-- [ ] إضافة مبدأ CSS logical properties لكل الهوامش/المواضع الحساسة للاتجاه (`margin-inline`, `inset-inline`, `padding-inline`).
-
-## B) إدارة اللغة والاتجاه RTL/LTR
-- [ ] اعتماد **مصدر وحيد للحقيقة** للغة المستخدم (session/profile/localStorage) + middleware يضبط `app()->getLocale()`.
-- [ ] إضافة Locale Switcher موحد يغيّر اللغة ويحدّث `dir` و`lang` بدون كسر الواجهة.
-- [ ] فصل مكونات تتأثر بالاتجاه (Sidebar align, dropdown align, icons spacing) في utilities واضحة.
-- [ ] إعداد اختبارات UI للانتقال AR↔EN على جميع المقاسات (Desktop/Tablet/Mobile).
-
-## C) إدارة Dark/Light
-- [ ] اعتماد `data-theme` على `<html>` مع persistence للمستخدم.
-- [ ] توحيد كل الألوان في CSS Variables (عدم وجود ألوان hard-coded في الصفحات).
-- [ ] مراجعة contrast وتوافق WCAG للعناصر الحرجة (inputs, table text, badges, alerts).
-- [ ] اختبار تزامن الثيم مع الرسوم البيانية والتقويم والتنبيهات.
-
-## D) الترجمة ومنع مشاكل النصوص
-- [ ] وضع سياسة ترجمة واحدة: إما Laravel lang أو JSON frontend مع جسر واضح بينهما.
-- [ ] بناء **Translation Key Registry** لمنع duplication/missing keys.
-- [ ] تمرير جميع النصوص الثابتة في Blade/JS عبر مفاتيح ترجمة فقط.
-- [ ] إضافة check آلي في CI لاكتشاف المفاتيح الناقصة بين العربية والإنجليزية.
-
-## E) Tabs / Alerts / Notifications / Calendars (المطلوب صراحة)
-- [ ] إنشاء مكوّن Tabs موحد (Blade component) يدعم RTL spacing وحالات Active/Hover في dark/light.
-- [ ] إنشاء Alert component (success/warning/error/info) بألوان متسقة بين الثيمين.
-- [ ] توحيد Notification layer:
-  - [ ] Toasts (نجاح/تحذير/خطأ)
-  - [ ] Modal alerts (info/confirm)
-  - [ ] مركز إشعارات أعلى الصفحة مع عدّاد متوافق مع اللغتين.
-- [ ] دمج Calendar module (FullCalendar) عبر wrapper موحد:
-  - [ ] يتبدل locale + direction مباشرة مع اللغة.
-  - [ ] صيغ التاريخ/الوقت تتوافق مع لغة الواجهة.
-  - [ ] دعم fallback UX عند فشل تحميل المكتبة.
-
-## F) تحويل الصفحات الحالية تدريجيًا
-- [ ] جرد جميع صفحات `resources/views/pages/**` وتصنيفها حسب الأولوية (حرجة/متوسطة/منخفضة).
-- [ ] تحويل الصفحات الحرجة أولًا (Dashboard + العمليات اليومية + النماذج).
-- [ ] تطبيق migration template موحد لكل صفحة (Header actions, cards, forms, tables, filters).
-- [ ] التحقق من consistency لكل صفحة في 4 حالات: (AR-light, AR-dark, EN-light, EN-dark).
-
-## G) الجودة والاختبار قبل الإطلاق
-- [ ] إعداد Visual Regression baseline لأهم الصفحات (4 حالات لغة/ثيم).
-- [ ] E2E smoke tests: login, navigation, create/edit forms, notifications, calendar actions.
-- [ ] اختبار الأداء بعد إضافة المكتبات الجديدة (تقليل payload، lazy load عند الحاجة).
-- [ ] UAT ثنائي اللغة مع checklist واضحة للـ RTL/LTR + الترجمة + الثيم.
+### سياسة التنفيذ
+- أي عنصر UI موجود في النظام الحالي سيتم **مطابقته** مع نظيره في الثيم الجديد (وليس إعادة اختراعه).
+- نستخدم نفس naming ونفس سلوك الـ classes قدر الإمكان لتقليل الانحرافات.
 
 ---
 
-## 4) خطة تنفيذ مرحلية (Timeline مقترح)
+## 2) الفجوات الحالية التي يجب إغلاقها أولًا
 
-### المرحلة 0 — تحضير (1–2 يوم)
-- اعتماد قرار معماري للترجمة (Laravel vs JSON hybrid).
-- تثبيت بنية الأصول (Vite) وتجهيز base layout.
-- تعريف Definition of Done لصفحة "جاهزة".
-
-### المرحلة 1 — Foundation (3–4 أيام)
-- ترحيل Theme.css + Style.css كنظام تصميم قابل لإعادة الاستخدام.
-- بناء Locale/Theme switchers داخل layout الرئيسي.
-- دمج Sidebar/Topbar responsive وإغلاق فجوات RTL/LTR الأساسية.
-
-### المرحلة 2 — Shared Components (3–5 أيام)
-- بناء Tabs/Alerts/Notification/Calendar wrappers كمكوّنات موحدة.
-- توحيد الترجمة داخل هذه المكوّنات.
-- إعداد tests وحدات/واجهة للمكوّنات.
-
-### المرحلة 3 — Page Migration (1–2 أسبوع بحسب عدد الصفحات)
-- ترحيل الصفحات على دفعات (Batch-by-batch).
-- بعد كل دفعة: QA سريع للحالات الأربع (AR/EN × Dark/Light).
-- إصلاح regressions أولًا بأول.
-
-### المرحلة 4 — Stabilization & Launch (2–3 أيام)
-- Visual regression + E2E + UAT.
-- إقفال مفاتيح الترجمة الناقصة.
-- إطلاق تجريبي ثم إطلاق تدريجي.
+- الـ layout الحالي في `resources/views/layouts new/app.blade.php` يضبط `lang/dir` فقط، لكنه لا يفعّل كامل عناصر الثيم الجديدة.
+- `resources/css/app.css` و`resources/js/app.js` لا يحتويان حاليًا بنية تشغيل feature parity مع الثيم الجديد.
+- يوجد نظام ترجمة Laravel كبير، بينما الثيم الجديد يعتمد JSON frontend؛ يجب وضع جسر واضح مع جعل العربية default.
 
 ---
 
-## 5) Definition of Done (لكل صفحة قبل اعتبارها "مكتملة")
+## 3) خطة تنفيذ "صفحات صفحات" (عملي ومباشر)
 
-- [ ] لا يوجد أي نص hard-coded خارج نظام الترجمة.
-- [ ] تعمل الصفحة بنفس الجودة في العربية والإنجليزية.
-- [ ] لا توجد مشاكل RTL/LTR (محاذاة، أيقونات، padding، dropdown placement).
-- [ ] لا توجد مشاكل Dark/Light (contrast, borders, disabled states).
-- [ ] Tabs/Alerts/Notifications/Calendars تعمل دون كسر في تبديل اللغة/الثيم.
-- [ ] الصفحة ناجحة في الاختبارات الآلية + مراجعة QA اليدوية.
+## المرحلة A — Foundation (قبل أي صفحة أعمال)
+
+### A1) تفعيل اللغة العربية افتراضيًا
+- [ ] ضبط locale الافتراضي إلى `ar` على مستوى Laravel config/middleware.
+- [ ] فرض `dir="rtl"` تلقائيًا عند أول زيارة للمستخدم.
+- [ ] إبقاء زر التحويل للإنجليزية مع تذكر الاختيار.
+
+### A2) اعتماد أصول الثيم بدون Vite
+- [ ] نسخ ملفات CSS/JS/assets من `Arabic Theame` إلى مسارات public مع تنظيم واضح.
+- [ ] ربط الملفات مباشرة عبر `<link>` و`<script>` في Blade (بدون pipeline Vite).
+- [ ] توحيد bootstrap rtl/ltr switching كما هو في الثيم الجديد.
+
+### A3) Base Layout مطابق للثيم
+- [ ] إنشاء Layout Blade موحد يطابق `index.html` في الثيم (Topbar + Sidebar + Content).
+- [ ] دمج نفس منطق sidebar collapse/mobile open + overlay.
+- [ ] ربط locale/theme toggles بنفس سلوك `Arabic Theame/js/app.js`.
+
+**معيار نجاح المرحلة A:**
+- الصفحة الرئيسية تعمل فورًا بالعربية RTL + Dark/Light + Sidebar responsive + EN switch بدون مشاكل.
 
 ---
 
-## 6) مخاطر متوقعة + تخفيفها
+## المرحلة B — Shared Components (مرة واحدة تُستخدم بكل الصفحات)
 
-- **ازدواجية مصادر الترجمة** → الحل: اعتماد registry موحد + CI check للمفاتيح.
-- **انكسار بعض الصفحات القديمة مع RTL** → الحل: migration تدريجي + utility classes + visual tests.
-- **تباين الألوان في الدارك** → الحل: ضبط tokens مركزيًا وعدم استخدام hard-coded colors.
-- **تعقيد calendar/time format بين اللغات** → الحل: wrapper واحد مسؤول عن locale/direction/format.
+- [ ] **Cards component** مطابق `card.html`.
+- [ ] **Tabs component** بنمط الثيم.
+- [ ] **Alerts component** (success/warning/error/info).
+- [ ] **Toast + Notifications component** مطابق `notifications.html` و`toast.htm`.
+- [ ] **Pagination component** مطابق `pagination.html`.
+- [ ] **Calendar wrapper** مطابق `calendar.html`.
+- [ ] **DateTime picker wrapper** مطابق `datetime.html`.
+
+**معيار نجاح المرحلة B:**
+- كل مكوّن قابل للاستخدام من أي صفحة، ويعمل في الحالات الأربع: `AR-light`, `AR-dark`, `EN-light`, `EN-dark`.
 
 ---
 
-## 7) ترتيب أولويات عملي مقترح
+## المرحلة C — ترحيل الصفحات دفعات (Batches)
 
-1. Layout الأساسي + theme/locale switchers.
-2. Components المشتركة (Tabs, Alerts, Notifications, Calendar).
-3. Dashboard والصفحات اليومية عالية الاستخدام.
-4. باقي الصفحات الإدارية الأقل استخدامًا.
-5. الإقفال النهائي عبر QA/E2E/Visual regression.
+## Batch 1 (أولوية قصوى)
+- [ ] Dashboard
+- [ ] صفحات النماذج الأساسية (Inputs/Forms)
+- [ ] صفحة الإشعارات (alerts/toasts)
+- [ ] صفحة التقويم والتاريخ
 
-> بهذه الطريقة نضمن الانتقال "بدفعة واضحة" لكن **على مراحل مضبوطة** تمنع مشاكل الترجمة، وتضمن تطابق dark/light، وتمنع أخطاء التحويل بين RTL/LTR في جميع الصفحات.
+## Batch 2
+- [ ] صفحات الجداول والقوائم التي تحتاج pagination/cards بكثافة
+- [ ] صفحات العمليات اليومية الأكثر استخدامًا
+
+## Batch 3
+- [ ] الصفحات الأقل استخدامًا
+- [ ] صفحات الإعدادات التفصيلية
+
+## Batch 4
+- [ ] صفحات Auth (`Login`, `Forgot Password`) بتصميم الثيم الجديد
+- [ ] أي صفحات legacy متبقية
+
+**قاعدة التنفيذ في كل Batch:**
+1. مطابقة الواجهة مع صفحة مرجعية من الثيم الجديد.
+2. تمرير كل النصوص على الترجمة.
+3. فحص RTL/LTR + dark/light.
+4. اعتماد المكوّنات المشتركة بدل CSS/JS مكرر.
+
+---
+
+## 4) سياسة الترجمة بعد اعتماد العربية افتراضيًا
+
+- العربية هي default في أول تحميل.
+- الإنجليزية اختيارية عبر toggle.
+- جميع النصوص الجديدة يجب أن تمتلك مفتاحًا بالعربية والإنجليزية قبل الدمج.
+- منع hard-coded text في Blade/JS.
+- فحص دوري للمفاتيح الناقصة بين `ar` و`en`.
+
+---
+
+## 5) قائمة فحص الجودة (لكل صفحة قبل اعتمادها)
+
+- [ ] الشكل مطابق للثيم الجديد (spacing, typography, colors, controls).
+- [ ] تعمل الصفحة طبيعيًا بالعربية RTL كحالة افتراضية.
+- [ ] التبديل إلى الإنجليزية LTR لا يسبب كسر محاذاة/أيقونات.
+- [ ] الدارك/لايت متطابقان وظيفيًا وبصريًا.
+- [ ] العناصر المطلوبة موجودة عند الحاجة: cards/tabs/alerts/pagination/notifications/calendar.
+- [ ] لا يوجد JavaScript errors في المتصفح.
+
+---
+
+## 6) التنفيذ الفوري (سنبدأ من هنا الآن)
+
+## الخطوة 1 (الآن)
+- تجهيز **Base Layout عربي افتراضي** + ربط CSS/JS من الثيم الجديد **بدون Vite**.
+
+## الخطوة 2
+- ترحيل Dashboard بالكامل ليطابق `Arabic Theame/index.html`.
+
+## الخطوة 3
+- ترحيل صفحات `notifications`, `calendar`, `datetime`, `cards`, `pagination` كحزمة Features موحدة.
+
+## الخطوة 4
+- البدء صفحة صفحة من صفحات المشروع الفعلية وربطها بالمكوّنات الجديدة.
+
+---
+
+## 7) ترتيب الأولويات النهائي المختصر
+
+1. Foundation (Arabic default + no Vite + base layout)
+2. Shared features (cards/tabs/alerts/toast/notifications/pagination/calendar)
+3. Dashboard + pages عالية الاستخدام
+4. باقي الصفحات
+5. Auth + polishing
+
+> بهذه الخطة سننفذ **جزء جزء / صفحات صفحات** مع اعتماد كامل للثيم الجديد كما طلبت، وبدون Vite، وبافتراضية عربية واضحة، ثم نغلق أي فجوات ترجمة أو RTL/LTR أو dark/light بشكل منهجي.
