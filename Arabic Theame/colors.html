@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الألوان - ZAHA Flow Theme</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link id="bootstrapCss" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <link rel="stylesheet" href="./css/Theme.css">
+  <link rel="stylesheet" href="./css/Style.css">
+</head>
+<body>
+  <div class="layout-shell">
+    <aside id="appSidebar" class="sidebar-original">
+      <div class="sidebar-brand"><img class="brand-logo" src="./assets/logos/logo2.svg" alt="ZAHA Logo"></div>
+      <p class="side-comment" data-i18n="quick_menu">القائمة السريعة</p>
+      <ul class="side-list"><li class="side-item "><a href="./index.html"><i class="fas fa-gauge-high"></i><span data-i18n="menu_dashboard">الرئيسية</span></a></li>
+<li class="side-item "><a href="./calendar.html"><i class="fas fa-calendar-days"></i><span data-i18n="menu_calendar_page">التقويم</span></a></li>
+<li class="side-item "><a href="./datetime.html"><i class="fas fa-clock"></i><span data-i18n="menu_datetime_page">التاريخ والوقت</span></a></li>
+<li class="side-item "><a href="./notifications.html"><i class="fas fa-bell"></i><span data-i18n="menu_notify_page">الإشعارات</span></a></li>
+<li class="side-item "><a href="./card.html"><i class="fas fa-id-card"></i><span data-i18n="menu_cards">البطاقات</span></a></li>
+<li class="side-item "><a href="./Chart.html"><i class="fas fa-chart-line"></i><span data-i18n="menu_analytics">التحليلات</span></a></li>
+<li class="side-item "><a href="./Input.html"><i class="fas fa-pen-ruler"></i><span data-i18n="menu_forms">النماذج</span></a></li>
+<li class="side-item "><a href="./sidebar.html"><i class="fas fa-bars"></i><span data-i18n="menu_sidebar">السايدبار</span></a></li>
+<li class="side-item "><a href="./toast.htm"><i class="fas fa-message"></i><span data-i18n="menu_toast">Toast</span></a></li>
+<li class="side-item "><a href="./pagination.html"><i class="fas fa-list-ol"></i><span data-i18n="menu_pagination">Pagination</span></a></li>
+<li class="side-item selected"><a href="./colors.html"><i class="fas fa-palette"></i><span data-i18n="menu_colors">الألوان</span></a></li>
+<li class="side-item "><a href="./zaha-identity.html"><i class="fas fa-gem"></i><span data-i18n="menu_identity">هوية زها</span></a></li>
+<li class="side-item "><a href="./feature-readme.html"><i class="fas fa-book-open"></i><span data-i18n="menu_readme_page">README بسيط</span></a></li></ul>
+      <p class="side-comment" data-i18n="language">اللغة</p>
+      <button id="mobileLocaleToggle" class="btn btn-outline-info w-100 mb-2">🌐 English (LTR)</button>
+      <button id="mobileThemeToggle" class="btn btn-outline-light w-100">🌙 داكن</button>
+    </aside>
+    <div class="content-shell">
+      <header>
+        <nav class="navbar topbar-original topbar-pill">
+          <button id="sidebarToggle" class="btn topbar-toggle" type="button"><i class="fas fa-bars"></i></button>
+          <ul class="nav ms-auto align-items-center gap-2 topbar-actions">
+            <li class="nav-item dropdown">
+              <button class="btn icon-dd" data-bs-toggle="dropdown"><i class="far fa-envelope"></i><span class="badge bg-danger rounded-pill">5</span><i class="fas fa-caret-down tiny-caret"></i></button>
+              <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#" data-i18n="msg_new">4 رسائل جديدة</a></li><li><a class="dropdown-item" href="#" data-i18n="see_all">عرض الكل</a></li></ul>
+            </li>
+            <li class="nav-item dropdown">
+              <button class="btn icon-dd" data-bs-toggle="dropdown"><i class="far fa-bell"></i><span class="badge bg-warning text-dark rounded-pill">5</span><i class="fas fa-caret-down tiny-caret"></i></button>
+              <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#" data-i18n="notif_count">8 إشعارات</a></li><li><a class="dropdown-item" href="#" data-i18n="see_all">عرض الكل</a></li></ul>
+            </li>
+            <li class="nav-item"><span class="top-avatar top-avatar-icon"><i class="fas fa-user-astronaut"></i></span></li>
+            <li class="nav-item dropdown">
+              <button class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown">MAJID</button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="./sidebar.html" data-i18n="settings"><i class="fas fa-gear me-2"></i>Settings</a></li>
+                <li><a class="dropdown-item" href="./Login.html" data-i18n="login"><i class="fas fa-right-to-bracket me-2"></i>Login</a></li>
+                <li><a class="dropdown-item" href="#" data-i18n="logout"><i class="fas fa-right-from-bracket me-2"></i>Logout</a></li>
+                <li><button id="themeToggle" class="dropdown-item" type="button">🌙 Dark</button></li>
+              </ul>
+            </li>
+            <li class="nav-item"><button class="btn btn-locale-toggle" id="localeToggle" type="button">🌐 English (LTR)</button></li>
+          </ul>
+        </nav>
+      </header>
+      <main class="content-main"><div class="card p-4"><h1 class="h4 mb-3">صفحة الألوان</h1><p class="text-muted mb-3">لوحة ألوان محسنة لسهولة الاستخدام في عناصر UI و KPI.</p><div class="palette-grid"><div class="color-chip"><div class="chip-swatch" style="background:linear-gradient(135deg,#00a9c4,#2fc9e2)"></div><div class="chip-meta"><p class="chip-name">Primary Blue</p><p class="chip-code">#00A9C4 → #2FC9E2</p></div></div><div class="color-chip"><div class="chip-swatch" style="background:linear-gradient(135deg,#00a37f,#1ec7a0)"></div><div class="chip-meta"><p class="chip-name">Success Green</p><p class="chip-code">#00A37F → #1EC7A0</p></div></div><div class="color-chip"><div class="chip-swatch" style="background:linear-gradient(135deg,#4f5ee0,#7a88ff)"></div><div class="chip-meta"><p class="chip-name">Analytics Purple</p><p class="chip-code">#4F5EE0 → #7A88FF</p></div></div><div class="color-chip"><div class="chip-swatch" style="background:linear-gradient(135deg,#d1992b,#ffc247)"></div><div class="chip-meta"><p class="chip-name">Accent Gold</p><p class="chip-code">#D1992B → #FFC247</p></div></div></div></div></main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="./js/app.js"></script>
+</body></html>
