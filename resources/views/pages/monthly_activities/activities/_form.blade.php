@@ -53,6 +53,22 @@
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
     $selectedZahaTimeOptions = old('programs_zaha_time_options', []);
+    $oldCeremonyItems = old('ceremony_items', []);
+    if ($oldCeremonyItems === [] && (filled(old('ceremony_item_name')) || filled(old('ceremony_item_description')) || filled(old('ceremony_time_from')) || filled(old('ceremony_time_to')))) {
+        $oldCeremonyItems = [[
+            'name' => old('ceremony_item_name'),
+            'description' => old('ceremony_item_description'),
+            'time_from' => old('ceremony_time_from'),
+            'time_to' => old('ceremony_time_to'),
+        ]];
+    }
+    $oldCeremonyItems = $oldCeremonyItems === [] ? [['name' => null, 'description' => null, 'time_from' => null, 'time_to' => null]] : $oldCeremonyItems;
+    $programsNeedTrainerChecked = old('programs_need_trainer', '0') === '1';
+    $programsNeedsZahaTimeChecked = old('programs_needs_zaha_time', $selectedZahaTimeOptions === [] ? '0' : '1') === '1';
+    $programsNeedsShowChecked = old('programs_needs_show', (filled(old('programs_show_name')) || filled(old('programs_show_description'))) ? '1' : '0') === '1';
+    $programsNeedsFunChecked = old('programs_needs_fun', filled(old('programs_fun_note')) ? '1' : '0') === '1';
+    $certificatesDetailsChecked = old('needs_certificates_details', (filled(old('certificates_count')) || filled(old('certificates_template')) || filled(old('certificates_for'))) ? '1' : '0') === '1';
+    $thanksLettersDetailsChecked = old('needs_thanks_letters_details', (filled(old('thanks_letters_count')) || filled(old('thanks_letters_template')) || filled(old('thanks_letters_for'))) ? '1' : '0') === '1';
     $isUnifiedMandatory = $existingMonthlyActivity
         && (bool) $existingMonthlyActivity->is_from_agenda
         && (string) $existingMonthlyActivity->plan_type === 'unified'
@@ -430,26 +446,11 @@
                     <div class="monthly-subsection-card monthly-subsection-card--ceremony">
                         <h3 class="h6 mb-3">أجندة الحفل</h3>
                         <div class="row g-3">
-                            <div class="col-12 col-md-2">
+                            <div class="col-12 col-md-3">
                                 <label class="form-label">عدد الفقرات</label>
-                                <input class="form-control" type="number" min="1" name="ceremony_items_count" value="{{ old('ceremony_items_count') }}">
+                                <input class="form-control js-ceremony-items-count" type="number" min="1" max="20" name="ceremony_items_count" value="{{ old('ceremony_items_count', count($oldCeremonyItems)) }}">
                             </div>
-                            <div class="col-12 col-md-2">
-                                <label class="form-label">وقت الفقرة من</label>
-                                <input class="form-control" type="time" name="ceremony_time_from" value="{{ old('ceremony_time_from') }}">
-                            </div>
-                            <div class="col-12 col-md-2">
-                                <label class="form-label">وقت الفقرة إلى</label>
-                                <input class="form-control" type="time" name="ceremony_time_to" value="{{ old('ceremony_time_to') }}">
-                            </div>
-                            <div class="col-12 col-md-3">
-                                <label class="form-label">اسم/ترتيب الفقرة</label>
-                                <input class="form-control" name="ceremony_item_name" value="{{ old('ceremony_item_name') }}">
-                            </div>
-                            <div class="col-12 col-md-3">
-                                <label class="form-label">وصف الفقرة</label>
-                                <input class="form-control" name="ceremony_item_description" value="{{ old('ceremony_item_description') }}">
-                            </div>
+                            <div class="col-12"><div class="row g-3 js-ceremony-items-container"></div></div>
                         </div>
                     </div>
                 </div>
@@ -549,20 +550,25 @@
                         <div class="row g-3">
                             <div class="col-12 col-md-4">
                                 <label class="form-label">بحاجة محاضر/مدرب؟</label>
-                                <select class="form-select" name="programs_need_trainer">
-                                    <option value="0" {{ old('programs_need_trainer', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                    <option value="1" {{ old('programs_need_trainer', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                                </select>
+                                <div class="form-check form-switch pt-2">
+                                    <input class="form-check-input js-programs-need-trainer-toggle" type="checkbox" role="switch" name="programs_need_trainer" value="1" {{ $programsNeedTrainerChecked ? 'checked' : '' }}>
+                                </div>
                             </div>
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-4 js-programs-trainer-fields">
                                 <label class="form-label">وصف المحاضر/المدرب</label>
                                 <input class="form-control" name="programs_trainer_description" value="{{ old('programs_trainer_description') }}">
                             </div>
-                            <div class="col-12 col-md-2">
+                            <div class="col-12 col-md-2 js-programs-trainer-fields">
                                 <label class="form-label">العدد</label>
                                 <input class="form-control" type="number" min="1" name="programs_trainer_count" value="{{ old('programs_trainer_count') }}">
                             </div>
                             <div class="col-12 col-md-6">
+                                <label class="form-label d-block">خدمات زها تايم؟</label>
+                                <div class="form-check form-switch pt-2">
+                                    <input class="form-check-input js-programs-zaha-toggle" type="checkbox" role="switch" name="programs_needs_zaha_time" value="1" {{ $programsNeedsZahaTimeChecked ? 'checked' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 js-programs-zaha-fields">
                                 <label class="form-label">خدمات زها تايم (اختيار متعدد)</label>
                                 <select class="form-select" name="programs_zaha_time_options[]" multiple>
                                     @foreach (($zahaTimeOptions ?? collect()) as $zahaOption)
@@ -571,20 +577,32 @@
                                 </select>
                                 <small class="text-muted">الخيارات تُدار من شاشة القوائم المرجعية للأدمن.</small>
                             </div>
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-6 js-programs-zaha-fields">
                                 <label class="form-label">تفاصيل إضافية لزها تايم</label>
                                 <input class="form-control" name="programs_zaha_time_other" value="{{ old('programs_zaha_time_other') }}">
                             </div>
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label d-block">العرض الفني؟</label>
+                                <div class="form-check form-switch pt-2">
+                                    <input class="form-check-input js-programs-show-toggle" type="checkbox" role="switch" name="programs_needs_show" value="1" {{ $programsNeedsShowChecked ? 'checked' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4 js-programs-show-fields">
                                 <label class="form-label">اسم العرض الفني</label>
                                 <input class="form-control" name="programs_show_name" value="{{ old('programs_show_name') }}">
                             </div>
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-4 js-programs-show-fields">
                                 <label class="form-label">وصف العرض الفني</label>
                                 <input class="form-control" name="programs_show_description" value="{{ old('programs_show_description') }}">
                             </div>
-                            <div class="col-12 col-md-4">
-                                <label class="form-label">فان</label>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label d-block">بحاجة فان؟</label>
+                                <div class="form-check form-switch pt-2">
+                                    <input class="form-check-input js-programs-fun-toggle" type="checkbox" role="switch" name="programs_needs_fun" value="1" {{ $programsNeedsFunChecked ? 'checked' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4 js-programs-fun-fields">
+                                <label class="form-label">تفاصيل الفان</label>
                                 <input class="form-control" name="programs_fun_note" value="{{ old('programs_fun_note') }}">
                             </div>
                         </div>
@@ -595,29 +613,39 @@
                     <div class="monthly-subsection-card monthly-subsection-card--certificates">
                         <h3 class="h6 mb-3">الشهادات وكتب الشكر</h3>
                         <div class="row g-3">
-                            <div class="col-12"><h4 class="h6 mb-1">الشهادات</h4></div>
-                            <div class="col-12 col-md-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label d-block">إصدار شهادات؟</label>
+                                <div class="form-check form-switch pt-2">
+                                    <input class="form-check-input js-certificates-detail-toggle" type="checkbox" role="switch" name="needs_certificates_details" value="1" {{ $certificatesDetailsChecked ? 'checked' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3 js-certificates-detail-fields">
                                 <label class="form-label">عددها</label>
                                 <input class="form-control" type="number" min="1" name="certificates_count" value="{{ old('certificates_count') }}">
                             </div>
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-4 js-certificates-detail-fields">
                                 <label class="form-label">صيغة مقترحة</label>
                                 <input class="form-control" name="certificates_template" value="{{ old('certificates_template') }}">
                             </div>
-                            <div class="col-12 col-md-5">
+                            <div class="col-12 col-md-5 js-certificates-detail-fields">
                                 <label class="form-label">لمن</label>
                                 <input class="form-control" name="certificates_for" value="{{ old('certificates_for') }}">
                             </div>
-                            <div class="col-12"><h4 class="h6 mb-1 mt-2">كتب الشكر</h4></div>
-                            <div class="col-12 col-md-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label d-block">إصدار كتب شكر؟</label>
+                                <div class="form-check form-switch pt-2">
+                                    <input class="form-check-input js-thanks-letters-detail-toggle" type="checkbox" role="switch" name="needs_thanks_letters_details" value="1" {{ $thanksLettersDetailsChecked ? 'checked' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3 js-thanks-letters-detail-fields">
                                 <label class="form-label">عددها</label>
                                 <input class="form-control" type="number" min="1" name="thanks_letters_count" value="{{ old('thanks_letters_count') }}">
                             </div>
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-4 js-thanks-letters-detail-fields">
                                 <label class="form-label">صيغة مقترحة</label>
                                 <input class="form-control" name="thanks_letters_template" value="{{ old('thanks_letters_template') }}">
                             </div>
-                            <div class="col-12 col-md-5">
+                            <div class="col-12 col-md-5 js-thanks-letters-detail-fields">
                                 <label class="form-label">لمن</label>
                                 <input class="form-control" name="thanks_letters_for" value="{{ old('thanks_letters_for') }}">
                             </div>
@@ -697,6 +725,7 @@
 @endpush
 
 @push('scripts')
+    <script type="application/json" id="monthly-form-old-ceremony-items-json">@json($oldCeremonyItems)</script>
     <script type="application/json" id="monthly-form-old-partners-json">@json($oldPartners)</script>
     <script type="application/json" id="monthly-form-old-supplies-json">@json($oldSupplies)</script>
     <script type="application/json" id="monthly-form-old-team-groups-json">@json($oldTeamGroups)</script>

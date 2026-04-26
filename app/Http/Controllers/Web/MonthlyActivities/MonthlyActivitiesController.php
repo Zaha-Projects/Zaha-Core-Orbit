@@ -613,6 +613,19 @@ class MonthlyActivitiesController extends Controller
         $needsPrograms = (bool) ($data['needs_programs_participation'] ?? false);
         $needsCertificates = (bool) ($data['needs_certificates_and_thanks'] ?? false);
         $needsInvitations = (bool) ($data['needs_invitations'] ?? false);
+        $ceremonyItems = collect($data['ceremony_items'] ?? [])
+            ->filter(fn ($item) => is_array($item))
+            ->map(function (array $item, int $index): array {
+                return [
+                    'order' => isset($item['order']) ? (int) $item['order'] : ($index + 1),
+                    'name' => $item['name'] ?? null,
+                    'time_from' => $item['time_from'] ?? null,
+                    'time_to' => $item['time_to'] ?? null,
+                    'description' => $item['description'] ?? null,
+                ];
+            })
+            ->values();
+        $firstCeremonyItem = $ceremonyItems->first() ?? [];
 
         $payload = [
             'schema_version' => 2,
@@ -630,11 +643,12 @@ class MonthlyActivitiesController extends Controller
             'ceremony' => [
                 'need_code' => 'ceremony',
                 'future_cycle_id' => null,
-                'items_count' => $data['ceremony_items_count'] ?? null,
-                'time_from' => $data['ceremony_time_from'] ?? null,
-                'time_to' => $data['ceremony_time_to'] ?? null,
-                'item_name' => $data['ceremony_item_name'] ?? null,
-                'item_description' => $data['ceremony_item_description'] ?? null,
+                'items_count' => $data['ceremony_items_count'] ?? ($ceremonyItems->count() ?: null),
+                'time_from' => $data['ceremony_time_from'] ?? ($firstCeremonyItem['time_from'] ?? null),
+                'time_to' => $data['ceremony_time_to'] ?? ($firstCeremonyItem['time_to'] ?? null),
+                'item_name' => $data['ceremony_item_name'] ?? ($firstCeremonyItem['name'] ?? null),
+                'item_description' => $data['ceremony_item_description'] ?? ($firstCeremonyItem['description'] ?? null),
+                'items' => $ceremonyItems->all(),
             ],
             'needs_transport' => $needsTransport,
             'transport' => [
@@ -1456,6 +1470,12 @@ class MonthlyActivitiesController extends Controller
             'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
             'ceremony_item_name' => ['nullable', 'string', 'max:255'],
             'ceremony_item_description' => ['nullable', 'string', 'max:500'],
+            'ceremony_items' => ['nullable', 'array'],
+            'ceremony_items.*.order' => ['nullable', 'integer', 'min:1'],
+            'ceremony_items.*.name' => ['nullable', 'string', 'max:255'],
+            'ceremony_items.*.time_from' => ['nullable', 'date_format:H:i'],
+            'ceremony_items.*.time_to' => ['nullable', 'date_format:H:i'],
+            'ceremony_items.*.description' => ['nullable', 'string', 'max:500'],
             'needs_transport' => ['nullable', 'boolean'],
             'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
             'transport_vehicle_type' => ['nullable', 'in:bus,car'],
@@ -1469,6 +1489,9 @@ class MonthlyActivitiesController extends Controller
             'gifts_delivery_entity' => ['nullable', 'string', 'max:255'],
             'needs_programs_participation' => ['nullable', 'boolean'],
             'programs_need_trainer' => ['nullable', 'boolean'],
+            'programs_needs_zaha_time' => ['nullable', 'boolean'],
+            'programs_needs_show' => ['nullable', 'boolean'],
+            'programs_needs_fun' => ['nullable', 'boolean'],
             'programs_trainer_description' => ['nullable', 'string', 'max:255'],
             'programs_trainer_count' => ['nullable', 'integer', 'min:1'],
             'programs_zaha_time_options' => ['nullable', 'array'],
@@ -1478,6 +1501,8 @@ class MonthlyActivitiesController extends Controller
             'programs_show_description' => ['nullable', 'string', 'max:500'],
             'programs_fun_note' => ['nullable', 'string', 'max:255'],
             'needs_certificates_and_thanks' => ['nullable', 'boolean'],
+            'needs_certificates_details' => ['nullable', 'boolean'],
+            'needs_thanks_letters_details' => ['nullable', 'boolean'],
             'certificates_count' => ['nullable', 'integer', 'min:1'],
             'certificates_template' => ['nullable', 'string', 'max:255'],
             'certificates_for' => ['nullable', 'string', 'max:255'],
@@ -1918,6 +1943,12 @@ class MonthlyActivitiesController extends Controller
                 'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
                 'ceremony_item_name' => ['nullable', 'string', 'max:255'],
                 'ceremony_item_description' => ['nullable', 'string', 'max:500'],
+                'ceremony_items' => ['nullable', 'array'],
+                'ceremony_items.*.order' => ['nullable', 'integer', 'min:1'],
+                'ceremony_items.*.name' => ['nullable', 'string', 'max:255'],
+                'ceremony_items.*.time_from' => ['nullable', 'date_format:H:i'],
+                'ceremony_items.*.time_to' => ['nullable', 'date_format:H:i'],
+                'ceremony_items.*.description' => ['nullable', 'string', 'max:500'],
                 'needs_transport' => ['nullable', 'boolean'],
                 'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
                 'transport_vehicle_type' => ['nullable', 'in:bus,car'],
@@ -1931,6 +1962,9 @@ class MonthlyActivitiesController extends Controller
                 'gifts_delivery_entity' => ['nullable', 'string', 'max:255'],
                 'needs_programs_participation' => ['nullable', 'boolean'],
                 'programs_need_trainer' => ['nullable', 'boolean'],
+                'programs_needs_zaha_time' => ['nullable', 'boolean'],
+                'programs_needs_show' => ['nullable', 'boolean'],
+                'programs_needs_fun' => ['nullable', 'boolean'],
                 'programs_trainer_description' => ['nullable', 'string', 'max:255'],
                 'programs_trainer_count' => ['nullable', 'integer', 'min:1'],
                 'programs_zaha_time_options' => ['nullable', 'array'],
@@ -1940,6 +1974,8 @@ class MonthlyActivitiesController extends Controller
                 'programs_show_description' => ['nullable', 'string', 'max:500'],
                 'programs_fun_note' => ['nullable', 'string', 'max:255'],
                 'needs_certificates_and_thanks' => ['nullable', 'boolean'],
+                'needs_certificates_details' => ['nullable', 'boolean'],
+                'needs_thanks_letters_details' => ['nullable', 'boolean'],
                 'certificates_count' => ['nullable', 'integer', 'min:1'],
                 'certificates_template' => ['nullable', 'string', 'max:255'],
                 'certificates_for' => ['nullable', 'string', 'max:255'],
