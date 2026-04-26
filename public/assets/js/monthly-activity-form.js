@@ -127,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function () {
         setRequiredState([
             '[name="outside_place_name"]',
             '[name="outside_google_maps_url"]',
-            '[name="outside_contact_number"]',
             '[name="external_liaison_name"]',
             '[name="external_liaison_phone"]',
             '[name="outside_address"]'

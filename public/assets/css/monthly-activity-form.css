@@ -1,8 +1,14 @@
 .monthly-plan-form-page .monthly-form-section-head {
-    padding-bottom: .5rem;
-    border-bottom: 1px solid #e5e7eb;
+    padding: .75rem .9rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
     margin-bottom: .5rem;
+    background: #f9fafb;
 }
+.monthly-plan-form-page .monthly-form-section-head--planning { background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-color:#cbd5e1; }
+.monthly-plan-form-page .monthly-form-section-head--location { background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); border-color:#bae6fd; }
+.monthly-plan-form-page .monthly-form-section-head--time { background: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%); border-color:#a5f3fc; }
+.monthly-plan-form-page .monthly-form-section-head--execution { background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border-color:#fdba74; }
 .monthly-plan-form-page .monthly-activation-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -11,8 +17,9 @@
 .monthly-plan-form-page .monthly-activation-option {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: .45rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: .65rem;
     padding: .85rem 1rem;
     border: 1px solid #d8e1ea;
     border-radius: 14px;
@@ -25,7 +32,7 @@
     border-color: #9fb8d4;
     background: #f5f9ff;
 }
-.monthly-plan-form-page .monthly-activation-option:has(select option:checked[value="1"]) {
+.monthly-plan-form-page .monthly-activation-option:has(.form-check-input:checked) {
     border-color: #0ea5e9;
     background: linear-gradient(180deg, #eff8ff 0%, #e0f2fe 100%);
     color: #0c4a6e;
@@ -36,8 +43,8 @@
     font-weight: 600;
 }
 
-.monthly-plan-form-page .monthly-activation-option .form-select {
-    background-color: #fff;
+.monthly-plan-form-page .monthly-activation-option .form-check-input {
+    margin-inline-start: auto;
 }
 .monthly-plan-form-page .monthly-subsection-card {
     border: 1px solid #e5e7eb;
@@ -104,10 +111,33 @@
     color: var(--text-color);
 }
 
-[data-theme="dark"] .monthly-plan-form-page .monthly-activation-option:has(select option:checked[value="1"]) {
+[data-theme="dark"] .monthly-plan-form-page .monthly-activation-option:has(.form-check-input:checked) {
     background: color-mix(in srgb, var(--brand-primary) 22%, var(--surface-soft));
     border-color: var(--brand-primary);
     color: color-mix(in srgb, #ffffff 88%, var(--brand-primary));
+}
+
+.monthly-plan-form-page .monthly-chip-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.monthly-plan-form-page .monthly-chip-option {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    padding: .4rem .75rem;
+    background: #fff;
+    cursor: pointer;
+}
+
+.monthly-plan-form-page .monthly-chip-option:has(input:checked) {
+    border-color: #0ea5e9;
+    background: #e0f2fe;
+    color: #0c4a6e;
 }
 
 @media (max-width: 767.98px) {
