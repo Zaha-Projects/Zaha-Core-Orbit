@@ -17,29 +17,29 @@
     border-radius: 14px;
     background: #fbfdff;
     cursor: pointer;
-    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+    color: #1f2937;
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease, color .2s ease;
 }
 .monthly-plan-form-page .monthly-activation-option:hover {
     border-color: #9fb8d4;
     background: #f5f9ff;
 }
 .monthly-plan-form-page .monthly-activation-option:has(input:checked) {
-    border-color: #3c78b5;
-    background: #eef6ff;
-    box-shadow: 0 0 0 2px rgba(60, 120, 181, .08);
+    border-color: #0ea5e9;
+    background: linear-gradient(180deg, #eff8ff 0%, #e0f2fe 100%);
+    color: #0c4a6e;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, .12);
 }
-.monthly-plan-form-page .monthly-activation-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 999px;
-    background: #d9e9f8;
-    color: #22598d;
-    font-size: .82rem;
-    font-weight: 700;
-    flex-shrink: 0;
+
+.monthly-plan-form-page .monthly-activation-option .form-check-input {
+    inline-size: 1.05rem;
+    block-size: 1.05rem;
+    border-color: #94a3b8;
+    accent-color: #0284c7;
+}
+
+.monthly-plan-form-page .monthly-activation-option span:last-child {
+    font-weight: 600;
 }
 .monthly-plan-form-page .monthly-subsection-card {
     border: 1px solid #e5e7eb;
@@ -84,8 +84,9 @@
 }
 
 [data-theme="dark"] .monthly-plan-form-page .monthly-activation-option:has(input:checked) {
-    background: color-mix(in srgb, var(--brand-primary) 18%, var(--surface-soft));
+    background: color-mix(in srgb, var(--brand-primary) 22%, var(--surface-soft));
     border-color: var(--brand-primary);
+    color: color-mix(in srgb, #ffffff 88%, var(--brand-primary));
 }
 
 @media (max-width: 767.98px) {

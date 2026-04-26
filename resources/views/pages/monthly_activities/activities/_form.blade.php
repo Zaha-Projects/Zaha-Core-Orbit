@@ -256,37 +256,30 @@
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
                             <input class="form-check-input m-0 js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" {{ $needsVolunteersChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمتطوعين</span>
                         </label>
                         <label class="monthly-activation-option">
                             <input class="form-check-input m-0 js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" {{ $needsOfficialCorrespondenceChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمخاطبة الرسمية</span>
                         </label>
                         <label class="monthly-activation-option">
                             <input class="form-check-input m-0 js-needs-official-letters" type="checkbox" name="needs_official_letters" value="1" {{ $needsOfficialLettersChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للكتب الرسمية</span>
                         </label>
                         <label class="monthly-activation-option">
                             <input class="form-check-input m-0 js-needs-media" type="checkbox" name="needs_media_coverage" value="1" {{ $needsMediaCoverageChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة لتغطية إعلامية</span>
                         </label>
                         <label class="monthly-activation-option">
                             <input class="form-check-input m-0 js-needs-supplies" type="checkbox" name="requires_supplies" value="1" {{ $requiresSuppliesChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمستلزمات</span>
                         </label>
                         <label class="monthly-activation-option">
                             <input class="form-check-input m-0 js-has-sponsor" type="checkbox" name="has_sponsor" value="1" {{ $hasSponsorChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>يوجد راعٍ</span>
                         </label>
                         <label class="monthly-activation-option">
                             <input class="form-check-input m-0 js-has-partners" type="checkbox" name="has_partners" value="1" {{ $hasPartnersChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>يوجد شركاء</span>
                         </label>
                     </div>
