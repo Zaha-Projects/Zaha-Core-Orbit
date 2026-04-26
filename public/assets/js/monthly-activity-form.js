@@ -223,11 +223,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleInvitations() {
-        toggleSection(invitationsFields, isEnabled(needsInvitations));
+        const active = isEnabled(needsInvitations);
+        toggleSection(invitationsFields, active);
         toggleInvitationTypeDetails();
     }
 
     function toggleInvitationTypeDetails() {
+        if (!isEnabled(needsInvitations)) {
+            toggleSection(invitationPaperFields, false);
+            toggleSection(invitationElectronicFields, false);
+            return;
+        }
         const value = invitationType?.value || '';
         toggleSection(invitationPaperFields, value === 'paper');
         toggleSection(invitationElectronicFields, value === 'electronic');
@@ -291,27 +297,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleProgramsTrainer() {
-        toggleSection(programsTrainerFields, isEnabled(programsNeedTrainerToggle));
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsTrainerFields, parentActive && isEnabled(programsNeedTrainerToggle));
     }
 
     function toggleProgramsZahaTime() {
-        toggleSection(programsZahaFields, isEnabled(programsZahaToggle));
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsZahaFields, parentActive && isEnabled(programsZahaToggle));
     }
 
     function toggleProgramsShow() {
-        toggleSection(programsShowFields, isEnabled(programsShowToggle));
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsShowFields, parentActive && isEnabled(programsShowToggle));
     }
 
     function toggleProgramsFun() {
-        toggleSection(programsFunFields, isEnabled(programsFunToggle));
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsFunFields, parentActive && isEnabled(programsFunToggle));
     }
 
     function toggleCertificatesDetails() {
-        toggleSection(certificatesDetailFields, isEnabled(certificatesDetailToggle));
+        const parentActive = isEnabled(needsCertificates);
+        toggleSection(certificatesDetailFields, parentActive && isEnabled(certificatesDetailToggle));
     }
 
     function toggleThanksLettersDetails() {
-        toggleSection(thanksLettersDetailFields, isEnabled(thanksLettersDetailToggle));
+        const parentActive = isEnabled(needsCertificates);
+        toggleSection(thanksLettersDetailFields, parentActive && isEnabled(thanksLettersDetailToggle));
     }
 
     function renderSupplies() {
