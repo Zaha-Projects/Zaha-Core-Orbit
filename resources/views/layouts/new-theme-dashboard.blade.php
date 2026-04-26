@@ -5,6 +5,18 @@
     $user = auth()->user();
     $displayName = $user?->name ?? 'ZAHA';
     $currentRoute = request()->route()?->getName();
+    $canAccessAgendaApprovals = $user && (
+        $user->can('agenda.approve')
+        || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('agenda', $user)
+    );
+    $canAccessMonthlyApprovals = $user && (
+        $user->can('monthly_activities.approve')
+        || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('monthly_activities', $user)
+    );
+    $canAccessAdminSidebar = $user && (
+        $user->hasRole('super_admin')
+        || $user->canAny(['users.view', 'roles.view', 'workflows.manage', 'branches.manage'])
+    );
 @endphp
 <!doctype html>
 <html lang="{{ $locale }}" dir="{{ $isArabic ? 'rtl' : 'ltr' }}" data-theme="{{ $theme }}">
@@ -39,13 +51,36 @@
             <li class="side-item {{ $currentRoute === 'dashboard' ? 'selected' : '' }}">
                 <a href="{{ route('dashboard') }}"><i class="fas fa-gauge-high"></i><span data-i18n="menu_dashboard">{{ __('app.common.dashboard') }}</span></a>
             </li>
-            @hasSection('theme_sidebar_links')
-                @yield('theme_sidebar_links')
-            @else
-                <li class="side-item"><a href="#calendarSection"><i class="fas fa-calendar-days"></i><span data-i18n="menu_calendar_page">التقويم</span></a></li>
-                <li class="side-item"><a href="#notificationsSection"><i class="fas fa-bell"></i><span data-i18n="menu_notify_page">{{ __('app.common.notifications') }}</span></a></li>
-                <li class="side-item"><a href="#cardsSection"><i class="fas fa-id-card"></i><span data-i18n="menu_cards">البطاقات</span></a></li>
-                <li class="side-item"><a href="#paginationSection"><i class="fas fa-list-ol"></i><span data-i18n="menu_pagination">Pagination</span></a></li>
+
+            @if ($canAccessAdminSidebar)
+                <li class="side-item {{ request()->routeIs('role.super_admin.users*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.users') }}"><i class="fas fa-users"></i><span>{{ __('app.roles.super_admin.sidebar.users') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.roles*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.roles') }}"><i class="fas fa-user-shield"></i><span>{{ __('app.roles.super_admin.sidebar.roles') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.workflows*') || request()->routeIs('role.super_admin.workflow_steps*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.workflows') }}"><i class="fas fa-diagram-project"></i><span>Workflow Builder</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.branches*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.branches') }}"><i class="fas fa-building"></i><span>{{ __('app.roles.super_admin.sidebar.branches') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.approvals*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.approvals') }}"><i class="fas fa-list-check"></i><span>{{ __('app.roles.super_admin.sidebar.approvals') }}</span></a></li>
+            @endif
+
+            @can('agenda.view')
+                <li class="side-item {{ request()->routeIs('role.relations.agenda.*') ? 'selected' : '' }}"><a href="{{ route('role.relations.agenda.index') }}"><i class="fas fa-calendar-days"></i><span>{{ __('app.roles.relations.agenda.title') }}</span></a></li>
+            @endcan
+            @if($canAccessAgendaApprovals)
+                <li class="side-item {{ request()->routeIs('role.relations.approvals.*') ? 'selected' : '' }}"><a href="{{ route('role.relations.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('app.roles.relations.approvals.title') }}</span></a></li>
+            @endif
+            @canany(['monthly_activities.view','monthly_plan.view'])
+                <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
+            @endcanany
+            @can('monthly_activities.view_other_branches')
+                <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') === 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}"><i class="fas fa-table-cells-large"></i><span>{{ __('app.acl.permissions.monthly_activities_view_other_branches') }}</span></a></li>
+            @endcan
+            @if($canAccessMonthlyApprovals)
+                <li class="side-item {{ request()->routeIs('role.programs.approvals.*') ? 'selected' : '' }}"><a href="{{ route('role.programs.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('app.roles.programs.monthly_activities.approvals.title') }}</span></a></li>
+            @endif
+
+            @if ($user?->hasRole('finance_officer') || request()->routeIs('role.finance.*') || request()->routeIs('role.finance_officer.*'))
+                <li class="side-item {{ request()->routeIs('role.finance.donations.*') ? 'selected' : '' }}"><a href="{{ route('role.finance.donations.index') }}"><i class="fas fa-hand-holding-heart"></i><span>{{ __('app.roles.finance.donations.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.finance.bookings.*') ? 'selected' : '' }}"><a href="{{ route('role.finance.bookings.index') }}"><i class="fas fa-book"></i><span>{{ __('app.roles.finance.bookings.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.finance.zaha_time.*') ? 'selected' : '' }}"><a href="{{ route('role.finance.zaha_time.index') }}"><i class="fas fa-clock"></i><span>{{ __('app.roles.finance.zaha_time.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.finance.payments.*') ? 'selected' : '' }}"><a href="{{ route('role.finance.payments.index') }}"><i class="fas fa-credit-card"></i><span>{{ __('app.roles.finance.payments.title') }}</span></a></li>
             @endif
         </ul>
 

@@ -3,17 +3,6 @@
 @section('page_title', __('app.enterprise.annual_overview.title'))
 @section('page_breadcrumb', __('app.enterprise.annual_overview.title'))
 
-@section('theme_sidebar_links')
-    <li class="side-item {{ request()->routeIs('role.enterprise.dashboard') ? 'selected' : '' }}">
-        <a href="{{ route('role.enterprise.dashboard') }}"><i class="fas fa-chart-line"></i><span>{{ __('app.enterprise.dashboard.title') }}</span></a>
-    </li>
-    <li class="side-item {{ request()->routeIs('role.enterprise.annual_planning') ? 'selected' : '' }}">
-        <a href="{{ route('role.enterprise.annual_planning') }}"><i class="fas fa-calendar"></i><span>{{ __('app.enterprise.annual_overview.title') }}</span></a>
-    </li>
-    <li class="side-item {{ request()->routeIs('role.reports.enterprise.branch_performance') ? 'selected' : '' }}">
-        <a href="{{ route('role.reports.enterprise.branch_performance') }}"><i class="fas fa-building"></i><span>{{ __('app.enterprise.branch_report.title') }}</span></a>
-    </li>
-@endsection
 
 @section('content')
     <div class="card">

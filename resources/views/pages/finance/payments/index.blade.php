@@ -12,20 +12,6 @@
 
 @section('title', $title)
 
-@section('theme_sidebar_links')
-    <li class="side-item {{ request()->routeIs('role.finance.donations.*') ? 'selected' : '' }}">
-        <a href="{{ route('role.finance.donations.index') }}"><i class="fas fa-hand-holding-heart"></i><span>{{ __('app.roles.finance.donations.title') }}</span></a>
-    </li>
-    <li class="side-item {{ request()->routeIs('role.finance.bookings.*') ? 'selected' : '' }}">
-        <a href="{{ route('role.finance.bookings.index') }}"><i class="fas fa-book"></i><span>{{ __('app.roles.finance.bookings.title') }}</span></a>
-    </li>
-    <li class="side-item {{ request()->routeIs('role.finance.zaha_time.*') ? 'selected' : '' }}">
-        <a href="{{ route('role.finance.zaha_time.index') }}"><i class="fas fa-clock"></i><span>{{ __('app.roles.finance.zaha_time.title') }}</span></a>
-    </li>
-    <li class="side-item {{ request()->routeIs('role.finance.payments.*') ? 'selected' : '' }}">
-        <a href="{{ route('role.finance.payments.index') }}"><i class="fas fa-credit-card"></i><span>{{ __('app.roles.finance.payments.title') }}</span></a>
-    </li>
-@endsection
 
 @section('content')
     <section class="mb-4">

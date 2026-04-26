@@ -156,3 +156,7 @@
   1) توصيلها بالثيم الجديد.
   2) الحفاظ على نفس routes/forms/logic.
   3) فحص AR/EN + RTL/LTR + Dark/Light.
+
+## ملاحظة التوحيد
+- السايدبار والنافبار أصبحا موحدين داخل `layouts/new-theme-dashboard.blade.php`.
+- أي تعريفات قديمة من نوع `theme_sidebar_links` تمت إزالتها من الصفحات المهاجرة.
