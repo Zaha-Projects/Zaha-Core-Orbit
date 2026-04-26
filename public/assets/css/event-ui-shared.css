@@ -218,14 +218,14 @@
 }
 
 .agenda-calendar-day {
-    min-height: 132px;
+    min-height: 110px;
     border: 1px solid var(--event-border);
     border-radius: 12px;
     background: var(--event-card-bg);
     padding: .5rem;
     display: flex;
     flex-direction: column;
-    gap: .4rem;
+    gap: .3rem;
     position: relative;
     overflow: hidden;
 }
@@ -256,6 +256,25 @@
 
 .agenda-calendar-day--friday {
     border-color: #67e8f9;
+}
+
+.event-module .pagination {
+    margin-bottom: 0;
+    gap: .25rem;
+}
+
+.event-module .page-link {
+    border-radius: 10px;
+    border-color: var(--event-border);
+    color: var(--event-text);
+    min-width: 38px;
+    text-align: center;
+}
+
+.event-module .page-item.active .page-link {
+    background: var(--brand-primary, #00a9c4);
+    border-color: var(--brand-primary, #00a9c4);
+    color: #fff;
 }
 
 .agenda-calendar-day--saturday {

@@ -37,6 +37,41 @@
                     </div>
                 @endforeach
             </div>
+
+            <div class="relations-dashboard-yearly mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2 class="h6 mb-0">الأجندة السنوية (عرض فقط)</h2>
+                    <span class="text-muted small">{{ $year ?? now()->year }}</span>
+                </div>
+                <div class="relations-dashboard-yearly-grid">
+                    @foreach (range(1, 12) as $monthNumber)
+                        @php
+                            $monthEvents = collect($agendaYearOverview[$monthNumber] ?? []);
+                            $monthTitle = \Carbon\Carbon::createFromDate(($year ?? now()->year), $monthNumber, 1)->translatedFormat('F');
+                        @endphp
+                        <section class="relations-dashboard-month-card">
+                            <header class="relations-dashboard-month-head">
+                                <span class="fw-semibold">{{ $monthTitle }}</span>
+                                <span class="badge bg-light text-dark">{{ $monthEvents->count() }}</span>
+                            </header>
+                            <div class="relations-dashboard-month-body">
+                                @forelse($monthEvents as $event)
+                                    <a href="{{ route('role.relations.agenda.show', $event) }}" class="relations-dashboard-event-chip">
+                                        <span class="relations-dashboard-event-chip__day">{{ optional($event->event_date)->format('d') ?? sprintf('%02d', (int) $event->day) }}</span>
+                                        <span class="relations-dashboard-event-chip__title">{{ $event->event_name }}</span>
+                                    </a>
+                                @empty
+                                    <div class="text-muted small">لا توجد فعاليات</div>
+                                @endforelse
+                            </div>
+                        </section>
+                    @endforeach
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/relations-dashboard.css') }}">
+@endpush

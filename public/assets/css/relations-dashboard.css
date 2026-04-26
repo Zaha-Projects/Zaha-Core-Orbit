@@ -1,0 +1,64 @@
+.relations-dashboard-yearly-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: .75rem;
+}
+
+.relations-dashboard-month-card {
+    border: 1px solid var(--event-border, #dbe4ef);
+    border-radius: 12px;
+    background: #fff;
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+}
+
+.relations-dashboard-month-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .55rem .7rem;
+    border-bottom: 1px solid #edf2f7;
+    background: #f8fafc;
+    border-radius: 12px 12px 0 0;
+}
+
+.relations-dashboard-month-body {
+    padding: .55rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    max-height: 220px;
+    overflow: auto;
+}
+
+.relations-dashboard-event-chip {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: .45rem;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: .35rem .45rem;
+    background: #fff;
+}
+
+.relations-dashboard-event-chip:hover {
+    border-color: var(--brand-primary, #00a9c4);
+    background: #f0fcff;
+}
+
+.relations-dashboard-event-chip__day {
+    font-weight: 700;
+    color: #0f766e;
+    text-align: center;
+    border-radius: 6px;
+    background: #ecfeff;
+}
+
+.relations-dashboard-event-chip__title {
+    font-size: .8rem;
+    line-height: 1.3;
+}

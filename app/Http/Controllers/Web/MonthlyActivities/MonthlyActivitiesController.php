@@ -150,9 +150,13 @@ class MonthlyActivitiesController extends Controller
         return max(0, (int) Setting::valueOf('monthly_plan_lock_days', '5'));
     }
 
-    protected function monthlyIndexPerPage(): int
+    protected function monthlyIndexPerPage(?int $requestedPerPage = null): int
     {
-        return max(1, min(50, (int) Setting::valueOf('monthly_activities_index_per_page', '10')));
+        if ($requestedPerPage !== null) {
+            return max(5, min(100, $requestedPerPage));
+        }
+
+        return max(5, min(100, (int) Setting::valueOf('monthly_activities_index_per_page', '10')));
     }
 
     protected function buildLockAt(string $proposedDate): ?Carbon
@@ -552,6 +556,7 @@ class MonthlyActivitiesController extends Controller
         $viewScope = $request->input('scope', 'default');
         $selectedStatus = trim((string) $request->input('status', ''));
         $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
+        $requestedPerPage = $request->integer('per_page');
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);
@@ -590,7 +595,7 @@ class MonthlyActivitiesController extends Controller
             ])
             ->orderBy('month')
             ->orderBy('day')
-            ->paginate($this->monthlyIndexPerPage())
+            ->paginate($this->monthlyIndexPerPage($requestedPerPage))
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
@@ -606,6 +611,7 @@ class MonthlyActivitiesController extends Controller
             'status' => $selectedStatus,
             'branch_id' => $request->input('branch_id'),
             'summary_filter' => $selectedSummaryFilter,
+            'per_page' => $this->monthlyIndexPerPage($requestedPerPage),
         ];
         $canFilterBranches = $viewScope === 'all_branches'
             ? $this->canViewOtherBranches($user)
