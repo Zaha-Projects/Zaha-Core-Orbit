@@ -782,7 +782,9 @@ class MonthlyActivitiesController extends Controller
         $viewScope = $request->input('scope', 'default');
         $selectedStatus = trim((string) $request->input('status', ''));
         $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
-        $requestedPerPage = $request->integer('per_page');
+        $requestedPerPage = filter_var($request->input('per_page'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]) ?: null;
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);

@@ -24,6 +24,12 @@ return [
     ],
 
     'attributes' => [
+        'title' => 'عنوان النشاط',
+        'activity_date' => 'تاريخ النشاط',
+        'proposed_date' => 'تاريخ النشاط المخطط',
+        'branch_id' => 'الفرع',
+        'internal_location' => 'القاعة / الموقع الداخلي',
+        'description' => 'الوصف التفصيلي',
         'supplies.*.item_name' => 'اسم المستلزم',
         'supplies.*.available' => 'حالة التوفر',
         'supplies.*.provider_type' => 'جهة التوفير',
