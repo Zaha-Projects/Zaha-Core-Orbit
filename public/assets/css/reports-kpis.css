@@ -1,0 +1,68 @@
+.kpi-reports-page .card {
+    border-radius: 16px;
+    border-color: #dbe5f3;
+}
+
+.kpi-hero-card .card-body {
+    background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%);
+    border-radius: 16px;
+}
+
+.kpi-period-badge {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #bfd2ef;
+    background: #ffffff;
+    color: #1e3a8a;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: .45rem .9rem;
+    font-size: .78rem;
+}
+
+.kpi-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: .75rem;
+}
+
+.kpi-summary-card {
+    background: #fff;
+    border: 1px solid #dbe5f3;
+    border-radius: 14px;
+    padding: .9rem 1rem;
+}
+
+.kpi-summary-card__label {
+    color: #64748b;
+    font-size: .78rem;
+}
+
+.kpi-summary-card__value {
+    color: #0f172a;
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.kpi-form-card .form-control,
+.kpi-form-card .form-select {
+    border-radius: 10px;
+    border-color: #ced9ea;
+}
+
+.kpi-form-card .form-control:focus,
+.kpi-form-card .form-select:focus {
+    border-color: #7aa7ea;
+    box-shadow: 0 0 0 .2rem rgba(59, 130, 246, .12);
+}
+
+.kpi-table thead th {
+    background: #f4f8ff;
+    color: #334155;
+    border-bottom-color: #d7e3f3;
+    white-space: nowrap;
+}
+
+.kpi-table tbody tr:hover {
+    background: #f8fbff;
+}
