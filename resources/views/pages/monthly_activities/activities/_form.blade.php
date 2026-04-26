@@ -9,7 +9,6 @@
     $linkedAgendaEventId = old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
-    $needsOfficialLettersChecked = (bool) old('needs_official_letters', $existingMonthlyActivity?->needs_official_letters ?? false);
     $needsMediaCoverageChecked = (bool) old('needs_media_coverage', $existingMonthlyActivity?->needs_media_coverage ?? false);
     $requiresSuppliesChecked = (bool) old('requires_supplies', $existingMonthlyActivity?->supplies?->isNotEmpty() ?? false);
     $hasSponsorChecked = (bool) old('has_sponsor', $existingMonthlyActivity?->has_sponsor ?? false);
@@ -143,7 +142,7 @@
 
                 <div class="col-12">
                     <div class="monthly-form-section-head">
-                        <h2 class="h6 mb-1">المكان والوقت</h2>
+                        <h2 class="h6 mb-1">المكان</h2>
                     </div>
                 </div>
 
@@ -186,6 +185,12 @@
                     <input class="form-control" name="external_liaison_phone" value="{{ old('external_liaison_phone', $existingMonthlyActivity?->external_liaison_phone) }}">
                 </div>
 
+                <div class="col-12 mt-2">
+                    <div class="monthly-form-section-head">
+                        <h2 class="h6 mb-1">الوقت</h2>
+                    </div>
+                </div>
+
                 <div class="col-12 col-md-4">
                     <label class="form-label">الوقت من</label>
                     <input class="form-control" type="time" name="time_from" value="{{ old('time_from', optional($existingMonthlyActivity?->time_from)->format('H:i')) }}">
@@ -201,14 +206,10 @@
                     <input class="form-control" name="outside_address" value="{{ old('outside_address', $existingMonthlyActivity?->outside_address) }}">
                 </div>
 
-                <div class="col-12 col-md-6">
-                    <label class="form-label">وصف مختصر</label>
-                    <textarea class="form-control" name="short_description" rows="2">{{ old('short_description', $existingMonthlyActivity?->short_description) }}</textarea>
-                </div>
-
-                <div class="col-12 col-md-6">
+                <div class="col-12">
                     <label class="form-label">الوصف التفصيلي</label>
-                    <textarea class="form-control" name="description" rows="2">{{ old('description', $existingMonthlyActivity?->description) }}</textarea>
+                    <textarea class="form-control @error('description') is-invalid @enderror" name="description" rows="3" placeholder="اكتب وصفًا تفصيليًا للنشاط (الفكرة، الأهداف، الفقرات، الفئة المستهدفة، المخرجات المتوقعة)">{{ old('description', $existingMonthlyActivity?->description) }}</textarea>
+                    @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12">
@@ -253,13 +254,6 @@
                             <select class="form-select form-select-sm js-needs-letters" name="needs_official_correspondence">
                                 <option value="0" {{ $needsOfficialCorrespondenceChecked ? '' : 'selected' }}>لا</option>
                                 <option value="1" {{ $needsOfficialCorrespondenceChecked ? 'selected' : '' }}>نعم</option>
-                            </select>
-                        </label>
-                        <label class="monthly-activation-option">
-                            <span>الحاجة للكتب الرسمية</span>
-                            <select class="form-select form-select-sm js-needs-official-letters" name="needs_official_letters">
-                                <option value="0" {{ $needsOfficialLettersChecked ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ $needsOfficialLettersChecked ? 'selected' : '' }}>نعم</option>
                             </select>
                         </label>
                         <label class="monthly-activation-option">
@@ -343,7 +337,7 @@
                 </div>
 
                 <div class="col-12 js-volunteers-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--volunteers">
                         <h3 class="h6 mb-3">احتياج المتطوعين</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-3">
@@ -401,7 +395,7 @@
                 </div>
 
                 <div class="col-12 js-correspondence-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--correspondence">
                         <h3 class="h6 mb-3">المخاطبة الرسمية</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
@@ -423,17 +417,8 @@
                     </div>
                 </div>
 
-                <div class="col-12 js-official-letters-fields">
-                    <div class="monthly-subsection-card">
-                        <h3 class="h6 mb-3">الكتب الرسمية</h3>
-                        <label class="form-label">سبب الكتب الرسمية</label>
-                        <input class="form-control @error('letter_purpose') is-invalid @enderror" name="letter_purpose" value="{{ old('letter_purpose', $existingMonthlyActivity?->letter_purpose) }}">
-                        @error('letter_purpose')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-
                 <div class="col-12 js-media-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--media">
                         <h3 class="h6 mb-3">التغطية الإعلامية</h3>
                         <label class="form-label">ملاحظات التغطية الإعلامية</label>
                         <textarea class="form-control @error('media_coverage_notes') is-invalid @enderror" name="media_coverage_notes" rows="2">{{ old('media_coverage_notes', $existingMonthlyActivity?->media_coverage_notes) }}</textarea>
@@ -442,7 +427,7 @@
                 </div>
 
                 <div class="col-12 js-ceremony-agenda-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--ceremony">
                         <h3 class="h6 mb-3">أجندة الحفل</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-2">
@@ -470,7 +455,7 @@
                 </div>
 
                 <div class="col-12 js-transport-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--transport">
                         <h3 class="h6 mb-3">تأمين المواصلات</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-3">
@@ -494,7 +479,7 @@
                 </div>
 
                 <div class="col-12 js-maintenance-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--maintenance">
                         <h3 class="h6 mb-3">الصيانة بالموقع</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-3">
@@ -510,7 +495,7 @@
                 </div>
 
                 <div class="col-12 js-gifts-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--gifts">
                         <h3 class="h6 mb-3">الهدايا والدروع</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-2">
@@ -530,7 +515,7 @@
                 </div>
 
                 <div class="col-12 js-sponsor-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--sponsor">
                         <h3 class="h6 mb-3">بيانات الراعي</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
@@ -546,7 +531,7 @@
                 </div>
 
                 <div class="col-12 js-partners-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--partners">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
                             <h3 class="h6 mb-0">الشركاء</h3>
                             <div class="d-flex align-items-center gap-2">
@@ -559,7 +544,7 @@
                 </div>
 
                 <div class="col-12 js-programs-participation-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--programs">
                         <h3 class="h6 mb-3">مشاركة البرامج</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-4">
@@ -607,7 +592,7 @@
                 </div>
 
                 <div class="col-12 js-certificates-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--certificates">
                         <h3 class="h6 mb-3">الشهادات وكتب الشكر</h3>
                         <div class="row g-3">
                             <div class="col-12"><h4 class="h6 mb-1">الشهادات</h4></div>
@@ -641,7 +626,7 @@
                 </div>
 
                 <div class="col-12 js-invitations-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--invitations">
                         <h3 class="h6 mb-3">بطاقات الدعوة</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-4">
@@ -669,7 +654,7 @@
                 </div>
 
                 <div class="col-12 js-supplies-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--supplies">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
                             <h3 class="h6 mb-0">المستلزمات</h3>
                             <div class="d-flex align-items-center gap-2">
@@ -682,7 +667,7 @@
                 </div>
 
                 <div class="col-12">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--team">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
                             <h3 class="h6 mb-0">فريق العمل</h3>
                             <div class="d-flex align-items-center gap-2">

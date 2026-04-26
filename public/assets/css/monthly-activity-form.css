@@ -68,6 +68,29 @@
     border-top: 1px solid #e5e7eb;
 }
 
+.monthly-plan-form-page .monthly-subsection-card[class*="monthly-subsection-card--"] {
+    border-width: 1px;
+}
+.monthly-plan-form-page .monthly-subsection-card--volunteers { background: linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%); border-color:#bae6fd; }
+.monthly-plan-form-page .monthly-subsection-card--correspondence { background: linear-gradient(180deg,#f5f3ff 0%,#ede9fe 100%); border-color:#ddd6fe; }
+.monthly-plan-form-page .monthly-subsection-card--media { background: linear-gradient(180deg,#ecfeff 0%,#cffafe 100%); border-color:#a5f3fc; }
+.monthly-plan-form-page .monthly-subsection-card--ceremony { background: linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%); border-color:#fed7aa; }
+.monthly-plan-form-page .monthly-subsection-card--transport { background: linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%); border-color:#bfdbfe; }
+.monthly-plan-form-page .monthly-subsection-card--maintenance { background: linear-gradient(180deg,#f0fdf4 0%,#dcfce7 100%); border-color:#bbf7d0; }
+.monthly-plan-form-page .monthly-subsection-card--gifts { background: linear-gradient(180deg,#fdf4ff 0%,#fae8ff 100%); border-color:#f5d0fe; }
+.monthly-plan-form-page .monthly-subsection-card--sponsor { background: linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%); border-color:#c7d2fe; }
+.monthly-plan-form-page .monthly-subsection-card--partners { background: linear-gradient(180deg,#f0fdfa 0%,#ccfbf1 100%); border-color:#99f6e4; }
+.monthly-plan-form-page .monthly-subsection-card--programs { background: linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%); border-color:#fecdd3; }
+.monthly-plan-form-page .monthly-subsection-card--certificates { background: linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%); border-color:#fde68a; }
+.monthly-plan-form-page .monthly-subsection-card--invitations { background: linear-gradient(180deg,#eef2ff 0%,#e0e7ff 100%); border-color:#c7d2fe; }
+.monthly-plan-form-page .monthly-subsection-card--supplies { background: linear-gradient(180deg,#f8fafc 0%,#e2e8f0 100%); border-color:#cbd5e1; }
+.monthly-plan-form-page .monthly-subsection-card--team { background: linear-gradient(180deg,#f9fafb 0%,#f3f4f6 100%); border-color:#d1d5db; }
+
+[data-theme="dark"] .monthly-plan-form-page .monthly-subsection-card[class*="monthly-subsection-card--"] {
+    background: color-mix(in srgb, var(--surface-soft) 82%, var(--brand-primary)) !important;
+    border-color: var(--border-color) !important;
+}
+
 [data-theme="dark"] .monthly-plan-form-page .monthly-form-section-head,
 [data-theme="dark"] .monthly-plan-form-page .monthly-form-actions {
     border-color: var(--border-color);

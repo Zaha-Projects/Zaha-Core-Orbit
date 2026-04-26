@@ -465,6 +465,15 @@ class MonthlyActivitiesController extends Controller
             $data['official_correspondence_brief'] = null;
         }
 
+        $data['needs_official_letters'] = false;
+        $data['letter_purpose'] = null;
+
+        $description = trim((string) ($data['description'] ?? ''));
+        if ($description !== '') {
+            $data['description'] = $description;
+            $data['short_description'] = Str::limit($description, 255, '');
+        }
+
         if (! (bool) ($data['needs_volunteers'] ?? false)) {
             $data['required_volunteers'] = null;
             $data['volunteer_need'] = null;
@@ -1324,7 +1333,7 @@ class MonthlyActivitiesController extends Controller
             'target_group_ids' => ['nullable', 'array'],
             'target_group_ids.*' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
-            'short_description' => ['required', 'string', 'max:255'],
+            'short_description' => ['nullable', 'string', 'max:255'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
@@ -1361,8 +1370,6 @@ class MonthlyActivitiesController extends Controller
             'partner_2_role' => ['nullable', 'string', 'max:255'],
             'partner_3_name' => ['nullable', 'string', 'max:255'],
             'partner_3_role' => ['nullable', 'string', 'max:255'],
-            'needs_official_letters' => ['nullable', 'boolean'],
-            'letter_purpose' => ['nullable', 'string', 'max:255'],
             'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
             'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
             'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
@@ -1517,12 +1524,12 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
+            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
             'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => $data['letter_purpose'] ?? null,
+            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -1810,7 +1817,7 @@ class MonthlyActivitiesController extends Controller
             'target_group_ids' => ['nullable', 'array'],
             'target_group_ids.*' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
-            'short_description' => ['required', 'string', 'max:255'],
+            'short_description' => ['nullable', 'string', 'max:255'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
@@ -1845,8 +1852,6 @@ class MonthlyActivitiesController extends Controller
             'partner_2_role' => ['nullable', 'string', 'max:255'],
             'partner_3_name' => ['nullable', 'string', 'max:255'],
             'partner_3_role' => ['nullable', 'string', 'max:255'],
-            'needs_official_letters' => ['nullable', 'boolean'],
-            'letter_purpose' => ['nullable', 'string', 'max:255'],
             'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
             'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
             'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
@@ -2086,12 +2091,12 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
+            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
             'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => $data['letter_purpose'] ?? null,
+            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -2195,12 +2200,12 @@ class MonthlyActivitiesController extends Controller
                 'has_sponsor' => $newValues['has_sponsor'],
                 'sponsor_name_title' => $newValues['sponsor_name_title'],
                 'has_partners' => $newValues['has_partners'],
-                'needs_official_letters' => $newValues['needs_official_letters'],
+                'needs_official_letters' => false,
                 'needs_official_correspondence' => $newValues['needs_official_correspondence'],
                 'official_correspondence_reason' => $newValues['official_correspondence_reason'],
                 'official_correspondence_target' => $newValues['official_correspondence_target'],
                 'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-                'letter_purpose' => $newValues['letter_purpose'],
+                'letter_purpose' => null,
                 'rescheduled_date' => $newValues['rescheduled_date'],
                 'reschedule_reason' => $newValues['reschedule_reason'],
                 'cancellation_reason' => $newValues['cancellation_reason'],
@@ -2290,12 +2295,12 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => $newValues['has_sponsor'],
             'sponsor_name_title' => $newValues['sponsor_name_title'],
             'has_partners' => $newValues['has_partners'],
-            'needs_official_letters' => $newValues['needs_official_letters'],
+            'needs_official_letters' => false,
             'needs_official_correspondence' => $newValues['needs_official_correspondence'],
             'official_correspondence_reason' => $newValues['official_correspondence_reason'],
             'official_correspondence_target' => $newValues['official_correspondence_target'],
             'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-            'letter_purpose' => $newValues['letter_purpose'],
+            'letter_purpose' => null,
             'rescheduled_date' => $newValues['rescheduled_date'],
             'reschedule_reason' => $newValues['reschedule_reason'],
             'cancellation_reason' => $newValues['cancellation_reason'],

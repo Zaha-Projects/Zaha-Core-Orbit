@@ -21,8 +21,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const partnersFields = form.querySelectorAll('.js-partners-fields');
     const partnersCount = form.querySelector('.js-partners-count');
     const partnersContainer = form.querySelector('.js-partners-container');
-    const needsOfficialLetters = form.querySelector('.js-needs-official-letters');
-    const officialLettersFields = form.querySelectorAll('.js-official-letters-fields');
     const needsMedia = form.querySelector('.js-needs-media');
     const mediaFields = form.querySelectorAll('.js-media-fields');
     const needsCeremonyAgenda = form.querySelector('.js-needs-ceremony-agenda');
@@ -129,10 +127,6 @@ document.addEventListener('DOMContentLoaded', function () {
             '[name="official_correspondence_target"]',
             '[name="official_correspondence_brief"]'
         ], active);
-    }
-
-    function toggleOfficialLetters() {
-        toggleElements(officialLettersFields, isEnabled(needsOfficialLetters));
     }
 
     function toggleMedia() {
@@ -329,7 +323,6 @@ document.addEventListener('DOMContentLoaded', function () {
     targetGroupCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', toggleTargetGroupOther));
     needsVolunteers?.addEventListener('change', toggleVolunteers);
     needsCorrespondence?.addEventListener('change', toggleCorrespondence);
-    needsOfficialLetters?.addEventListener('change', toggleOfficialLetters);
     needsMedia?.addEventListener('change', toggleMedia);
     needsSupplies?.addEventListener('change', toggleSupplies);
     hasSponsor?.addEventListener('change', toggleSponsor);
@@ -354,7 +347,6 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleTargetGroupOther();
     toggleVolunteers();
     toggleCorrespondence();
-    toggleOfficialLetters();
     toggleMedia();
     toggleSupplies();
     toggleSponsor();
