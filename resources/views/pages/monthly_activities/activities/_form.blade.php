@@ -6,12 +6,9 @@
         && $formUser->hasBranchScopedMonthlyVisibility()
         && ! empty($formUser->branch_id);
     $selectedBranch = $branches->firstWhere('id', old('branch_id', $existingMonthlyActivity?->branch_id ?? $formUser?->branch_id));
-    $departmentsFromForm = $departments ?? \App\Models\Department::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
-    $selectedPartnerDepartmentIds = collect(old('partner_department_ids', []))->map(fn ($id) => (string) $id)->all();
     $linkedAgendaEventId = old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
-    $needsOfficialLettersChecked = (bool) old('needs_official_letters', $existingMonthlyActivity?->needs_official_letters ?? false);
     $needsMediaCoverageChecked = (bool) old('needs_media_coverage', $existingMonthlyActivity?->needs_media_coverage ?? false);
     $requiresSuppliesChecked = (bool) old('requires_supplies', $existingMonthlyActivity?->supplies?->isNotEmpty() ?? false);
     $hasSponsorChecked = (bool) old('has_sponsor', $existingMonthlyActivity?->has_sponsor ?? false);
@@ -36,8 +33,8 @@
         ? $existingMonthlyActivity->supplies->map(fn ($supply) => [
             'item_name' => $supply->item_name,
             'available' => (int) $supply->available,
-            'provider_type' => $supply->provider_type,
-            'provider_name' => $supply->provider_name,
+            'insurance_mechanism' => $supply->provider_type,
+            'insurance_other_details' => $supply->provider_name,
         ])->values()->all()
         : []);
     $groupedTeam = $existingMonthlyActivity?->team
@@ -55,6 +52,7 @@
     $partnersCount = max(1, count($oldPartners));
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
+    $selectedZahaTimeOptions = old('programs_zaha_time_options', []);
     $isUnifiedMandatory = $existingMonthlyActivity
         && (bool) $existingMonthlyActivity->is_from_agenda
         && (string) $existingMonthlyActivity->plan_type === 'unified'
@@ -143,20 +141,8 @@
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label d-block mb-2">الجهات الشركاء</label>
-                    <div class="partner-departments-box mb-3">
-                        @foreach($departmentsFromForm as $department)
-                            <label class="partner-department-item">
-                                <input class="form-check-input m-0" type="checkbox" name="partner_department_ids[]" value="{{ $department->id }}" {{ in_array((string) $department->id, $selectedPartnerDepartmentIds, true) ? 'checked' : '' }} {{ $isLockedField('partner_department_ids') ? 'disabled' : '' }}>
-                                <span>{{ $department->name }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="col-12">
                     <div class="monthly-form-section-head">
-                        <h2 class="h6 mb-1">المكان والوقت</h2>
+                        <h2 class="h6 mb-1">المكان</h2>
                     </div>
                 </div>
 
@@ -199,6 +185,12 @@
                     <input class="form-control" name="external_liaison_phone" value="{{ old('external_liaison_phone', $existingMonthlyActivity?->external_liaison_phone) }}">
                 </div>
 
+                <div class="col-12 mt-2">
+                    <div class="monthly-form-section-head">
+                        <h2 class="h6 mb-1">الوقت</h2>
+                    </div>
+                </div>
+
                 <div class="col-12 col-md-4">
                     <label class="form-label">الوقت من</label>
                     <input class="form-control" type="time" name="time_from" value="{{ old('time_from', optional($existingMonthlyActivity?->time_from)->format('H:i')) }}">
@@ -214,14 +206,10 @@
                     <input class="form-control" name="outside_address" value="{{ old('outside_address', $existingMonthlyActivity?->outside_address) }}">
                 </div>
 
-                <div class="col-12 col-md-6">
-                    <label class="form-label">وصف مختصر</label>
-                    <textarea class="form-control" name="short_description" rows="2">{{ old('short_description', $existingMonthlyActivity?->short_description) }}</textarea>
-                </div>
-
-                <div class="col-12 col-md-6">
+                <div class="col-12">
                     <label class="form-label">الوصف التفصيلي</label>
-                    <textarea class="form-control" name="description" rows="2">{{ old('description', $existingMonthlyActivity?->description) }}</textarea>
+                    <textarea class="form-control @error('description') is-invalid @enderror" name="description" rows="3" placeholder="اكتب وصفًا تفصيليًا للنشاط (الفكرة، الأهداف، الفقرات، الفئة المستهدفة، المخرجات المتوقعة)">{{ old('description', $existingMonthlyActivity?->description) }}</textarea>
+                    @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12">
@@ -248,52 +236,108 @@
 
                 <div class="col-12">
                     <div class="monthly-form-section-head">
-                        <h2 class="h6 mb-1">خيارات التفعيل</h2>
+                        <h2 class="h6 mb-1">احتياجات التنفيذ</h2>
                     </div>
                 </div>
 
                 <div class="col-12">
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" {{ $needsVolunteersChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمتطوعين</span>
+                            <select class="form-select form-select-sm js-needs-volunteers" name="needs_volunteers">
+                                <option value="0" {{ $needsVolunteersChecked ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ $needsVolunteersChecked ? 'selected' : '' }}>نعم</option>
+                            </select>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-letters" type="checkbox" name="needs_official_correspondence" value="1" {{ $needsOfficialCorrespondenceChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمخاطبة الرسمية</span>
+                            <select class="form-select form-select-sm js-needs-letters" name="needs_official_correspondence">
+                                <option value="0" {{ $needsOfficialCorrespondenceChecked ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ $needsOfficialCorrespondenceChecked ? 'selected' : '' }}>نعم</option>
+                            </select>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-official-letters" type="checkbox" name="needs_official_letters" value="1" {{ $needsOfficialLettersChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
-                            <span>الحاجة للكتب الرسمية</span>
-                        </label>
-                        <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-media" type="checkbox" name="needs_media_coverage" value="1" {{ $needsMediaCoverageChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة لتغطية إعلامية</span>
+                            <select class="form-select form-select-sm js-needs-media" name="needs_media_coverage">
+                                <option value="0" {{ $needsMediaCoverageChecked ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ $needsMediaCoverageChecked ? 'selected' : '' }}>نعم</option>
+                            </select>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-needs-supplies" type="checkbox" name="requires_supplies" value="1" {{ $requiresSuppliesChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
                             <span>الحاجة للمستلزمات</span>
+                            <select class="form-select form-select-sm js-needs-supplies" name="requires_supplies">
+                                <option value="0" {{ $requiresSuppliesChecked ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ $requiresSuppliesChecked ? 'selected' : '' }}>نعم</option>
+                            </select>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-has-sponsor" type="checkbox" name="has_sponsor" value="1" {{ $hasSponsorChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
-                            <span>يوجد راعٍ</span>
+                            <span>الحاجة لرعاية رسمية</span>
+                            <select class="form-select form-select-sm js-has-sponsor" name="has_sponsor">
+                                <option value="0" {{ $hasSponsorChecked ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ $hasSponsorChecked ? 'selected' : '' }}>نعم</option>
+                            </select>
                         </label>
                         <label class="monthly-activation-option">
-                            <input class="form-check-input m-0 js-has-partners" type="checkbox" name="has_partners" value="1" {{ $hasPartnersChecked ? 'checked' : '' }}>
-                            <span class="monthly-activation-icon">✓</span>
-                            <span>يوجد شركاء</span>
+                            <span>الحاجة لشركاء خارجيين</span>
+                            <select class="form-select form-select-sm js-has-partners" name="has_partners">
+                                <option value="0" {{ $hasPartnersChecked ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ $hasPartnersChecked ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </label>
+                        <label class="monthly-activation-option">
+                            <span>الحاجة لوجود أجندة حفل</span>
+                            <select class="form-select form-select-sm js-needs-ceremony-agenda" name="needs_ceremony_agenda">
+                                <option value="0" {{ old('needs_ceremony_agenda', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ old('needs_ceremony_agenda', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </label>
+                        <label class="monthly-activation-option">
+                            <span>الحاجة لتأمين مواصلات</span>
+                            <select class="form-select form-select-sm js-needs-transport" name="needs_transport">
+                                <option value="0" {{ old('needs_transport', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ old('needs_transport', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </label>
+                        <label class="monthly-activation-option">
+                            <span>الحاجة لعمال صيانة بالموقع</span>
+                            <select class="form-select form-select-sm js-needs-maintenance" name="needs_maintenance_workers">
+                                <option value="0" {{ old('needs_maintenance_workers', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ old('needs_maintenance_workers', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </label>
+                        <label class="monthly-activation-option">
+                            <span>الحاجة لهدايا ودروع</span>
+                            <select class="form-select form-select-sm js-needs-gifts" name="needs_gifts">
+                                <option value="0" {{ old('needs_gifts', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ old('needs_gifts', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </label>
+                        <label class="monthly-activation-option">
+                            <span>الحاجة لمشاركة البرامج</span>
+                            <select class="form-select form-select-sm js-needs-programs-participation" name="needs_programs_participation">
+                                <option value="0" {{ old('needs_programs_participation', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ old('needs_programs_participation', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </label>
+                        <label class="monthly-activation-option">
+                            <span>الحاجة لشهادات وكتب شكر</span>
+                            <select class="form-select form-select-sm js-needs-certificates" name="needs_certificates_and_thanks">
+                                <option value="0" {{ old('needs_certificates_and_thanks', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ old('needs_certificates_and_thanks', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </label>
+                        <label class="monthly-activation-option">
+                            <span>الحاجة إلى بطاقات دعوة</span>
+                            <select class="form-select form-select-sm js-needs-invitations" name="needs_invitations">
+                                <option value="0" {{ old('needs_invitations', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                <option value="1" {{ old('needs_invitations', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
                         </label>
                     </div>
                 </div>
 
                 <div class="col-12 js-volunteers-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--volunteers">
                         <h3 class="h6 mb-3">احتياج المتطوعين</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-3">
@@ -303,8 +347,33 @@
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الفترة العمرية</label>
-                                <input class="form-control @error('volunteer_age_range') is-invalid @enderror" name="volunteer_age_range" value="{{ old('volunteer_age_range', $existingMonthlyActivity?->volunteer_age_range) }}">
-                                @error('volunteer_age_range')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input
+                                            class="form-control @error('volunteer_age_from') is-invalid @enderror"
+                                            type="number"
+                                            min="10"
+                                            max="80"
+                                            name="volunteer_age_from"
+                                            placeholder="من"
+                                            value="{{ old('volunteer_age_from') }}"
+                                        >
+                                        @error('volunteer_age_from')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-6">
+                                        <input
+                                            class="form-control @error('volunteer_age_to') is-invalid @enderror"
+                                            type="number"
+                                            min="10"
+                                            max="80"
+                                            name="volunteer_age_to"
+                                            placeholder="إلى"
+                                            value="{{ old('volunteer_age_to') }}"
+                                        >
+                                        @error('volunteer_age_to')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                @error('volunteer_age_range')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الجنس</label>
@@ -326,7 +395,7 @@
                 </div>
 
                 <div class="col-12 js-correspondence-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--correspondence">
                         <h3 class="h6 mb-3">المخاطبة الرسمية</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
@@ -348,17 +417,8 @@
                     </div>
                 </div>
 
-                <div class="col-12 js-official-letters-fields">
-                    <div class="monthly-subsection-card">
-                        <h3 class="h6 mb-3">الكتب الرسمية</h3>
-                        <label class="form-label">سبب الكتب الرسمية</label>
-                        <input class="form-control @error('letter_purpose') is-invalid @enderror" name="letter_purpose" value="{{ old('letter_purpose', $existingMonthlyActivity?->letter_purpose) }}">
-                        @error('letter_purpose')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-
                 <div class="col-12 js-media-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--media">
                         <h3 class="h6 mb-3">التغطية الإعلامية</h3>
                         <label class="form-label">ملاحظات التغطية الإعلامية</label>
                         <textarea class="form-control @error('media_coverage_notes') is-invalid @enderror" name="media_coverage_notes" rows="2">{{ old('media_coverage_notes', $existingMonthlyActivity?->media_coverage_notes) }}</textarea>
@@ -366,8 +426,96 @@
                     </div>
                 </div>
 
+                <div class="col-12 js-ceremony-agenda-fields">
+                    <div class="monthly-subsection-card monthly-subsection-card--ceremony">
+                        <h3 class="h6 mb-3">أجندة الحفل</h3>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-2">
+                                <label class="form-label">عدد الفقرات</label>
+                                <input class="form-control" type="number" min="1" name="ceremony_items_count" value="{{ old('ceremony_items_count') }}">
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <label class="form-label">وقت الفقرة من</label>
+                                <input class="form-control" type="time" name="ceremony_time_from" value="{{ old('ceremony_time_from') }}">
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <label class="form-label">وقت الفقرة إلى</label>
+                                <input class="form-control" type="time" name="ceremony_time_to" value="{{ old('ceremony_time_to') }}">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">اسم/ترتيب الفقرة</label>
+                                <input class="form-control" name="ceremony_item_name" value="{{ old('ceremony_item_name') }}">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">وصف الفقرة</label>
+                                <input class="form-control" name="ceremony_item_description" value="{{ old('ceremony_item_description') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 js-transport-fields">
+                    <div class="monthly-subsection-card monthly-subsection-card--transport">
+                        <h3 class="h6 mb-3">تأمين المواصلات</h3>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">عدد المركبات</label>
+                                <input class="form-control" type="number" min="1" name="transport_vehicles_count" value="{{ old('transport_vehicles_count') }}">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">نوع المركبة</label>
+                                <select class="form-select" name="transport_vehicle_type">
+                                    <option value="">اختر</option>
+                                    <option value="bus" {{ old('transport_vehicle_type') === 'bus' ? 'selected' : '' }}>باص</option>
+                                    <option value="car" {{ old('transport_vehicle_type') === 'car' ? 'selected' : '' }}>سيارة</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">عدد الركاب</label>
+                                <input class="form-control" type="number" min="1" name="transport_passengers_count" value="{{ old('transport_passengers_count') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 js-maintenance-fields">
+                    <div class="monthly-subsection-card monthly-subsection-card--maintenance">
+                        <h3 class="h6 mb-3">الصيانة بالموقع</h3>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">عدد العمال</label>
+                                <input class="form-control" type="number" min="1" name="maintenance_workers_count" value="{{ old('maintenance_workers_count') }}">
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <label class="form-label">نوع الصيانة</label>
+                                <input class="form-control" name="maintenance_type" value="{{ old('maintenance_type') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 js-gifts-fields">
+                    <div class="monthly-subsection-card monthly-subsection-card--gifts">
+                        <h3 class="h6 mb-3">الهدايا والدروع</h3>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-2">
+                                <label class="form-label">عدد الهدايا</label>
+                                <input class="form-control" type="number" min="1" name="gifts_count" value="{{ old('gifts_count') }}">
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <label class="form-label">وصف الهدايا</label>
+                                <input class="form-control" name="gifts_description" value="{{ old('gifts_description') }}">
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <label class="form-label">جهة تسليم الهدايا</label>
+                                <input class="form-control" name="gifts_delivery_entity" value="{{ old('gifts_delivery_entity') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-12 js-sponsor-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--sponsor">
                         <h3 class="h6 mb-3">بيانات الراعي</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
@@ -383,7 +531,7 @@
                 </div>
 
                 <div class="col-12 js-partners-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--partners">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
                             <h3 class="h6 mb-0">الشركاء</h3>
                             <div class="d-flex align-items-center gap-2">
@@ -395,8 +543,118 @@
                     </div>
                 </div>
 
+                <div class="col-12 js-programs-participation-fields">
+                    <div class="monthly-subsection-card monthly-subsection-card--programs">
+                        <h3 class="h6 mb-3">مشاركة البرامج</h3>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">بحاجة محاضر/مدرب؟</label>
+                                <select class="form-select" name="programs_need_trainer">
+                                    <option value="0" {{ old('programs_need_trainer', '0') === '1' ? '' : 'selected' }}>لا</option>
+                                    <option value="1" {{ old('programs_need_trainer', '0') === '1' ? 'selected' : '' }}>نعم</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">وصف المحاضر/المدرب</label>
+                                <input class="form-control" name="programs_trainer_description" value="{{ old('programs_trainer_description') }}">
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <label class="form-label">العدد</label>
+                                <input class="form-control" type="number" min="1" name="programs_trainer_count" value="{{ old('programs_trainer_count') }}">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">خدمات زها تايم (اختيار متعدد)</label>
+                                <select class="form-select" name="programs_zaha_time_options[]" multiple>
+                                    @foreach (($zahaTimeOptions ?? collect()) as $zahaOption)
+                                        <option value="{{ $zahaOption->code }}" {{ in_array($zahaOption->code, $selectedZahaTimeOptions, true) ? 'selected' : '' }}>{{ $zahaOption->name }}</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">الخيارات تُدار من شاشة القوائم المرجعية للأدمن.</small>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">تفاصيل إضافية لزها تايم</label>
+                                <input class="form-control" name="programs_zaha_time_other" value="{{ old('programs_zaha_time_other') }}">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">اسم العرض الفني</label>
+                                <input class="form-control" name="programs_show_name" value="{{ old('programs_show_name') }}">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">وصف العرض الفني</label>
+                                <input class="form-control" name="programs_show_description" value="{{ old('programs_show_description') }}">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">فان</label>
+                                <input class="form-control" name="programs_fun_note" value="{{ old('programs_fun_note') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 js-certificates-fields">
+                    <div class="monthly-subsection-card monthly-subsection-card--certificates">
+                        <h3 class="h6 mb-3">الشهادات وكتب الشكر</h3>
+                        <div class="row g-3">
+                            <div class="col-12"><h4 class="h6 mb-1">الشهادات</h4></div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">عددها</label>
+                                <input class="form-control" type="number" min="1" name="certificates_count" value="{{ old('certificates_count') }}">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">صيغة مقترحة</label>
+                                <input class="form-control" name="certificates_template" value="{{ old('certificates_template') }}">
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <label class="form-label">لمن</label>
+                                <input class="form-control" name="certificates_for" value="{{ old('certificates_for') }}">
+                            </div>
+                            <div class="col-12"><h4 class="h6 mb-1 mt-2">كتب الشكر</h4></div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">عددها</label>
+                                <input class="form-control" type="number" min="1" name="thanks_letters_count" value="{{ old('thanks_letters_count') }}">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">صيغة مقترحة</label>
+                                <input class="form-control" name="thanks_letters_template" value="{{ old('thanks_letters_template') }}">
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <label class="form-label">لمن</label>
+                                <input class="form-control" name="thanks_letters_for" value="{{ old('thanks_letters_for') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 js-invitations-fields">
+                    <div class="monthly-subsection-card monthly-subsection-card--invitations">
+                        <h3 class="h6 mb-3">بطاقات الدعوة</h3>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">نوع الدعوة</label>
+                                <select class="form-select js-invitation-type" name="invitation_type">
+                                    <option value="">اختر</option>
+                                    <option value="paper" {{ old('invitation_type') === 'paper' ? 'selected' : '' }}>ورقية</option>
+                                    <option value="electronic" {{ old('invitation_type') === 'electronic' ? 'selected' : '' }}>إلكترونية</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4 js-invitation-paper-fields">
+                                <label class="form-label">الصيغة المقترحة (ورقية)</label>
+                                <input class="form-control" name="invitation_paper_template" value="{{ old('invitation_paper_template') }}">
+                            </div>
+                            <div class="col-12 col-md-2 js-invitation-paper-fields">
+                                <label class="form-label">عدد النسخ</label>
+                                <input class="form-control" type="number" min="1" name="invitation_paper_copies" value="{{ old('invitation_paper_copies') }}">
+                            </div>
+                            <div class="col-12 col-md-4 js-invitation-electronic-fields">
+                                <label class="form-label">الصيغة المقترحة (إلكترونية)</label>
+                                <input class="form-control" name="invitation_electronic_template" value="{{ old('invitation_electronic_template') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-12 js-supplies-fields">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--supplies">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
                             <h3 class="h6 mb-0">المستلزمات</h3>
                             <div class="d-flex align-items-center gap-2">
@@ -409,7 +667,7 @@
                 </div>
 
                 <div class="col-12">
-                    <div class="monthly-subsection-card">
+                    <div class="monthly-subsection-card monthly-subsection-card--team">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
                             <h3 class="h6 mb-0">فريق العمل</h3>
                             <div class="d-flex align-items-center gap-2">

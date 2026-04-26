@@ -20,6 +20,7 @@ use App\Models\MonthlyActivityEvaluationResponse;
 use App\Models\TargetGroup;
 use App\Models\Setting;
 use App\Models\WorkflowActionLog;
+use App\Models\ZahaTimeOption;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -150,9 +151,13 @@ class MonthlyActivitiesController extends Controller
         return max(0, (int) Setting::valueOf('monthly_plan_lock_days', '5'));
     }
 
-    protected function monthlyIndexPerPage(): int
+    protected function monthlyIndexPerPage(?int $requestedPerPage = null): int
     {
-        return max(1, min(50, (int) Setting::valueOf('monthly_activities_index_per_page', '10')));
+        if ($requestedPerPage !== null) {
+            return max(5, min(100, $requestedPerPage));
+        }
+
+        return max(5, min(100, (int) Setting::valueOf('monthly_activities_index_per_page', '10')));
     }
 
     protected function buildLockAt(string $proposedDate): ?Carbon
@@ -435,6 +440,11 @@ class MonthlyActivitiesController extends Controller
 
     protected function normalizePlanningPayload(array &$data): void
     {
+        $this->normalizeVolunteerAgeRange($data);
+        $this->normalizeExecutionNeedsFollowup($data);
+        $this->normalizeExecutionNeedsPayload($data);
+        $this->normalizeSuppliesPayload($data);
+
         $data['execution_status'] = $data['execution_status'] ?? 'executed';
         $data['status'] = $data['status'] ?? 'draft';
 
@@ -455,10 +465,21 @@ class MonthlyActivitiesController extends Controller
             $data['official_correspondence_brief'] = null;
         }
 
+        $data['needs_official_letters'] = false;
+        $data['letter_purpose'] = null;
+
+        $description = trim((string) ($data['description'] ?? ''));
+        if ($description !== '') {
+            $data['description'] = $description;
+            $data['short_description'] = Str::limit($description, 255, '');
+        }
+
         if (! (bool) ($data['needs_volunteers'] ?? false)) {
             $data['required_volunteers'] = null;
             $data['volunteer_need'] = null;
             $data['volunteer_age_range'] = null;
+            $data['volunteer_age_from'] = null;
+            $data['volunteer_age_to'] = null;
             $data['volunteer_gender'] = null;
             $data['volunteer_tasks_summary'] = null;
         }
@@ -483,6 +504,201 @@ class MonthlyActivitiesController extends Controller
         if (! (bool) ($data['has_sponsor'] ?? false)) {
             $data['sponsors'] = [];
         }
+    }
+
+    protected function normalizeVolunteerAgeRange(array &$data): void
+    {
+        $from = isset($data['volunteer_age_from']) && $data['volunteer_age_from'] !== ''
+            ? (int) $data['volunteer_age_from']
+            : null;
+        $to = isset($data['volunteer_age_to']) && $data['volunteer_age_to'] !== ''
+            ? (int) $data['volunteer_age_to']
+            : null;
+
+        if ($from !== null && $to !== null) {
+            $data['volunteer_age_range'] = $from . '-' . $to;
+        } elseif (! isset($data['volunteer_age_range'])) {
+            $data['volunteer_age_range'] = null;
+        }
+    }
+
+    protected function extractVolunteerAgeBounds(?string $range): array
+    {
+        $range = trim((string) $range);
+        if ($range === '') {
+            return [null, null];
+        }
+
+        if (preg_match('/^\s*(\d{1,2})\s*[-–]\s*(\d{1,2})\s*$/u', $range, $matches)) {
+            return [(int) $matches[1], (int) $matches[2]];
+        }
+
+        return [null, null];
+    }
+
+    protected function normalizeExecutionNeedsFollowup(array &$data): void
+    {
+        $rows = $data['execution_needs_followup'] ?? null;
+        if (! is_array($rows)) {
+            $data['execution_needs_followup'] = null;
+            return;
+        }
+
+        $normalized = collect($rows)
+            ->map(function ($row, $key) {
+                if (! is_array($row)) {
+                    return null;
+                }
+
+                $status = in_array((string) ($row['status'] ?? ''), ['secured', 'not_secured'], true)
+                    ? (string) $row['status']
+                    : null;
+                $reason = trim((string) ($row['reason'] ?? ''));
+                $score = $row['effectiveness_score'] ?? null;
+                $score = $score === '' || $score === null ? null : (int) $score;
+
+                if (! $status && $reason === '' && $score === null) {
+                    return null;
+                }
+
+                return [
+                    'key' => (string) $key,
+                    'status' => $status,
+                    'reason' => $reason !== '' ? $reason : null,
+                    'effectiveness_score' => $score,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        $data['execution_needs_followup'] = $normalized === [] ? null : $normalized;
+    }
+
+    protected function normalizeSuppliesPayload(array &$data): void
+    {
+        if (! isset($data['supplies']) || ! is_array($data['supplies'])) {
+            return;
+        }
+
+        $data['supplies'] = collect($data['supplies'])->map(function ($supply) {
+            if (! is_array($supply)) {
+                return $supply;
+            }
+
+            if (! isset($supply['provider_type']) && isset($supply['insurance_mechanism'])) {
+                $supply['provider_type'] = $supply['insurance_mechanism'];
+            }
+
+            if (! isset($supply['provider_name']) && isset($supply['insurance_other_details'])) {
+                $supply['provider_name'] = $supply['insurance_other_details'];
+            }
+
+            return $supply;
+        })->all();
+    }
+
+    protected function normalizeExecutionNeedsPayload(array &$data): void
+    {
+        $sectionLink = static fn (string $needCode, bool $enabled): array => [
+            'need_code' => $needCode,
+            'enabled' => $enabled,
+            'future_cycle_id' => null,
+        ];
+
+        $needsCeremonyAgenda = (bool) ($data['needs_ceremony_agenda'] ?? false);
+        $needsTransport = (bool) ($data['needs_transport'] ?? false);
+        $needsMaintenance = (bool) ($data['needs_maintenance_workers'] ?? false);
+        $needsGifts = (bool) ($data['needs_gifts'] ?? false);
+        $needsPrograms = (bool) ($data['needs_programs_participation'] ?? false);
+        $needsCertificates = (bool) ($data['needs_certificates_and_thanks'] ?? false);
+        $needsInvitations = (bool) ($data['needs_invitations'] ?? false);
+
+        $payload = [
+            'schema_version' => 2,
+            'needs_registry' => [
+                'ceremony' => $sectionLink('ceremony', $needsCeremonyAgenda),
+                'transport' => $sectionLink('transport', $needsTransport),
+                'maintenance' => $sectionLink('maintenance', $needsMaintenance),
+                'gifts' => $sectionLink('gifts', $needsGifts),
+                'programs' => $sectionLink('programs', $needsPrograms),
+                'certificates' => $sectionLink('certificates', $needsCertificates),
+                'thanks_letters' => $sectionLink('thanks_letters', $needsCertificates),
+                'invitations' => $sectionLink('invitations', $needsInvitations),
+            ],
+            'needs_ceremony_agenda' => $needsCeremonyAgenda,
+            'ceremony' => [
+                'need_code' => 'ceremony',
+                'future_cycle_id' => null,
+                'items_count' => $data['ceremony_items_count'] ?? null,
+                'time_from' => $data['ceremony_time_from'] ?? null,
+                'time_to' => $data['ceremony_time_to'] ?? null,
+                'item_name' => $data['ceremony_item_name'] ?? null,
+                'item_description' => $data['ceremony_item_description'] ?? null,
+            ],
+            'needs_transport' => $needsTransport,
+            'transport' => [
+                'need_code' => 'transport',
+                'future_cycle_id' => null,
+                'vehicles_count' => $data['transport_vehicles_count'] ?? null,
+                'vehicle_type' => $data['transport_vehicle_type'] ?? null,
+                'passengers_count' => $data['transport_passengers_count'] ?? null,
+            ],
+            'needs_maintenance_workers' => $needsMaintenance,
+            'maintenance' => [
+                'need_code' => 'maintenance',
+                'future_cycle_id' => null,
+                'workers_count' => $data['maintenance_workers_count'] ?? null,
+                'type' => $data['maintenance_type'] ?? null,
+            ],
+            'needs_gifts' => $needsGifts,
+            'gifts' => [
+                'need_code' => 'gifts',
+                'future_cycle_id' => null,
+                'count' => $data['gifts_count'] ?? null,
+                'description' => $data['gifts_description'] ?? null,
+                'delivery_entity' => $data['gifts_delivery_entity'] ?? null,
+            ],
+            'needs_programs_participation' => $needsPrograms,
+            'programs' => [
+                'need_code' => 'programs',
+                'future_cycle_id' => null,
+                'need_trainer' => (bool) ($data['programs_need_trainer'] ?? false),
+                'trainer_description' => $data['programs_trainer_description'] ?? null,
+                'trainer_count' => $data['programs_trainer_count'] ?? null,
+                'zaha_time_options' => collect($data['programs_zaha_time_options'] ?? [])->filter()->values()->all(),
+                'zaha_time_other' => $data['programs_zaha_time_other'] ?? null,
+                'show_name' => $data['programs_show_name'] ?? null,
+                'show_description' => $data['programs_show_description'] ?? null,
+                'fun_note' => $data['programs_fun_note'] ?? null,
+            ],
+            'needs_certificates_and_thanks' => $needsCertificates,
+            'certificates' => [
+                'need_code' => 'certificates',
+                'future_cycle_id' => null,
+                'count' => $data['certificates_count'] ?? null,
+                'template' => $data['certificates_template'] ?? null,
+                'for' => $data['certificates_for'] ?? null,
+            ],
+            'thanks_letters' => [
+                'need_code' => 'thanks_letters',
+                'future_cycle_id' => null,
+                'count' => $data['thanks_letters_count'] ?? null,
+                'template' => $data['thanks_letters_template'] ?? null,
+                'for' => $data['thanks_letters_for'] ?? null,
+            ],
+            'needs_invitations' => $needsInvitations,
+            'invitations' => [
+                'need_code' => 'invitations',
+                'future_cycle_id' => null,
+                'type' => $data['invitation_type'] ?? null,
+                'paper_template' => $data['invitation_paper_template'] ?? null,
+                'paper_copies' => $data['invitation_paper_copies'] ?? null,
+                'electronic_template' => $data['invitation_electronic_template'] ?? null,
+            ],
+        ];
+
+        $data['execution_needs_payload'] = $payload;
     }
 
     protected function shouldSubmitFromRequest(Request $request): bool
@@ -552,6 +768,7 @@ class MonthlyActivitiesController extends Controller
         $viewScope = $request->input('scope', 'default');
         $selectedStatus = trim((string) $request->input('status', ''));
         $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
+        $requestedPerPage = $request->integer('per_page');
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);
@@ -590,7 +807,7 @@ class MonthlyActivitiesController extends Controller
             ])
             ->orderBy('month')
             ->orderBy('day')
-            ->paginate($this->monthlyIndexPerPage())
+            ->paginate($this->monthlyIndexPerPage($requestedPerPage))
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
@@ -606,6 +823,7 @@ class MonthlyActivitiesController extends Controller
             'status' => $selectedStatus,
             'branch_id' => $request->input('branch_id'),
             'summary_filter' => $selectedSummaryFilter,
+            'per_page' => $this->monthlyIndexPerPage($requestedPerPage),
         ];
         $canFilterBranches = $viewScope === 'all_branches'
             ? $this->canViewOtherBranches($user)
@@ -788,6 +1006,7 @@ class MonthlyActivitiesController extends Controller
         $agendaEvents = $this->agendaEventsForUser($user);
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
+        $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyCreationStatusOptions('draft');
         $executionStatusLabels = $this->executionStatusLabels();
 
@@ -796,6 +1015,7 @@ class MonthlyActivitiesController extends Controller
             'agendaEvents',
             'targetGroups',
             'evaluationQuestions',
+            'zahaTimeOptions',
             'monthlyStatusOptions',
             'executionStatusLabels',
         ));
@@ -813,6 +1033,7 @@ class MonthlyActivitiesController extends Controller
         $needsOfficialCorrespondence = (bool) $monthlyActivity->needs_official_correspondence;
         $outsideCenter = $monthlyActivity->location_type === 'outside_center';
         $needsSupplies = $monthlyActivity->supplies->isNotEmpty();
+        [$volunteerAgeFrom, $volunteerAgeTo] = $this->extractVolunteerAgeBounds($monthlyActivity->volunteer_age_range);
 
         $prefill = array_merge($monthlyActivity->getAttributes(), [
             'title' => $monthlyActivity->title,
@@ -839,6 +1060,8 @@ class MonthlyActivitiesController extends Controller
             'required_volunteers' => $needsVolunteers ? $monthlyActivity->required_volunteers : null,
             'volunteer_need' => $needsVolunteers ? $monthlyActivity->volunteer_need : null,
             'volunteer_age_range' => $needsVolunteers ? $monthlyActivity->volunteer_age_range : null,
+            'volunteer_age_from' => $needsVolunteers ? $volunteerAgeFrom : null,
+            'volunteer_age_to' => $needsVolunteers ? $volunteerAgeTo : null,
             'volunteer_gender' => $needsVolunteers ? $monthlyActivity->volunteer_gender : null,
             'volunteer_tasks_summary' => $needsVolunteers ? $monthlyActivity->volunteer_tasks_summary : null,
             'needs_official_correspondence' => (int) $needsOfficialCorrespondence,
@@ -1151,11 +1374,13 @@ class MonthlyActivitiesController extends Controller
             'target_group_ids' => ['nullable', 'array'],
             'target_group_ids.*' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
-            'short_description' => ['required', 'string', 'max:255'],
+            'short_description' => ['nullable', 'string', 'max:255'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
-            'volunteer_age_range' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_age_from' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1'],
+            'volunteer_age_to' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1', 'gte:volunteer_age_from'],
+            'volunteer_age_range' => ['nullable', 'string', 'max:255'],
             'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
@@ -1186,8 +1411,6 @@ class MonthlyActivitiesController extends Controller
             'partner_2_role' => ['nullable', 'string', 'max:255'],
             'partner_3_name' => ['nullable', 'string', 'max:255'],
             'partner_3_role' => ['nullable', 'string', 'max:255'],
-            'needs_official_letters' => ['nullable', 'boolean'],
-            'letter_purpose' => ['nullable', 'string', 'max:255'],
             'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
             'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
             'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
@@ -1223,6 +1446,49 @@ class MonthlyActivitiesController extends Controller
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
             'evaluations.*.note' => ['nullable', 'string'],
             'followup_remarks' => ['nullable', 'string'],
+            'execution_needs_followup' => ['nullable', 'array'],
+            'execution_needs_followup.*.status' => ['nullable', 'in:secured,not_secured'],
+            'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
+            'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
+            'needs_ceremony_agenda' => ['nullable', 'boolean'],
+            'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
+            'ceremony_time_from' => ['nullable', 'date_format:H:i'],
+            'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
+            'ceremony_item_name' => ['nullable', 'string', 'max:255'],
+            'ceremony_item_description' => ['nullable', 'string', 'max:500'],
+            'needs_transport' => ['nullable', 'boolean'],
+            'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
+            'transport_vehicle_type' => ['nullable', 'in:bus,car'],
+            'transport_passengers_count' => ['nullable', 'integer', 'min:1'],
+            'needs_maintenance_workers' => ['nullable', 'boolean'],
+            'maintenance_workers_count' => ['nullable', 'integer', 'min:1'],
+            'maintenance_type' => ['nullable', 'string', 'max:255'],
+            'needs_gifts' => ['nullable', 'boolean'],
+            'gifts_count' => ['nullable', 'integer', 'min:1'],
+            'gifts_description' => ['nullable', 'string', 'max:500'],
+            'gifts_delivery_entity' => ['nullable', 'string', 'max:255'],
+            'needs_programs_participation' => ['nullable', 'boolean'],
+            'programs_need_trainer' => ['nullable', 'boolean'],
+            'programs_trainer_description' => ['nullable', 'string', 'max:255'],
+            'programs_trainer_count' => ['nullable', 'integer', 'min:1'],
+            'programs_zaha_time_options' => ['nullable', 'array'],
+            'programs_zaha_time_options.*' => ['nullable', 'string', 'max:100'],
+            'programs_zaha_time_other' => ['nullable', 'string', 'max:255'],
+            'programs_show_name' => ['nullable', 'string', 'max:255'],
+            'programs_show_description' => ['nullable', 'string', 'max:500'],
+            'programs_fun_note' => ['nullable', 'string', 'max:255'],
+            'needs_certificates_and_thanks' => ['nullable', 'boolean'],
+            'certificates_count' => ['nullable', 'integer', 'min:1'],
+            'certificates_template' => ['nullable', 'string', 'max:255'],
+            'certificates_for' => ['nullable', 'string', 'max:255'],
+            'thanks_letters_count' => ['nullable', 'integer', 'min:1'],
+            'thanks_letters_template' => ['nullable', 'string', 'max:255'],
+            'thanks_letters_for' => ['nullable', 'string', 'max:255'],
+            'needs_invitations' => ['nullable', 'boolean'],
+            'invitation_type' => ['nullable', 'in:paper,electronic'],
+            'invitation_paper_template' => ['nullable', 'string', 'max:255'],
+            'invitation_paper_copies' => ['nullable', 'integer', 'min:1'],
+            'invitation_electronic_template' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
         ]);
 
@@ -1299,12 +1565,12 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
+            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
             'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => $data['letter_purpose'] ?? null,
+            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -1317,6 +1583,8 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) (($data['requires_communications'] ?? false) || in_array('relations', $data['responsible_entities'] ?? [], true)),
+            'execution_needs_payload' => $data['execution_needs_payload'] ?? null,
+            'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
             'branch_id' => $data['branch_id'],
@@ -1432,6 +1700,7 @@ class MonthlyActivitiesController extends Controller
         $agendaEvents = $this->agendaEventsForUser(request()->user(), $monthlyActivity);
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
+        $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);
         $monthlyCloseStatusOptions = $this->monthlyCloseStatusOptions((string) $monthlyActivity->status);
         $executionStatusLabels = $this->executionStatusLabels();
@@ -1442,6 +1711,7 @@ class MonthlyActivitiesController extends Controller
             'agendaEvents',
             'targetGroups',
             'evaluationQuestions',
+            'zahaTimeOptions',
             'monthlyStatusOptions',
             'monthlyCloseStatusOptions',
             'executionStatusLabels',
@@ -1530,6 +1800,25 @@ class MonthlyActivitiesController extends Controller
                 ->with('status', 'تم حفظ متابعة وتقييم الفعالية بنجاح.');
         }
 
+        if ($request->boolean('post_execution_needs_only')) {
+            $data = $request->validate([
+                'execution_needs_followup' => ['nullable', 'array'],
+                'execution_needs_followup.*.status' => ['nullable', 'in:secured,not_secured'],
+                'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
+                'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
+            ]);
+
+            $this->normalizePlanningPayload($data);
+            $monthlyActivity->update([
+                'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
+            ]);
+            $this->logWorkflowAction('execution_needs_followup_updated', $monthlyActivity, $request, $monthlyActivity->status);
+
+            return redirect()
+                ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'])
+                ->with('status', 'تم حفظ متابعة احتياجات التنفيذ بنجاح.');
+        }
+
         $isCreator = (int) $monthlyActivity->created_by === (int) $request->user()->id;
 
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin') && ! $isCreator) {
@@ -1569,11 +1858,13 @@ class MonthlyActivitiesController extends Controller
             'target_group_ids' => ['nullable', 'array'],
             'target_group_ids.*' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_group_other' => ['nullable', 'string', 'max:255', 'required_if:target_group,other'],
-            'short_description' => ['required', 'string', 'max:255'],
+            'short_description' => ['nullable', 'string', 'max:255'],
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
-            'volunteer_age_range' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_age_from' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1'],
+            'volunteer_age_to' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1', 'gte:volunteer_age_from'],
+            'volunteer_age_range' => ['nullable', 'string', 'max:255'],
             'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
@@ -1602,8 +1893,6 @@ class MonthlyActivitiesController extends Controller
             'partner_2_role' => ['nullable', 'string', 'max:255'],
             'partner_3_name' => ['nullable', 'string', 'max:255'],
             'partner_3_role' => ['nullable', 'string', 'max:255'],
-            'needs_official_letters' => ['nullable', 'boolean'],
-            'letter_purpose' => ['nullable', 'string', 'max:255'],
             'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
             'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
             'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
@@ -1619,12 +1908,51 @@ class MonthlyActivitiesController extends Controller
             'partners.*.role' => ['nullable', 'required_with:partners.*.name', 'string', 'max:255'],
             'partners.*.contact_info' => ['nullable', 'string', 'max:255'],
             'evaluations' => ['nullable', 'array'],
-            'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
-            'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
-            'evaluations.*.note' => ['nullable', 'string'],
-            'followup_remarks' => ['nullable', 'string'],
-            'description' => ['required', 'string', 'max:2000'],
-        ]);
+                'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
+                'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
+                'evaluations.*.note' => ['nullable', 'string'],
+                'followup_remarks' => ['nullable', 'string'],
+                'needs_ceremony_agenda' => ['nullable', 'boolean'],
+                'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
+                'ceremony_time_from' => ['nullable', 'date_format:H:i'],
+                'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
+                'ceremony_item_name' => ['nullable', 'string', 'max:255'],
+                'ceremony_item_description' => ['nullable', 'string', 'max:500'],
+                'needs_transport' => ['nullable', 'boolean'],
+                'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
+                'transport_vehicle_type' => ['nullable', 'in:bus,car'],
+                'transport_passengers_count' => ['nullable', 'integer', 'min:1'],
+                'needs_maintenance_workers' => ['nullable', 'boolean'],
+                'maintenance_workers_count' => ['nullable', 'integer', 'min:1'],
+                'maintenance_type' => ['nullable', 'string', 'max:255'],
+                'needs_gifts' => ['nullable', 'boolean'],
+                'gifts_count' => ['nullable', 'integer', 'min:1'],
+                'gifts_description' => ['nullable', 'string', 'max:500'],
+                'gifts_delivery_entity' => ['nullable', 'string', 'max:255'],
+                'needs_programs_participation' => ['nullable', 'boolean'],
+                'programs_need_trainer' => ['nullable', 'boolean'],
+                'programs_trainer_description' => ['nullable', 'string', 'max:255'],
+                'programs_trainer_count' => ['nullable', 'integer', 'min:1'],
+                'programs_zaha_time_options' => ['nullable', 'array'],
+                'programs_zaha_time_options.*' => ['nullable', 'string', 'max:100'],
+                'programs_zaha_time_other' => ['nullable', 'string', 'max:255'],
+                'programs_show_name' => ['nullable', 'string', 'max:255'],
+                'programs_show_description' => ['nullable', 'string', 'max:500'],
+                'programs_fun_note' => ['nullable', 'string', 'max:255'],
+                'needs_certificates_and_thanks' => ['nullable', 'boolean'],
+                'certificates_count' => ['nullable', 'integer', 'min:1'],
+                'certificates_template' => ['nullable', 'string', 'max:255'],
+                'certificates_for' => ['nullable', 'string', 'max:255'],
+                'thanks_letters_count' => ['nullable', 'integer', 'min:1'],
+                'thanks_letters_template' => ['nullable', 'string', 'max:255'],
+                'thanks_letters_for' => ['nullable', 'string', 'max:255'],
+                'needs_invitations' => ['nullable', 'boolean'],
+                'invitation_type' => ['nullable', 'in:paper,electronic'],
+                'invitation_paper_template' => ['nullable', 'string', 'max:255'],
+                'invitation_paper_copies' => ['nullable', 'integer', 'min:1'],
+                'invitation_electronic_template' => ['nullable', 'string', 'max:255'],
+                'description' => ['required', 'string', 'max:2000'],
+            ]);
 
         $this->applyUnifiedLockedFieldValues($monthlyActivity, $data, $request->user());
 
@@ -1727,6 +2055,8 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops',
             'requires_communications',
             'is_program_related',
+            'execution_needs_payload',
+            'execution_needs_followup',
             'participation_status',
             'plan_type',
             'branch_plan_file',
@@ -1802,12 +2132,12 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => (bool) ($data['needs_official_letters'] ?? false),
+            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
             'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
             'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
             'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => $data['letter_purpose'] ?? null,
+            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -1820,6 +2150,8 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
+            'execution_needs_payload' => $data['execution_needs_payload'] ?? null,
+            'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'branch_id' => $data['branch_id'],
             'lifecycle_status' => $newLifecycleStatus,
             'relations_officer_approval_status' => $monthlyActivity->relations_officer_approval_status,
@@ -1909,12 +2241,12 @@ class MonthlyActivitiesController extends Controller
                 'has_sponsor' => $newValues['has_sponsor'],
                 'sponsor_name_title' => $newValues['sponsor_name_title'],
                 'has_partners' => $newValues['has_partners'],
-                'needs_official_letters' => $newValues['needs_official_letters'],
+                'needs_official_letters' => false,
                 'needs_official_correspondence' => $newValues['needs_official_correspondence'],
                 'official_correspondence_reason' => $newValues['official_correspondence_reason'],
                 'official_correspondence_target' => $newValues['official_correspondence_target'],
                 'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-                'letter_purpose' => $newValues['letter_purpose'],
+                'letter_purpose' => null,
                 'rescheduled_date' => $newValues['rescheduled_date'],
                 'reschedule_reason' => $newValues['reschedule_reason'],
                 'cancellation_reason' => $newValues['cancellation_reason'],
@@ -1927,6 +2259,8 @@ class MonthlyActivitiesController extends Controller
                 'is_program_related' => $newValues['is_program_related'],
                 'requires_workshops' => $newValues['requires_workshops'],
                 'requires_communications' => $newValues['requires_communications'],
+                'execution_needs_payload' => $newValues['execution_needs_payload'],
+                'execution_needs_followup' => $newValues['execution_needs_followup'],
                 'branch_id' => $newValues['branch_id'],
                 'lifecycle_status' => $newValues['lifecycle_status'],
                 'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],
@@ -2002,12 +2336,12 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => $newValues['has_sponsor'],
             'sponsor_name_title' => $newValues['sponsor_name_title'],
             'has_partners' => $newValues['has_partners'],
-            'needs_official_letters' => $newValues['needs_official_letters'],
+            'needs_official_letters' => false,
             'needs_official_correspondence' => $newValues['needs_official_correspondence'],
             'official_correspondence_reason' => $newValues['official_correspondence_reason'],
             'official_correspondence_target' => $newValues['official_correspondence_target'],
             'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-            'letter_purpose' => $newValues['letter_purpose'],
+            'letter_purpose' => null,
             'rescheduled_date' => $newValues['rescheduled_date'],
             'reschedule_reason' => $newValues['reschedule_reason'],
             'cancellation_reason' => $newValues['cancellation_reason'],
@@ -2020,6 +2354,8 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => $newValues['is_program_related'],
             'requires_workshops' => $newValues['requires_workshops'],
             'requires_communications' => $newValues['requires_communications'],
+            'execution_needs_payload' => $newValues['execution_needs_payload'],
+            'execution_needs_followup' => $newValues['execution_needs_followup'],
             'branch_id' => $newValues['branch_id'],
             'lifecycle_status' => $newValues['lifecycle_status'],
             'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],

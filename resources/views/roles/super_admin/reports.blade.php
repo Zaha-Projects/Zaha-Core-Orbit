@@ -100,6 +100,56 @@
         <div class="col-12 col-lg-6">
             <div class="card h-100 stretch stretch-full">
                 <div class="card-body">
+                    <h2 class="h6">مؤشرات احتياجات التنفيذ</h2>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>أنشطة فيها احتياجات تنفيذ محفوظة</span>
+                            <strong>{{ $executionNeedsStats['with_payload'] }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>أنشطة فيها متابعة بعد التنفيذ</span>
+                            <strong>{{ $executionNeedsStats['with_followup'] }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>احتياجات تم تأمينها</span>
+                            <strong>{{ $executionNeedsStats['secured_count'] }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>احتياجات لم يتم تأمينها</span>
+                            <strong>{{ $executionNeedsStats['not_secured_count'] }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>متوسط فعالية التأمين /10</span>
+                            <strong>{{ $executionNeedsStats['avg_effectiveness'] ?? '-' }}</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card h-100 stretch stretch-full">
+                <div class="card-body">
+                    <h2 class="h6">خيارات زها تايم (Lookup + Usage)</h2>
+                    <p class="text-muted small mb-2">إجمالي الخيارات: {{ $zahaTimeStats['total'] }} | المفعّل: {{ $zahaTimeStats['active'] }}</p>
+                    <ul class="list-group list-group-flush">
+                        @forelse ($zahaTimeStats['usage'] as $option)
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>{{ $option['name'] }} <small class="text-muted">({{ $option['code'] }})</small></span>
+                                <strong>{{ $option['used'] }}</strong>
+                            </li>
+                        @empty
+                            <li class="list-group-item text-muted">لا توجد بيانات خيارات زها تايم.</li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card h-100 stretch stretch-full">
+                <div class="card-body">
                     <h2 class="h6">{{ __('app.reports.financials.title') }}</h2>
                     <p class="text-muted small">{{ __('app.reports.financials.subtitle') }}</p>
                     <ul class="list-group list-group-flush">

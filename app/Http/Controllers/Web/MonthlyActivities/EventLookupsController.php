@@ -9,6 +9,7 @@ use App\Models\EvaluationQuestion;
 use App\Models\EventCategory;
 use App\Models\EventStatusLookup;
 use App\Models\TargetGroup;
+use App\Models\ZahaTimeOption;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -22,6 +23,7 @@ class EventLookupsController extends Controller
         $departmentUnits = DepartmentUnit::query()->orderBy('sort_order')->orderBy('name')->get();
         $eventCategories = EventCategory::query()->with('department')->orderBy('sort_order')->orderBy('name')->get();
         $statusLookups = EventStatusLookup::query()->ordered()->get()->groupBy('module');
+        $zahaTimeOptions = ZahaTimeOption::query()->orderBy('sort_order')->orderBy('name')->get();
 
         return view('pages.monthly_activities.lookups.admin', compact(
             'targetGroups',
@@ -30,7 +32,46 @@ class EventLookupsController extends Controller
             'departmentUnits',
             'eventCategories',
             'statusLookups',
+            'zahaTimeOptions',
         ));
+    }
+
+    public function storeZahaTimeOption(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:100', 'alpha_dash', 'unique:zaha_time_options,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        ZahaTimeOption::query()->create([
+            'code' => $data['code'],
+            'name' => $data['name'],
+            'sort_order' => $data['sort_order'] ?? 0,
+            'is_active' => (bool) ($data['is_active'] ?? true),
+        ]);
+
+        return back()->with('status', 'تمت إضافة خيار زها تايم.');
+    }
+
+    public function updateZahaTimeOption(Request $request, ZahaTimeOption $zahaTimeOption)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:100', 'alpha_dash', Rule::unique('zaha_time_options', 'code')->ignore($zahaTimeOption->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $zahaTimeOption->update([
+            'code' => $data['code'],
+            'name' => $data['name'],
+            'sort_order' => $data['sort_order'] ?? 0,
+            'is_active' => (bool) ($data['is_active'] ?? false),
+        ]);
+
+        return back()->with('status', 'تم تحديث خيار زها تايم.');
     }
 
     public function storeDepartment(Request $request)

@@ -389,10 +389,7 @@
                             {{ __('عرض') }} {{ $events->firstItem() ?? 0 }} - {{ $events->lastItem() ?? 0 }} {{ __('من') }} {{ $events->total() }}
                         </small>
                         <div class="d-flex align-items-center gap-2">
-                            {{ $events->links() }}
-                            @if ($events->hasMorePages())
-                                <a class="btn btn-outline-primary btn-sm" href="{{ $events->nextPageUrl() }}">عرض المزيد</a>
-                            @endif
+                            {{ $events->onEachSide(1)->links('pagination::bootstrap-5') }}
                         </div>
                     </div>
                 </div>

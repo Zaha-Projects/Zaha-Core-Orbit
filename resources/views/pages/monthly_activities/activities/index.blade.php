@@ -46,6 +46,11 @@
         'submitted' => $workflowStatusLabel('submitted'),
         'approved' => $workflowStatusLabel('approved'),
     ];
+    $perPageFilterOptions = collect([10, 20, 30, 50, 100])
+        ->map(fn (int $size): array => [
+            'value' => (string) $size,
+            'label' => __('app.roles.relations.agenda.filters.show_count', ['count' => $size]),
+        ]);
     $branchFilterSelected = $filters['branch_id'] ?? '';
     $authUser = auth()->user();
     $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
@@ -155,6 +160,13 @@
                         'options' => $monthlyStatusOptions,
                         'selectedValue' => $filters['status'] ?? '',
                     ])
+                    @include('pages.shared.filters.select-field', [
+                        'columnClass' => 'col-6 col-xl-2',
+                        'fieldName' => 'per_page',
+                        'label' => __('app.pagination'),
+                        'options' => $perPageFilterOptions,
+                        'selectedValue' => $filters['per_page'] ?? 10,
+                    ])
                     <div class="col-12 col-xl-2 event-actions"><button class="btn btn-outline-primary" type="submit">{{ __('app.common.filter') }}</button></div>
                 </form>
             </div>
@@ -248,11 +260,13 @@
                     </div>
                 </div>
             </div>
-            <div class="mt-3 d-flex flex-column align-items-center gap-2">
-                {{ $activities->links() }}
-                @if ($activities->hasMorePages())
-                    <a class="btn btn-outline-primary" href="{{ $activities->nextPageUrl() }}">عرض المزيد</a>
-                @endif
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <small class="text-muted">
+                    {{ __('عرض') }} {{ $activities->firstItem() ?? 0 }} - {{ $activities->lastItem() ?? 0 }} {{ __('من') }} {{ $activities->total() }}
+                </small>
+                <div>
+                    {{ $activities->onEachSide(1)->links('pagination::bootstrap-5') }}
+                </div>
             </div>
         </div>
 

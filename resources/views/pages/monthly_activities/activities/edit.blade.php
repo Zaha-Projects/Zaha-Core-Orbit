@@ -42,6 +42,24 @@
         && method_exists($editUser, 'hasBranchScopedMonthlyVisibility')
         && $editUser->hasBranchScopedMonthlyVisibility()
         && ! empty($editUser->branch_id);
+    $executionNeedsCatalog = [
+        'volunteers' => 'الحاجة للمتطوعين',
+        'official_correspondence' => 'الحاجة للمخاطبة الرسمية',
+        'official_letters' => 'الحاجة للكتب الرسمية',
+        'media_coverage' => 'الحاجة لتغطية إعلامية',
+        'supplies' => 'الحاجة للمستلزمات',
+        'official_sponsorship' => 'الحاجة لرعاية رسمية',
+        'external_partners' => 'الحاجة لشركاء خارجيين',
+        'ceremony_agenda' => 'الحاجة لوجود أجندة حفل',
+        'transport' => 'الحاجة لتأمين مواصلات',
+        'maintenance_workers' => 'الحاجة لعمال صيانة بالموقع',
+        'gifts_shields' => 'الحاجة لهدايا ودروع',
+        'programs_participation' => 'الحاجة لمشاركة البرامج',
+        'certificates_thanks' => 'الحاجة لشهادات وكتب شكر',
+        'invitations' => 'الحاجة إلى بطاقات دعوة',
+    ];
+    $executionNeedsFollowup = collect(old('execution_needs_followup', $monthlyActivity->execution_needs_followup ?? []))
+        ->keyBy('key');
 @endphp
 
 @push('styles')
@@ -473,6 +491,56 @@
     @endif
 
     @if ($isPostMode)
+    <div class="card event-card mb-4" id="post-execution-needs-followup">
+        <div class="card-body">
+            <h2 class="h6 mb-3">تأكيد تأمين احتياجات التنفيذ</h2>
+            <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" class="row g-3 mb-0">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="post_execution_needs_only" value="1">
+                @foreach($executionNeedsCatalog as $needKey => $needLabel)
+                    @php($needData = $executionNeedsFollowup->get($needKey, []))
+                    <div class="col-12 border rounded-3 p-3">
+                        <div class="fw-semibold mb-2">{{ $needLabel }}</div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">حالة التأمين</label>
+                                <select class="form-select" name="execution_needs_followup[{{ $needKey }}][status]">
+                                    <option value="">اختر</option>
+                                    <option value="secured" {{ old("execution_needs_followup.$needKey.status", $needData['status'] ?? '') === 'secured' ? 'selected' : '' }}>تم التأمين</option>
+                                    <option value="not_secured" {{ old("execution_needs_followup.$needKey.status", $needData['status'] ?? '') === 'not_secured' ? 'selected' : '' }}>لم يتم التأمين</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">سبب عدم التأمين (عند الحاجة)</label>
+                                <input
+                                    class="form-control"
+                                    name="execution_needs_followup[{{ $needKey }}][reason]"
+                                    value="{{ old("execution_needs_followup.$needKey.reason", $needData['reason'] ?? '') }}"
+                                >
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">تقييم فعالية التأمين /10</label>
+                                <input
+                                    class="form-control"
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    name="execution_needs_followup[{{ $needKey }}][effectiveness_score]"
+                                    value="{{ old("execution_needs_followup.$needKey.effectiveness_score", $needData['effectiveness_score'] ?? '') }}"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+
+                <div class="col-12 d-flex justify-content-end">
+                    <button class="btn btn-outline-primary" type="submit">حفظ متابعة الاحتياجات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @if ($canManageEvaluation)
     <div class="card event-card mb-4" id="post-execution-evaluation">
         <div class="card-body">

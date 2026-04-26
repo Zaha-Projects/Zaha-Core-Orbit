@@ -9,37 +9,35 @@
     gap: .75rem;
 }
 .monthly-plan-form-page .monthly-activation-option {
-    display: inline-flex;
-    align-items: center;
-    gap: .55rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .45rem;
     padding: .85rem 1rem;
     border: 1px solid #d8e1ea;
     border-radius: 14px;
     background: #fbfdff;
     cursor: pointer;
-    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+    color: #1f2937;
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease, color .2s ease;
 }
 .monthly-plan-form-page .monthly-activation-option:hover {
     border-color: #9fb8d4;
     background: #f5f9ff;
 }
-.monthly-plan-form-page .monthly-activation-option:has(input:checked) {
-    border-color: #3c78b5;
-    background: #eef6ff;
-    box-shadow: 0 0 0 2px rgba(60, 120, 181, .08);
+.monthly-plan-form-page .monthly-activation-option:has(select option:checked[value="1"]) {
+    border-color: #0ea5e9;
+    background: linear-gradient(180deg, #eff8ff 0%, #e0f2fe 100%);
+    color: #0c4a6e;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, .12);
 }
-.monthly-plan-form-page .monthly-activation-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 999px;
-    background: #d9e9f8;
-    color: #22598d;
-    font-size: .82rem;
-    font-weight: 700;
-    flex-shrink: 0;
+
+.monthly-plan-form-page .monthly-activation-option span:last-child {
+    font-weight: 600;
+}
+
+.monthly-plan-form-page .monthly-activation-option .form-select {
+    background-color: #fff;
 }
 .monthly-plan-form-page .monthly-subsection-card {
     border: 1px solid #e5e7eb;
@@ -70,6 +68,29 @@
     border-top: 1px solid #e5e7eb;
 }
 
+.monthly-plan-form-page .monthly-subsection-card[class*="monthly-subsection-card--"] {
+    border-width: 1px;
+}
+.monthly-plan-form-page .monthly-subsection-card--volunteers { background: linear-gradient(180deg,#f0f9ff 0%,#e0f2fe 100%); border-color:#bae6fd; }
+.monthly-plan-form-page .monthly-subsection-card--correspondence { background: linear-gradient(180deg,#f5f3ff 0%,#ede9fe 100%); border-color:#ddd6fe; }
+.monthly-plan-form-page .monthly-subsection-card--media { background: linear-gradient(180deg,#ecfeff 0%,#cffafe 100%); border-color:#a5f3fc; }
+.monthly-plan-form-page .monthly-subsection-card--ceremony { background: linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%); border-color:#fed7aa; }
+.monthly-plan-form-page .monthly-subsection-card--transport { background: linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%); border-color:#bfdbfe; }
+.monthly-plan-form-page .monthly-subsection-card--maintenance { background: linear-gradient(180deg,#f0fdf4 0%,#dcfce7 100%); border-color:#bbf7d0; }
+.monthly-plan-form-page .monthly-subsection-card--gifts { background: linear-gradient(180deg,#fdf4ff 0%,#fae8ff 100%); border-color:#f5d0fe; }
+.monthly-plan-form-page .monthly-subsection-card--sponsor { background: linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%); border-color:#c7d2fe; }
+.monthly-plan-form-page .monthly-subsection-card--partners { background: linear-gradient(180deg,#f0fdfa 0%,#ccfbf1 100%); border-color:#99f6e4; }
+.monthly-plan-form-page .monthly-subsection-card--programs { background: linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%); border-color:#fecdd3; }
+.monthly-plan-form-page .monthly-subsection-card--certificates { background: linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%); border-color:#fde68a; }
+.monthly-plan-form-page .monthly-subsection-card--invitations { background: linear-gradient(180deg,#eef2ff 0%,#e0e7ff 100%); border-color:#c7d2fe; }
+.monthly-plan-form-page .monthly-subsection-card--supplies { background: linear-gradient(180deg,#f8fafc 0%,#e2e8f0 100%); border-color:#cbd5e1; }
+.monthly-plan-form-page .monthly-subsection-card--team { background: linear-gradient(180deg,#f9fafb 0%,#f3f4f6 100%); border-color:#d1d5db; }
+
+[data-theme="dark"] .monthly-plan-form-page .monthly-subsection-card[class*="monthly-subsection-card--"] {
+    background: color-mix(in srgb, var(--surface-soft) 82%, var(--brand-primary)) !important;
+    border-color: var(--border-color) !important;
+}
+
 [data-theme="dark"] .monthly-plan-form-page .monthly-form-section-head,
 [data-theme="dark"] .monthly-plan-form-page .monthly-form-actions {
     border-color: var(--border-color);
@@ -83,9 +104,10 @@
     color: var(--text-color);
 }
 
-[data-theme="dark"] .monthly-plan-form-page .monthly-activation-option:has(input:checked) {
-    background: color-mix(in srgb, var(--brand-primary) 18%, var(--surface-soft));
+[data-theme="dark"] .monthly-plan-form-page .monthly-activation-option:has(select option:checked[value="1"]) {
+    background: color-mix(in srgb, var(--brand-primary) 22%, var(--surface-soft));
     border-color: var(--brand-primary);
+    color: color-mix(in srgb, #ffffff 88%, var(--brand-primary));
 }
 
 @media (max-width: 767.98px) {
