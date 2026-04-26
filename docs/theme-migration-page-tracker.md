@@ -45,18 +45,18 @@
 ### 4) Agenda
 | Page | Status |
 |---|---|
-| `resources/views/pages/agenda/events/index.blade.php` | ⏳ Pending |
+| `resources/views/pages/agenda/events/index.blade.php` | ✅ Migrated |
 | `resources/views/pages/agenda/events/create.blade.php` | ⏳ Pending |
 | `resources/views/pages/agenda/events/edit.blade.php` | ⏳ Pending |
 | `resources/views/pages/agenda/events/show.blade.php` | ⏳ Pending |
 | `resources/views/pages/agenda/events/_form.blade.php` | 🔁 Shared Partial |
-| `resources/views/pages/agenda/approvals/index.blade.php` | ⏳ Pending |
+| `resources/views/pages/agenda/approvals/index.blade.php` | ✅ Migrated |
 | `resources/views/pages/agenda/partials/sidebar.blade.php` | 🔁 Shared Partial |
 
 ### 5) Monthly Activities
 | Page | Status |
 |---|---|
-| `resources/views/pages/monthly_activities/activities/index.blade.php` | ⏳ Pending |
+| `resources/views/pages/monthly_activities/activities/index.blade.php` | ✅ Migrated |
 | `resources/views/pages/monthly_activities/activities/create.blade.php` | ⏳ Pending |
 | `resources/views/pages/monthly_activities/activities/edit.blade.php` | ⏳ Pending |
 | `resources/views/pages/monthly_activities/activities/show.blade.php` | ⏳ Pending |
@@ -112,7 +112,7 @@
 | `resources/views/pages/reports/enterprise/printable.blade.php` | ⏳ Pending |
 | `resources/views/pages/reports/partials/sidebar.blade.php` | 🔁 Shared Partial |
 | `resources/views/pages/enterprise/dashboard.blade.php` | ⏳ Pending |
-| `resources/views/pages/enterprise/annual-planning-overview.blade.php` | ⏳ Pending |
+| `resources/views/pages/enterprise/annual-planning-overview.blade.php` | ✅ Migrated |
 | `resources/views/pages/enterprise/partials/kpis.blade.php` | 🔁 Shared Partial |
 | `resources/views/pages/enterprise/partials/charts.blade.php` | 🔁 Shared Partial |
 | `resources/views/pages/enterprise/partials/charts-scripts.blade.php` | 🔁 Shared Partial |

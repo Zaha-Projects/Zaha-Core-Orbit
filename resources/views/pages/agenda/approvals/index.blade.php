@@ -1,8 +1,22 @@
-﻿@extends('layouts.app')
+﻿@extends('layouts.new-theme-dashboard')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
 @endpush
+
+@section('theme_sidebar_links')
+    @can('agenda.view')
+        <li class="side-item {{ request()->routeIs('role.relations.agenda.*') ? 'selected' : '' }}">
+            <a href="{{ route('role.relations.agenda.index') }}"><i class="fas fa-calendar-days"></i><span>{{ __('app.roles.relations.agenda.title') }}</span></a>
+        </li>
+    @endcan
+    <li class="side-item {{ request()->routeIs('role.relations.approvals.*') ? 'selected' : '' }}">
+        <a href="{{ route('role.relations.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('app.roles.relations.approvals.title') }}</span></a>
+    </li>
+    <li class="side-item {{ request()->routeIs('role.relations.activities.*') ? 'selected' : '' }}">
+        <a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a>
+    </li>
+@endsection
 
 @section('content')
     <div class="workflow-ui">
