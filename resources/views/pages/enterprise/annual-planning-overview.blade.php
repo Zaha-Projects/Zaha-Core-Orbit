@@ -1,4 +1,4 @@
-@extends('layouts.new-theme-dashboard')
+@extends('layouts.app')
 
 @section('page_title', __('app.enterprise.annual_overview.title'))
 @section('page_breadcrumb', __('app.enterprise.annual_overview.title'))

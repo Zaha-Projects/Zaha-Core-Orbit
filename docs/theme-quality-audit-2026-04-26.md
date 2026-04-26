@@ -1,7 +1,7 @@
 # Theme QA Audit — 2026-04-26
 
 ## نطاق التدقيق
-- الصفحات المهاجرة إلى `layouts.new-theme-dashboard`.
+- الصفحات المهاجرة إلى `layouts.app`.
 - التحقق من:
   1) الترجمة AR/EN (مفاتيح واضحة بدون نصوص ثابتة إنجليزية حرجة)
   2) ربط الثيم (Light/Dark)
@@ -10,7 +10,7 @@
 
 ## نتيجة التوحيد
 - تم توحيد السايدبار داخل ملف layout واحد:
-  - `resources/views/layouts/new-theme-dashboard.blade.php`
+  - `resources/views/layouts/app.blade.php`
 - تم إلغاء تعريفات `@section('theme_sidebar_links')` من الصفحات المهاجرة لضمان عدم تكرار السايدبار لكل صفحة.
 
 ## نتيجة التحقق البرمجي

@@ -1,4 +1,4 @@
-@extends('layouts.new-theme-dashboard')
+@extends('layouts.app')
 
 @section('title', __('app.common.dashboard'))
 

@@ -120,7 +120,7 @@
     let dict = fallbackDictionaries[locale] || fallbackDictionaries.ar;
 
     try {
-      const response = await fetch(`/assets/new-theme/locales/${locale}/common.json`, { cache: 'no-store' });
+      const response = await fetch(`/assets/theme/locales/${locale}/common.json`, { cache: 'no-store' });
       if (response.ok) dict = await response.json();
     } catch (error) {
       console.warn('Locale fetch fallback:', error);
