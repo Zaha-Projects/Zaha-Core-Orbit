@@ -68,6 +68,24 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function setSectionInputsState(elements, isActive) {
+        elements.forEach((element) => {
+            element.querySelectorAll('input, select, textarea, button').forEach((field) => {
+                const shouldSkip = field.classList.contains('js-partners-count')
+                    || field.classList.contains('js-supplies-count')
+                    || field.classList.contains('js-team-groups-count');
+                if (shouldSkip) return;
+
+                field.disabled = !isActive;
+            });
+        });
+    }
+
+    function toggleSection(elements, isActive) {
+        toggleElements(elements, isActive);
+        setSectionInputsState(elements, isActive);
+    }
+
     function isEnabled(input) {
         if (!input) return false;
         if (input.type === 'checkbox') return !!input.checked;
@@ -109,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleVolunteers() {
         const active = isEnabled(needsVolunteers);
-        toggleElements(volunteersFields, active);
+        toggleSection(volunteersFields, active);
         setRequiredState([
             '[name="required_volunteers"]',
             '[name="volunteer_age_from"]',
@@ -121,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleCorrespondence() {
         const active = isEnabled(needsCorrespondence);
-        toggleElements(correspondenceFields, active);
+        toggleSection(correspondenceFields, active);
         setRequiredState([
             '[name="official_correspondence_reason"]',
             '[name="official_correspondence_target"]',
@@ -130,62 +148,62 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleMedia() {
-        toggleElements(mediaFields, isEnabled(needsMedia));
+        toggleSection(mediaFields, isEnabled(needsMedia));
     }
 
     function toggleSupplies() {
         const active = isEnabled(needsSupplies);
-        toggleElements(suppliesFields, active);
+        toggleSection(suppliesFields, active);
         if (suppliesCount) {
             suppliesCount.disabled = !active;
         }
     }
 
     function toggleSponsor() {
-        toggleElements(sponsorFields, isEnabled(hasSponsor));
+        toggleSection(sponsorFields, isEnabled(hasSponsor));
     }
 
     function togglePartners() {
         const active = isEnabled(hasPartners);
-        toggleElements(partnersFields, active);
+        toggleSection(partnersFields, active);
         if (partnersCount) {
             partnersCount.disabled = !active;
         }
     }
 
     function toggleCeremonyAgenda() {
-        toggleElements(ceremonyAgendaFields, isEnabled(needsCeremonyAgenda));
+        toggleSection(ceremonyAgendaFields, isEnabled(needsCeremonyAgenda));
     }
 
     function toggleTransport() {
-        toggleElements(transportFields, isEnabled(needsTransport));
+        toggleSection(transportFields, isEnabled(needsTransport));
     }
 
     function toggleMaintenance() {
-        toggleElements(maintenanceFields, isEnabled(needsMaintenance));
+        toggleSection(maintenanceFields, isEnabled(needsMaintenance));
     }
 
     function toggleGifts() {
-        toggleElements(giftsFields, isEnabled(needsGifts));
+        toggleSection(giftsFields, isEnabled(needsGifts));
     }
 
     function toggleProgramsParticipation() {
-        toggleElements(programsParticipationFields, isEnabled(needsProgramsParticipation));
+        toggleSection(programsParticipationFields, isEnabled(needsProgramsParticipation));
     }
 
     function toggleCertificates() {
-        toggleElements(certificatesFields, isEnabled(needsCertificates));
+        toggleSection(certificatesFields, isEnabled(needsCertificates));
     }
 
     function toggleInvitations() {
-        toggleElements(invitationsFields, isEnabled(needsInvitations));
+        toggleSection(invitationsFields, isEnabled(needsInvitations));
         toggleInvitationTypeDetails();
     }
 
     function toggleInvitationTypeDetails() {
         const value = invitationType?.value || '';
-        toggleElements(invitationPaperFields, value === 'paper');
-        toggleElements(invitationElectronicFields, value === 'electronic');
+        toggleSection(invitationPaperFields, value === 'paper');
+        toggleSection(invitationElectronicFields, value === 'electronic');
     }
 
     function renderPartners() {
