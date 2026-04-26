@@ -440,6 +440,8 @@ class MonthlyActivitiesController extends Controller
     protected function normalizePlanningPayload(array &$data): void
     {
         $this->normalizeVolunteerAgeRange($data);
+        $this->normalizeExecutionNeedsFollowup($data);
+        $this->normalizeSuppliesPayload($data);
 
         $data['execution_status'] = $data['execution_status'] ?? 'executed';
         $data['status'] = $data['status'] ?? 'draft';
@@ -521,6 +523,68 @@ class MonthlyActivitiesController extends Controller
         }
 
         return [null, null];
+    }
+
+    protected function normalizeExecutionNeedsFollowup(array &$data): void
+    {
+        $rows = $data['execution_needs_followup'] ?? null;
+        if (! is_array($rows)) {
+            $data['execution_needs_followup'] = null;
+            return;
+        }
+
+        $normalized = collect($rows)
+            ->map(function ($row, $key) {
+                if (! is_array($row)) {
+                    return null;
+                }
+
+                $status = in_array((string) ($row['status'] ?? ''), ['secured', 'not_secured'], true)
+                    ? (string) $row['status']
+                    : null;
+                $reason = trim((string) ($row['reason'] ?? ''));
+                $score = $row['effectiveness_score'] ?? null;
+                $score = $score === '' || $score === null ? null : (int) $score;
+
+                if (! $status && $reason === '' && $score === null) {
+                    return null;
+                }
+
+                return [
+                    'key' => (string) $key,
+                    'status' => $status,
+                    'reason' => $reason !== '' ? $reason : null,
+                    'effectiveness_score' => $score,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        $data['execution_needs_followup'] = $normalized === [] ? null : $normalized;
+    }
+
+    protected function normalizeSuppliesPayload(array &$data): void
+    {
+        if (! isset($data['supplies']) || ! is_array($data['supplies'])) {
+            return;
+        }
+
+        $data['supplies'] = collect($data['supplies'])->map(function ($supply) {
+            if (! is_array($supply)) {
+                return $supply;
+            }
+
+            if (! isset($supply['provider_type']) && isset($supply['insurance_mechanism'])) {
+                $supply['provider_type'] = $supply['insurance_mechanism'];
+            }
+
+            if (! isset($supply['provider_name']) && isset($supply['insurance_other_details'])) {
+                $supply['provider_name'] = $supply['insurance_other_details'];
+            }
+
+            return $supply;
+        })->all();
     }
 
     protected function shouldSubmitFromRequest(Request $request): bool
@@ -1268,6 +1332,10 @@ class MonthlyActivitiesController extends Controller
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
             'evaluations.*.note' => ['nullable', 'string'],
             'followup_remarks' => ['nullable', 'string'],
+            'execution_needs_followup' => ['nullable', 'array'],
+            'execution_needs_followup.*.status' => ['nullable', 'in:secured,not_secured'],
+            'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
+            'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
             'description' => ['required', 'string', 'max:2000'],
         ]);
 
@@ -1362,6 +1430,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) (($data['requires_communications'] ?? false) || in_array('relations', $data['responsible_entities'] ?? [], true)),
+            'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
             'branch_id' => $data['branch_id'],
@@ -1575,6 +1644,25 @@ class MonthlyActivitiesController extends Controller
                 ->with('status', 'تم حفظ متابعة وتقييم الفعالية بنجاح.');
         }
 
+        if ($request->boolean('post_execution_needs_only')) {
+            $data = $request->validate([
+                'execution_needs_followup' => ['nullable', 'array'],
+                'execution_needs_followup.*.status' => ['nullable', 'in:secured,not_secured'],
+                'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
+                'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
+            ]);
+
+            $this->normalizePlanningPayload($data);
+            $monthlyActivity->update([
+                'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
+            ]);
+            $this->logWorkflowAction('execution_needs_followup_updated', $monthlyActivity, $request, $monthlyActivity->status);
+
+            return redirect()
+                ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'])
+                ->with('status', 'تم حفظ متابعة احتياجات التنفيذ بنجاح.');
+        }
+
         $isCreator = (int) $monthlyActivity->created_by === (int) $request->user()->id;
 
         if ($this->isLocked($monthlyActivity) && ! $request->user()->hasRole('super_admin') && ! $isCreator) {
@@ -1774,6 +1862,7 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops',
             'requires_communications',
             'is_program_related',
+            'execution_needs_followup',
             'participation_status',
             'plan_type',
             'branch_plan_file',
@@ -1867,6 +1956,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
+            'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'branch_id' => $data['branch_id'],
             'lifecycle_status' => $newLifecycleStatus,
             'relations_officer_approval_status' => $monthlyActivity->relations_officer_approval_status,
@@ -1974,6 +2064,7 @@ class MonthlyActivitiesController extends Controller
                 'is_program_related' => $newValues['is_program_related'],
                 'requires_workshops' => $newValues['requires_workshops'],
                 'requires_communications' => $newValues['requires_communications'],
+                'execution_needs_followup' => $newValues['execution_needs_followup'],
                 'branch_id' => $newValues['branch_id'],
                 'lifecycle_status' => $newValues['lifecycle_status'],
                 'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],
@@ -2067,6 +2158,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => $newValues['is_program_related'],
             'requires_workshops' => $newValues['requires_workshops'],
             'requires_communications' => $newValues['requires_communications'],
+            'execution_needs_followup' => $newValues['execution_needs_followup'],
             'branch_id' => $newValues['branch_id'],
             'lifecycle_status' => $newValues['lifecycle_status'],
             'relations_officer_approval_status' => $newValues['relations_officer_approval_status'],
