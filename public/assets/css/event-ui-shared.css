@@ -291,6 +291,60 @@
     overflow-wrap: anywhere;
 }
 
+.calendar-chip-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    align-items: center;
+}
+
+.calendar-chip-flag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.25rem;
+    max-width: 100%;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: .1rem .45rem;
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #334155;
+    background: #eef2f7;
+    overflow-wrap: anywhere;
+}
+
+.calendar-chip-flag--event-mandatory {
+    color: #9f1239;
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+.calendar-chip-flag--event-optional {
+    color: #92400e;
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.calendar-chip-flag--plan-unified {
+    color: #075985;
+    background: #e0f2fe;
+    border-color: #bae6fd;
+}
+
+.calendar-chip-flag--plan-non_unified {
+    color: #115e59;
+    background: #ccfbf1;
+    border-color: #99f6e4;
+}
+
+.calendar-chip-flag--source,
+.calendar-chip-flag--version {
+    color: #475569;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
 .agenda-calendar-day-head {
     display: flex;
     align-items: flex-start;

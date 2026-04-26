@@ -3,7 +3,8 @@
     if (!module) return;
 
     const isRtl = module.dataset.rtl === '1';
-    const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
+    const initialView = module.dataset.initialView || 'table';
+    const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, initialView) : (() => {});
     const statusLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-status-labels-json', {}) : JSON.parse(document.getElementById('monthly-status-labels-json')?.textContent ?? '{}');
     const createCalendarDayHeader = window.ZahaUi?.createCalendarDayHeader;
     const renderCalendarWeekdays = window.ZahaUi?.renderCalendarWeekdays;
@@ -120,6 +121,12 @@
                 activityLink.innerHTML = `
                     <span class="agenda-event-chip-title">${item.title}</span>
                     <span class="monthly-calendar-branch">${item.branch || ''}</span>
+                    <span class="calendar-chip-flags">
+                        ${item.event_type_label ? `<span class="calendar-chip-flag calendar-chip-flag--event-${item.event_type || 'default'}">${item.event_type_label}</span>` : ''}
+                        ${item.plan_type_label ? `<span class="calendar-chip-flag calendar-chip-flag--plan-${item.plan_type || 'default'}">${item.plan_type_label}</span>` : ''}
+                        <span class="calendar-chip-flag calendar-chip-flag--source">${item.source_label || ''}</span>
+                        <span class="calendar-chip-flag calendar-chip-flag--version">V${item.plan_version || 1}</span>
+                    </span>
                     <div class="monthly-calendar-meta">
                         <span class="monthly-calendar-badge ${badgeClass}">${statusLabels[item.status] || item.status}</span>
                         <span class="monthly-calendar-icons">${item.requires_workshops ? '🛠️' : ''}${item.requires_communications ? '📣' : ''}</span>
@@ -141,6 +148,6 @@
         });
     });
 
-    switchView('table');
+    switchView(initialView);
     loadCalendar();
 })();

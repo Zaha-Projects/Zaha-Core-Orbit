@@ -279,6 +279,22 @@ body.mobile-sidebar-open .layout-shell::after {
   color: #1f2a37;
 }
 
+.btn-sidebar-control {
+  background: rgba(255, 255, 255, .78);
+  border: 1px solid rgba(95, 118, 147, .38);
+  color: var(--sidebar-text);
+  border-radius: .65rem;
+  font-weight: 700;
+  padding: .45rem .7rem;
+}
+
+.btn-sidebar-control:hover,
+.btn-sidebar-control:focus {
+  background: var(--sidebar-item-hover-bg);
+  border-color: var(--sidebar-cyan);
+  color: var(--sidebar-item-hover-text);
+}
+
 .page-crumb {
   background: var(--surface-soft);
   border: 1px solid var(--border-color);
@@ -315,6 +331,12 @@ body.mobile-sidebar-open .layout-shell::after {
   align-items: center;
   justify-content: center;
   background: rgba(255,255,255,.18);
+}
+
+.kpi-icon i {
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .kpi-label {

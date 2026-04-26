@@ -5,6 +5,9 @@
     $subtitle = ($viewScope ?? 'default') === 'all_branches'
         ? 'يتم إظهار الخطط الشهرية المعتمدة بالكامل والمنشورة فقط لبقية الفروع.'
         : __('app.roles.programs.monthly_activities.subtitle');
+    $subtitle = ($viewScope ?? 'default') === 'all_branches'
+        ? __('app.roles.programs.monthly_activities.other_branches_subtitle')
+        : $subtitle;
     $normalizeMonthlyPageStatus = function (?string $status): ?string {
         return match ((string) $status) {
             'approved' => 'approved',
@@ -44,11 +47,13 @@
         'approved' => $workflowStatusLabel('approved'),
     ];
     $branchFilterSelected = $filters['branch_id'] ?? '';
+    $authUser = auth()->user();
+    $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
     $calendarCreateBranchId = filled($branchFilterSelected)
         ? (int) $branchFilterSelected
-        : (method_exists(auth()->user(), 'primaryScopedBranchId')
-            ? auth()->user()?->primaryScopedBranchId()
-            : auth()->user()?->branch_id);
+        : ($authUser && method_exists($authUser, 'primaryScopedBranchId')
+            ? $authUser?->primaryScopedBranchId()
+            : $authUser?->branch_id);
     $versionedAsset = static function (string $path): string {
         $absolutePath = public_path($path);
         $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
@@ -65,6 +70,7 @@
         data-rtl="{{ app()->getLocale() === 'ar' ? '1' : '0' }}"
         data-create-url="{{ route('role.relations.activities.create') }}"
         data-default-branch-id="{{ $calendarCreateBranchId ?: '' }}"
+        data-initial-view="{{ $isBranchCalendarOnly ? 'calendar' : 'table' }}"
     >
         <div class="card event-card mb-4">
             <div class="card-body">
@@ -90,6 +96,7 @@
             </div>
         @endif
 
+        @unless($isBranchCalendarOnly)
         <div class="event-kpi-grid">
             @foreach (($summaryCards ?? collect()) as $card)
                 @php
@@ -108,6 +115,7 @@
                 </a>
             @endforeach
         </div>
+        @endunless
 
         <div class="card event-card mb-4">
             <div class="card-body">
@@ -152,6 +160,7 @@
             </div>
         </div>
 
+        @unless($isBranchCalendarOnly)
         <div class="card event-card mb-4">
             <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 <div>
@@ -161,13 +170,14 @@
                 <a href="{{ route('role.relations.activities.create') }}" class="btn btn-primary">{{ __('app.roles.programs.monthly_activities.actions.create') }}</a>
             </div>
         </div>
+        @endunless
 
-        <div class="agenda-view-switch mb-3" role="tablist">
+        <div class="agenda-view-switch mb-3 {{ $isBranchCalendarOnly ? 'd-none' : '' }}" role="tablist">
             <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">بطاقات</button>
             <button type="button" class="btn btn-sm btn-outline-primary" data-view-toggle="calendar" aria-pressed="false">تقويم</button>
         </div>
 
-        <div class="agenda-view-pane" data-view-pane="table">
+        <div class="agenda-view-pane {{ $isBranchCalendarOnly ? 'd-none' : '' }}" data-view-pane="table">
             <div class="card event-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -246,7 +256,7 @@
             </div>
         </div>
 
-        <div class="agenda-view-pane d-none" data-view-pane="calendar">
+        <div class="agenda-view-pane {{ $isBranchCalendarOnly ? '' : 'd-none' }}" data-view-pane="calendar">
             <div class="card event-card">
                 <div class="card-body">
                     <div class="agenda-calendar-toolbar mb-3 d-flex justify-content-between align-items-center">

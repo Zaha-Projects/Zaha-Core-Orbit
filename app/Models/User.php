@@ -85,6 +85,12 @@ class User extends Authenticatable
         return $this->can('branches.view.own');
     }
 
+    public function isBranchScopedPlanningUser(): bool
+    {
+        return $this->hasBranchScopedMonthlyVisibility()
+            || $this->hasBranchScopedAgendaVisibility();
+    }
+
     public function branch()
     {
         return $this->belongsTo(Branch::class);

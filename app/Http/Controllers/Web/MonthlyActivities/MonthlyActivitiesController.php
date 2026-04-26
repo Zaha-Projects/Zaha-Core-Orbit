@@ -2193,6 +2193,18 @@ class MonthlyActivitiesController extends Controller
                     ?? sprintf('%04d-%02d-%02d', $year, $activity->month, $activity->day),
                 'branch' => $activity->branch?->name,
                 'status' => $activity->status,
+                'source_label' => $activity->is_in_agenda
+                    ? __('app.roles.programs.monthly_activities.sources.from_agenda')
+                    : __('app.roles.programs.monthly_activities.sources.manual'),
+                'event_type' => $activity->agendaEvent?->event_type,
+                'event_type_label' => $activity->agendaEvent?->event_type
+                    ? __('app.roles.relations.agenda.types.' . $activity->agendaEvent->event_type)
+                    : null,
+                'plan_type' => $activity->plan_type,
+                'plan_type_label' => $activity->plan_type
+                    ? __('app.roles.relations.agenda.plans.' . $activity->plan_type)
+                    : null,
+                'plan_version' => (int) ($activity->plan_version ?: 1),
                 'requires_workshops' => (bool) $activity->requires_workshops,
                 'requires_communications' => (bool) $activity->requires_communications,
                 'edit_url' => route('role.relations.activities.edit', $activity),

@@ -134,8 +134,8 @@
         </ul>
 
         <p class="side-comment" data-i18n="language">{{ __('app.layout.language_switch') }}</p>
-        <button id="mobileLocaleToggle" class="btn btn-outline-info w-100 mb-2" type="button">🌐 English (LTR)</button>
-        <button id="mobileThemeToggle" class="btn btn-outline-light w-100" type="button">🌙 داكن</button>
+        <button id="mobileLocaleToggle" class="btn btn-sidebar-control w-100 mb-2" type="button">English</button>
+        <button id="mobileThemeToggle" class="btn btn-sidebar-control w-100" type="button">Dark mode</button>
     </aside>
 
     <div class="content-shell">
@@ -144,22 +144,12 @@
                 <button id="sidebarToggle" class="btn topbar-toggle" type="button"><i class="fas fa-bars"></i></button>
 
                 <ul class="nav ms-auto align-items-center gap-2 topbar-actions">
-                    <li class="nav-item dropdown">
-                        <button class="btn icon-dd" data-bs-toggle="dropdown" type="button">
-                            <i class="far fa-bell"></i><span class="badge bg-warning text-dark rounded-pill">{{ $user?->inAppNotifications()?->whereNull('read_at')->count() ?? 0 }}</span><i class="fas fa-caret-down tiny-caret"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#notificationsSection" data-i18n="notif_count">{{ __('app.layout.notifications') }}</a></li>
-                            <li><a class="dropdown-item" href="#" data-i18n="see_all">عرض الكل</a></li>
-                        </ul>
-                    </li>
-
                     <li class="nav-item"><span class="top-avatar top-avatar-icon"><i class="fas fa-user-astronaut"></i></span></li>
                     <li class="nav-item dropdown">
                         <button class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown" type="button">{{ $displayName }}</button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <button id="themeToggle" class="dropdown-item" type="button">🌙 Dark</button>
+                                <button id="themeToggle" class="dropdown-item" type="button">Dark mode</button>
                             </li>
                             @auth
                                 <li>
@@ -171,7 +161,7 @@
                             @endauth
                         </ul>
                     </li>
-                    <li class="nav-item"><button class="btn btn-locale-toggle" id="localeToggle" type="button">🌐 English (LTR)</button></li>
+                    <li class="nav-item"><button class="btn btn-locale-toggle" id="localeToggle" type="button">English</button></li>
                 </ul>
             </nav>
         </header>

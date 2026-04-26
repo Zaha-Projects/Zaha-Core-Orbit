@@ -9,6 +9,7 @@
     $isKhaldaHq = str_contains($branchText, 'khalda') || str_contains($branchText, 'خلدا') || str_contains($branchText, 'عمان') || str_contains($branchText, 'عمّان') || str_contains($branchText, 'amman');
     $canManageAgenda = $authUser?->can('agenda.create') ?? false;
     $canBranchInteract = ($authUser?->can('agenda.participation.update') ?? false) && ! $isKhaldaHq;
+    $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
 
     $normalizeAgendaPageStatus = function (?string $status): ?string {
         return match ((string) $status) {
@@ -122,7 +123,9 @@
             'participant_count' => $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count(),
             'participant_branches' => $participantBranches,
             'plan_type' => $event->plan_type,
+            'plan_type_label' => __('app.roles.relations.agenda.plans.' . $event->plan_type),
             'event_type' => $event->event_type,
+            'event_type_label' => __('app.roles.relations.agenda.types.' . $event->event_type),
             'is_active' => (bool) ($event->is_active ?? true),
             'branch_participation_status' => $branchParticipation?->participation_status,
             'branch_proposed_date' => optional($branchParticipation?->proposed_date)?->format('Y-m-d'),
@@ -153,6 +156,7 @@
         data-selected-month="{{ (int) request('month', 0) }}"
         data-create-url="{{ $canManageAgenda ? route('role.relations.agenda.create') : '' }}"
         data-branch-interact="{{ $canBranchInteract ? '1' : '0' }}"
+        data-initial-view="{{ $isBranchCalendarOnly ? 'calendar' : 'table' }}"
     >
         <div class="event-header">
             <div>
@@ -222,16 +226,18 @@
             </div>
         </form>
 
+        @unless($isBranchCalendarOnly)
         <div class="event-kpi-grid">
             <div class="event-kpi-card">
                 <div class="text-muted small">{{ __('app.roles.relations.agenda.title') }}</div>
                 <div class="event-kpi-value">{{ $events->total() }}</div>
             </div>
         </div>
+        @endunless
 
         <div class="alert alert-info mt-3">{{ __('app.roles.relations.agenda.hints.scope_notice') }}</div>
 
-        @if($canBranchInteract)
+        @if($canBranchInteract && ! $isBranchCalendarOnly)
             <div class="card event-card mb-3">
                 <div class="card-body">
                     <h2 class="h6 mb-3">{{ __('app.roles.relations.agenda.branch_interaction_title') }}</h2>
@@ -312,7 +318,7 @@
             </div>
         @endif
 
-        <div class="agenda-view-switch mb-3" role="tablist" aria-label="{{ __('app.roles.relations.agenda.calendar.view_switcher') }}">
+        <div class="agenda-view-switch mb-3 {{ $isBranchCalendarOnly ? 'd-none' : '' }}" role="tablist" aria-label="{{ __('app.roles.relations.agenda.calendar.view_switcher') }}">
             <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">
                 {{ __('app.roles.relations.agenda.calendar.table_view') }}
             </button>
@@ -321,7 +327,7 @@
             </button>
         </div>
 
-        <div class="agenda-view-pane" data-view-pane="table">
+        <div class="agenda-view-pane {{ $isBranchCalendarOnly ? 'd-none' : '' }}" data-view-pane="table">
             <div class="card event-card">
                 <div class="card-body">
                     <div class="agenda-cards-grid">
@@ -393,7 +399,7 @@
             </div>
         </div>
 
-        <div class="agenda-view-pane d-none" data-view-pane="calendar">
+        <div class="agenda-view-pane {{ $isBranchCalendarOnly ? '' : 'd-none' }}" data-view-pane="calendar">
             <div class="card event-card">
                 <div class="card-body">
                     <div class="agenda-calendar-toolbar">

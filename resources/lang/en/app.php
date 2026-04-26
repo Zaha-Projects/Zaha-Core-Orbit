@@ -602,6 +602,7 @@ return [
                     'calendar_view' => 'Calendar view',
                     'previous_month' => 'Previous month',
                     'next_month' => 'Next month',
+                    'fallback' => 'Calendar failed to load.',
                     'weekdays' => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
                     'months' => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
                 ],
@@ -703,6 +704,11 @@ return [
             'monthly_activities' => [
                 'title' => 'Monthly plan',
                 'subtitle' => 'Create and manage monthly activities.',
+                'other_branches_subtitle' => 'Only fully approved and published monthly plans are shown for other branches.',
+                'sources' => [
+                    'from_agenda' => 'From agenda',
+                    'manual' => 'Manual entry',
+                ],
                 'create_title' => 'Add monthly activity',
                 'edit_title' => 'Edit monthly activity',
                 'edit_details' => 'Activity details',

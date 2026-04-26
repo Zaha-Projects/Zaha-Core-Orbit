@@ -5,7 +5,8 @@
     const isRtl = module.dataset.rtl === '1';
     const createUrl = module.dataset.createUrl || '';
     const canBranchInteract = module.dataset.branchInteract === '1';
-    const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, 'table') : (() => {});
+    const initialView = module.dataset.initialView || 'table';
+    const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, initialView) : (() => {});
     const events = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-events-json', []) : JSON.parse(document.getElementById('agenda-events-json')?.textContent ?? '[]');
     const weekDayLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-weekdays-json', []) : JSON.parse(document.getElementById('agenda-weekdays-json')?.textContent ?? '[]');
     const monthNames = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-months-json', []) : JSON.parse(document.getElementById('agenda-months-json')?.textContent ?? '[]');
@@ -306,6 +307,10 @@
                 )).join('');
                 eventLink.innerHTML = `
                     <span class="agenda-event-chip-title">${event.name}</span>
+                    <span class="calendar-chip-flags">
+                        <span class="calendar-chip-flag calendar-chip-flag--event-${event.event_type || 'default'}">${event.event_type_label || event.event_type || ''}</span>
+                        <span class="calendar-chip-flag calendar-chip-flag--plan-${event.plan_type || 'default'}">${event.plan_type_label || event.plan_type || ''}</span>
+                    </span>
                     <span class="event-status status-${event.status}">${event.status_label ?? event.status}</span>
                     <span class="agenda-event-chip-units">${unitSquares}</span>
                     <span class="agenda-event-chip-branches">${branchDots}</span>
@@ -332,7 +337,7 @@
                         <div class="tooltip-row">📅 ${event.date}</div>
                         <div class="tooltip-row">🏢 ${event.department ?? '-'}</div>
                         <div class="tooltip-row">🏷️ ${event.category ?? '-'}</div>
-                        <div class="tooltip-row">📝 ${(event.event_type ?? '-') + ' / ' + (event.plan_type ?? '-')}</div>
+                        <div class="tooltip-row">📝 ${(event.event_type_label ?? event.event_type ?? '-') + ' / ' + (event.plan_type_label ?? event.plan_type ?? '-')}</div>
                         <div class="tooltip-row">✅ ${event.status_label ?? event.status}</div>
                         <div class="tooltip-row"><strong>الفروع المشاركة:</strong></div>
                         <div class="tooltip-list">${branchPills || '<span class="text-muted">-</span>'}</div>
@@ -382,7 +387,7 @@
         });
     }
 
-    switchView('table');
+    switchView(initialView);
     renderWeekdays();
     renderCalendar();
 })();
