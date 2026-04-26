@@ -25,3 +25,45 @@
 .approvals-status-item { border: 1px solid #e2e8f0; border-radius: .75rem; padding: .55rem .65rem; background: #f8fafc; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
 .approvals-status-item.is-current { border-color: #bfd7ff; background: #eef5ff; }
 .approvals-status-role { font-size: .82rem; color: #334155; font-weight: 600; }
+
+[data-theme="dark"] .workflow-ui .wf-card,
+[data-theme="dark"] .approvals-activity-card,
+[data-theme="dark"] .approvals-status-panel,
+[data-theme="dark"] .approvals-status-item,
+[data-theme="dark"] .workflow-ui .wf-chip,
+[data-theme="dark"] .workflow-ui .wf-tab {
+    background: var(--surface-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .workflow-ui .wf-page-title,
+[data-theme="dark"] .approvals-kpi-value,
+[data-theme="dark"] .approvals-status-title,
+[data-theme="dark"] .approvals-status-role {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .workflow-ui .wf-muted,
+[data-theme="dark"] .approvals-kpi-label {
+    color: var(--muted-color);
+}
+
+[data-theme="dark"] .approvals-card-header,
+[data-theme="dark"] .approvals-card-footer,
+[data-theme="dark"] .approvals-card-body,
+[data-theme="dark"] .approvals-kpi-card {
+    background: var(--surface-soft);
+    border-color: var(--border-color);
+}
+
+@media (max-width: 767.98px) {
+    .workflow-ui .wf-tabbar,
+    .workflow-ui .wf-tab {
+        width: 100%;
+    }
+
+    .workflow-ui .wf-tab {
+        text-align: center;
+    }
+}

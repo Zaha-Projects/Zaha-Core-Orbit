@@ -1,7 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
+
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
 @endpush
 
 @php

@@ -26,6 +26,7 @@ class AgendaEvent extends Model
         'is_unified',
         'status',
         'is_archived',
+        'is_active',
         'archived_year',
         'relations_approval_status',
         'executive_approval_status',
@@ -42,6 +43,7 @@ class AgendaEvent extends Model
         'approved_by_relations_at' => 'datetime',
         'approved_by_executive_at' => 'datetime',
         'is_archived' => 'boolean',
+        'is_active' => 'boolean',
         'is_mandatory' => 'boolean',
         'is_unified' => 'boolean',
         'version' => 'integer',
@@ -63,9 +65,7 @@ class AgendaEvent extends Model
             ->when($filters['plan_type'] ?? null, fn ($q, $planType) => $q->where('plan_type', $planType))
             ->when($filters['event_type'] ?? null, fn ($q, $eventType) => $q->where('event_type', $eventType))
             ->when($filters['branch_id'] ?? null, function ($q, $branchId) {
-                $q->whereHas('participations', function ($p) use ($branchId) {
-                    $p->where('entity_type', 'branch')->where('entity_id', $branchId);
-                });
+                $q->forBranchAudience([(int) $branchId]);
             })
             ->when(array_key_exists('archived', $filters), function ($q) use ($filters) {
                 $archived = filter_var($filters['archived'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
@@ -73,6 +73,63 @@ class AgendaEvent extends Model
                     $q->where('is_archived', $archived);
                 }
             });
+    }
+
+    public function scopeForBranchAudience($query, array $branchIds, ?int $creatorId = null, ?int $selectedEventId = null)
+    {
+        $branchIds = collect($branchIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($branchIds === []) {
+            return $query;
+        }
+
+        return $query->where(function ($audienceQuery) use ($branchIds, $creatorId, $selectedEventId) {
+            $audienceQuery
+                ->where('event_type', 'optional')
+                ->orWhereHas('participations', function ($participationQuery) use ($branchIds) {
+                    $participationQuery
+                        ->where('entity_type', 'branch')
+                        ->whereIn('entity_id', $branchIds)
+                        ->where('participation_status', 'participant');
+                });
+
+            if ($creatorId) {
+                $audienceQuery->orWhere('created_by', $creatorId);
+            }
+
+            if ($selectedEventId) {
+                $audienceQuery->orWhere($audienceQuery->getModel()->getQualifiedKeyName(), $selectedEventId);
+            }
+        });
+    }
+
+    public function isVisibleToAnyBranch(array $branchIds): bool
+    {
+        $branchIds = collect($branchIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ((string) $this->event_type === 'optional') {
+            return true;
+        }
+
+        if ($branchIds === []) {
+            return false;
+        }
+
+        return $this->participations()
+            ->where('entity_type', 'branch')
+            ->whereIn('entity_id', $branchIds)
+            ->where('participation_status', 'participant')
+            ->exists();
     }
 
     public function department()

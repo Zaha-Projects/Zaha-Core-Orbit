@@ -1,4 +1,5 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
+
 
 @php
     use Illuminate\Support\Str;

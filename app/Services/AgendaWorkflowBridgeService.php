@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\AgendaEvent;
-use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Models\WorkflowInstance;
 use App\Models\WorkflowLog;
@@ -46,7 +45,7 @@ class AgendaWorkflowBridgeService
         $agendaEvent = $agendaEvent->fresh(['participations']);
 
         if ($oldStatus !== 'published' && $newStatus === 'published') {
-            $this->syncUnifiedAgendaToMonthlyPlans($agendaEvent);
+            $this->syncMandatoryAgendaToMonthlyPlans($agendaEvent);
         }
 
         return $agendaEvent->fresh(['workflowInstance.currentStep.role', 'workflowInstance.logs.step.role', 'approvals.approver', 'creator']);
@@ -113,9 +112,13 @@ class AgendaWorkflowBridgeService
         );
     }
 
-    protected function syncUnifiedAgendaToMonthlyPlans(AgendaEvent $agendaEvent): void
+    protected function syncMandatoryAgendaToMonthlyPlans(AgendaEvent $agendaEvent): void
     {
-        if ((string) $agendaEvent->plan_type !== 'unified') {
+        if ((string) $agendaEvent->event_type !== 'mandatory') {
+            return;
+        }
+
+        if (! (bool) ($agendaEvent->is_active ?? true)) {
             return;
         }
 
@@ -124,17 +127,12 @@ class AgendaWorkflowBridgeService
             ? Carbon::parse($eventDate)->toDateString()
             : Carbon::create(now()->year, (int) $agendaEvent->month, (int) $agendaEvent->day)->toDateString();
 
-        $branchIds = [];
-        if ((string) $agendaEvent->event_type === 'mandatory') {
-            $branchIds = Branch::query()->pluck('id')->map(fn ($id) => (int) $id)->all();
-        } else {
-            $branchIds = $agendaEvent->participations()
-                ->where('entity_type', 'branch')
-                ->where('participation_status', 'participant')
-                ->pluck('entity_id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
-        }
+        $branchIds = $agendaEvent->participations()
+            ->where('entity_type', 'branch')
+            ->where('participation_status', 'participant')
+            ->pluck('entity_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
         foreach ($branchIds as $branchId) {
             $monthlyActivity = MonthlyActivity::firstOrNew([

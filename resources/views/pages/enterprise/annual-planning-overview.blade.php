@@ -1,7 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
 
 @section('page_title', __('app.enterprise.annual_overview.title'))
 @section('page_breadcrumb', __('app.enterprise.annual_overview.title'))
+
 
 @section('content')
     <div class="card">

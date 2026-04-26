@@ -1,4 +1,5 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
+
 
 @php
     $title = __('app.roles.programs.monthly_activities.edit_title');
@@ -42,6 +43,10 @@
         && $editUser->hasBranchScopedMonthlyVisibility()
         && ! empty($editUser->branch_id);
 @endphp
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
+@endpush
 
 
 @section('content')

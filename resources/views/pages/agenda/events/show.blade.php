@@ -1,6 +1,8 @@
-﻿@extends('layouts.app')
+﻿@extends('layouts.new-theme-dashboard')
+
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/agenda-event-show.css') }}">
 @endpush
@@ -140,26 +142,13 @@
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.event_type') }}:</strong> {{ __('app.roles.relations.agenda.types.' . $agendaEvent->event_type) }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.plan_type') }}:</strong> {{ __('app.roles.relations.agenda.plans.' . $agendaEvent->plan_type) }}</div>
                     <div class="col-md-3"><strong>{{ __('app.roles.relations.agenda.fields_ext.review_status') }}:</strong> {{ $workflowSummary['status_label'] ?? $statusLabel($agendaEvent->status) }}</div>
+                    <div class="col-md-3"><strong>حالة التفعيل:</strong> {{ ($agendaEvent->is_active ?? true) ? 'نشطة' : 'غير نشطة' }}</div>
                     <div class="col-md-12"><strong>{{ __('app.roles.relations.agenda.fields.notes') }}:</strong> {{ $agendaEvent->notes ?: '-' }}</div>
                 </div>
             </div>
         </div>
 
         <div class="row g-3">
-            <div class="col-12 col-lg-6">
-                <div class="card event-card h-100">
-                    <div class="card-body">
-                        <h2 class="h6 mb-3">{{ __('app.roles.relations.agenda.fields_ext.partner_department') }}</h2>
-                        <ul class="mb-0 ps-3">
-                            @forelse($agendaEvent->partnerDepartments as $partnerDepartment)
-                                <li>{{ $partnerDepartment->icon }} <span class="d-inline-block rounded-circle align-middle" style="width:10px;height:10px;background:{{ $partnerDepartment->color_hex ?? '#94a3b8' }}"></span> {{ $partnerDepartment->name }}</li>
-                            @empty
-                                <li class="text-muted">لا يوجد شركاء</li>
-                            @endforelse
-                        </ul>
-                    </div>
-                </div>
-            </div>
             <div class="col-12 col-lg-6">
                 <div class="card event-card h-100">
                     <div class="card-body">

@@ -50,8 +50,48 @@
             background: #f8fbfd;
             min-height: 100%;
         }
-        .agenda-form-page .agenda-form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: .75rem;
-        }
+.agenda-form-page .agenda-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .75rem;
+}
+
+[data-theme="dark"] .agenda-form-page .agenda-form-section,
+[data-theme="dark"] .agenda-form-page .partner-departments-box,
+[data-theme="dark"] .agenda-form-page .branch-toggle-item {
+    background: var(--surface-soft);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .agenda-form-page .agenda-form-section__title {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .agenda-form-page .agenda-form-section__text {
+    color: var(--muted-color);
+}
+
+[data-theme="dark"] .agenda-form-page .partner-department-item {
+    background: var(--surface-bg);
+    border-color: var(--border-color);
+}
+
+@media (max-width: 767.98px) {
+    .agenda-form-page .agenda-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .agenda-form-page .agenda-form-actions .btn {
+        width: 100%;
+    }
+
+    .agenda-form-page .partner-departments-box {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+
+    .agenda-form-page .branch-toggle-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

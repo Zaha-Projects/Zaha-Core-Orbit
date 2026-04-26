@@ -12,6 +12,7 @@ use App\Models\WorkflowInstance;
 use App\Models\WorkflowLog;
 use App\Models\WorkflowStep;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -183,9 +184,10 @@ class ProductionReadinessMonthlyActivitiesTest extends TestCase
             ->assertSessionHasErrors('status');
     }
 
-    public function test_agenda_event_requires_owner_and_owner_not_partner(): void
+    public function test_agenda_event_creation_ignores_legacy_partner_department_payload(): void
     {
         $role = Role::findOrCreate('relations_manager', 'web');
+        $role->givePermissionTo(Permission::findOrCreate('agenda.create', 'web'));
         $user = User::factory()->create();
         $user->assignRole($role);
 
@@ -199,8 +201,15 @@ class ProductionReadinessMonthlyActivitiesTest extends TestCase
                 'partner_department_ids' => [$owner->id],
                 'event_type' => 'mandatory',
                 'plan_type' => 'unified',
+                'is_active' => 1,
             ])
-            ->assertSessionHasErrors('partner_department_ids.0');
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('agenda_events', [
+            'event_name' => 'Event',
+            'owner_department_id' => $owner->id,
+            'is_active' => true,
+        ]);
     }
 
     public function test_planning_attachment_accessor_is_backward_compatible(): void

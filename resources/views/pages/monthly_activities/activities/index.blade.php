@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
 
 @php
     $title = __('app.roles.programs.monthly_activities.title');
@@ -56,6 +56,7 @@
         return asset($path) . '?v=' . $version;
     };
 @endphp
+
 
 @section('content')
     <div

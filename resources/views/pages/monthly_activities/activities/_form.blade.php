@@ -7,8 +7,8 @@
         && ! empty($formUser->branch_id);
     $selectedBranch = $branches->firstWhere('id', old('branch_id', $existingMonthlyActivity?->branch_id ?? $formUser?->branch_id));
     $departmentsFromForm = $departments ?? \App\Models\Department::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
-    $selectedOwnerDepartmentId = (string) old('owner_department_id', '');
     $selectedPartnerDepartmentIds = collect(old('partner_department_ids', []))->map(fn ($id) => (string) $id)->all();
+    $linkedAgendaEventId = old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
     $needsOfficialLettersChecked = (bool) old('needs_official_letters', $existingMonthlyActivity?->needs_official_letters ?? false);
@@ -92,6 +92,10 @@
                 <input type="hidden" name="status" value="draft">
                 <input type="hidden" name="execution_status" value="{{ old('execution_status', $existingMonthlyActivity?->execution_status ?? 'executed') }}">
                 <input type="hidden" class="js-activity-date" name="activity_date" value="{{ old('activity_date', optional($existingMonthlyActivity?->activity_date)->format('Y-m-d') ?: optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}">
+                @if (filled($linkedAgendaEventId))
+                    <input type="hidden" name="agenda_event_id" value="{{ $linkedAgendaEventId }}">
+                    <input type="hidden" name="is_in_agenda" value="1">
+                @endif
                 @if ($isUnifiedBranchEditMode)
                     <div class="col-12">
                         <div class="alert alert-primary py-2 px-3 mb-0">
@@ -105,19 +109,6 @@
                         <h2 class="h6 mb-1">بيانات التخطيط الأساسية</h2>
                         <p class="text-muted small mb-0">هذه الشاشة مخصصة للتخطيط قبل التنفيذ، بينما تحديث حالة التنفيذ يتم في وضع إكمال التعبئة بعد التنفيذ.</p>
                     </div>
-                </div>
-
-                <div class="col-12 col-lg-6">
-                    <label class="form-label">الجهة المالكة</label>
-                    <select class="form-select" name="owner_department_id" {{ $isLockedField('owner_department_id') ? 'disabled' : '' }}>
-                        <option value="">اختر الجهة المالكة</option>
-                        @foreach($departmentsFromForm as $department)
-                            <option value="{{ $department->id }}" {{ $selectedOwnerDepartmentId === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                    @if ($isLockedField('owner_department_id'))
-                        <input type="hidden" name="owner_department_id" value="{{ $selectedOwnerDepartmentId }}">
-                    @endif
                 </div>
 
                 <div class="col-12 col-lg-6">
@@ -151,28 +142,6 @@
                     @endif
                 </div>
 
-                <div class="col-12 col-md-4">
-                    <label class="form-label">فعالية الأجندة السنوية المرتبطة</label>
-                    <select class="form-select" name="agenda_event_id" {{ $isLockedField('agenda_event_id') ? 'disabled' : '' }}>
-                        <option value="">اختياري</option>
-                        @foreach ($agendaEvents as $event)
-                            <option value="{{ $event->id }}" {{ (string) old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) === (string) $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
-                        @endforeach
-                    </select>
-                    @if ($isLockedField('agenda_event_id'))
-                        <input type="hidden" name="agenda_event_id" value="{{ old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id) }}">
-                    @endif
-                </div>
-
-                <div class="col-12 col-md-4">
-                    <label class="form-label">أجندة الحفل (إن وجدت)</label>
-                    <input class="form-control @error('planning_attachment') is-invalid @enderror @error('branch_plan_file') is-invalid @enderror" type="file" name="planning_attachment" accept=".pdf,.doc,.docx,.xls,.xlsx" {{ $isLockedField('planning_attachment') ? 'disabled' : '' }}>
-                    @if (old('planning_attachment', $existingMonthlyActivity?->planning_attachment))
-                        <a class="small d-inline-block mt-1" href="{{ asset('storage/' . old('planning_attachment', $existingMonthlyActivity?->planning_attachment)) }}" target="_blank">عرض المرفق الحالي</a>
-                    @endif
-                    @error('planning_attachment')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    @error('branch_plan_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
                 <div class="col-12">
                     <label class="form-label d-block mb-2">الجهات الشركاء</label>
                     <div class="partner-departments-box mb-3">
@@ -465,6 +434,7 @@
 
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-form.css') }}">
 @endpush
 

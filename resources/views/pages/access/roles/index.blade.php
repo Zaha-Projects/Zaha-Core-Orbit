@@ -1,4 +1,5 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
+
 
 @php
     use Illuminate\Support\Str;
@@ -77,7 +78,7 @@
                     @endforeach
                 </div>
 
-                <button class="btn btn-primary mt-3">Create</button>
+                <button class="btn btn-primary mt-3">{{ __('app.roles.super_admin.roles.actions.create') }}</button>
             </form>
 
         </div>
@@ -108,7 +109,7 @@
                             </div>
 
                             <span class="badge bg-light text-dark">
-                                {{ count($rolePermissionNames) }} Permissions
+                                {{ count($rolePermissionNames) }} {{ __('app.common.permissions') }}
                             </span>
                         </div>
                     </button>
@@ -176,7 +177,7 @@
                                 @endforeach
                             </div>
 
-                            <button class="btn btn-success mt-3">Save</button>
+                            <button class="btn btn-success mt-3">{{ __('app.roles.super_admin.roles.actions.save') }}</button>
                         </form>
 
                     </div>

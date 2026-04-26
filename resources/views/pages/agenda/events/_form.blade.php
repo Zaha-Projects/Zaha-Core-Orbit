@@ -1,10 +1,6 @@
 @php
     $isEditMode = isset($agendaEvent);
     $existingAgendaEvent = $agendaEvent ?? null;
-    $selectedPartnerDepartmentIds = array_map('strval', old(
-        'partner_department_ids',
-        $isEditMode ? $existingAgendaEvent->partnerDepartments->pluck('id')->all() : []
-    ));
 @endphp
 
 <div class="event-module agenda-form-page">
@@ -90,6 +86,14 @@
                                 </select>
                                 @error('plan_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
+                            <div class="col-12 col-md-6 col-xl-2">
+                                <label class="form-label">حالة التفعيل</label>
+                                <select class="form-select @error('is_active') is-invalid @enderror" name="is_active" required>
+                                    <option value="1" {{ (string) old('is_active', (int) ($existingAgendaEvent?->is_active ?? true)) === '1' ? 'selected' : '' }}>نشطة</option>
+                                    <option value="0" {{ (string) old('is_active', (int) ($existingAgendaEvent?->is_active ?? true)) === '0' ? 'selected' : '' }}>غير نشطة</option>
+                                </select>
+                                @error('is_active')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
                             <div class="col-12 js-unified-plan-source">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields_ext.unified_plan_source') }}</label>
                                 <input type="hidden" class="js-unified-plan-source-select" name="unified_plan_source" value="monthly_auto">
@@ -101,6 +105,7 @@
                     </div>
                 </div>
 
+                @if(false)
                 <div class="col-12">
                     <div class="agenda-form-section">
                         <div class="agenda-form-section__head">
@@ -117,6 +122,8 @@
                         </div>
                     </div>
                 </div>
+
+                @endif
 
                 <div class="col-12 js-branch-participation-section">
                     <div class="agenda-form-section">
@@ -179,6 +186,7 @@
 
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/agenda-events-form.css') }}">
 @endpush
 

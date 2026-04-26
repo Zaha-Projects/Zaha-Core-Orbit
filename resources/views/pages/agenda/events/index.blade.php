@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
 
 @php
     $title = __('app.roles.relations.agenda.title');
@@ -87,15 +87,6 @@
             })
             ->values()
             ->all();
-        $partnerDepartments = $event->partnerDepartments
-            ->map(fn ($department) => [
-                'id' => (int) $department->id,
-                'name' => $department->name,
-                'color_hex' => $department->color_hex,
-                'icon' => $department->icon,
-            ])
-            ->values()
-            ->all();
         $participantUnits = $event->participations
             ->where('entity_type', 'department_unit')
             ->where('participation_status', 'participant')
@@ -118,7 +109,6 @@
             'department' => $event->department?->name ?? '-',
             'department_color_hex' => $event->department?->color_hex,
             'department_icon' => $event->department?->icon,
-            'partner_departments' => $partnerDepartments,
             'participant_units' => $participantUnits,
             'category' => $event->eventCategory?->name ?? $event->event_category ?? '-',
             'status' => $normalizeAgendaPageStatus($workflowSummary['status_key'] ?? $event->status),
@@ -133,11 +123,12 @@
             'participant_branches' => $participantBranches,
             'plan_type' => $event->plan_type,
             'event_type' => $event->event_type,
+            'is_active' => (bool) ($event->is_active ?? true),
             'branch_participation_status' => $branchParticipation?->participation_status,
             'branch_proposed_date' => optional($branchParticipation?->proposed_date)?->format('Y-m-d'),
             'branch_actual_execution_date' => optional($branchParticipation?->actual_execution_date)?->format('Y-m-d'),
-            'can_quick_subscribe' => $canBranchInteract && (string) $event->event_type === 'optional',
-            'quick_subscribe_url' => $canBranchInteract && (string) $event->event_type === 'optional'
+            'can_quick_subscribe' => $canBranchInteract && (bool) ($event->is_active ?? true) && (string) $event->event_type === 'optional',
+            'quick_subscribe_url' => $canBranchInteract && (bool) ($event->is_active ?? true) && (string) $event->event_type === 'optional'
                 ? route('role.relations.agenda.quick_subscribe', $event)
                 : null,
             'branch_monthly_activity_edit_url' => $linkedMonthlyActivity
@@ -152,6 +143,7 @@
         return asset($path) . '?v=' . $version;
     };
 @endphp
+
 
 @section('content')
     <div
@@ -246,6 +238,7 @@
                     <div class="row g-3">
                         @foreach($events as $event)
                             @php
+                                $isActiveAgendaEvent = (bool) ($event->is_active ?? true);
                                 $branchParticipation = $event->participations->where('entity_type', 'branch')->where('entity_id', $authUser?->branch_id)->first();
                                 $linkedMonthlyActivity = $event->monthlyActivities->firstWhere('branch_id', $authUser?->branch_id);
                                 $baseDate = optional($event->event_date)->format('Y-m-d') ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
@@ -268,9 +261,13 @@
                                         <div class="d-flex gap-1 flex-wrap justify-content-end">
                                             <span class="badge {{ $event->event_type === 'mandatory' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning' }}">{{ __('app.roles.relations.agenda.types.' . $event->event_type) }}</span>
                                             <span class="badge {{ $event->plan_type === 'unified' ? 'bg-primary-subtle text-primary' : 'bg-info-subtle text-info' }}">{{ __('app.roles.relations.agenda.plans.' . $event->plan_type) }}</span>
+                                            <span class="badge {{ $isActiveAgendaEvent ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}">{{ $isActiveAgendaEvent ? 'نشطة' : 'غير نشطة' }}</span>
                                         </div>
                                     </div>
 
+                                    @if(! $isActiveAgendaEvent)
+                                        <div class="alert alert-secondary py-2 px-3 mb-0">هذه الفعالية غير نشطة حالياً، لذلك لا يمكن المشاركة بها إلى أن يتم تفعيلها.</div>
+                                    @else
                                     <form method="POST" action="{{ route('role.relations.agenda.branch_participation.update', $event) }}" enctype="multipart/form-data" class="row g-2">
                                         @csrf
                                         @method('PATCH')
@@ -306,6 +303,7 @@
                                             <button class="btn btn-sm btn-primary">{{ __('app.roles.relations.agenda.branch_interaction.save') }}</button>
                                         </div>
                                     </form>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -335,6 +333,7 @@
                                         <h3 class="h6 mb-0">{{ $event->event_name }}</h3>
                                         @php($pageStatusKey = $normalizeAgendaPageStatus($workflowSummary['status_key'] ?? $event->status))
                                         <span class="event-status status-{{ $pageStatusKey ?? ($workflowSummary['status_key'] ?? $event->status) }}">{{ $agendaStatusLabel($workflowSummary['status_key'] ?? $event->status) }}</span>
+                                        <span class="badge {{ ($event->is_active ?? true) ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}">{{ ($event->is_active ?? true) ? 'نشطة' : 'غير نشطة' }}</span>
                                     </div>
                                 </div>
                                 <div class="module-card-body">

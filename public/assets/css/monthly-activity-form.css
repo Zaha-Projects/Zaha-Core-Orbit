@@ -69,3 +69,36 @@
     padding-top: 1rem;
     border-top: 1px solid #e5e7eb;
 }
+
+[data-theme="dark"] .monthly-plan-form-page .monthly-form-section-head,
+[data-theme="dark"] .monthly-plan-form-page .monthly-form-actions {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .monthly-plan-form-page .monthly-activation-option,
+[data-theme="dark"] .monthly-plan-form-page .monthly-subsection-card,
+[data-theme="dark"] .monthly-plan-form-page .partner-department-item {
+    background: var(--surface-soft);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .monthly-plan-form-page .monthly-activation-option:has(input:checked) {
+    background: color-mix(in srgb, var(--brand-primary) 18%, var(--surface-soft));
+    border-color: var(--brand-primary);
+}
+
+@media (max-width: 767.98px) {
+    .monthly-plan-form-page .monthly-activation-grid,
+    .monthly-plan-form-page .partner-departments-box {
+        grid-template-columns: 1fr;
+    }
+
+    .monthly-plan-form-page .monthly-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .monthly-plan-form-page .monthly-form-actions .btn {
+        width: 100%;
+    }
+}

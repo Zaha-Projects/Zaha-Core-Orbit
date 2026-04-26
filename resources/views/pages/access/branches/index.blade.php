@@ -1,4 +1,5 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
+
 
 @php
     $title = __('app.roles.super_admin.branches.title');
