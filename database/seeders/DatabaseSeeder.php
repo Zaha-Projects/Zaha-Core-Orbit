@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(TargetGroupSeeder::class);
         $this->call(EvaluationQuestionSeeder::class);
         $this->call(ZahaTimeOptionSeeder::class);
+        $this->call(ExecutionNeedTypeSeeder::class);
         $this->call(EventStatusLookupSeeder::class);
 
         $this->call(RolePermissionSeeder::class);

@@ -600,34 +600,69 @@ class MonthlyActivitiesController extends Controller
 
     protected function normalizeExecutionNeedsPayload(array &$data): void
     {
+        $sectionLink = static fn (string $needCode, bool $enabled): array => [
+            'need_code' => $needCode,
+            'enabled' => $enabled,
+            'future_cycle_id' => null,
+        ];
+
+        $needsCeremonyAgenda = (bool) ($data['needs_ceremony_agenda'] ?? false);
+        $needsTransport = (bool) ($data['needs_transport'] ?? false);
+        $needsMaintenance = (bool) ($data['needs_maintenance_workers'] ?? false);
+        $needsGifts = (bool) ($data['needs_gifts'] ?? false);
+        $needsPrograms = (bool) ($data['needs_programs_participation'] ?? false);
+        $needsCertificates = (bool) ($data['needs_certificates_and_thanks'] ?? false);
+        $needsInvitations = (bool) ($data['needs_invitations'] ?? false);
+
         $payload = [
-            'needs_ceremony_agenda' => (bool) ($data['needs_ceremony_agenda'] ?? false),
+            'schema_version' => 2,
+            'needs_registry' => [
+                'ceremony' => $sectionLink('ceremony', $needsCeremonyAgenda),
+                'transport' => $sectionLink('transport', $needsTransport),
+                'maintenance' => $sectionLink('maintenance', $needsMaintenance),
+                'gifts' => $sectionLink('gifts', $needsGifts),
+                'programs' => $sectionLink('programs', $needsPrograms),
+                'certificates' => $sectionLink('certificates', $needsCertificates),
+                'thanks_letters' => $sectionLink('thanks_letters', $needsCertificates),
+                'invitations' => $sectionLink('invitations', $needsInvitations),
+            ],
+            'needs_ceremony_agenda' => $needsCeremonyAgenda,
             'ceremony' => [
+                'need_code' => 'ceremony',
+                'future_cycle_id' => null,
                 'items_count' => $data['ceremony_items_count'] ?? null,
                 'time_from' => $data['ceremony_time_from'] ?? null,
                 'time_to' => $data['ceremony_time_to'] ?? null,
                 'item_name' => $data['ceremony_item_name'] ?? null,
                 'item_description' => $data['ceremony_item_description'] ?? null,
             ],
-            'needs_transport' => (bool) ($data['needs_transport'] ?? false),
+            'needs_transport' => $needsTransport,
             'transport' => [
+                'need_code' => 'transport',
+                'future_cycle_id' => null,
                 'vehicles_count' => $data['transport_vehicles_count'] ?? null,
                 'vehicle_type' => $data['transport_vehicle_type'] ?? null,
                 'passengers_count' => $data['transport_passengers_count'] ?? null,
             ],
-            'needs_maintenance_workers' => (bool) ($data['needs_maintenance_workers'] ?? false),
+            'needs_maintenance_workers' => $needsMaintenance,
             'maintenance' => [
+                'need_code' => 'maintenance',
+                'future_cycle_id' => null,
                 'workers_count' => $data['maintenance_workers_count'] ?? null,
                 'type' => $data['maintenance_type'] ?? null,
             ],
-            'needs_gifts' => (bool) ($data['needs_gifts'] ?? false),
+            'needs_gifts' => $needsGifts,
             'gifts' => [
+                'need_code' => 'gifts',
+                'future_cycle_id' => null,
                 'count' => $data['gifts_count'] ?? null,
                 'description' => $data['gifts_description'] ?? null,
                 'delivery_entity' => $data['gifts_delivery_entity'] ?? null,
             ],
-            'needs_programs_participation' => (bool) ($data['needs_programs_participation'] ?? false),
+            'needs_programs_participation' => $needsPrograms,
             'programs' => [
+                'need_code' => 'programs',
+                'future_cycle_id' => null,
                 'need_trainer' => (bool) ($data['programs_need_trainer'] ?? false),
                 'trainer_description' => $data['programs_trainer_description'] ?? null,
                 'trainer_count' => $data['programs_trainer_count'] ?? null,
@@ -637,19 +672,25 @@ class MonthlyActivitiesController extends Controller
                 'show_description' => $data['programs_show_description'] ?? null,
                 'fun_note' => $data['programs_fun_note'] ?? null,
             ],
-            'needs_certificates_and_thanks' => (bool) ($data['needs_certificates_and_thanks'] ?? false),
+            'needs_certificates_and_thanks' => $needsCertificates,
             'certificates' => [
+                'need_code' => 'certificates',
+                'future_cycle_id' => null,
                 'count' => $data['certificates_count'] ?? null,
                 'template' => $data['certificates_template'] ?? null,
                 'for' => $data['certificates_for'] ?? null,
             ],
             'thanks_letters' => [
+                'need_code' => 'thanks_letters',
+                'future_cycle_id' => null,
                 'count' => $data['thanks_letters_count'] ?? null,
                 'template' => $data['thanks_letters_template'] ?? null,
                 'for' => $data['thanks_letters_for'] ?? null,
             ],
-            'needs_invitations' => (bool) ($data['needs_invitations'] ?? false),
+            'needs_invitations' => $needsInvitations,
             'invitations' => [
+                'need_code' => 'invitations',
+                'future_cycle_id' => null,
                 'type' => $data['invitation_type'] ?? null,
                 'paper_template' => $data['invitation_paper_template'] ?? null,
                 'paper_copies' => $data['invitation_paper_copies'] ?? null,
