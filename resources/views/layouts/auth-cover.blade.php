@@ -50,12 +50,13 @@
             </div>
         </div>
         <div class="auth-cover-card-wrapper">
-            <div class="auth-cover-card p-sm-5">
-                <div class="wd-50 mb-4">
-                    <img src="{{ asset('assets/images/zaha-core-orbit-mark.svg') }}" alt="Zaha - Core Orbit" class="img-fluid">
+            <div class="auth-cover-card auth-cover-card--zaha p-sm-5">
+                <div class="auth-brand mb-4">
+                    <img src="{{ asset('assets/images/zaha-core-orbit-logo.svg') }}" alt="Zaha" class="auth-brand__logo">
+                    <img src="{{ asset('assets/images/zaha-core-orbit-mark.svg') }}" alt="Zaha - Core Orbit" class="auth-brand__mark">
                 </div>
-                <h1 class="fs-20 fw-bolder mb-2">Zaha - Core Orbit</h1>
-                <p class="fs-12 fw-medium text-muted mb-4">منصة موحدة لإدارة العمليات والتقارير والاعتمادات.</p>
+                <h1 class="fs-20 fw-bolder mb-2 auth-cover-card__title">Zaha - Core Orbit</h1>
+                <p class="fs-12 fw-medium text-muted mb-4 auth-cover-card__subtitle">منصة موحدة لإدارة العمليات والتقارير والاعتمادات.</p>
                 @yield('content')
             </div>
         </div>

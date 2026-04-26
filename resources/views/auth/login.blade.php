@@ -2,7 +2,7 @@
 
 @section('content')
     <h2 class="fs-18 fw-bold mb-2">{{ __('app.auth.login_title') }}</h2>
-    <p class="text-muted fs-12 mb-4">سجّل الدخول للوصول إلى المنصة وإدارة مهامك اليومية.</p>
+    <p class="text-muted fs-12 mb-4">تسجيل دخول رسمي للوصول إلى بيئة زها الإدارية وإدارة الأعمال اليومية.</p>
 
     @if ($errors->any())
         <div class="alert alert-danger">
@@ -14,7 +14,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ url('/login') }}" class="w-100">
+    <form method="POST" action="{{ url('/login') }}" class="w-100 auth-login-form">
         @csrf
         <div class="mb-4">
             <label class="form-label" for="email">{{ __('app.auth.email') }}</label>
