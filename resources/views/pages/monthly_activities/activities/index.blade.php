@@ -265,7 +265,7 @@
                     {{ __('عرض') }} {{ $activities->firstItem() ?? 0 }} - {{ $activities->lastItem() ?? 0 }} {{ __('من') }} {{ $activities->total() }}
                 </small>
                 <div class="event-pagination-wrap">
-                    {{ $activities->onEachSide(1)->links('pagination::bootstrap-5') }}
+                    {{ $activities->onEachSide(1)->links() }}
                 </div>
             </div>
         </div>

@@ -1,0 +1,62 @@
+.auth-arabic-layout {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(0, 169, 196, .2), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(73, 87, 214, .15), transparent 42%),
+        #edf2f7;
+}
+
+.auth-flow-card {
+    border-radius: 1.2rem;
+    overflow: hidden;
+    background: #fff;
+}
+
+.auth-flow-form {
+    background: #f8fafc;
+    height: 100%;
+}
+
+.auth-flow-cover {
+    background: linear-gradient(160deg, #00a9c4, #4957d6);
+    color: #fff;
+    align-items: flex-end;
+    padding: 2.5rem;
+    min-height: 560px;
+}
+
+.auth-flow-logo-main {
+    width: 150px;
+    max-width: 42vw;
+    height: auto;
+}
+
+.auth-flow-logo-original {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .75);
+    padding: .35rem;
+    border: 1px solid #d5e2f1;
+}
+
+.auth-flow-form .input-group-text {
+    background: #eef4fb;
+    border-color: #d8e2ef;
+}
+
+.auth-flow-form .form-control {
+    border-color: #d8e2ef;
+}
+
+.auth-flow-form .form-control:focus {
+    border-color: #00a9c4;
+    box-shadow: 0 0 0 .2rem rgba(0, 169, 196, .15);
+}
+
+@media (max-width: 991.98px) {
+    .auth-flow-card {
+        border-radius: 1rem;
+    }
+}
