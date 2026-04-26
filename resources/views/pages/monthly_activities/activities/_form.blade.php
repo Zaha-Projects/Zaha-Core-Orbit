@@ -303,8 +303,33 @@
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الفترة العمرية</label>
-                                <input class="form-control @error('volunteer_age_range') is-invalid @enderror" name="volunteer_age_range" value="{{ old('volunteer_age_range', $existingMonthlyActivity?->volunteer_age_range) }}">
-                                @error('volunteer_age_range')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input
+                                            class="form-control @error('volunteer_age_from') is-invalid @enderror"
+                                            type="number"
+                                            min="10"
+                                            max="80"
+                                            name="volunteer_age_from"
+                                            placeholder="من"
+                                            value="{{ old('volunteer_age_from') }}"
+                                        >
+                                        @error('volunteer_age_from')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-6">
+                                        <input
+                                            class="form-control @error('volunteer_age_to') is-invalid @enderror"
+                                            type="number"
+                                            min="10"
+                                            max="80"
+                                            name="volunteer_age_to"
+                                            placeholder="إلى"
+                                            value="{{ old('volunteer_age_to') }}"
+                                        >
+                                        @error('volunteer_age_to')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                @error('volunteer_age_range')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الجنس</label>

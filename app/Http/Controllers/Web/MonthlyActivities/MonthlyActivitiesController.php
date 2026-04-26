@@ -439,6 +439,8 @@ class MonthlyActivitiesController extends Controller
 
     protected function normalizePlanningPayload(array &$data): void
     {
+        $this->normalizeVolunteerAgeRange($data);
+
         $data['execution_status'] = $data['execution_status'] ?? 'executed';
         $data['status'] = $data['status'] ?? 'draft';
 
@@ -463,6 +465,8 @@ class MonthlyActivitiesController extends Controller
             $data['required_volunteers'] = null;
             $data['volunteer_need'] = null;
             $data['volunteer_age_range'] = null;
+            $data['volunteer_age_from'] = null;
+            $data['volunteer_age_to'] = null;
             $data['volunteer_gender'] = null;
             $data['volunteer_tasks_summary'] = null;
         }
@@ -487,6 +491,36 @@ class MonthlyActivitiesController extends Controller
         if (! (bool) ($data['has_sponsor'] ?? false)) {
             $data['sponsors'] = [];
         }
+    }
+
+    protected function normalizeVolunteerAgeRange(array &$data): void
+    {
+        $from = isset($data['volunteer_age_from']) && $data['volunteer_age_from'] !== ''
+            ? (int) $data['volunteer_age_from']
+            : null;
+        $to = isset($data['volunteer_age_to']) && $data['volunteer_age_to'] !== ''
+            ? (int) $data['volunteer_age_to']
+            : null;
+
+        if ($from !== null && $to !== null) {
+            $data['volunteer_age_range'] = $from . '-' . $to;
+        } elseif (! isset($data['volunteer_age_range'])) {
+            $data['volunteer_age_range'] = null;
+        }
+    }
+
+    protected function extractVolunteerAgeBounds(?string $range): array
+    {
+        $range = trim((string) $range);
+        if ($range === '') {
+            return [null, null];
+        }
+
+        if (preg_match('/^\s*(\d{1,2})\s*[-–]\s*(\d{1,2})\s*$/u', $range, $matches)) {
+            return [(int) $matches[1], (int) $matches[2]];
+        }
+
+        return [null, null];
     }
 
     protected function shouldSubmitFromRequest(Request $request): bool
@@ -819,6 +853,7 @@ class MonthlyActivitiesController extends Controller
         $needsOfficialCorrespondence = (bool) $monthlyActivity->needs_official_correspondence;
         $outsideCenter = $monthlyActivity->location_type === 'outside_center';
         $needsSupplies = $monthlyActivity->supplies->isNotEmpty();
+        [$volunteerAgeFrom, $volunteerAgeTo] = $this->extractVolunteerAgeBounds($monthlyActivity->volunteer_age_range);
 
         $prefill = array_merge($monthlyActivity->getAttributes(), [
             'title' => $monthlyActivity->title,
@@ -845,6 +880,8 @@ class MonthlyActivitiesController extends Controller
             'required_volunteers' => $needsVolunteers ? $monthlyActivity->required_volunteers : null,
             'volunteer_need' => $needsVolunteers ? $monthlyActivity->volunteer_need : null,
             'volunteer_age_range' => $needsVolunteers ? $monthlyActivity->volunteer_age_range : null,
+            'volunteer_age_from' => $needsVolunteers ? $volunteerAgeFrom : null,
+            'volunteer_age_to' => $needsVolunteers ? $volunteerAgeTo : null,
             'volunteer_gender' => $needsVolunteers ? $monthlyActivity->volunteer_gender : null,
             'volunteer_tasks_summary' => $needsVolunteers ? $monthlyActivity->volunteer_tasks_summary : null,
             'needs_official_correspondence' => (int) $needsOfficialCorrespondence,
@@ -1161,7 +1198,9 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
-            'volunteer_age_range' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_age_from' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1'],
+            'volunteer_age_to' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1', 'gte:volunteer_age_from'],
+            'volunteer_age_range' => ['nullable', 'string', 'max:255'],
             'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
@@ -1579,7 +1618,9 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need' => ['nullable', 'string', 'max:255'],
             'needs_volunteers' => ['nullable', 'boolean'],
             'required_volunteers' => ['nullable', 'integer', 'min:1', 'required_if:needs_volunteers,1'],
-            'volunteer_age_range' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_age_from' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1'],
+            'volunteer_age_to' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1', 'gte:volunteer_age_from'],
+            'volunteer_age_range' => ['nullable', 'string', 'max:255'],
             'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
