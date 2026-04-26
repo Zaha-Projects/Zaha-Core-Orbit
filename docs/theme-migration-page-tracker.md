@@ -35,20 +35,20 @@
 ### 3) Access
 | Page | Status |
 |---|---|
-| `resources/views/pages/access/roles/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/access/users/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/access/workflows/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/access/branches/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/access/approvals/index.blade.php` | ⏳ Pending |
+| `resources/views/pages/access/roles/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/access/users/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/access/workflows/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/access/branches/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/access/approvals/index.blade.php` | ✅ Migrated |
 | `resources/views/pages/access/partials/sidebar.blade.php` | 🔁 Shared Partial |
 
 ### 4) Agenda
 | Page | Status |
 |---|---|
 | `resources/views/pages/agenda/events/index.blade.php` | ✅ Migrated |
-| `resources/views/pages/agenda/events/create.blade.php` | ⏳ Pending |
-| `resources/views/pages/agenda/events/edit.blade.php` | ⏳ Pending |
-| `resources/views/pages/agenda/events/show.blade.php` | ⏳ Pending |
+| `resources/views/pages/agenda/events/create.blade.php` | ✅ Migrated |
+| `resources/views/pages/agenda/events/edit.blade.php` | ✅ Migrated |
+| `resources/views/pages/agenda/events/show.blade.php` | ✅ Migrated |
 | `resources/views/pages/agenda/events/_form.blade.php` | 🔁 Shared Partial |
 | `resources/views/pages/agenda/approvals/index.blade.php` | ✅ Migrated |
 | `resources/views/pages/agenda/partials/sidebar.blade.php` | 🔁 Shared Partial |
@@ -57,17 +57,17 @@
 | Page | Status |
 |---|---|
 | `resources/views/pages/monthly_activities/activities/index.blade.php` | ✅ Migrated |
-| `resources/views/pages/monthly_activities/activities/create.blade.php` | ⏳ Pending |
-| `resources/views/pages/monthly_activities/activities/edit.blade.php` | ⏳ Pending |
-| `resources/views/pages/monthly_activities/activities/show.blade.php` | ⏳ Pending |
+| `resources/views/pages/monthly_activities/activities/create.blade.php` | ✅ Migrated |
+| `resources/views/pages/monthly_activities/activities/edit.blade.php` | ✅ Migrated |
+| `resources/views/pages/monthly_activities/activities/show.blade.php` | ✅ Migrated |
 | `resources/views/pages/monthly_activities/activities/_form.blade.php` | 🔁 Shared Partial |
-| `resources/views/pages/monthly_activities/approvals/index.blade.php` | ⏳ Pending |
+| `resources/views/pages/monthly_activities/approvals/index.blade.php` | ✅ Migrated |
 | `resources/views/pages/monthly_activities/approvals/partials/activity-card.blade.php` | 🔁 Shared Partial |
 | `resources/views/pages/monthly_activities/approvals/partials/activity-details.blade.php` | 🔁 Shared Partial |
-| `resources/views/pages/monthly_activities/communications/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/monthly_activities/workshops/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/monthly_activities/lookups/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/monthly_activities/lookups/admin.blade.php` | ⏳ Pending |
+| `resources/views/pages/monthly_activities/communications/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/monthly_activities/workshops/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/monthly_activities/lookups/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/monthly_activities/lookups/admin.blade.php` | ✅ Migrated |
 | `resources/views/pages/monthly_activities/partials/sidebar.blade.php` | 🔁 Shared Partial |
 
 ### 6) Maintenance
