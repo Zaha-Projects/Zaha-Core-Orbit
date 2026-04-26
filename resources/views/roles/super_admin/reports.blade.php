@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.new-theme-dashboard')
 
 @php
     $title = __('app.reports.title');

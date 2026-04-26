@@ -10,6 +10,8 @@
   "notify_title": "النظام",
   "theme_dark": "الوضع الداكن",
   "theme_light": "الوضع الفاتح",
+  "switch_to_english": "English",
+  "switch_to_arabic": "العربية",
   "calendar_fallback": "تعذر تحميل التقويم. تحقق من الاتصال بالشبكة.",
   "logout": "تسجيل الخروج"
 }

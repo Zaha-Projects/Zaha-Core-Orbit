@@ -3,7 +3,7 @@
     $isArabic = $locale === 'ar';
     $theme = session('ui.theme', 'light');
     $user = auth()->user();
-    $displayName = $user?->name ?? 'ZAHA';
+    $displayName = $user?->name ?? config('app.name', __('app.common.app_name'));
     $currentRoute = request()->route()?->getName();
     $canAccessAgendaApprovals = $user && (
         $user->can('agenda.approve')
@@ -61,7 +61,7 @@
 <div class="layout-shell">
     <aside id="appSidebar" class="sidebar-original">
         <div class="sidebar-brand">
-            <img class="brand-logo" src="{{ asset('assets/new-theme/logos/logo2.svg') }}" alt="ZAHA Logo">
+            <img class="brand-logo" src="{{ asset('assets/new-theme/logos/logo2.svg') }}" alt="{{ __('app.common.app_name') }}">
         </div>
 
         <p class="side-comment" data-i18n="quick_menu">{{ __('app.common.dashboard') }}</p>
@@ -134,8 +134,12 @@
         </ul>
 
         <p class="side-comment" data-i18n="language">{{ __('app.layout.language_switch') }}</p>
-        <button id="mobileLocaleToggle" class="btn btn-sidebar-control w-100 mb-2" type="button">English</button>
-        <button id="mobileThemeToggle" class="btn btn-sidebar-control w-100" type="button">Dark mode</button>
+        <button id="mobileLocaleToggle" class="btn btn-sidebar-control w-100 mb-2" type="button">
+            {{ $isArabic ? __('app.layout.switch_to_english') : __('app.layout.switch_to_arabic') }}
+        </button>
+        <button id="mobileThemeToggle" class="btn btn-sidebar-control w-100" type="button">
+            {{ $theme === 'dark' ? __('nav.light_mode') : __('nav.dark_mode') }}
+        </button>
     </aside>
 
     <div class="content-shell">
@@ -149,7 +153,9 @@
                         <button class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown" type="button">{{ $displayName }}</button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <button id="themeToggle" class="dropdown-item" type="button">Dark mode</button>
+                                <button id="themeToggle" class="dropdown-item" type="button">
+                                    {{ $theme === 'dark' ? __('nav.light_mode') : __('nav.dark_mode') }}
+                                </button>
                             </li>
                             @auth
                                 <li>
@@ -161,7 +167,11 @@
                             @endauth
                         </ul>
                     </li>
-                    <li class="nav-item"><button class="btn btn-locale-toggle" id="localeToggle" type="button">English</button></li>
+                    <li class="nav-item">
+                        <button class="btn btn-locale-toggle" id="localeToggle" type="button">
+                            {{ $isArabic ? __('app.layout.switch_to_english') : __('app.layout.switch_to_arabic') }}
+                        </button>
+                    </li>
                 </ul>
             </nav>
         </header>
