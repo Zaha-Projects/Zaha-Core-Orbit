@@ -56,10 +56,31 @@
                             </header>
                             <div class="relations-dashboard-month-body">
                                 @forelse($monthEvents as $event)
-                                    <a href="{{ route('role.relations.agenda.show', $event) }}" class="relations-dashboard-event-chip">
+                                    @php
+                                        $eventDate = optional($event->event_date)->format('Y-m-d')
+                                            ?: sprintf('%d-%02d-%02d', (int) ($year ?? now()->year), (int) $monthNumber, (int) $event->day);
+                                        $statusLabel = match ((string) $event->status) {
+                                            'approved', 'published' => 'معتمد',
+                                            'submitted', 'in_review' => 'قيد المراجعة',
+                                            'rejected' => 'مرفوض',
+                                            default => 'مسودة',
+                                        };
+                                    @endphp
+                                    <article class="relations-dashboard-event-chip" aria-label="تفاصيل فعالية {{ $event->event_name }}">
                                         <span class="relations-dashboard-event-chip__day">{{ optional($event->event_date)->format('d') ?? sprintf('%02d', (int) $event->day) }}</span>
-                                        <span class="relations-dashboard-event-chip__title">{{ $event->event_name }}</span>
-                                    </a>
+                                        <div class="relations-dashboard-event-chip__content">
+                                            <div class="relations-dashboard-event-chip__title">{{ $event->event_name }}</div>
+                                            <div class="relations-dashboard-event-chip__meta">التاريخ: {{ $eventDate }}</div>
+                                            <div class="relations-dashboard-event-chip__meta">الجهة: {{ $event->department?->name ?? '—' }}</div>
+                                            <div class="relations-dashboard-event-chip__meta">الفئة: {{ $event->eventCategory?->name ?? ($event->event_category ?: '—') }}</div>
+                                            <div class="relations-dashboard-event-chip__meta">نوع الفعالية: {{ $event->event_type === 'mandatory' ? 'إلزامية' : 'اختيارية' }}</div>
+                                            <div class="relations-dashboard-event-chip__meta">الخطة: {{ $event->plan_type === 'unified' ? 'موحدة' : 'خاصة بالفرع' }}</div>
+                                            @if (filled($event->notes))
+                                                <div class="relations-dashboard-event-chip__meta">ملاحظات: {{ \Illuminate\Support\Str::limit($event->notes, 80) }}</div>
+                                            @endif
+                                            <span class="relations-dashboard-event-chip__status">{{ $statusLabel }}</span>
+                                        </div>
+                                    </article>
                                 @empty
                                     <div class="text-muted small">لا توجد فعاليات</div>
                                 @endforelse
