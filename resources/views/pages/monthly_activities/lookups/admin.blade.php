@@ -9,7 +9,7 @@
     </li>
     @can('monthly_activities.view_other_branches')
         <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') === 'all_branches' ? 'selected' : '' }}">
-            <a href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}"><i class="fas fa-table-cells-large"></i><span>الخطط الشهرية للفروع الأخرى</span></a>
+            <a href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}"><i class="fas fa-table-cells-large"></i><span>{{ __('app.acl.permissions.monthly_activities_view_other_branches') }}</span></a>
         </li>
     @endcan
     <li class="side-item {{ request()->routeIs('role.programs.approvals.*') ? 'selected' : '' }}">

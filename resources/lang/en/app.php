@@ -20,6 +20,12 @@ return [
         'all_months' => 'All months',
         'all_years' => 'All years',
         'na' => 'N/A',
+        'save' => 'Save',
+        'create' => 'Create',
+        'alerts' => 'Alerts',
+        'pagination' => 'Pagination',
+        'communications_requests' => 'Communications requests',
+        'permissions' => 'Permissions',
     ],
     'layout' => [
         'sidebar_title' => 'Application menu',

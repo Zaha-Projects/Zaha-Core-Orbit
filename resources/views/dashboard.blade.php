@@ -52,8 +52,8 @@
             <div class="card p-3" id="notificationsSection">
                 <h2 class="h4" data-i18n="notifications">الإشعارات</h2>
                 <ul class="nav nav-tabs mb-3" role="tablist">
-                    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAlerts" type="button" role="tab">Alerts</button></li>
-                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPagination" type="button" role="tab">Pagination</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAlerts" type="button" role="tab">{{ __('app.common.alerts') }}</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPagination" type="button" role="tab">{{ __('app.common.pagination') }}</button></li>
                 </ul>
 
                 <div class="tab-content">

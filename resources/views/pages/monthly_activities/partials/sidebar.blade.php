@@ -18,7 +18,7 @@
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.relations.activities.*') && request('scope') === 'all_branches' ? 'active' : '' }}" href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}">
         <span class="nxl-micon"><i class="feather-grid"></i></span>
-        <span class="nxl-mtext">الخطط الشهرية للفروع الأخرى</span>
+        <span class="nxl-mtext">{{ __('app.acl.permissions.monthly_activities_view_other_branches') }}</span>
     </a>
 </li>
 @endcan

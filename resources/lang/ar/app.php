@@ -20,6 +20,12 @@ return [
         'all_months' => 'كل الأشهر',
         'all_years' => 'كل السنوات',
         'na' => 'غير متاح',
+        'save' => 'حفظ',
+        'create' => 'إنشاء',
+        'alerts' => 'التنبيهات',
+        'pagination' => 'ترقيم الصفحات',
+        'communications_requests' => 'طلبات الاتصال',
+        'permissions' => 'الصلاحيات',
     ],
     'layout' => [
         'sidebar_title' => 'قائمة التطبيق',
