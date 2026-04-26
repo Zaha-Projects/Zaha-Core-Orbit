@@ -16,7 +16,12 @@ class MovementsController extends Controller
         $query = MovementDay::query()->with(['driver', 'trips']);
 
         if ($request->filled('driver_id')) {
-            $query->where('driver_id', $request->integer('driver_id'));
+            $driverId = filter_var($request->input('driver_id'), FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]);
+            if ($driverId) {
+                $query->where('driver_id', $driverId);
+            }
         }
 
         if ($request->filled('from_date')) {

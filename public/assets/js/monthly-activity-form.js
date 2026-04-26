@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const mediaFields = form.querySelectorAll('.js-media-fields');
     const needsCeremonyAgenda = form.querySelector('.js-needs-ceremony-agenda');
     const ceremonyAgendaFields = form.querySelectorAll('.js-ceremony-agenda-fields');
+    const ceremonyItemsCount = form.querySelector('.js-ceremony-items-count');
+    const ceremonyItemsContainer = form.querySelector('.js-ceremony-items-container');
     const needsTransport = form.querySelector('.js-needs-transport');
     const transportFields = form.querySelectorAll('.js-transport-fields');
     const needsMaintenance = form.querySelector('.js-needs-maintenance');
@@ -33,8 +35,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const giftsFields = form.querySelectorAll('.js-gifts-fields');
     const needsProgramsParticipation = form.querySelector('.js-needs-programs-participation');
     const programsParticipationFields = form.querySelectorAll('.js-programs-participation-fields');
+    const programsNeedTrainerToggle = form.querySelector('.js-programs-need-trainer-toggle');
+    const programsTrainerFields = form.querySelectorAll('.js-programs-trainer-fields');
+    const programsZahaToggle = form.querySelector('.js-programs-zaha-toggle');
+    const programsZahaFields = form.querySelectorAll('.js-programs-zaha-fields');
+    const programsShowToggle = form.querySelector('.js-programs-show-toggle');
+    const programsShowFields = form.querySelectorAll('.js-programs-show-fields');
+    const programsFunToggle = form.querySelector('.js-programs-fun-toggle');
+    const programsFunFields = form.querySelectorAll('.js-programs-fun-fields');
     const needsCertificates = form.querySelector('.js-needs-certificates');
     const certificatesFields = form.querySelectorAll('.js-certificates-fields');
+    const certificatesDetailToggle = form.querySelector('.js-certificates-detail-toggle');
+    const certificatesDetailFields = form.querySelectorAll('.js-certificates-detail-fields');
+    const thanksLettersDetailToggle = form.querySelector('.js-thanks-letters-detail-toggle');
+    const thanksLettersDetailFields = form.querySelectorAll('.js-thanks-letters-detail-fields');
     const needsInvitations = form.querySelector('.js-needs-invitations');
     const invitationsFields = form.querySelectorAll('.js-invitations-fields');
     const invitationType = form.querySelector('.js-invitation-type');
@@ -48,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const oldPartners = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-partners-json', []) : JSON.parse(document.getElementById('monthly-form-old-partners-json')?.textContent ?? '[]');
     const oldSupplies = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-supplies-json', []) : JSON.parse(document.getElementById('monthly-form-old-supplies-json')?.textContent ?? '[]');
     const oldTeamGroups = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-team-groups-json', []) : JSON.parse(document.getElementById('monthly-form-old-team-groups-json')?.textContent ?? '[]');
+    const oldCeremonyItems = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-ceremony-items-json', []) : JSON.parse(document.getElementById('monthly-form-old-ceremony-items-json')?.textContent ?? '[]');
 
     const esc = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -66,6 +81,24 @@ document.addEventListener('DOMContentLoaded', function () {
         elements.forEach((element) => {
             element.style.display = isVisible ? '' : 'none';
         });
+    }
+
+    function setSectionInputsState(elements, isActive) {
+        elements.forEach((element) => {
+            element.querySelectorAll('input, select, textarea, button').forEach((field) => {
+                const shouldSkip = field.classList.contains('js-partners-count')
+                    || field.classList.contains('js-supplies-count')
+                    || field.classList.contains('js-team-groups-count');
+                if (shouldSkip) return;
+
+                field.disabled = !isActive;
+            });
+        });
+    }
+
+    function toggleSection(elements, isActive) {
+        toggleElements(elements, isActive);
+        setSectionInputsState(elements, isActive);
     }
 
     function isEnabled(input) {
@@ -109,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleVolunteers() {
         const active = isEnabled(needsVolunteers);
-        toggleElements(volunteersFields, active);
+        toggleSection(volunteersFields, active);
         setRequiredState([
             '[name="required_volunteers"]',
             '[name="volunteer_age_from"]',
@@ -121,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleCorrespondence() {
         const active = isEnabled(needsCorrespondence);
-        toggleElements(correspondenceFields, active);
+        toggleSection(correspondenceFields, active);
         setRequiredState([
             '[name="official_correspondence_reason"]',
             '[name="official_correspondence_target"]',
@@ -130,62 +163,80 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleMedia() {
-        toggleElements(mediaFields, isEnabled(needsMedia));
+        toggleSection(mediaFields, isEnabled(needsMedia));
     }
 
     function toggleSupplies() {
         const active = isEnabled(needsSupplies);
-        toggleElements(suppliesFields, active);
+        toggleSection(suppliesFields, active);
         if (suppliesCount) {
             suppliesCount.disabled = !active;
         }
     }
 
     function toggleSponsor() {
-        toggleElements(sponsorFields, isEnabled(hasSponsor));
+        toggleSection(sponsorFields, isEnabled(hasSponsor));
     }
 
     function togglePartners() {
         const active = isEnabled(hasPartners);
-        toggleElements(partnersFields, active);
+        toggleSection(partnersFields, active);
         if (partnersCount) {
             partnersCount.disabled = !active;
         }
     }
 
     function toggleCeremonyAgenda() {
-        toggleElements(ceremonyAgendaFields, isEnabled(needsCeremonyAgenda));
+        const active = isEnabled(needsCeremonyAgenda);
+        toggleSection(ceremonyAgendaFields, active);
+        if (ceremonyItemsCount) {
+            ceremonyItemsCount.disabled = !active;
+        }
     }
 
     function toggleTransport() {
-        toggleElements(transportFields, isEnabled(needsTransport));
+        toggleSection(transportFields, isEnabled(needsTransport));
     }
 
     function toggleMaintenance() {
-        toggleElements(maintenanceFields, isEnabled(needsMaintenance));
+        toggleSection(maintenanceFields, isEnabled(needsMaintenance));
     }
 
     function toggleGifts() {
-        toggleElements(giftsFields, isEnabled(needsGifts));
+        toggleSection(giftsFields, isEnabled(needsGifts));
     }
 
     function toggleProgramsParticipation() {
-        toggleElements(programsParticipationFields, isEnabled(needsProgramsParticipation));
+        const active = isEnabled(needsProgramsParticipation);
+        toggleSection(programsParticipationFields, active);
+        toggleProgramsTrainer();
+        toggleProgramsZahaTime();
+        toggleProgramsShow();
+        toggleProgramsFun();
     }
 
     function toggleCertificates() {
-        toggleElements(certificatesFields, isEnabled(needsCertificates));
+        const active = isEnabled(needsCertificates);
+        toggleSection(certificatesFields, active);
+        toggleCertificatesDetails();
+        toggleThanksLettersDetails();
     }
 
     function toggleInvitations() {
-        toggleElements(invitationsFields, isEnabled(needsInvitations));
+        const active = isEnabled(needsInvitations);
+        toggleSection(invitationsFields, active);
         toggleInvitationTypeDetails();
     }
 
     function toggleInvitationTypeDetails() {
+        if (!isEnabled(needsInvitations)) {
+            toggleSection(invitationPaperFields, false);
+            toggleSection(invitationElectronicFields, false);
+            return;
+        }
         const value = invitationType?.value || '';
-        toggleElements(invitationPaperFields, value === 'paper');
-        toggleElements(invitationElectronicFields, value === 'electronic');
+        toggleSection(invitationPaperFields, value === 'paper');
+        toggleSection(invitationElectronicFields, value === 'electronic');
     }
 
     function renderPartners() {
@@ -210,6 +261,69 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             `);
         }
+    }
+
+    function renderCeremonyItems() {
+        if (!ceremonyItemsContainer) return;
+
+        const count = Math.max(1, Math.min(20, parseInt(ceremonyItemsCount?.value || '1', 10)));
+        ceremonyItemsContainer.innerHTML = '';
+
+        for (let i = 0; i < count; i += 1) {
+            ceremonyItemsContainer.insertAdjacentHTML('beforeend', `
+                <div class="col-12"><h4 class="h6 mb-1">الفقرة ${i + 1}</h4></div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">الترتيب</label>
+                    <input class="form-control" type="number" min="1" name="ceremony_items[${i}][order]" value="${i + 1}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">اسم الفقرة</label>
+                    <input class="form-control" name="ceremony_items[${i}][name]" value="${esc(oldCeremonyItems?.[i]?.name)}">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">من</label>
+                    <input class="form-control" type="time" name="ceremony_items[${i}][time_from]" value="${esc(oldCeremonyItems?.[i]?.time_from)}">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">إلى</label>
+                    <input class="form-control" type="time" name="ceremony_items[${i}][time_to]" value="${esc(oldCeremonyItems?.[i]?.time_to)}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">وصف الفقرة</label>
+                    <input class="form-control" name="ceremony_items[${i}][description]" value="${esc(oldCeremonyItems?.[i]?.description)}">
+                </div>
+            `);
+        }
+    }
+
+    function toggleProgramsTrainer() {
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsTrainerFields, parentActive && isEnabled(programsNeedTrainerToggle));
+    }
+
+    function toggleProgramsZahaTime() {
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsZahaFields, parentActive && isEnabled(programsZahaToggle));
+    }
+
+    function toggleProgramsShow() {
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsShowFields, parentActive && isEnabled(programsShowToggle));
+    }
+
+    function toggleProgramsFun() {
+        const parentActive = isEnabled(needsProgramsParticipation);
+        toggleSection(programsFunFields, parentActive && isEnabled(programsFunToggle));
+    }
+
+    function toggleCertificatesDetails() {
+        const parentActive = isEnabled(needsCertificates);
+        toggleSection(certificatesDetailFields, parentActive && isEnabled(certificatesDetailToggle));
+    }
+
+    function toggleThanksLettersDetails() {
+        const parentActive = isEnabled(needsCertificates);
+        toggleSection(thanksLettersDetailFields, parentActive && isEnabled(thanksLettersDetailToggle));
     }
 
     function renderSupplies() {
@@ -332,15 +446,23 @@ document.addEventListener('DOMContentLoaded', function () {
     needsMaintenance?.addEventListener('change', toggleMaintenance);
     needsGifts?.addEventListener('change', toggleGifts);
     needsProgramsParticipation?.addEventListener('change', toggleProgramsParticipation);
+    programsNeedTrainerToggle?.addEventListener('change', toggleProgramsTrainer);
+    programsZahaToggle?.addEventListener('change', toggleProgramsZahaTime);
+    programsShowToggle?.addEventListener('change', toggleProgramsShow);
+    programsFunToggle?.addEventListener('change', toggleProgramsFun);
     needsCertificates?.addEventListener('change', toggleCertificates);
+    certificatesDetailToggle?.addEventListener('change', toggleCertificatesDetails);
+    thanksLettersDetailToggle?.addEventListener('change', toggleThanksLettersDetails);
     needsInvitations?.addEventListener('change', toggleInvitations);
     invitationType?.addEventListener('change', toggleInvitationTypeDetails);
+    ceremonyItemsCount?.addEventListener('input', renderCeremonyItems);
     partnersCount?.addEventListener('input', renderPartners);
     suppliesCount?.addEventListener('input', renderSupplies);
     teamGroupsCount?.addEventListener('input', renderTeamGroups);
 
     syncActivityDate();
     renderPartners();
+    renderCeremonyItems();
     renderSupplies();
     renderTeamGroups();
     toggleLocationFields();
@@ -356,6 +478,12 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleMaintenance();
     toggleGifts();
     toggleProgramsParticipation();
+    toggleProgramsTrainer();
+    toggleProgramsZahaTime();
+    toggleProgramsShow();
+    toggleProgramsFun();
     toggleCertificates();
+    toggleCertificatesDetails();
+    toggleThanksLettersDetails();
     toggleInvitations();
 });
