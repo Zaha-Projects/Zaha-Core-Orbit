@@ -22,15 +22,15 @@
 |---|---|---|
 | `resources/views/pages/finance/payments/index.blade.php` | ✅ Migrated | تم الحفاظ على نفس الفورمز والـ routes |
 | `resources/views/pages/finance/donations/index.blade.php` | ✅ Migrated | تم تحويل واجهة الإدخال + الجدول + pagination |
-| `resources/views/pages/finance/bookings/index.blade.php` | ⏳ Pending | التالي في التنفيذ |
-| `resources/views/pages/finance/bookings/create.blade.php` | ⏳ Pending | |
-| `resources/views/pages/finance/bookings/edit.blade.php` | ⏳ Pending | |
-| `resources/views/pages/finance/zaha_time/index.blade.php` | ⏳ Pending | |
-| `resources/views/pages/finance/zaha_time/create.blade.php` | ⏳ Pending | |
-| `resources/views/pages/finance/zaha_time/edit.blade.php` | ⏳ Pending | |
-| `resources/views/pages/finance/donations/create.blade.php` | ⏳ Pending | |
-| `resources/views/pages/finance/donations/edit.blade.php` | ⏳ Pending | |
-| `resources/views/pages/finance/partials/sidebar.blade.php` | 🔁 Shared Partial | يمكن إلغاؤه تدريجيًا لصالح `theme_sidebar_links` |
+| `resources/views/pages/finance/bookings/index.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/bookings/create.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/bookings/edit.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/zaha_time/index.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/zaha_time/create.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/zaha_time/edit.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/donations/create.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/donations/edit.blade.php` | ✅ Migrated | |
+| `resources/views/pages/finance/partials/sidebar.blade.php` | 🔁 Shared Partial | مرجع قديم؛ التنقل أصبح موحدًا داخل `new-theme-dashboard` |
 
 ### 3) Access
 | Page | Status |
