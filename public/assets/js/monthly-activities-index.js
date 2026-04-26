@@ -15,11 +15,6 @@
     const gridContainer = module.querySelector('[data-calendar-grid]');
     const titleContainer = module.querySelector('[data-calendar-title]');
     const endpoint = module.dataset.calendarEndpoint;
-    if (!endpoint) return;
-    const emptyState = document.createElement('div');
-    emptyState.className = 'monthly-calendar-empty d-none';
-    emptyState.textContent = 'لا توجد أنشطة لهذا الشهر حسب الفلاتر المحددة.';
-    gridContainer.parentNode.insertBefore(emptyState, gridContainer);
 
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     if (renderCalendarWeekdays) {
@@ -91,8 +86,6 @@
             console.error('Monthly calendar load failed:', error);
         }
 
-        emptyState.classList.toggle('d-none', items.length > 0);
-
         gridContainer.innerHTML = '';
         for (let i = 0; i < firstOffset; i++) {
             const pad = document.createElement('div');
@@ -116,7 +109,7 @@
 
             dayItems.forEach((item) => {
                 const activityLink = document.createElement('a');
-                activityLink.href = item.open_url || item.edit_url || '#';
+                activityLink.href = item.open_url || item.edit_url;
                 activityLink.className = `agenda-event-chip status-${item.status}`;
                 const badgeClass = item.status === 'approved'
                     ? 'monthly-calendar-badge--approved'
@@ -131,7 +124,7 @@
                     <span class="calendar-chip-flags">
                         ${item.event_type_label ? `<span class="calendar-chip-flag calendar-chip-flag--event-${item.event_type || 'default'}">${item.event_type_label}</span>` : ''}
                         ${item.plan_type_label ? `<span class="calendar-chip-flag calendar-chip-flag--plan-${item.plan_type || 'default'}">${item.plan_type_label}</span>` : ''}
-                        ${item.source_label ? `<span class="calendar-chip-flag calendar-chip-flag--source">${item.source_label}</span>` : ''}
+                        <span class="calendar-chip-flag calendar-chip-flag--source">${item.source_label || ''}</span>
                         <span class="calendar-chip-flag calendar-chip-flag--version">V${item.plan_version || 1}</span>
                     </span>
                     <div class="monthly-calendar-meta">
