@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,7 +35,5 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
-        Paginator::defaultView('pagination::bootstrap-5');
-        Paginator::defaultSimpleView('pagination::simple-bootstrap-5');
     }
 }
