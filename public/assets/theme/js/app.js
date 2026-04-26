@@ -3,6 +3,8 @@
     ar: {
       theme_dark: 'الوضع الداكن',
       theme_light: 'الوضع الفاتح',
+      switch_to_english: 'English',
+      switch_to_arabic: 'العربية',
       notify_saved: 'تم حفظ الإعدادات بنجاح',
       notify_warning_msg: 'يوجد عناصر تحتاج متابعة عاجلة.',
       notify_title: 'النظام',
@@ -11,6 +13,8 @@
     en: {
       theme_dark: 'Dark mode',
       theme_light: 'Light mode',
+      switch_to_english: 'English',
+      switch_to_arabic: 'Arabic',
       notify_saved: 'Settings were saved successfully',
       notify_warning_msg: 'There are items that require immediate follow-up.',
       notify_title: 'System',
@@ -84,7 +88,9 @@
   };
 
   const syncLocaleButtons = (locale) => {
-    const label = locale === 'ar' ? 'English' : 'العربية';
+    const label = locale === 'ar'
+      ? (state.dictionary.switch_to_english || 'English')
+      : (state.dictionary.switch_to_arabic || 'Arabic');
     if (el.localeToggle) el.localeToggle.textContent = label;
     if (el.mobileLocaleToggle) el.mobileLocaleToggle.textContent = label;
   };
@@ -114,7 +120,7 @@
     let dict = fallbackDictionaries[locale] || fallbackDictionaries.ar;
 
     try {
-      const response = await fetch(`/assets/new-theme/locales/${locale}/common.json`, { cache: 'no-store' });
+      const response = await fetch(`/assets/theme/locales/${locale}/common.json`, { cache: 'no-store' });
       if (response.ok) dict = await response.json();
     } catch (error) {
       console.warn('Locale fetch fallback:', error);

@@ -39,6 +39,8 @@ return [
         'toggle_page_actions' => 'إظهار إجراءات الصفحة',
         'close_page_actions' => 'إغلاق إجراءات الصفحة',
         'user_avatar' => 'صورة المستخدم',
+        'switch_to_english' => 'English',
+        'switch_to_arabic' => 'العربية',
     ],
     'welcome' => [
         'title' => 'مرحباً بكم في Zaha - Core Orbit',

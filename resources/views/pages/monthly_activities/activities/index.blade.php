@@ -1,4 +1,4 @@
-@extends('layouts.new-theme-dashboard')
+@extends('layouts.app')
 
 @php
     $title = __('app.roles.programs.monthly_activities.title');

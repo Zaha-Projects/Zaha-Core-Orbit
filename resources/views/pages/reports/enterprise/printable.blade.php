@@ -7,7 +7,7 @@
 <head>
     <meta charset="utf-8">
     <title>{{ __('app.enterprise.printable.title') }}</title>
-    <link rel="stylesheet" href="{{ asset('assets/new-theme/css/Theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/theme/css/Theme.css') }}">
     <style>
         body { font-family: Arial, 'Tajawal', sans-serif; margin: 20px; background: var(--page-bg); color: var(--text-color); }
         h2 { margin-top: 1.2rem; margin-bottom: 0.6rem; }

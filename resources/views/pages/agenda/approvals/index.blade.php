@@ -1,4 +1,4 @@
-﻿@extends('layouts.new-theme-dashboard')
+﻿@extends('layouts.app')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">

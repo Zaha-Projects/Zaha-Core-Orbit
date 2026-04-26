@@ -10,6 +10,8 @@
   "notify_title": "System",
   "theme_dark": "Dark mode",
   "theme_light": "Light mode",
+  "switch_to_english": "English",
+  "switch_to_arabic": "Arabic",
   "calendar_fallback": "Calendar failed to load. Please check your network connection.",
   "logout": "Logout"
 }
