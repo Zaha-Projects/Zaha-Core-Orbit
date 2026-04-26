@@ -34,5 +34,6 @@ class AppServiceProvider extends ServiceProvider
                 class_alias($actual, $expected);
             }
         }
+
     }
 }
