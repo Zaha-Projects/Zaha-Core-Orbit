@@ -442,6 +442,7 @@ class MonthlyActivitiesController extends Controller
     {
         $this->normalizeVolunteerAgeRange($data);
         $this->normalizeExecutionNeedsFollowup($data);
+        $this->normalizeExecutionNeedsPayload($data);
         $this->normalizeSuppliesPayload($data);
 
         $data['execution_status'] = $data['execution_status'] ?? 'executed';
@@ -586,6 +587,68 @@ class MonthlyActivitiesController extends Controller
 
             return $supply;
         })->all();
+    }
+
+    protected function normalizeExecutionNeedsPayload(array &$data): void
+    {
+        $payload = [
+            'needs_ceremony_agenda' => (bool) ($data['needs_ceremony_agenda'] ?? false),
+            'ceremony' => [
+                'items_count' => $data['ceremony_items_count'] ?? null,
+                'time_from' => $data['ceremony_time_from'] ?? null,
+                'time_to' => $data['ceremony_time_to'] ?? null,
+                'item_name' => $data['ceremony_item_name'] ?? null,
+                'item_description' => $data['ceremony_item_description'] ?? null,
+            ],
+            'needs_transport' => (bool) ($data['needs_transport'] ?? false),
+            'transport' => [
+                'vehicles_count' => $data['transport_vehicles_count'] ?? null,
+                'vehicle_type' => $data['transport_vehicle_type'] ?? null,
+                'passengers_count' => $data['transport_passengers_count'] ?? null,
+            ],
+            'needs_maintenance_workers' => (bool) ($data['needs_maintenance_workers'] ?? false),
+            'maintenance' => [
+                'workers_count' => $data['maintenance_workers_count'] ?? null,
+                'type' => $data['maintenance_type'] ?? null,
+            ],
+            'needs_gifts' => (bool) ($data['needs_gifts'] ?? false),
+            'gifts' => [
+                'count' => $data['gifts_count'] ?? null,
+                'description' => $data['gifts_description'] ?? null,
+                'delivery_entity' => $data['gifts_delivery_entity'] ?? null,
+            ],
+            'needs_programs_participation' => (bool) ($data['needs_programs_participation'] ?? false),
+            'programs' => [
+                'need_trainer' => (bool) ($data['programs_need_trainer'] ?? false),
+                'trainer_description' => $data['programs_trainer_description'] ?? null,
+                'trainer_count' => $data['programs_trainer_count'] ?? null,
+                'zaha_time_options' => collect($data['programs_zaha_time_options'] ?? [])->filter()->values()->all(),
+                'zaha_time_other' => $data['programs_zaha_time_other'] ?? null,
+                'show_name' => $data['programs_show_name'] ?? null,
+                'show_description' => $data['programs_show_description'] ?? null,
+                'fun_note' => $data['programs_fun_note'] ?? null,
+            ],
+            'needs_certificates_and_thanks' => (bool) ($data['needs_certificates_and_thanks'] ?? false),
+            'certificates' => [
+                'count' => $data['certificates_count'] ?? null,
+                'template' => $data['certificates_template'] ?? null,
+                'for' => $data['certificates_for'] ?? null,
+            ],
+            'thanks_letters' => [
+                'count' => $data['thanks_letters_count'] ?? null,
+                'template' => $data['thanks_letters_template'] ?? null,
+                'for' => $data['thanks_letters_for'] ?? null,
+            ],
+            'needs_invitations' => (bool) ($data['needs_invitations'] ?? false),
+            'invitations' => [
+                'type' => $data['invitation_type'] ?? null,
+                'paper_template' => $data['invitation_paper_template'] ?? null,
+                'paper_copies' => $data['invitation_paper_copies'] ?? null,
+                'electronic_template' => $data['invitation_electronic_template'] ?? null,
+            ],
+        ];
+
+        $data['execution_needs_payload'] = $payload;
     }
 
     protected function shouldSubmitFromRequest(Request $request): bool
@@ -1339,6 +1402,45 @@ class MonthlyActivitiesController extends Controller
             'execution_needs_followup.*.status' => ['nullable', 'in:secured,not_secured'],
             'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
             'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
+            'needs_ceremony_agenda' => ['nullable', 'boolean'],
+            'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
+            'ceremony_time_from' => ['nullable', 'date_format:H:i'],
+            'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
+            'ceremony_item_name' => ['nullable', 'string', 'max:255'],
+            'ceremony_item_description' => ['nullable', 'string', 'max:500'],
+            'needs_transport' => ['nullable', 'boolean'],
+            'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
+            'transport_vehicle_type' => ['nullable', 'in:bus,car'],
+            'transport_passengers_count' => ['nullable', 'integer', 'min:1'],
+            'needs_maintenance_workers' => ['nullable', 'boolean'],
+            'maintenance_workers_count' => ['nullable', 'integer', 'min:1'],
+            'maintenance_type' => ['nullable', 'string', 'max:255'],
+            'needs_gifts' => ['nullable', 'boolean'],
+            'gifts_count' => ['nullable', 'integer', 'min:1'],
+            'gifts_description' => ['nullable', 'string', 'max:500'],
+            'gifts_delivery_entity' => ['nullable', 'string', 'max:255'],
+            'needs_programs_participation' => ['nullable', 'boolean'],
+            'programs_need_trainer' => ['nullable', 'boolean'],
+            'programs_trainer_description' => ['nullable', 'string', 'max:255'],
+            'programs_trainer_count' => ['nullable', 'integer', 'min:1'],
+            'programs_zaha_time_options' => ['nullable', 'array'],
+            'programs_zaha_time_options.*' => ['nullable', 'string', 'max:100'],
+            'programs_zaha_time_other' => ['nullable', 'string', 'max:255'],
+            'programs_show_name' => ['nullable', 'string', 'max:255'],
+            'programs_show_description' => ['nullable', 'string', 'max:500'],
+            'programs_fun_note' => ['nullable', 'string', 'max:255'],
+            'needs_certificates_and_thanks' => ['nullable', 'boolean'],
+            'certificates_count' => ['nullable', 'integer', 'min:1'],
+            'certificates_template' => ['nullable', 'string', 'max:255'],
+            'certificates_for' => ['nullable', 'string', 'max:255'],
+            'thanks_letters_count' => ['nullable', 'integer', 'min:1'],
+            'thanks_letters_template' => ['nullable', 'string', 'max:255'],
+            'thanks_letters_for' => ['nullable', 'string', 'max:255'],
+            'needs_invitations' => ['nullable', 'boolean'],
+            'invitation_type' => ['nullable', 'in:paper,electronic'],
+            'invitation_paper_template' => ['nullable', 'string', 'max:255'],
+            'invitation_paper_copies' => ['nullable', 'integer', 'min:1'],
+            'invitation_electronic_template' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
         ]);
 
@@ -1433,6 +1535,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) (($data['requires_communications'] ?? false) || in_array('relations', $data['responsible_entities'] ?? [], true)),
+            'execution_needs_payload' => $data['execution_needs_payload'] ?? null,
             'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => false,
@@ -1759,12 +1862,51 @@ class MonthlyActivitiesController extends Controller
             'partners.*.role' => ['nullable', 'required_with:partners.*.name', 'string', 'max:255'],
             'partners.*.contact_info' => ['nullable', 'string', 'max:255'],
             'evaluations' => ['nullable', 'array'],
-            'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
-            'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
-            'evaluations.*.note' => ['nullable', 'string'],
-            'followup_remarks' => ['nullable', 'string'],
-            'description' => ['required', 'string', 'max:2000'],
-        ]);
+                'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
+                'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
+                'evaluations.*.note' => ['nullable', 'string'],
+                'followup_remarks' => ['nullable', 'string'],
+                'needs_ceremony_agenda' => ['nullable', 'boolean'],
+                'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
+                'ceremony_time_from' => ['nullable', 'date_format:H:i'],
+                'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
+                'ceremony_item_name' => ['nullable', 'string', 'max:255'],
+                'ceremony_item_description' => ['nullable', 'string', 'max:500'],
+                'needs_transport' => ['nullable', 'boolean'],
+                'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
+                'transport_vehicle_type' => ['nullable', 'in:bus,car'],
+                'transport_passengers_count' => ['nullable', 'integer', 'min:1'],
+                'needs_maintenance_workers' => ['nullable', 'boolean'],
+                'maintenance_workers_count' => ['nullable', 'integer', 'min:1'],
+                'maintenance_type' => ['nullable', 'string', 'max:255'],
+                'needs_gifts' => ['nullable', 'boolean'],
+                'gifts_count' => ['nullable', 'integer', 'min:1'],
+                'gifts_description' => ['nullable', 'string', 'max:500'],
+                'gifts_delivery_entity' => ['nullable', 'string', 'max:255'],
+                'needs_programs_participation' => ['nullable', 'boolean'],
+                'programs_need_trainer' => ['nullable', 'boolean'],
+                'programs_trainer_description' => ['nullable', 'string', 'max:255'],
+                'programs_trainer_count' => ['nullable', 'integer', 'min:1'],
+                'programs_zaha_time_options' => ['nullable', 'array'],
+                'programs_zaha_time_options.*' => ['nullable', 'string', 'max:100'],
+                'programs_zaha_time_other' => ['nullable', 'string', 'max:255'],
+                'programs_show_name' => ['nullable', 'string', 'max:255'],
+                'programs_show_description' => ['nullable', 'string', 'max:500'],
+                'programs_fun_note' => ['nullable', 'string', 'max:255'],
+                'needs_certificates_and_thanks' => ['nullable', 'boolean'],
+                'certificates_count' => ['nullable', 'integer', 'min:1'],
+                'certificates_template' => ['nullable', 'string', 'max:255'],
+                'certificates_for' => ['nullable', 'string', 'max:255'],
+                'thanks_letters_count' => ['nullable', 'integer', 'min:1'],
+                'thanks_letters_template' => ['nullable', 'string', 'max:255'],
+                'thanks_letters_for' => ['nullable', 'string', 'max:255'],
+                'needs_invitations' => ['nullable', 'boolean'],
+                'invitation_type' => ['nullable', 'in:paper,electronic'],
+                'invitation_paper_template' => ['nullable', 'string', 'max:255'],
+                'invitation_paper_copies' => ['nullable', 'integer', 'min:1'],
+                'invitation_electronic_template' => ['nullable', 'string', 'max:255'],
+                'description' => ['required', 'string', 'max:2000'],
+            ]);
 
         $this->applyUnifiedLockedFieldValues($monthlyActivity, $data, $request->user());
 
@@ -1867,6 +2009,7 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops',
             'requires_communications',
             'is_program_related',
+            'execution_needs_payload',
             'execution_needs_followup',
             'participation_status',
             'plan_type',
@@ -1961,6 +2104,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
             'requires_communications' => (bool) ($data['requires_communications'] ?? false),
+            'execution_needs_payload' => $data['execution_needs_payload'] ?? null,
             'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'branch_id' => $data['branch_id'],
             'lifecycle_status' => $newLifecycleStatus,
@@ -2069,6 +2213,7 @@ class MonthlyActivitiesController extends Controller
                 'is_program_related' => $newValues['is_program_related'],
                 'requires_workshops' => $newValues['requires_workshops'],
                 'requires_communications' => $newValues['requires_communications'],
+                'execution_needs_payload' => $newValues['execution_needs_payload'],
                 'execution_needs_followup' => $newValues['execution_needs_followup'],
                 'branch_id' => $newValues['branch_id'],
                 'lifecycle_status' => $newValues['lifecycle_status'],
@@ -2163,6 +2308,7 @@ class MonthlyActivitiesController extends Controller
             'is_program_related' => $newValues['is_program_related'],
             'requires_workshops' => $newValues['requires_workshops'],
             'requires_communications' => $newValues['requires_communications'],
+            'execution_needs_payload' => $newValues['execution_needs_payload'],
             'execution_needs_followup' => $newValues['execution_needs_followup'],
             'branch_id' => $newValues['branch_id'],
             'lifecycle_status' => $newValues['lifecycle_status'],
