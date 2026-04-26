@@ -15,7 +15,8 @@
   top: 0;
   bottom: 0;
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-inline-end: 1px solid rgba(143,182,222,.45);
   flex-shrink: 0;
   z-index: 1040;

@@ -465,6 +465,7 @@
 
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-form.css') }}">
 @endpush
 

@@ -44,6 +44,10 @@
         && ! empty($editUser->branch_id);
 @endphp
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
+@endpush
+
 
 @section('content')
     @if(request()->boolean('form'))

@@ -73,45 +73,45 @@
 ### 6) Maintenance
 | Page | Status |
 |---|---|
-| `resources/views/pages/maintenance/requests/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/maintenance/requests/create.blade.php` | ⏳ Pending |
-| `resources/views/pages/maintenance/requests/edit.blade.php` | ⏳ Pending |
-| `resources/views/pages/maintenance/approvals/index.blade.php` | ⏳ Pending |
+| `resources/views/pages/maintenance/requests/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/maintenance/requests/create.blade.php` | ✅ Migrated |
+| `resources/views/pages/maintenance/requests/edit.blade.php` | ✅ Migrated |
+| `resources/views/pages/maintenance/approvals/index.blade.php` | ✅ Migrated |
 | `resources/views/pages/maintenance/partials/sidebar.blade.php` | 🔁 Shared Partial |
 
 ### 7) Transport
 | Page | Status |
 |---|---|
-| `resources/views/pages/transport/vehicles/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/vehicles/create.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/vehicles/edit.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/drivers/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/drivers/create.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/drivers/edit.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/trips/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/trips/create.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/trips/edit.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/movements/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/movements/create.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/movements/edit.blade.php` | ⏳ Pending |
-| `resources/views/pages/transport/movements/show.blade.php` | ⏳ Pending |
+| `resources/views/pages/transport/vehicles/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/vehicles/create.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/vehicles/edit.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/drivers/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/drivers/create.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/drivers/edit.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/trips/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/trips/create.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/trips/edit.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/movements/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/movements/create.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/movements/edit.blade.php` | ✅ Migrated |
+| `resources/views/pages/transport/movements/show.blade.php` | ✅ Migrated |
 | `resources/views/pages/transport/movements/form.blade.php` | 🔁 Shared Partial |
 | `resources/views/pages/transport/partials/sidebar.blade.php` | 🔁 Shared Partial |
 
 ### 8) Reports + Enterprise
 | Page | Status |
 |---|---|
-| `resources/views/pages/reports/index.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/agenda.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/monthly.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/finance.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/maintenance.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/transport.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/kpis.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/enterprise/branch-performance.blade.php` | ⏳ Pending |
-| `resources/views/pages/reports/enterprise/printable.blade.php` | ⏳ Pending |
+| `resources/views/pages/reports/index.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/agenda.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/monthly.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/finance.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/maintenance.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/transport.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/kpis.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/enterprise/branch-performance.blade.php` | ✅ Migrated |
+| `resources/views/pages/reports/enterprise/printable.blade.php` | ✅ Migrated |
 | `resources/views/pages/reports/partials/sidebar.blade.php` | 🔁 Shared Partial |
-| `resources/views/pages/enterprise/dashboard.blade.php` | ⏳ Pending |
+| `resources/views/pages/enterprise/dashboard.blade.php` | ✅ Migrated |
 | `resources/views/pages/enterprise/annual-planning-overview.blade.php` | ✅ Migrated |
 | `resources/views/pages/enterprise/partials/kpis.blade.php` | 🔁 Shared Partial |
 | `resources/views/pages/enterprise/partials/charts.blade.php` | 🔁 Shared Partial |

@@ -17,6 +17,25 @@
         $user->hasRole('super_admin')
         || $user->canAny(['users.view', 'roles.view', 'workflows.manage', 'branches.manage'])
     );
+    $canAccessMaintenanceSidebar = $user && ($user->hasRole('maintenance_officer') || request()->routeIs('role.maintenance.*'));
+    $canAccessTransportSidebar = $user && (
+        $user->hasAnyRole(['transport_officer', 'movement_manager', 'movement_editor', 'movement_viewer', 'super_admin'])
+        || request()->routeIs('role.transport.*')
+    );
+    $canAccessReportsSidebar = $user && (
+        $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
+        || $user->canAny(['reports.view', 'kpi.view'])
+        || request()->routeIs('role.reports.*')
+        || request()->routeIs('role.enterprise.*')
+    );
+    $canAccessReportPages = $user && (
+        $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
+        || $user->can('reports.view')
+    );
+    $canAccessKpiPage = $user && (
+        $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
+        || $user->can('kpi.view')
+    );
 @endphp
 <!doctype html>
 <html lang="{{ $locale }}" dir="{{ $isArabic ? 'rtl' : 'ltr' }}" data-theme="{{ $theme }}">
@@ -81,6 +100,36 @@
                 <li class="side-item {{ request()->routeIs('role.finance.bookings.*') ? 'selected' : '' }}"><a href="{{ route('role.finance.bookings.index') }}"><i class="fas fa-book"></i><span>{{ __('app.roles.finance.bookings.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.finance.zaha_time.*') ? 'selected' : '' }}"><a href="{{ route('role.finance.zaha_time.index') }}"><i class="fas fa-clock"></i><span>{{ __('app.roles.finance.zaha_time.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.finance.payments.*') ? 'selected' : '' }}"><a href="{{ route('role.finance.payments.index') }}"><i class="fas fa-credit-card"></i><span>{{ __('app.roles.finance.payments.title') }}</span></a></li>
+            @endif
+
+            @if ($canAccessMaintenanceSidebar)
+                <li class="side-item {{ request()->routeIs('role.maintenance.requests.*') ? 'selected' : '' }}"><a href="{{ route('role.maintenance.requests.index') }}"><i class="fas fa-screwdriver-wrench"></i><span>{{ __('app.roles.maintenance.requests.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.maintenance.approvals.*') ? 'selected' : '' }}"><a href="{{ route('role.maintenance.approvals.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('app.roles.maintenance.approvals.title') }}</span></a></li>
+            @endif
+
+            @if ($canAccessTransportSidebar)
+                <li class="side-item {{ request()->routeIs('role.transport.vehicles.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.vehicles.index') }}"><i class="fas fa-truck"></i><span>{{ __('app.roles.transport.vehicles.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.transport.drivers.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.drivers.index') }}"><i class="fas fa-id-card"></i><span>{{ __('app.roles.transport.drivers.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.transport.trips.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.trips.index') }}"><i class="fas fa-route"></i><span>{{ __('app.roles.transport.trips.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.transport.movements.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.movements.index') }}"><i class="fas fa-map-location-dot"></i><span>{{ __('app.roles.transport.movements.title') }}</span></a></li>
+            @endif
+
+            @if ($canAccessReportsSidebar)
+                @if($canAccessReportPages)
+                    <li class="side-item {{ request()->routeIs('role.reports.index') ? 'selected' : '' }}"><a href="{{ route('role.reports.index') }}"><i class="fas fa-chart-simple"></i><span>{{ __('app.roles.reports.title') }}</span></a></li>
+                    <li class="side-item {{ request()->routeIs('role.reports.agenda.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.agenda.index') }}"><i class="fas fa-calendar-check"></i><span>{{ __('app.roles.reports.agenda.title') }}</span></a></li>
+                    <li class="side-item {{ request()->routeIs('role.reports.monthly.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.monthly.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.reports.monthly.title') }}</span></a></li>
+                    <li class="side-item {{ request()->routeIs('role.reports.finance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.finance.index') }}"><i class="fas fa-money-bill-trend-up"></i><span>{{ __('app.roles.reports.finance.title') }}</span></a></li>
+                    <li class="side-item {{ request()->routeIs('role.reports.maintenance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.maintenance.index') }}"><i class="fas fa-toolbox"></i><span>{{ __('app.roles.reports.maintenance.title') }}</span></a></li>
+                    <li class="side-item {{ request()->routeIs('role.reports.transport.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.transport.index') }}"><i class="fas fa-truck-fast"></i><span>{{ __('app.roles.reports.transport.title') }}</span></a></li>
+                @endif
+                @if($canAccessKpiPage)
+                    <li class="side-item {{ request()->routeIs('role.reports.kpis.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.kpis.index') }}"><i class="fas fa-chart-line"></i><span>{{ __('app.roles.reports.kpis.title') }}</span></a></li>
+                @endif
+                @if($user?->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin']))
+                    <li class="side-item {{ request()->routeIs('role.enterprise.dashboard') ? 'selected' : '' }}"><a href="{{ route('role.enterprise.dashboard') }}"><i class="fas fa-chart-pie"></i><span>{{ __('app.enterprise.analytics_title') }}</span></a></li>
+                    <li class="side-item {{ request()->routeIs('role.reports.enterprise.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.enterprise.branch_performance') }}"><i class="fas fa-arrow-trend-up"></i><span>{{ __('app.enterprise.branch_performance.report_title') }}</span></a></li>
+                @endif
             @endif
         </ul>
 

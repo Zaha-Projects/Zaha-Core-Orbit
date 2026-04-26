@@ -179,6 +179,7 @@
 
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/agenda-events-form.css') }}">
 @endpush
 
