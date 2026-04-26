@@ -14,10 +14,8 @@ pass() {
 }
 
 # 1) No Blade page should extend deprecated dashboard layout naming.
-if rg -n "@extends\('layouts\.new-theme-dashboard'\)" resources/views -g '*.blade.php' >/dev/null; then
-  fail "Found Blade views still extending layouts.new-theme-dashboard"
-elif rg -n "@extends\('layouts\.dashboard'\)" resources/views -g '*.blade.php' >/dev/null; then
-  fail "Found Blade views still extending layouts.dashboard"
+if rg -n "@extends\('layouts\.[^']*dashboard'\)" resources/views -g '*.blade.php' >/dev/null; then
+  fail "Found Blade views still extending deprecated dashboard layout aliases"
 else
   pass "No Blade view extends deprecated dashboard layouts"
 fi

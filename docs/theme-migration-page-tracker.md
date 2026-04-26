@@ -12,7 +12,7 @@
 
 ### الملخص الرقمي النهائي
 - الصفحات العاملة على القالب الموحد `layouts.app`: **71 صفحة**.
-- الصفحات المتبقية على القوالب القديمة (`layouts.dashboard` / `layouts.new-theme-dashboard`): **0 صفحة**.
+- الصفحات المتبقية على القوالب القديمة (dashboard aliases السابقة): **0 صفحة**.
 - صفحات المصادقة على `layouts.auth`: **3 صفحات** (`welcome`, `auth/login`, `auth/register`).
 
 ---
