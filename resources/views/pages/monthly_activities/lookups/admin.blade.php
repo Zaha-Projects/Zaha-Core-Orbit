@@ -427,6 +427,68 @@
             <div class="col-12">
                 <div class="card event-card">
                     <div class="card-body">
+                        <h2 class="h5 mb-3">خيارات زها تايم (مشاركة البرامج)</h2>
+
+                        <form method="POST" action="{{ route('role.super_admin.events_lookups.zaha_time_options.store') }}" class="row g-2 mb-4 lookup-create-form">
+                            @csrf
+                            <div class="col-12 col-lg-3">
+                                <input class="form-control" name="code" placeholder="الكود البرمجي" required>
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <input class="form-control" name="name" placeholder="اسم الخيار" required>
+                            </div>
+                            <div class="col-6 col-lg-2">
+                                <input class="form-control" type="number" min="0" name="sort_order" placeholder="الترتيب">
+                            </div>
+                            <div class="col-6 col-lg-2 d-flex align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" value="1" id="zaha_time_is_active" checked>
+                                    <label class="form-check-label" for="zaha_time_is_active">مفعل</label>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-1">
+                                <button class="btn btn-primary w-100" type="submit">إضافة</button>
+                            </div>
+                        </form>
+
+                        <div class="table-responsive mb-4">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>الكود</th>
+                                        <th>الاسم</th>
+                                        <th>الترتيب</th>
+                                        <th>الحالة</th>
+                                        <th class="text-end">حفظ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($zahaTimeOptions as $option)
+                                        <tr>
+                                            <form method="POST" action="{{ route('role.super_admin.events_lookups.zaha_time_options.update', $option) }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <td><input class="form-control" name="code" value="{{ $option->code }}" required></td>
+                                                <td><input class="form-control" name="name" value="{{ $option->name }}" required></td>
+                                                <td><input class="form-control" type="number" min="0" name="sort_order" value="{{ $option->sort_order ?? 0 }}"></td>
+                                                <td>
+                                                    <label class="form-check form-switch lookup-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" {{ $option->is_active ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ $option->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
+                                                    </label>
+                                                </td>
+                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                            </form>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-muted">لا توجد خيارات مضافة بعد.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
                         <h2 class="h5 mb-3">أسئلة التقييم</h2>
 
                         <form method="POST" action="{{ route('role.super_admin.events_lookups.evaluation_questions.store') }}" class="row g-2 mb-4 lookup-create-form">

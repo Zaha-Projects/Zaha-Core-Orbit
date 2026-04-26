@@ -20,6 +20,7 @@ use App\Models\MonthlyActivityEvaluationResponse;
 use App\Models\TargetGroup;
 use App\Models\Setting;
 use App\Models\WorkflowActionLog;
+use App\Models\ZahaTimeOption;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -892,6 +893,7 @@ class MonthlyActivitiesController extends Controller
         $agendaEvents = $this->agendaEventsForUser($user);
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
+        $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyCreationStatusOptions('draft');
         $executionStatusLabels = $this->executionStatusLabels();
 
@@ -900,6 +902,7 @@ class MonthlyActivitiesController extends Controller
             'agendaEvents',
             'targetGroups',
             'evaluationQuestions',
+            'zahaTimeOptions',
             'monthlyStatusOptions',
             'executionStatusLabels',
         ));
@@ -1546,6 +1549,7 @@ class MonthlyActivitiesController extends Controller
         $agendaEvents = $this->agendaEventsForUser(request()->user(), $monthlyActivity);
         $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
+        $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);
         $monthlyCloseStatusOptions = $this->monthlyCloseStatusOptions((string) $monthlyActivity->status);
         $executionStatusLabels = $this->executionStatusLabels();
@@ -1556,6 +1560,7 @@ class MonthlyActivitiesController extends Controller
             'agendaEvents',
             'targetGroups',
             'evaluationQuestions',
+            'zahaTimeOptions',
             'monthlyStatusOptions',
             'monthlyCloseStatusOptions',
             'executionStatusLabels',

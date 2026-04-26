@@ -53,6 +53,7 @@
     $partnersCount = max(1, count($oldPartners));
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
+    $selectedZahaTimeOptions = old('programs_zaha_time_options', []);
     $isUnifiedMandatory = $existingMonthlyActivity
         && (bool) $existingMonthlyActivity->is_from_agenda
         && (string) $existingMonthlyActivity->plan_type === 'unified'
@@ -579,11 +580,11 @@
                             <div class="col-12 col-md-6">
                                 <label class="form-label">خدمات زها تايم (اختيار متعدد)</label>
                                 <select class="form-select" name="programs_zaha_time_options[]" multiple>
-                                    @foreach (['storyteller' => 'حكواتي', 'face_painting' => 'رسم عالوجوه', 'magician' => 'ساحر', 'telematch' => 'تلي ماتش', 'characters' => 'شخصيات', 'other' => 'أخرى'] as $zahaOptionValue => $zahaOptionLabel)
-                                        <option value="{{ $zahaOptionValue }}" {{ in_array($zahaOptionValue, old('programs_zaha_time_options', []), true) ? 'selected' : '' }}>{{ $zahaOptionLabel }}</option>
+                                    @foreach (($zahaTimeOptions ?? collect()) as $zahaOption)
+                                        <option value="{{ $zahaOption->code }}" {{ in_array($zahaOption->code, $selectedZahaTimeOptions, true) ? 'selected' : '' }}>{{ $zahaOption->name }}</option>
                                     @endforeach
                                 </select>
-                                <small class="text-muted">مؤقتاً من النموذج — لاحقاً ستُدار الخيارات من لوحة الأدمن.</small>
+                                <small class="text-muted">الخيارات تُدار من شاشة القوائم المرجعية للأدمن.</small>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label">تفاصيل إضافية لزها تايم</label>
