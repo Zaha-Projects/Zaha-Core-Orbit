@@ -265,24 +265,18 @@
                     {{ __('عرض') }} {{ $activities->firstItem() ?? 0 }} - {{ $activities->lastItem() ?? 0 }} {{ __('من') }} {{ $activities->total() }}
                 </small>
                 <div>
-                    {{ $activities->onEachSide(1)->links('pagination::bootstrap-5') }}
+                    {{ $activities->onEachSide(1)->links() }}
                 </div>
             </div>
         </div>
 
         <div class="agenda-view-pane {{ $isBranchCalendarOnly ? '' : 'd-none' }}" data-view-pane="calendar">
-            <div class="card event-card monthly-calendar-card--compact">
+            <div class="card event-card">
                 <div class="card-body">
                     <div class="agenda-calendar-toolbar mb-3 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">السابق</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">التالي</button>
-                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">السابق</button>
                         <h2 class="h6 mb-0" data-calendar-title></h2>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-info-subtle text-info-emphasis monthly-calendar-view-badge">عرض فقط</span>
-                            <a href="{{ route('role.relations.agenda.index') }}" class="btn btn-sm btn-primary">عرض الأجندة السنوية</a>
-                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">التالي</button>
                     </div>
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
                     <div class="agenda-calendar-grid" data-calendar-grid></div>

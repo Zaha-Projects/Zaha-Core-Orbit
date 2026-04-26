@@ -389,7 +389,7 @@
                             {{ __('عرض') }} {{ $events->firstItem() ?? 0 }} - {{ $events->lastItem() ?? 0 }} {{ __('من') }} {{ $events->total() }}
                         </small>
                         <div class="d-flex align-items-center gap-2">
-                            {{ $events->onEachSide(1)->links('pagination::bootstrap-5') }}
+                            {{ $events->onEachSide(1)->links() }}
                         </div>
                     </div>
                 </div>

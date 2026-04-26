@@ -6,23 +6,3 @@
 .monthly-calendar-branch { font-size: 12px; color: #6b7280; margin-bottom: 4px; display: block; }
 .monthly-calendar-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
 .monthly-calendar-icons { display: inline-flex; gap: 4px; font-size: 13px; }
-
-.monthly-calendar-card--compact {
-    max-width: 980px;
-    margin-inline: auto;
-}
-
-.monthly-calendar-card--compact .agenda-calendar-day {
-    min-height: 100px;
-    padding: 8px;
-}
-
-.monthly-calendar-card--compact .agenda-event-chip {
-    padding: 6px 8px;
-    font-size: 11px;
-}
-
-.monthly-calendar-view-badge {
-    font-size: 11px;
-    font-weight: 700;
-}
