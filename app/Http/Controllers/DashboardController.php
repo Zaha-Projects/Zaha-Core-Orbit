@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AgendaEvent;
+use Carbon\Carbon;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
 
@@ -36,6 +38,25 @@ class DashboardController extends Controller
             })
             ->values();
 
-        return view('dashboard', compact('cards'));
+        $calendarEvents = AgendaEvent::query()
+            ->notArchived()
+            ->orderBy('month')
+            ->orderBy('day')
+            ->orderBy('event_date')
+            ->get()
+            ->map(function (AgendaEvent $event): array {
+                $resolvedDate = $event->event_date
+                    ? Carbon::parse($event->event_date)->toDateString()
+                    : Carbon::create(now()->year, max(1, (int) $event->month), max(1, (int) $event->day))->toDateString();
+
+                return [
+                    'title' => $event->event_name,
+                    'start' => $resolvedDate,
+                    'allDay' => true,
+                ];
+            })
+            ->values();
+
+        return view('dashboard', compact('cards', 'calendarEvents'));
     }
 }

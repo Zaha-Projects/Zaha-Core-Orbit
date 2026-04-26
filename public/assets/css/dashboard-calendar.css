@@ -1,0 +1,36 @@
+.dashboard-calendar-card {
+    border-radius: 18px;
+    border: 1px solid #d3e1f6;
+    background: linear-gradient(145deg, #f7fbff 0%, #eef5ff 100%);
+}
+
+.dashboard-calendar-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #bfd2ef;
+    background: #fff;
+    color: #1e3a8a;
+    font-size: .78rem;
+    font-weight: 700;
+    padding: .35rem .8rem;
+}
+
+#calendarSection #calendar {
+    max-width: 880px;
+    margin-inline: auto;
+}
+
+#calendarSection .fc {
+    font-size: .86rem;
+}
+
+#calendarSection .fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: .75rem;
+}
+
+#calendarSection .fc .fc-button {
+    border-radius: 10px;
+    font-size: .78rem;
+    padding: .32rem .55rem;
+}

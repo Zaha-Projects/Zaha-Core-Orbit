@@ -2,6 +2,15 @@
 
 @section('title', __('app.common.dashboard'))
 
+@php
+    $versionedAsset = static function (string $path): string {
+        $absolutePath = public_path($path);
+        $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
+
+        return asset($path) . '?v=' . $version;
+    };
+@endphp
+
 @section('content')
     <section class="mb-4">
         <div class="card p-4">
@@ -31,15 +40,25 @@
         @endforelse
     </section>
 
-    <section class="row g-3">
-        <div class="col-12">
-            <div class="card p-3" id="calendarSection">
-                <h2 class="h4 mb-3">{{ __('app.roles.relations.agenda.calendar.calendar_view') }}</h2>
-                <div id="calendar"></div>
-                <div id="calendarFallback" class="alert alert-warning mt-3 d-none">
-                    {{ app()->getLocale() === 'ar' ? 'تعذر تحميل التقويم.' : 'Calendar failed to load.' }}
+    @if(($calendarEvents ?? collect())->isNotEmpty())
+        <section class="row g-3">
+            <div class="col-12 col-xxl-8">
+                <div class="card dashboard-calendar-card p-3 p-lg-4" id="calendarSection">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h5 mb-0">{{ __('app.roles.relations.agenda.calendar.calendar_view') }}</h2>
+                        <span class="dashboard-calendar-chip">{{ ($calendarEvents ?? collect())->count() }} فعالية سنوية</span>
+                    </div>
+                    <div id="calendar"></div>
+                    <div id="calendarFallback" class="alert alert-warning mt-3 d-none">
+                        {{ app()->getLocale() === 'ar' ? 'تعذر تحميل التقويم.' : 'Calendar failed to load.' }}
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+        <script type="application/json" id="dashboard-calendar-events-json">@json($calendarEvents)</script>
+    @endif
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/dashboard-calendar.css') }}">
+@endpush

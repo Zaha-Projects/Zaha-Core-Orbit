@@ -148,15 +148,29 @@
 
   const initCalendar = () => {
     const calendarEl = document.getElementById('calendar');
+    const calendarSection = document.getElementById('calendarSection');
     if (!window.FullCalendar || !calendarEl) return;
+
+    let events = [];
+    try {
+      const eventsNode = document.getElementById('dashboard-calendar-events-json');
+      events = eventsNode ? JSON.parse(eventsNode.textContent || '[]') : [];
+    } catch (error) {
+      events = [];
+    }
+
+    if (!Array.isArray(events) || events.length === 0) {
+      if (calendarSection) calendarSection.classList.add('d-none');
+      return;
+    }
 
     try {
       calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: state.locale,
         direction: state.locale === 'ar' ? 'rtl' : 'ltr',
-        headerToolbar: { start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek' },
-        events: []
+        headerToolbar: { start: 'prev,next today', center: 'title', end: 'dayGridMonth' },
+        events
       });
       calendar.render();
     } catch (error) {
