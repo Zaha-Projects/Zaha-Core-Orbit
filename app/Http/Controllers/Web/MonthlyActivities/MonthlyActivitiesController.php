@@ -374,19 +374,7 @@ class MonthlyActivitiesController extends Controller
 
         return AgendaEvent::query()
             ->when($scopedBranchIds !== [], function ($query) use ($scopedBranchIds, $selectedEventId) {
-                $query->where(function ($scopedQuery) use ($scopedBranchIds, $selectedEventId) {
-                    $scopedQuery->where('event_type', 'mandatory')
-                        ->orWhereHas('participations', function ($participationQuery) use ($scopedBranchIds) {
-                            $participationQuery
-                                ->where('entity_type', 'branch')
-                                ->whereIn('entity_id', $scopedBranchIds)
-                                ->where('participation_status', 'participant');
-                        });
-
-                    if ($selectedEventId) {
-                        $scopedQuery->orWhere($scopedQuery->getModel()->getQualifiedKeyName(), $selectedEventId);
-                    }
-                });
+                $query->forBranchAudience($scopedBranchIds, null, $selectedEventId);
             });
     }
 
@@ -1060,14 +1048,14 @@ class MonthlyActivitiesController extends Controller
                 });
             })
             ->whereIn('status', ['relations_approved', 'published'])
+            ->where('is_active', true)
             ->where(function ($query) use ($data) {
-                $query->where('event_type', 'mandatory')
-                    ->orWhereHas('participations', function ($participationQuery) use ($data) {
-                        $participationQuery
-                            ->where('entity_type', 'branch')
-                            ->where('entity_id', $data['branch_id'])
-                            ->where('participation_status', 'participant');
-                    });
+                $query->whereHas('participations', function ($participationQuery) use ($data) {
+                    $participationQuery
+                        ->where('entity_type', 'branch')
+                        ->where('entity_id', $data['branch_id'])
+                        ->where('participation_status', 'participant');
+                });
             })
             ->get();
 

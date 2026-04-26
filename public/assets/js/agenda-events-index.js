@@ -201,7 +201,6 @@
                     icon: event.department_icon,
                 });
             }
-            (event.partner_departments ?? []).forEach((department) => departments.set(department.id, department));
             (event.participant_units ?? []).forEach((unit) => units.set(unit.id, unit));
         });
 
@@ -301,7 +300,6 @@
                         color_hex: event.department_color_hex,
                         icon: event.department_icon,
                     }] : []),
-                    ...(event.partner_departments ?? []),
                     ...(event.participant_units ?? []),
                 ].slice(0, 5).map((entity) => (
                     `<span class="agenda-event-chip-square" style="background:${softenColor(colorForEntity(entity))}" title="${entity.name}"></span>`
@@ -325,9 +323,6 @@
                     const branchPills = (event.participant_branches ?? []).map((branch) => (
                         `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge legend-badge--circle" style="background:${softenColor(colorForEntity(branch))}"></span><span>${branch.name}</span></span>`
                     )).join('');
-                    const partnerDepartmentPills = (event.partner_departments ?? []).map((department) => (
-                        `<span class="tooltip-pill"><span>${iconForEntity(department)}</span><span class="legend-badge legend-badge--square" style="background:${softenColor(colorForEntity(department))}"></span><span>${department.name}</span></span>`
-                    )).join('');
                     const unitPills = (event.participant_units ?? []).map((unit) => (
                         `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge legend-badge--square" style="background:${softenColor(colorForEntity(unit))}"></span><span>${unit.name}</span></span>`
                     )).join('');
@@ -342,10 +337,13 @@
                         <div class="tooltip-row"><strong>الفروع المشاركة:</strong></div>
                         <div class="tooltip-list">${branchPills || '<span class="text-muted">-</span>'}</div>
                         <div class="tooltip-row mt-1"><strong>الأقسام الشريكة:</strong></div>
-                        <div class="tooltip-list">${partnerDepartmentPills || '<span class="text-muted">-</span>'}</div>
                         <div class="tooltip-row mt-1"><strong>الوحدات المشاركة:</strong></div>
                         <div class="tooltip-list">${unitPills || '<span class="text-muted">-</span>'}</div>
                     `;
+                    tooltip.innerHTML = tooltip.innerHTML.replace(
+                        /<div class="tooltip-row mt-1"><strong>.*?<\/strong><\/div>\s*(<div class="tooltip-row mt-1"><strong>)/,
+                        '$1'
+                    );
                     tooltip.classList.remove('d-none');
                     setTooltipPosition(evt);
                 });

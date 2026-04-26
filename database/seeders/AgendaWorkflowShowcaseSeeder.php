@@ -7,6 +7,7 @@ use App\Models\AgendaEvent;
 use App\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
+use App\Models\DepartmentUnit;
 use App\Models\EventCategory;
 use App\Models\User;
 use App\Models\WorkflowInstance;
@@ -138,6 +139,28 @@ class AgendaWorkflowShowcaseSeeder extends Seeder
         $this->decideAgenda($publishedEvent, $creator, DynamicWorkflowService::DECISION_APPROVED, 'Submitted and validated.');
         $this->decideAgenda($publishedEvent, $relationsManager, DynamicWorkflowService::DECISION_APPROVED, 'Relations review completed.');
         $this->decideAgenda($publishedEvent, $executiveManager, DynamicWorkflowService::DECISION_APPROVED, 'Final executive approval granted.');
+
+        $openOptionalEvent = $this->upsertAgendaEvent([
+            'event_name' => 'Showcase Agenda Published Optional - Open Branch Enrollment',
+            'event_date' => Carbon::create($year, 10, 8),
+            'event_type' => 'optional',
+            'plan_type' => 'unified',
+            'notes' => 'Optional approved agenda event visible to all branches with no branch participation records yet.',
+            'owner_department_id' => $ownerDepartment->id,
+            'partner_department_ids' => array_filter([$partnerDepartment?->id]),
+            'event_category_id' => $category?->id,
+            'branches' => [],
+            'department_units' => DepartmentUnit::query()
+                ->where('is_active', true)
+                ->pluck('id')
+                ->map(fn ($id) => [(int) $id, 'participant'])
+                ->all(),
+            'created_by' => $creator->id,
+        ]);
+        $this->resetAgendaWorkflow($openOptionalEvent);
+        $this->decideAgenda($openOptionalEvent, $creator, DynamicWorkflowService::DECISION_APPROVED, 'Submitted as an optional open enrollment agenda event.');
+        $this->decideAgenda($openOptionalEvent, $relationsManager, DynamicWorkflowService::DECISION_APPROVED, 'Relations review completed for all internal categories.');
+        $this->decideAgenda($openOptionalEvent, $executiveManager, DynamicWorkflowService::DECISION_APPROVED, 'Final approval granted with no branch commitments yet.');
     }
 
     protected function upsertAgendaEvent(array $data): AgendaEvent
@@ -171,8 +194,9 @@ class AgendaWorkflowShowcaseSeeder extends Seeder
 
         $event->partnerDepartments()->sync($data['partner_department_ids'] ?? []);
         $event->participations()->where('entity_type', 'branch')->delete();
+        $event->participations()->where('entity_type', 'department_unit')->delete();
 
-        foreach ($data['branches'] as [$branchId, $status]) {
+        foreach ($data['branches'] ?? [] as [$branchId, $status]) {
             if (! $branchId) {
                 continue;
             }
@@ -181,6 +205,20 @@ class AgendaWorkflowShowcaseSeeder extends Seeder
                 'agenda_event_id' => $event->id,
                 'entity_type' => 'branch',
                 'entity_id' => $branchId,
+                'participation_status' => $status,
+                'updated_by' => $data['created_by'],
+            ]);
+        }
+
+        foreach ($data['department_units'] ?? [] as [$unitId, $status]) {
+            if (! $unitId) {
+                continue;
+            }
+
+            AgendaParticipation::query()->create([
+                'agenda_event_id' => $event->id,
+                'entity_type' => 'department_unit',
+                'entity_id' => $unitId,
                 'participation_status' => $status,
                 'updated_by' => $data['created_by'],
             ]);

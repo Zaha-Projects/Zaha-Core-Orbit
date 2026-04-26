@@ -28,18 +28,9 @@ use Illuminate\Support\Collection;
 
 class AgendaEventsController extends Controller
 {
-    protected function syncPartnerDepartments(AgendaEvent $event, array $data): void
+    protected function clearPartnerDepartments(AgendaEvent $event): void
     {
-        $ownerDepartmentId = (int) ($data['owner_department_id'] ?? 0);
-        $partnerDepartmentIds = collect($data['partner_department_ids'] ?? [])
-            ->filter(fn ($id) => filled($id))
-            ->map(fn ($id) => (int) $id)
-            ->reject(fn ($id) => $ownerDepartmentId > 0 && $id === $ownerDepartmentId)
-            ->unique()
-            ->values()
-            ->all();
-
-        $event->partnerDepartments()->sync($partnerDepartmentIds);
+        $event->partnerDepartments()->sync([]);
     }
 
     protected function branchCode(?Branch $branch): ?string
@@ -221,12 +212,7 @@ class AgendaEventsController extends Controller
             return $query;
         }
 
-        return $query->where(function ($scoped) use ($user, $branchIds) {
-            $scoped->where('created_by', $user->id)
-                ->orWhereHas('participations', function ($participation) use ($branchIds) {
-                    $participation->where('entity_type', 'branch')->whereIn('entity_id', $branchIds);
-                });
-        });
+        return $query->forBranchAudience($branchIds, (int) $user->id);
     }
 
     protected function applyDraftVisibilityScope($query, ?User $user)
@@ -273,13 +259,7 @@ class AgendaEventsController extends Controller
             return;
         }
 
-        abort_unless(
-            $agendaEvent->participations()
-                ->where('entity_type', 'branch')
-                ->whereIn('entity_id', $branchIds)
-                ->exists(),
-            403
-        );
+        abort_unless($agendaEvent->isVisibleToAnyBranch($branchIds), 403);
     }
 
     protected function agendaStatusOptions(?string $currentStatus = null)
@@ -302,7 +282,6 @@ class AgendaEventsController extends Controller
     protected function agendaDepartmentsForForm(?AgendaEvent $agendaEvent = null)
     {
         $selectedIds = collect([$agendaEvent?->owner_department_id])
-            ->merge($agendaEvent?->partnerDepartments?->pluck('id') ?? [])
             ->filter()
             ->map(fn ($id) => (int) $id)
             ->unique()
@@ -381,7 +360,6 @@ class AgendaEventsController extends Controller
             'creator',
             'department',
             'ownerDepartment',
-            'partnerDepartments',
             'eventCategory',
             'monthlyActivities',
             'participations',
@@ -480,7 +458,6 @@ class AgendaEventsController extends Controller
                 'creator',
                 'department',
                 'ownerDepartment',
-                'partnerDepartments',
                 'eventCategory',
                 'monthlyActivities',
                 'participations',
@@ -551,22 +528,13 @@ class AgendaEventsController extends Controller
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
             'owner_department_id' => ['required', 'exists:departments,id'],
-            'partner_department_ids' => ['array'],
-            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id', 'different:owner_department_id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $departmentIds = collect($request->input('partner_department_ids', []))
-                        ->push($request->input('owner_department_id'))
-                        ->filter()
-                        ->map(fn ($id) => (int) $id)
-                        ->filter(fn ($id) => $id > 0)
-                        ->unique()
-                        ->values()
-                        ->all();
+                    $ownerDepartmentId = (int) $request->input('owner_department_id');
 
-                    if (! empty($departmentIds)) {
-                        $query->whereIn('department_id', $departmentIds);
+                    if ($ownerDepartmentId > 0) {
+                        $query->where('department_id', $ownerDepartmentId);
                     } else {
                         $query->whereRaw('1 = 0');
                     }
@@ -574,6 +542,7 @@ class AgendaEventsController extends Controller
             ],
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
+            'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
             'unified_plan_source' => ['nullable', 'in:monthly_auto'],
             'branch_participation' => ['array'],
@@ -600,6 +569,7 @@ class AgendaEventsController extends Controller
             'is_mandatory' => $data['event_type'] === 'mandatory',
             'plan_type' => $data['plan_type'],
             'is_unified' => $data['plan_type'] === 'unified',
+            'is_active' => (bool) ($data['is_active'] ?? true),
             'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
             'status' => 'draft',
             'relations_approval_status' => 'pending',
@@ -610,7 +580,7 @@ class AgendaEventsController extends Controller
             'version' => 1,
         ]);
 
-        $this->syncPartnerDepartments($event, $data);
+        $this->clearPartnerDepartments($event);
         Log::info('agenda_event.created', [
             'agenda_event_id' => $event->id,
             'owner_department_id' => $event->owner_department_id,
@@ -638,7 +608,7 @@ class AgendaEventsController extends Controller
         $this->assertKhaldaHqAgendaAuthority(request());
         $this->assertEventManageAccess(request(), $agendaEvent);
 
-        $agendaEvent->load(['participations', 'partnerDepartments']);
+        $agendaEvent->load(['participations']);
         $departments = $this->agendaDepartmentsForForm($agendaEvent);
         $categories = $this->agendaCategoriesForForm($agendaEvent);
         $branches = Branch::orderBy('name')->get();
@@ -670,22 +640,13 @@ class AgendaEventsController extends Controller
             'event_name' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
             'owner_department_id' => ['required', 'exists:departments,id'],
-            'partner_department_ids' => ['array'],
-            'partner_department_ids.*' => ['nullable', 'integer', 'distinct', 'exists:departments,id', 'different:owner_department_id'],
             'event_category_id' => [
                 'nullable',
                 Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $departmentIds = collect($request->input('partner_department_ids', []))
-                        ->push($request->input('owner_department_id'))
-                        ->filter()
-                        ->map(fn ($id) => (int) $id)
-                        ->filter(fn ($id) => $id > 0)
-                        ->unique()
-                        ->values()
-                        ->all();
+                    $ownerDepartmentId = (int) $request->input('owner_department_id');
 
-                    if (! empty($departmentIds)) {
-                        $query->whereIn('department_id', $departmentIds);
+                    if ($ownerDepartmentId > 0) {
+                        $query->where('department_id', $ownerDepartmentId);
                     } else {
                         $query->whereRaw('1 = 0');
                     }
@@ -693,6 +654,7 @@ class AgendaEventsController extends Controller
             ],
             'event_type' => ['required', 'in:mandatory,optional'],
             'plan_type' => ['required', 'in:unified,non_unified'],
+            'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
             'unified_plan_source' => ['nullable', 'in:monthly_auto'],
             'branch_participation' => ['array'],
@@ -725,13 +687,14 @@ class AgendaEventsController extends Controller
             'is_mandatory' => $data['event_type'] === 'mandatory',
             'plan_type' => $data['plan_type'],
             'is_unified' => $data['plan_type'] === 'unified',
+            'is_active' => (bool) ($data['is_active'] ?? true),
             'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
             'notes' => $data['notes'] ?? null,
             'agenda_plan_file' => $agendaPlanFile,
             'version' => (int) ($agendaEvent->version ?? 1) + 1,
         ]);
 
-        $this->syncPartnerDepartments($agendaEvent, $data);
+        $this->clearPartnerDepartments($agendaEvent);
         Log::info('agenda_event.updated', [
             'agenda_event_id' => $agendaEvent->id,
             'owner_department_id' => $agendaEvent->owner_department_id,
@@ -863,6 +826,8 @@ class AgendaEventsController extends Controller
         $branchActor = $this->branchActor($request);
         abort_unless($branchActor !== null, 403);
         abort_if(empty($branchActor->branch_id), 422, 'Branch is required for branch participation.');
+        $this->ensureAgendaVisibleToUser($agendaEvent, $branchActor);
+        abort_unless((bool) ($agendaEvent->is_active ?? true), 422, 'هذه الفعالية غير نشطة حالياً ولا يمكن المشاركة بها.');
 
         $data = $request->validate([
             'will_participate' => ['required', 'in:yes,no'],
@@ -939,6 +904,7 @@ class AgendaEventsController extends Controller
         abort_if(empty($branchActor->branch_id), 422, 'Branch is required for branch participation.');
 
         $this->ensureAgendaVisibleToUser($agendaEvent, $branchActor);
+        abort_unless((bool) ($agendaEvent->is_active ?? true), 422, 'هذه الفعالية غير نشطة حالياً ولا يمكن الاشتراك بها.');
         abort_if((string) $agendaEvent->event_type !== 'optional', 422, 'Quick subscription is available for optional agenda events only.');
 
         $existingPlanFile = $agendaEvent->participations()
