@@ -11,6 +11,7 @@ class DashboardController extends Controller
     {
         $year = now()->year;
         $agendaYearOverview = AgendaEvent::query()
+            ->with(['department:id,name', 'eventCategory:id,name'])
             ->where(function ($query) use ($year) {
                 $query->whereYear('event_date', $year)
                     ->orWhereNull('event_date');

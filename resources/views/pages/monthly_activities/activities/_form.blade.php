@@ -119,7 +119,7 @@
                 @endif
 
                 <div class="col-12">
-                    <div class="monthly-form-section-head">
+                    <div class="monthly-form-section-head monthly-form-section-head--planning">
                         <h2 class="h6 mb-1">بيانات التخطيط الأساسية</h2>
                         <p class="text-muted small mb-0">هذه الشاشة مخصصة للتخطيط قبل التنفيذ، بينما تحديث حالة التنفيذ يتم في وضع إكمال التعبئة بعد التنفيذ.</p>
                     </div>
@@ -157,7 +157,7 @@
                 </div>
 
                 <div class="col-12">
-                    <div class="monthly-form-section-head">
+                    <div class="monthly-form-section-head monthly-form-section-head--location">
                         <h2 class="h6 mb-1">المكان</h2>
                     </div>
                 </div>
@@ -187,11 +187,6 @@
                 </div>
 
                 <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">رقم الجهة الشريكة</label>
-                    <input class="form-control" name="outside_contact_number" value="{{ old('outside_contact_number', $existingMonthlyActivity?->outside_contact_number) }}">
-                </div>
-
-                <div class="col-12 col-md-4 js-outside-location">
                     <label class="form-label">اسم ضابط الارتباط</label>
                     <input class="form-control" name="external_liaison_name" value="{{ old('external_liaison_name', $existingMonthlyActivity?->external_liaison_name) }}">
                 </div>
@@ -202,7 +197,7 @@
                 </div>
 
                 <div class="col-12 mt-2">
-                    <div class="monthly-form-section-head">
+                    <div class="monthly-form-section-head monthly-form-section-head--time">
                         <h2 class="h6 mb-1">الوقت</h2>
                     </div>
                 </div>
@@ -251,7 +246,7 @@
                 </div>
 
                 <div class="col-12">
-                    <div class="monthly-form-section-head">
+                    <div class="monthly-form-section-head monthly-form-section-head--execution">
                         <h2 class="h6 mb-1">احتياجات التنفيذ</h2>
                     </div>
                 </div>
@@ -260,94 +255,94 @@
                     <div class="monthly-activation-grid">
                         <label class="monthly-activation-option">
                             <span>الحاجة للمتطوعين</span>
-                            <select class="form-select form-select-sm js-needs-volunteers" name="needs_volunteers">
-                                <option value="0" {{ $needsVolunteersChecked ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ $needsVolunteersChecked ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_volunteers" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-volunteers" type="checkbox" role="switch" name="needs_volunteers" value="1" {{ $needsVolunteersChecked ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة للمخاطبة الرسمية</span>
-                            <select class="form-select form-select-sm js-needs-letters" name="needs_official_correspondence">
-                                <option value="0" {{ $needsOfficialCorrespondenceChecked ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ $needsOfficialCorrespondenceChecked ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_official_correspondence" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-letters" type="checkbox" role="switch" name="needs_official_correspondence" value="1" {{ $needsOfficialCorrespondenceChecked ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لتغطية إعلامية</span>
-                            <select class="form-select form-select-sm js-needs-media" name="needs_media_coverage">
-                                <option value="0" {{ $needsMediaCoverageChecked ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ $needsMediaCoverageChecked ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_media_coverage" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-media" type="checkbox" role="switch" name="needs_media_coverage" value="1" {{ $needsMediaCoverageChecked ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة للمستلزمات</span>
-                            <select class="form-select form-select-sm js-needs-supplies" name="requires_supplies">
-                                <option value="0" {{ $requiresSuppliesChecked ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ $requiresSuppliesChecked ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="requires_supplies" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-supplies" type="checkbox" role="switch" name="requires_supplies" value="1" {{ $requiresSuppliesChecked ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لرعاية رسمية</span>
-                            <select class="form-select form-select-sm js-has-sponsor" name="has_sponsor">
-                                <option value="0" {{ $hasSponsorChecked ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ $hasSponsorChecked ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="has_sponsor" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-has-sponsor" type="checkbox" role="switch" name="has_sponsor" value="1" {{ $hasSponsorChecked ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لشركاء خارجيين</span>
-                            <select class="form-select form-select-sm js-has-partners" name="has_partners">
-                                <option value="0" {{ $hasPartnersChecked ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ $hasPartnersChecked ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="has_partners" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-has-partners" type="checkbox" role="switch" name="has_partners" value="1" {{ $hasPartnersChecked ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لوجود أجندة حفل</span>
-                            <select class="form-select form-select-sm js-needs-ceremony-agenda" name="needs_ceremony_agenda">
-                                <option value="0" {{ old('needs_ceremony_agenda', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ old('needs_ceremony_agenda', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_ceremony_agenda" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-ceremony-agenda" type="checkbox" role="switch" name="needs_ceremony_agenda" value="1" {{ old('needs_ceremony_agenda', '0') === '1' ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لتأمين مواصلات</span>
-                            <select class="form-select form-select-sm js-needs-transport" name="needs_transport">
-                                <option value="0" {{ old('needs_transport', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ old('needs_transport', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_transport" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-transport" type="checkbox" role="switch" name="needs_transport" value="1" {{ old('needs_transport', '0') === '1' ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لعمال صيانة بالموقع</span>
-                            <select class="form-select form-select-sm js-needs-maintenance" name="needs_maintenance_workers">
-                                <option value="0" {{ old('needs_maintenance_workers', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ old('needs_maintenance_workers', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_maintenance_workers" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-maintenance" type="checkbox" role="switch" name="needs_maintenance_workers" value="1" {{ old('needs_maintenance_workers', '0') === '1' ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لهدايا ودروع</span>
-                            <select class="form-select form-select-sm js-needs-gifts" name="needs_gifts">
-                                <option value="0" {{ old('needs_gifts', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ old('needs_gifts', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_gifts" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-gifts" type="checkbox" role="switch" name="needs_gifts" value="1" {{ old('needs_gifts', '0') === '1' ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لمشاركة البرامج</span>
-                            <select class="form-select form-select-sm js-needs-programs-participation" name="needs_programs_participation">
-                                <option value="0" {{ old('needs_programs_participation', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ old('needs_programs_participation', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_programs_participation" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-programs-participation" type="checkbox" role="switch" name="needs_programs_participation" value="1" {{ old('needs_programs_participation', '0') === '1' ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لشهادات وكتب شكر</span>
-                            <select class="form-select form-select-sm js-needs-certificates" name="needs_certificates_and_thanks">
-                                <option value="0" {{ old('needs_certificates_and_thanks', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ old('needs_certificates_and_thanks', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_certificates_and_thanks" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-certificates" type="checkbox" role="switch" name="needs_certificates_and_thanks" value="1" {{ old('needs_certificates_and_thanks', '0') === '1' ? 'checked' : '' }}>
+                            </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة إلى بطاقات دعوة</span>
-                            <select class="form-select form-select-sm js-needs-invitations" name="needs_invitations">
-                                <option value="0" {{ old('needs_invitations', '0') === '1' ? '' : 'selected' }}>لا</option>
-                                <option value="1" {{ old('needs_invitations', '0') === '1' ? 'selected' : '' }}>نعم</option>
-                            </select>
+                            <input type="hidden" name="needs_invitations" value="0">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input js-needs-invitations" type="checkbox" role="switch" name="needs_invitations" value="1" {{ old('needs_invitations', '0') === '1' ? 'checked' : '' }}>
+                            </div>
                         </label>
                     </div>
                 </div>
@@ -570,11 +565,14 @@
                             </div>
                             <div class="col-12 col-md-6 js-programs-zaha-fields">
                                 <label class="form-label">خدمات زها تايم (اختيار متعدد)</label>
-                                <select class="form-select" name="programs_zaha_time_options[]" multiple>
+                                <div class="monthly-chip-options">
                                     @foreach (($zahaTimeOptions ?? collect()) as $zahaOption)
-                                        <option value="{{ $zahaOption->code }}" {{ in_array($zahaOption->code, $selectedZahaTimeOptions, true) ? 'selected' : '' }}>{{ $zahaOption->name }}</option>
+                                        <label class="monthly-chip-option">
+                                            <input class="form-check-input m-0" type="checkbox" name="programs_zaha_time_options[]" value="{{ $zahaOption->code }}" {{ in_array($zahaOption->code, $selectedZahaTimeOptions, true) ? 'checked' : '' }}>
+                                            <span>{{ $zahaOption->name }}</span>
+                                        </label>
                                     @endforeach
-                                </select>
+                                </div>
                                 <small class="text-muted">الخيارات تُدار من شاشة القوائم المرجعية للأدمن.</small>
                             </div>
                             <div class="col-12 col-md-6 js-programs-zaha-fields">
