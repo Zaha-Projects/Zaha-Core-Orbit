@@ -44,9 +44,12 @@
         <section class="row g-3">
             <div class="col-12 col-xxl-8">
                 <div class="card dashboard-calendar-card p-3 p-lg-4" id="calendarSection">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="h5 mb-0">{{ __('app.roles.relations.agenda.calendar.calendar_view') }}</h2>
-                        <span class="dashboard-calendar-chip">{{ ($calendarEvents ?? collect())->count() }} فعالية سنوية</span>
+                    <div class="dashboard-calendar-header mb-3 mb-lg-4">
+                        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                            <h2 class="h5 mb-0">{{ __('app.roles.relations.agenda.calendar.calendar_view') }}</h2>
+                            <span class="dashboard-calendar-chip">{{ ($calendarEvents ?? collect())->count() }} فعالية سنوية</span>
+                        </div>
+                        <p class="dashboard-calendar-intro mb-0">تقويم عام يلخّص أهم الفعاليات القادمة خلال العام.</p>
                     </div>
                     <div id="calendar"></div>
                     <div id="calendarFallback" class="alert alert-warning mt-3 d-none">
