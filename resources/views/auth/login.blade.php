@@ -59,7 +59,7 @@
                                 <img src="{{ asset('assets/theme/logos/logo2.svg') }}" alt="Zaha Original Logo" class="auth-flow-logo-original">
                             </div>
                             <h2 class="h2 mb-3">Zaha - Core Orbit</h2>
-                            <p class="mb-0">تسجيل دخول احترافي متوافق مع الهوية البصرية لمنصة زها.</p>
+                                <p class="mb-0">بوابتك لإدارة عمليات مركز زها.</p>
                         </div>
                     </div>
                 </div>
