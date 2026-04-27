@@ -7,15 +7,10 @@
                 <div class="row g-0">
                     <div class="col-lg-6 order-2 order-lg-1">
                         <div class="auth-flow-form p-4 p-md-5">
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="{{ asset('assets/images/zaha-core-orbit-logo.svg') }}" alt="Zaha - Core Orbit" class="auth-flow-logo-main">
-                                    <img src="{{ asset('assets/theme/logos/logo2.svg') }}" alt="Zaha Original Logo" class="auth-flow-logo-original">
-                                </div>
-                            </div>
+                            <div class="auth-flow-badge mb-4">Zaha • Core Orbit</div>
 
                             <h1 class="h3 mb-2">{{ __('app.auth.login_title') }}</h1>
-                            <p class="text-muted mb-4">أدخل بياناتك للوصول إلى منصة Zaha - Core Orbit.</p>
+                            <p class="text-muted mb-4">أدخل بياناتك للوصول إلى المنصة.</p>
 
                             @if ($errors->any())
                                 <div class="alert alert-danger">
@@ -55,15 +50,16 @@
                                 <button class="btn btn-info w-100 btn-lg text-white" type="submit">{{ __('app.auth.submit_login') }}</button>
                             </form>
 
-                            <div class="text-center mt-4">
-                                <a href="{{ url('/') }}" class="text-decoration-none fw-semibold">العودة إلى الرئيسية</a>
-                            </div>
                         </div>
                     </div>
                     <div class="col-lg-6 order-1 order-lg-2 d-none d-lg-flex auth-flow-cover">
-                        <div>
+                        <div class="auth-flow-cover-content w-100">
+                            <div class="auth-flow-cover-logos">
+                                <img src="{{ asset('assets/images/zaha-core-orbit-logo.svg') }}" alt="Zaha - Core Orbit" class="auth-flow-logo-main">
+                                <img src="{{ asset('assets/theme/logos/logo2.svg') }}" alt="Zaha Original Logo" class="auth-flow-logo-original">
+                            </div>
                             <h2 class="h2 mb-3">Zaha - Core Orbit</h2>
-                            <p class="mb-0">واجهة دخول احترافية متوافقة مع الهوية البصرية لمنصة زها.</p>
+                            <p class="mb-0">تسجيل دخول احترافي متوافق مع الهوية البصرية لمنصة زها.</p>
                         </div>
                     </div>
                 </div>
