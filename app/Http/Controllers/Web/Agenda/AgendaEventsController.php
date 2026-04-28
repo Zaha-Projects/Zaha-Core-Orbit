@@ -232,11 +232,17 @@ class AgendaEventsController extends Controller
             'agenda_event_id' => $agendaEvent->id,
             'branch_id' => $branchActor->branch_id,
         ]);
+        $templateSource = MonthlyActivity::query()
+            ->where('agenda_event_id', $agendaEvent->id)
+            ->where('branch_id', '!=', $branchActor->branch_id)
+            ->orderByRaw("CASE WHEN participation_status = 'not_participant' THEN 0 ELSE 1 END")
+            ->orderBy('id')
+            ->first();
 
         $monthlyActivity->fill([
             'month' => (int) Carbon::parse($agendaDate)->format('m'),
             'day' => (int) Carbon::parse($agendaDate)->format('d'),
-            'title' => $agendaEvent->event_name,
+            'title' => $templateSource->title ?? $agendaEvent->event_name,
             'proposed_date' => $isUnifiedPlan
                 ? (optional($monthlyActivity->proposed_date)->toDateString() ?: $proposedDate)
                 : $proposedDate,
@@ -244,7 +250,12 @@ class AgendaEventsController extends Controller
             'is_from_agenda' => true,
             'participation_status' => 'participant',
             'plan_type' => $agendaEvent->plan_type ?? 'non_unified',
-            'description' => $agendaEvent->notes,
+            'description' => $templateSource->description ?? $agendaEvent->notes,
+            'responsible_party' => $templateSource->responsible_party ?? $monthlyActivity->responsible_party,
+            'target_group' => $templateSource->target_group ?? $monthlyActivity->target_group,
+            'execution_time' => $templateSource->execution_time ?? $monthlyActivity->execution_time,
+            'location_details' => $templateSource->location_details ?? $monthlyActivity->location_details,
+            'required_volunteers' => $templateSource->required_volunteers ?? $monthlyActivity->required_volunteers,
             'location_type' => $monthlyActivity->location_type ?? 'inside_center',
             'status' => $monthlyActivity->status ?? 'draft',
             'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
@@ -283,15 +294,33 @@ class AgendaEventsController extends Controller
             ->map(fn ($id): int => (int) $id)
             ->filter(fn (int $id): bool => $id > 0)
             ->unique()
-            ->values();
+            ->values()
+            ->all();
 
-        if ($participantBranchIds->isEmpty()) {
-            return;
+        $templateBranchId = null;
+
+        if ((string) $agendaEvent->event_type === 'mandatory') {
+            $participantBranchIds = Branch::query()->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        } elseif ((string) $agendaEvent->event_type === 'optional' && $participantBranchIds === []) {
+            $templateBranchId = (int) (User::query()->whereKey($actorId)->value('branch_id') ?: 0);
+            if ($templateBranchId <= 0) {
+                $templateBranchId = Branch::query()
+                    ->get()
+                    ->first(fn (Branch $branch): bool => $this->branchCode($branch) === 'khalda')
+                    ?->id;
+            }
+            $templateBranchId = $templateBranchId > 0 ? $templateBranchId : null;
         }
+
+        $excludedBranchIds = collect($participantBranchIds)
+            ->when($templateBranchId, fn ($ids) => $ids->push($templateBranchId))
+            ->unique()
+            ->values()
+            ->all();
 
         MonthlyActivity::query()
             ->where('agenda_event_id', $agendaEvent->id)
-            ->whereNotIn('branch_id', $participantBranchIds->all())
+            ->when($excludedBranchIds !== [], fn ($q) => $q->whereNotIn('branch_id', $excludedBranchIds))
             ->update([
                 'agenda_event_id' => null,
                 'is_in_agenda' => false,
@@ -329,6 +358,33 @@ class AgendaEventsController extends Controller
             ]);
 
             $monthlyActivity->save();
+        }
+
+        if ((string) $agendaEvent->event_type === 'optional' && $templateBranchId !== null && ! in_array($templateBranchId, $participantBranchIds, true)) {
+            $templateActivity = MonthlyActivity::firstOrNew([
+                'agenda_event_id' => $agendaEvent->id,
+                'branch_id' => $templateBranchId,
+            ]);
+            $templateActivity->fill([
+                'month' => (int) Carbon::parse($resolvedDate)->format('m'),
+                'day' => (int) Carbon::parse($resolvedDate)->format('d'),
+                'title' => (string) ($monthlyTemplate['title'] ?? $agendaEvent->event_name),
+                'proposed_date' => (string) ($monthlyTemplate['proposed_date'] ?? $resolvedDate),
+                'is_in_agenda' => true,
+                'is_from_agenda' => true,
+                'participation_status' => 'not_participant',
+                'plan_type' => (string) ($agendaEvent->plan_type ?? 'unified'),
+                'description' => $monthlyTemplate['description'] ?? $agendaEvent->notes,
+                'responsible_party' => $monthlyTemplate['responsible_party'] ?? $templateActivity->responsible_party,
+                'target_group' => $monthlyTemplate['target_group'] ?? $templateActivity->target_group,
+                'execution_time' => $monthlyTemplate['execution_time'] ?? $templateActivity->execution_time,
+                'location_details' => $monthlyTemplate['location_details'] ?? $templateActivity->location_details,
+                'required_volunteers' => $monthlyTemplate['required_volunteers'] ?? $templateActivity->required_volunteers,
+                'location_type' => $templateActivity->location_type ?? 'inside_center',
+                'status' => $templateActivity->status ?? 'draft',
+                'created_by' => (int) ($templateActivity->created_by ?: $actorId),
+            ]);
+            $templateActivity->save();
         }
     }
 
