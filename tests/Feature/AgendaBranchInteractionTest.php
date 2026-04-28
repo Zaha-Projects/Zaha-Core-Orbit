@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\AgendaEvent;
 use App\Models\AgendaParticipation;
 use App\Models\Branch;
+use App\Models\Department;
 use App\Models\MonthlyActivity;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +19,13 @@ use Tests\TestCase;
 class AgendaBranchInteractionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
 
     protected function createBranchUser(Branch $branch): User
     {
@@ -362,6 +371,118 @@ class AgendaBranchInteractionTest extends TestCase
         $this->assertDatabaseMissing('monthly_activities', [
             'agenda_event_id' => $inactiveEvent->id,
             'branch_id' => $selectedBranch->id,
+        ]);
+    }
+
+    public function test_agenda_event_delete_is_limited_to_future_events_and_notifies_branch_plan_owner(): void
+    {
+        Carbon::setTestNow('2026-04-28 10:00:00');
+
+        $role = Role::findOrCreate('relations_manager', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.create', 'web'),
+            Permission::findOrCreate('agenda.update', 'web'),
+            Permission::findOrCreate('agenda.delete', 'web'),
+        ]);
+
+        $manager = User::factory()->create();
+        $manager->assignRole($role);
+        $branch = Branch::factory()->create();
+        $branchUser = User::factory()->create(['branch_id' => $branch->id]);
+
+        $event = AgendaEvent::create([
+            'event_date' => '2026-04-29',
+            'month' => 4,
+            'day' => 29,
+            'event_name' => 'Future Event',
+            'event_type' => 'optional',
+            'plan_type' => 'non_unified',
+            'status' => 'published',
+            'created_by' => $manager->id,
+        ]);
+
+        $activity = MonthlyActivity::factory()->create([
+            'agenda_event_id' => $event->id,
+            'branch_id' => $branch->id,
+            'created_by' => $branchUser->id,
+            'title' => 'Branch Plan',
+            'proposed_date' => '2026-04-29',
+            'is_in_agenda' => true,
+            'is_from_agenda' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->delete(route('role.relations.agenda.destroy', $event))
+            ->assertRedirect(route('role.relations.agenda.index'));
+
+        $this->assertDatabaseMissing('agenda_events', ['id' => $event->id]);
+        $this->assertDatabaseHas('monthly_activities', [
+            'id' => $activity->id,
+            'agenda_event_id' => null,
+            'is_in_agenda' => false,
+            'is_from_agenda' => false,
+            'execution_status' => 'cancelled',
+        ]);
+        $this->assertDatabaseHas('in_app_notifications', [
+            'user_id' => $branchUser->id,
+            'type' => 'agenda_event_cancelled',
+        ]);
+    }
+
+    public function test_agenda_event_delete_rejects_today_and_past_events(): void
+    {
+        Carbon::setTestNow('2026-04-28 10:00:00');
+
+        $role = Role::findOrCreate('relations_manager', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.create', 'web'),
+            Permission::findOrCreate('agenda.update', 'web'),
+            Permission::findOrCreate('agenda.delete', 'web'),
+        ]);
+        $manager = User::factory()->create();
+        $manager->assignRole($role);
+
+        $event = AgendaEvent::create([
+            'event_date' => '2026-04-28',
+            'month' => 4,
+            'day' => 28,
+            'event_name' => 'Today Event',
+            'event_type' => 'optional',
+            'plan_type' => 'non_unified',
+            'status' => 'published',
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)
+            ->delete(route('role.relations.agenda.destroy', $event))
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('agenda_events', ['id' => $event->id]);
+    }
+
+    public function test_agenda_event_cannot_be_created_with_yesterday_or_older_date(): void
+    {
+        Carbon::setTestNow('2026-04-28 10:00:00');
+
+        $role = Role::findOrCreate('relations_manager', 'web');
+        $role->givePermissionTo(Permission::findOrCreate('agenda.create', 'web'));
+        $user = User::factory()->create();
+        $user->assignRole($role);
+        $owner = Department::query()->create(['name' => 'Owner Dept']);
+
+        $this->actingAs($user)
+            ->post(route('role.relations.agenda.store'), [
+                'event_name' => 'Old Event',
+                'event_date' => '2026-04-27',
+                'owner_department_id' => $owner->id,
+                'event_type' => 'mandatory',
+                'plan_type' => 'unified',
+                'is_active' => 1,
+            ])
+            ->assertSessionHasErrors('event_date');
+
+        $this->assertDatabaseMissing('agenda_events', [
+            'event_name' => 'Old Event',
         ]);
     }
 }

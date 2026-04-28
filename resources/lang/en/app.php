@@ -518,6 +518,7 @@ return [
                     'create' => 'Create event',
                     'view' => 'View',
                     'edit' => 'Edit',
+                    'delete' => 'Delete',
                     'save' => 'Save changes',
                     'submit' => 'Submit for approval',
                     'update' => 'Update',
@@ -585,10 +586,18 @@ return [
                 ],
                 'created' => 'Agenda event created successfully.',
                 'updated' => 'Agenda event updated: :event.',
+                'deleted' => 'Agenda event deleted: :event.',
                 'submitted' => 'Agenda event submitted: :event.',
+                'confirm_delete' => 'Delete this agenda event? Branch plan owners linked to it will be notified.',
+                'cancellation_reason' => 'Agenda event ":event" scheduled on :date was cancelled.',
+                'notifications' => [
+                    'cancelled_title' => 'Agenda event cancelled',
+                    'cancelled_message' => 'The agenda event ":event" scheduled on :date was cancelled.',
+                ],
                 'unit_participation_updated' => 'Unit participation was updated successfully.',
                 'errors' => [
                     'partner_department_conflict' => 'The primary unit/department cannot also be selected as a partner.',
+                    'delete_future_only' => 'Only agenda events scheduled after today can be deleted.',
                 ],
                 'status_labels' => [
                     'approved' => 'Approved',

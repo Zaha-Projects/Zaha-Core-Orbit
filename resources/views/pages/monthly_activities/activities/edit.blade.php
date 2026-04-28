@@ -499,7 +499,9 @@
                 @method('PUT')
                 <input type="hidden" name="post_execution_needs_only" value="1">
                 @foreach($executionNeedsCatalog as $needKey => $needLabel)
-                    @php($needData = $executionNeedsFollowup->get($needKey, []))
+                    @php
+                        $needData = $executionNeedsFollowup->get($needKey, []);
+                    @endphp
                     <div class="col-12 border rounded-3 p-3">
                         <div class="fw-semibold mb-2">{{ $needLabel }}</div>
                         <div class="row g-3">

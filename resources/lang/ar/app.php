@@ -523,6 +523,7 @@ return [
                     'create' => 'إضافة الفعالية',
                     'view' => 'عرض',
                     'edit' => 'تعديل',
+                    'delete' => 'حذف',
                     'save' => 'حفظ التعديلات',
                     'submit' => 'إرسال للاعتماد',
                     'update' => 'تحديث',
@@ -590,10 +591,18 @@ return [
                 ],
                 'created' => 'تم إنشاء فعالية الأجندة بنجاح.',
                 'updated' => 'تم تحديث فعالية الأجندة :event.',
+                'deleted' => 'تم حذف فعالية الأجندة :event.',
                 'submitted' => 'تم إرسال الفعالية :event للاعتماد.',
+                'confirm_delete' => 'هل تريد حذف فعالية الأجندة؟ سيتم إشعار أصحاب خطط الفروع المرتبطة بها.',
+                'cancellation_reason' => 'تم إلغاء فعالية الأجندة ":event" المجدولة بتاريخ :date.',
+                'notifications' => [
+                    'cancelled_title' => 'تم إلغاء فعالية من الأجندة',
+                    'cancelled_message' => 'تم إلغاء فعالية الأجندة ":event" المجدولة بتاريخ :date.',
+                ],
                 'unit_participation_updated' => 'تم تحديث مشاركة الجهة بنجاح.',
                 'errors' => [
                     'partner_department_conflict' => 'لا يمكن اختيار نفس الوحدة/القسم كجهة رئيسية وشريكة.',
+                    'delete_future_only' => 'يمكن حذف فعاليات الأجندة التي تاريخها بعد اليوم فقط.',
                 ],
                 'status_labels' => [
                     'approved' => 'معتمد',

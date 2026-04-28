@@ -22,6 +22,7 @@ use App\Services\AgendaWorkflowBridgeService;
 use App\Services\ConflictDetectionService;
 use App\Services\DynamicWorkflowService;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
@@ -94,6 +95,56 @@ class AgendaEventsController extends Controller
         }
 
         abort(403);
+    }
+
+    protected function assertEventDeleteAccess(Request $request, AgendaEvent $agendaEvent): void
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('super_admin') || $user->can('agenda.delete')) {
+            return;
+        }
+
+        abort(403);
+    }
+
+    protected function minimumAgendaEventDate(): string
+    {
+        return now()->toDateString();
+    }
+
+    protected function canDeleteAgendaEvent(AgendaEvent $agendaEvent): bool
+    {
+        return Carbon::parse($this->resolveAgendaEventDate($agendaEvent))->isAfter(today());
+    }
+
+    protected function notifyBranchPlanOwnersOfAgendaCancellation(
+        AgendaEvent $agendaEvent,
+        Collection $monthlyActivities,
+        NotificationService $notifications
+    ): void {
+        $monthlyActivities
+            ->loadMissing('creator')
+            ->filter(fn (MonthlyActivity $activity): bool => $activity->creator !== null)
+            ->groupBy('created_by')
+            ->each(function (Collection $activities) use ($agendaEvent, $notifications) {
+                $activity = $activities->first();
+
+                $notifications->notifyUsers(
+                    collect([$activity->creator]),
+                    'agenda_event_cancelled',
+                    __('app.roles.relations.agenda.notifications.cancelled_title'),
+                    __('app.roles.relations.agenda.notifications.cancelled_message', [
+                        'event' => $agendaEvent->event_name,
+                        'date' => $this->resolveAgendaEventDate($agendaEvent),
+                    ]),
+                    route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]),
+                    [
+                        'agenda_event_id' => $agendaEvent->id,
+                        'monthly_activity_ids' => $activities->pluck('id')->values()->all(),
+                    ]
+                );
+            });
     }
 
     protected function allowedUnitRoleMap(): array
@@ -526,7 +577,7 @@ class AgendaEventsController extends Controller
 
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
-            'event_date' => ['required', 'date'],
+            'event_date' => ['required', 'date', 'after_or_equal:'.$this->minimumAgendaEventDate()],
             'owner_department_id' => ['required', 'exists:departments,id'],
             'event_category_id' => [
                 'nullable',
@@ -638,7 +689,7 @@ class AgendaEventsController extends Controller
 
         $data = $request->validate([
             'event_name' => ['required', 'string', 'max:255'],
-            'event_date' => ['required', 'date'],
+            'event_date' => ['required', 'date', 'after_or_equal:'.$this->minimumAgendaEventDate()],
             'owner_department_id' => ['required', 'exists:departments,id'],
             'event_category_id' => [
                 'nullable',
@@ -716,6 +767,48 @@ class AgendaEventsController extends Controller
             ->route('role.relations.agenda.index')
             ->with('status', __('app.roles.relations.agenda.updated', ['event' => $agendaEvent->event_name]))
             ->with('warning', $conflictWarning);
+    }
+
+    public function destroy(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications)
+    {
+        $this->assertKhaldaHqAgendaAuthority($request);
+        $this->assertEventDeleteAccess($request, $agendaEvent);
+
+        abort_unless($this->canDeleteAgendaEvent($agendaEvent), 422, __('app.roles.relations.agenda.errors.delete_future_only'));
+
+        $agendaEvent->load(['monthlyActivities.creator', 'workflowInstance']);
+        $monthlyActivities = $agendaEvent->monthlyActivities;
+        $eventName = $agendaEvent->event_name;
+
+        DB::transaction(function () use ($agendaEvent, $monthlyActivities, $notifications, $request) {
+            $this->notifyBranchPlanOwnersOfAgendaCancellation($agendaEvent, $monthlyActivities, $notifications);
+
+            $monthlyActivities->each(function (MonthlyActivity $activity) use ($agendaEvent) {
+                $activity->forceFill([
+                    'agenda_event_id' => null,
+                    'is_in_agenda' => false,
+                    'is_from_agenda' => false,
+                    'execution_status' => 'cancelled',
+                    'cancellation_reason' => __('app.roles.relations.agenda.cancellation_reason', [
+                        'event' => $agendaEvent->event_name,
+                        'date' => $this->resolveAgendaEventDate($agendaEvent),
+                    ]),
+                ])->save();
+            });
+
+            $agendaEvent->workflowInstance?->delete();
+            $agendaEvent->delete();
+
+            Log::info('agenda_event.deleted', [
+                'agenda_event_id' => $agendaEvent->id,
+                'deleted_by' => $request->user()->id,
+                'notified_monthly_activities_count' => $monthlyActivities->count(),
+            ]);
+        });
+
+        return redirect()
+            ->route('role.relations.agenda.index')
+            ->with('status', __('app.roles.relations.agenda.deleted', ['event' => $eventName]));
     }
 
     public function submit(

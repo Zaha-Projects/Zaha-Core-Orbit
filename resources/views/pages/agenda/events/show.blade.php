@@ -12,6 +12,10 @@
     $subtitle = __('app.roles.relations.agenda.subtitle');
     $workflowSummary = $agendaEvent->workflow_summary ?? [];
     $viewer = auth()->user();
+    $resolvedEventDate = optional($agendaEvent->event_date)->format('Y-m-d')
+        ?? sprintf('%04d-%02d-%02d', now()->year, $agendaEvent->month, $agendaEvent->day);
+    $canDeleteAgendaEvent = (($viewer?->can('agenda.delete') ?? false) || ($viewer?->hasRole('super_admin') ?? false))
+        && \Carbon\Carbon::parse($resolvedEventDate)->isAfter(today());
     $canViewApprovalStates = (bool) ($workflowSummary['can_current_user_decide'] ?? false)
         || ($viewer?->can('agenda.approve') ?? false)
         || ($viewer?->hasRole('super_admin') ?? false);
@@ -31,7 +35,16 @@
                 <h1 class="h4 mb-1"><i class="feather-calendar me-1"></i>{{ $title }}</h1>
                 <p class="text-muted mb-0">{{ $subtitle }}</p>
             </div>
-            <a class="btn btn-outline-secondary" href="{{ route('role.relations.agenda.index') }}">{{ __('app.common.back') }}</a>
+            <div class="d-flex gap-2 flex-wrap">
+                @if($canDeleteAgendaEvent)
+                    <form method="POST" action="{{ route('role.relations.agenda.destroy', $agendaEvent) }}" onsubmit="return confirm('{{ __('app.roles.relations.agenda.confirm_delete') }}')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn btn-outline-danger" type="submit">{{ __('app.roles.relations.agenda.actions.delete') }}</button>
+                    </form>
+                @endif
+                <a class="btn btn-outline-secondary" href="{{ route('role.relations.agenda.index') }}">{{ __('app.common.back') }}</a>
+            </div>
         </div>
 
         <div class="workflow-ui mb-3">

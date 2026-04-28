@@ -8,6 +8,7 @@
     $branchText = mb_strtolower(trim((string) optional($authUser?->branch)->name . ' ' . (string) optional($authUser?->branch)->city));
     $isKhaldaHq = str_contains($branchText, 'khalda') || str_contains($branchText, 'خلدا') || str_contains($branchText, 'عمان') || str_contains($branchText, 'عمّان') || str_contains($branchText, 'amman');
     $canManageAgenda = $authUser?->can('agenda.create') ?? false;
+    $canDeleteAgenda = ($authUser?->can('agenda.delete') ?? false) || ($authUser?->hasRole('super_admin') ?? false);
     $canBranchInteract = ($authUser?->can('agenda.participation.update') ?? false) && ! $isKhaldaHq;
     $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
 
@@ -64,9 +65,10 @@
             ],
         ]);
 
-    $agendaEvents = collect($calendarEvents ?? $events->getCollection())->map(function ($event) use ($canManageAgenda, $agendaStatusLabel, $normalizeAgendaPageStatus, $authUser, $branchesById, $unitsById, $canBranchInteract) {
+    $agendaEvents = collect($calendarEvents ?? $events->getCollection())->map(function ($event) use ($canManageAgenda, $canDeleteAgenda, $agendaStatusLabel, $normalizeAgendaPageStatus, $authUser, $branchesById, $unitsById, $canBranchInteract) {
         $resolvedDate = optional($event->event_date)->format('Y-m-d')
             ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day);
+        $canDeleteThisEvent = $canDeleteAgenda && \Carbon\Carbon::parse($resolvedDate)->isAfter(today());
         $workflowSummary = $event->workflow_summary ?? [];
         $branchParticipation = $event->participations
             ->where('entity_type', 'branch')
@@ -120,6 +122,7 @@
             'edit_url' => $canManageAgenda ? route('role.relations.agenda.edit', $event) : null,
             'view_url' => route('role.relations.agenda.show', $event),
             'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
+            'delete_url' => $canDeleteThisEvent ? route('role.relations.agenda.destroy', $event) : null,
             'participant_count' => $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count(),
             'participant_branches' => $participantBranches,
             'plan_type' => $event->plan_type,
@@ -333,6 +336,8 @@
                     <div class="agenda-cards-grid">
                         @forelse ($events as $event)
                             @php($workflowSummary = $event->workflow_summary ?? [])
+                            @php($resolvedEventDate = optional($event->event_date)->format('Y-m-d') ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day))
+                            @php($canDeleteThisEvent = $canDeleteAgenda && \Carbon\Carbon::parse($resolvedEventDate)->isAfter(today()))
                             <article class="agenda-event-card">
                                 <div class="module-card-header">
                                     <div class="d-flex justify-content-between align-items-start gap-2 mb-0">
@@ -374,6 +379,13 @@
                                                 @csrf
                                                 @method('PATCH')
                                                 <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
+                                            </form>
+                                        @endif
+                                        @if($canDeleteThisEvent)
+                                            <form method="POST" action="{{ route('role.relations.agenda.destroy', $event) }}" onsubmit="return confirm('{{ __('app.roles.relations.agenda.confirm_delete') }}')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-outline-danger" type="submit">{{ __('app.roles.relations.agenda.actions.delete') }}</button>
                                             </form>
                                         @endif
                                     </div>

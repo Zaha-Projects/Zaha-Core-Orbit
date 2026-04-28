@@ -1,6 +1,7 @@
 @php
     $isEditMode = isset($agendaEvent);
     $existingAgendaEvent = $agendaEvent ?? null;
+    $minimumEventDate = now()->toDateString();
 @endphp
 
 <div class="event-module agenda-form-page">
@@ -47,7 +48,7 @@
                             </div>
                             <div class="col-12 col-lg-6">
                                 <label class="form-label">{{ __('app.roles.relations.agenda.fields.event_date') }}</label>
-                                <input class="form-control @error('event_date') is-invalid @enderror" type="date" name="event_date" value="{{ old('event_date', optional($existingAgendaEvent?->event_date)->format('Y-m-d')) }}" required>
+                                <input class="form-control @error('event_date') is-invalid @enderror" type="date" name="event_date" min="{{ $minimumEventDate }}" value="{{ old('event_date', optional($existingAgendaEvent?->event_date)->format('Y-m-d')) }}" required>
                                 @error('event_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
