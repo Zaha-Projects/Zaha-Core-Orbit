@@ -56,20 +56,6 @@
     gap: .75rem;
 }
 
-.agenda-form-page .unified-monthly-plan-hint {
-    border: 1px dashed #bfdbfe;
-    border-radius: 12px;
-    padding: .75rem;
-    background: #f8fbff;
-}
-
-.agenda-form-page .unified-monthly-plan-group {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: .85rem;
-    background: #fff;
-}
-
 [data-theme="dark"] .agenda-form-page .agenda-form-section,
 [data-theme="dark"] .agenda-form-page .partner-departments-box,
 [data-theme="dark"] .agenda-form-page .branch-toggle-item {
@@ -86,12 +72,6 @@
 }
 
 [data-theme="dark"] .agenda-form-page .partner-department-item {
-    background: var(--surface-bg);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .agenda-form-page .unified-monthly-plan-hint,
-[data-theme="dark"] .agenda-form-page .unified-monthly-plan-group {
     background: var(--surface-bg);
     border-color: var(--border-color);
 }

@@ -255,6 +255,70 @@ class AgendaEventsController extends Controller
         return $monthlyActivity;
     }
 
+    /**
+     * عند حفظ فعالية أجندة موحدة: أنشئ/حدّث سجلات الخطة الشهرية المرتبطة مباشرة.
+     * لا نضيف أي حقل جديد في agenda_events؛ الربط يتم عبر agenda_event_id الموجود أساساً.
+     *
+     * @param array<int|string, string> $branchParticipation
+     */
+    protected function syncUnifiedAgendaMonthlyActivities(AgendaEvent $agendaEvent, array $branchParticipation, int $actorId): void
+    {
+        if ((string) ($agendaEvent->plan_type ?? 'non_unified') !== 'unified') {
+            return;
+        }
+
+        if (! (bool) ($agendaEvent->is_active ?? true)) {
+            return;
+        }
+
+        $resolvedDate = $this->resolveAgendaEventDate($agendaEvent);
+        $participantBranchIds = collect($branchParticipation)
+            ->filter(fn ($status): bool => (string) $status === 'participant')
+            ->keys()
+            ->map(fn ($id): int => (int) $id)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values();
+
+        if ($participantBranchIds->isEmpty()) {
+            return;
+        }
+
+        MonthlyActivity::query()
+            ->where('agenda_event_id', $agendaEvent->id)
+            ->whereNotIn('branch_id', $participantBranchIds->all())
+            ->update([
+                'agenda_event_id' => null,
+                'is_in_agenda' => false,
+                'is_from_agenda' => false,
+                'participation_status' => 'not_participant',
+            ]);
+
+        foreach ($participantBranchIds as $branchId) {
+            $monthlyActivity = MonthlyActivity::firstOrNew([
+                'agenda_event_id' => $agendaEvent->id,
+                'branch_id' => $branchId,
+            ]);
+
+            $monthlyActivity->fill([
+                'month' => (int) Carbon::parse($resolvedDate)->format('m'),
+                'day' => (int) Carbon::parse($resolvedDate)->format('d'),
+                'title' => (string) $agendaEvent->event_name,
+                'proposed_date' => (string) (optional($monthlyActivity->proposed_date)->toDateString() ?: $resolvedDate),
+                'is_in_agenda' => true,
+                'is_from_agenda' => true,
+                'participation_status' => 'participant',
+                'plan_type' => (string) ($agendaEvent->plan_type ?? 'unified'),
+                'description' => $agendaEvent->notes,
+                'location_type' => $monthlyActivity->location_type ?? 'inside_center',
+                'status' => $monthlyActivity->status ?? 'draft',
+                'created_by' => (int) ($monthlyActivity->created_by ?: $actorId),
+            ]);
+
+            $monthlyActivity->save();
+        }
+    }
+
 
     protected function applyBranchVisibilityScope($query, User $user)
     {
@@ -608,46 +672,54 @@ class AgendaEventsController extends Controller
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
-        $event = AgendaEvent::create([
-            'month' => (int) $date->format('m'),
-            'day' => (int) $date->format('d'),
-            'event_date' => $date->toDateString(),
-            'event_day' => $date->translatedFormat('l'),
-            'event_name' => $data['event_name'],
-            'department_id' => (int) $data['owner_department_id'],
-            'owner_department_id' => (int) $data['owner_department_id'],
-            'event_category_id' => $data['event_category_id'] ?? null,
-            'event_type' => $data['event_type'],
-            'is_mandatory' => $data['event_type'] === 'mandatory',
-            'plan_type' => $data['plan_type'],
-            'is_unified' => $data['plan_type'] === 'unified',
-            'is_active' => (bool) ($data['is_active'] ?? true),
-            'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
-            'status' => 'draft',
-            'relations_approval_status' => 'pending',
-            'executive_approval_status' => 'pending',
-            'created_by' => $request->user()->id,
-            'notes' => $data['notes'] ?? null,
-            'agenda_plan_file' => null,
-            'version' => 1,
-        ]);
+        $event = DB::transaction(function () use ($data, $date, $request) {
+            $event = AgendaEvent::create([
+                'month' => (int) $date->format('m'),
+                'day' => (int) $date->format('d'),
+                'event_date' => $date->toDateString(),
+                'event_day' => $date->translatedFormat('l'),
+                'event_name' => $data['event_name'],
+                'department_id' => (int) $data['owner_department_id'],
+                'owner_department_id' => (int) $data['owner_department_id'],
+                'event_category_id' => $data['event_category_id'] ?? null,
+                'event_type' => $data['event_type'],
+                'is_mandatory' => $data['event_type'] === 'mandatory',
+                'plan_type' => $data['plan_type'],
+                'is_unified' => $data['plan_type'] === 'unified',
+                'is_active' => (bool) ($data['is_active'] ?? true),
+                'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
+                'status' => 'draft',
+                'relations_approval_status' => 'pending',
+                'executive_approval_status' => 'pending',
+                'created_by' => $request->user()->id,
+                'notes' => $data['notes'] ?? null,
+                'agenda_plan_file' => null,
+                'version' => 1,
+            ]);
 
-        $this->clearPartnerDepartments($event);
+            $this->clearPartnerDepartments($event);
+
+            foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
+                AgendaParticipation::create([
+                    'agenda_event_id' => $event->id,
+                    'entity_type' => 'branch',
+                    'entity_id' => $branchId,
+                    'participation_status' => $status,
+                    'updated_by' => $request->user()->id,
+                ]);
+            }
+
+            $this->syncUnifiedAgendaMonthlyActivities($event, $data['branch_participation'] ?? [], (int) $request->user()->id);
+
+            return $event;
+        });
+
         Log::info('agenda_event.created', [
             'agenda_event_id' => $event->id,
             'owner_department_id' => $event->owner_department_id,
             'created_by' => $request->user()->id,
         ]);
 
-        foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
-            AgendaParticipation::create([
-                'agenda_event_id' => $event->id,
-                'entity_type' => 'branch',
-                'entity_id' => $branchId,
-                'participation_status' => $status,
-                'updated_by' => $request->user()->id,
-            ]);
-        }
         $workflowNotifications->created($event, $request->user(), route('role.relations.agenda.show', $event));
 
         return redirect()
@@ -727,43 +799,48 @@ class AgendaEventsController extends Controller
         }
         $agendaPlanFile = null;
 
-        $agendaEvent->update([
-            'month' => (int) $date->format('m'),
-            'day' => (int) $date->format('d'),
-            'event_date' => $date->toDateString(),
-            'event_day' => $date->translatedFormat('l'),
-            'event_name' => $data['event_name'],
-            'department_id' => (int) $data['owner_department_id'],
-            'owner_department_id' => (int) $data['owner_department_id'],
-            'event_category_id' => $data['event_category_id'] ?? null,
-            'event_type' => $data['event_type'],
-            'is_mandatory' => $data['event_type'] === 'mandatory',
-            'plan_type' => $data['plan_type'],
-            'is_unified' => $data['plan_type'] === 'unified',
-            'is_active' => (bool) ($data['is_active'] ?? true),
-            'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
-            'notes' => $data['notes'] ?? null,
-            'agenda_plan_file' => $agendaPlanFile,
-            'version' => (int) ($agendaEvent->version ?? 1) + 1,
-        ]);
+        DB::transaction(function () use ($agendaEvent, $data, $date, $agendaPlanFile, $request) {
+            $agendaEvent->update([
+                'month' => (int) $date->format('m'),
+                'day' => (int) $date->format('d'),
+                'event_date' => $date->toDateString(),
+                'event_day' => $date->translatedFormat('l'),
+                'event_name' => $data['event_name'],
+                'department_id' => (int) $data['owner_department_id'],
+                'owner_department_id' => (int) $data['owner_department_id'],
+                'event_category_id' => $data['event_category_id'] ?? null,
+                'event_type' => $data['event_type'],
+                'is_mandatory' => $data['event_type'] === 'mandatory',
+                'plan_type' => $data['plan_type'],
+                'is_unified' => $data['plan_type'] === 'unified',
+                'is_active' => (bool) ($data['is_active'] ?? true),
+                'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
+                'notes' => $data['notes'] ?? null,
+                'agenda_plan_file' => $agendaPlanFile,
+                'version' => (int) ($agendaEvent->version ?? 1) + 1,
+            ]);
 
-        $this->clearPartnerDepartments($agendaEvent);
+            $this->clearPartnerDepartments($agendaEvent);
+
+            $agendaEvent->participations()->where('entity_type', 'branch')->delete();
+            foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
+                AgendaParticipation::create([
+                    'agenda_event_id' => $agendaEvent->id,
+                    'entity_type' => 'branch',
+                    'entity_id' => $branchId,
+                    'participation_status' => $status,
+                    'updated_by' => $request->user()->id,
+                ]);
+            }
+
+            $this->syncUnifiedAgendaMonthlyActivities($agendaEvent, $data['branch_participation'] ?? [], (int) $request->user()->id);
+        });
+
         Log::info('agenda_event.updated', [
             'agenda_event_id' => $agendaEvent->id,
             'owner_department_id' => $agendaEvent->owner_department_id,
             'updated_by' => $request->user()->id,
         ]);
-
-        $agendaEvent->participations()->where('entity_type', 'branch')->delete();
-        foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
-            AgendaParticipation::create([
-                'agenda_event_id' => $agendaEvent->id,
-                'entity_type' => 'branch',
-                'entity_id' => $branchId,
-                'participation_status' => $status,
-                'updated_by' => $request->user()->id,
-            ]);
-        }
 
         return redirect()
             ->route('role.relations.agenda.index')
