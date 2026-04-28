@@ -48,6 +48,48 @@ return [
         'updated' => 'Auto approval preference updated.',
         'log_comment' => 'Approved automatically by user preference.',
     ],
+    'workflow_notifications' => [
+        'entity' => [
+            'agenda' => 'event',
+            'monthly_activity' => 'monthly activity',
+            'item' => 'item',
+        ],
+        'created_draft' => [
+            'title' => 'Draft created',
+            'message' => 'A draft :type was created: :item.',
+        ],
+        'submitted' => [
+            'title' => 'Sent for approval',
+            'message' => ':item was sent for approval.',
+        ],
+        'approval_requested' => [
+            'title' => 'Approval needed',
+            'message' => 'Please review and approve: :item.',
+        ],
+        'decision' => [
+            'approved_title' => 'Approved',
+            'changes_requested_title' => 'Changes requested',
+            'rejected_title' => 'Rejected',
+            'update_title' => 'Approval update',
+            'approved_text' => 'approved',
+            'changes_requested_text' => 'returned for changes',
+            'rejected_text' => 'rejected',
+            'updated_text' => 'updated',
+            'message' => ':item was :decision by :actor.',
+        ],
+        'auto_approved' => [
+            'title' => 'Automatically approved',
+            'message' => ':item was automatically approved by :actor.',
+        ],
+        'published' => [
+            'title' => 'Published',
+            'message' => ':item was published by :actor.',
+        ],
+        'deleted' => [
+            'title' => 'Deleted',
+            'message' => ':item was deleted by :actor.',
+        ],
+    ],
     'welcome' => [
         'title' => 'Welcome to Zaha - Core Orbit',
         'subtitle' => 'A unified platform to manage operations, reports, and approvals.',

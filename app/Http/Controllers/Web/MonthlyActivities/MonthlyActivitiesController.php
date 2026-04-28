@@ -25,7 +25,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Services\ConflictDetectionService;
-use App\Services\NotificationService;
+use App\Services\WorkflowNotificationService;
 use App\Services\MonthlyActivityWorkflowService;
 use App\Services\MonthlyActivityLifecycleService;
 use App\Services\DynamicWorkflowService;
@@ -723,7 +723,7 @@ class MonthlyActivitiesController extends Controller
     protected function submitActivityForApproval(
         MonthlyActivity $monthlyActivity,
         User $actor,
-        NotificationService $notifications,
+        WorkflowNotificationService $workflowNotifications,
         MonthlyActivityLifecycleService $lifecycle,
         DynamicWorkflowService $dynamicWorkflowService,
         ?Request $request = null
@@ -762,14 +762,7 @@ class MonthlyActivitiesController extends Controller
             $lifecycle->transitionOrFail($monthlyActivity, 'Submitted');
         }
 
-        $nextRecipients = $dynamicWorkflowService->eligibleUsersForStep($instance);
-        $notifications->notifyUsers(
-            $nextRecipients,
-            'approval_requested',
-            __('app.roles.programs.monthly_activities.approvals.notifications.submit_title'),
-            __('app.roles.programs.monthly_activities.approvals.notifications.submit_body', ['activity' => $monthlyActivity->title]),
-            route('role.programs.approvals.index')
-        );
+        $workflowNotifications->approvalRequested($instance, $monthlyActivity, route('role.programs.approvals.index'), $actor);
 
         if ($request && $request->user()) {
             $this->logWorkflowAction('submitted', $monthlyActivity, $request, 'submitted');
@@ -1348,7 +1341,7 @@ class MonthlyActivitiesController extends Controller
         Request $request,
         ConflictDetectionService $conflicts,
         MonthlyActivityWorkflowService $workflowService,
-        NotificationService $notifications,
+        WorkflowNotificationService $workflowNotifications,
         MonthlyActivityLifecycleService $lifecycle,
         DynamicWorkflowService $dynamicWorkflowService
     )
@@ -1677,7 +1670,9 @@ class MonthlyActivitiesController extends Controller
         $this->logWorkflowAction('created', $monthlyActivity, $request, $monthlyActivity->status);
 
         if ($this->shouldSubmitFromRequest($request)) {
-            $this->submitActivityForApproval($monthlyActivity, $request->user(), $notifications, $lifecycle, $dynamicWorkflowService, $request);
+            $this->submitActivityForApproval($monthlyActivity, $request->user(), $workflowNotifications, $lifecycle, $dynamicWorkflowService, $request);
+        } else {
+            $workflowNotifications->created($monthlyActivity, $request->user(), route('role.relations.activities.show', $monthlyActivity));
         }
 
         return redirect()
@@ -1787,7 +1782,7 @@ class MonthlyActivitiesController extends Controller
         MonthlyActivity $monthlyActivity,
         ConflictDetectionService $conflicts,
         MonthlyActivityWorkflowService $workflowService,
-        NotificationService $notifications,
+        WorkflowNotificationService $workflowNotifications,
         MonthlyActivityLifecycleService $lifecycle,
         DynamicWorkflowService $dynamicWorkflowService
     )
@@ -2432,7 +2427,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         if ($this->shouldSubmitFromRequest($request)) {
-            $this->submitActivityForApproval($activityToSave, $request->user(), $notifications, $lifecycle, $dynamicWorkflowService, $request);
+            $this->submitActivityForApproval($activityToSave, $request->user(), $workflowNotifications, $lifecycle, $dynamicWorkflowService, $request);
         }
 
         return redirect()
@@ -2441,7 +2436,7 @@ class MonthlyActivitiesController extends Controller
             ->with('warning', $conflictWarning);
     }
 
-    public function submit(MonthlyActivity $monthlyActivity, NotificationService $notifications, MonthlyActivityLifecycleService $lifecycle, DynamicWorkflowService $dynamicWorkflowService)
+    public function submit(MonthlyActivity $monthlyActivity, WorkflowNotificationService $workflowNotifications, MonthlyActivityLifecycleService $lifecycle, DynamicWorkflowService $dynamicWorkflowService)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
         $actor = request()->user();
@@ -2458,7 +2453,7 @@ class MonthlyActivitiesController extends Controller
             ]);
         }
 
-        $this->submitActivityForApproval($monthlyActivity, $actor, $notifications, $lifecycle, $dynamicWorkflowService, request());
+        $this->submitActivityForApproval($monthlyActivity, $actor, $workflowNotifications, $lifecycle, $dynamicWorkflowService, request());
 
         return redirect()
             ->route('role.relations.activities.index')

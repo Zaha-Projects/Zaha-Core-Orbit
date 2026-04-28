@@ -2,7 +2,6 @@
     $theme = session('ui.theme', 'light');
     $nextTheme = $theme === 'dark' ? 'light' : 'dark';
     $isArabic = app()->getLocale() === 'ar';
-    $unreadNotifications = auth()->check() ? auth()->user()->inAppNotifications()->whereNull('read_at')->latest()->take(5)->get() : collect();
     $showHeaderSearch = trim($__env->yieldContent('enable_header_search', '0')) === '1';
 @endphp
 <header class="nxl-header nxl-header-clean {{ $isArabic ? 'is-rtl-header' : 'is-ltr-header' }}">
@@ -52,39 +51,7 @@
                     </form>
                 </div>
 
-                <div class="dropdown nxl-h-item">
-                    <a class="nxl-head-link me-0" data-bs-toggle="dropdown" href="#" aria-label="{{ __('app.layout.notifications') }}">
-                        <i class="feather-bell"></i><span class="badge bg-danger nxl-h-badge">{{ $unreadNotifications->count() }}</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown notification-chat-menu">
-                        <div class="notification-chat-head">
-                            <div class="fw-semibold">{{ __('app.layout.notifications') }}</div>
-                            <div class="small text-muted">{{ __('app.layout.new_notifications_count', ['count' => $unreadNotifications->count()]) }}</div>
-                        </div>
-                        <div class="notification-chat-list">
-                            @forelse($unreadNotifications as $notification)
-                                <div class="notification-chat-item">
-                                    <div class="notification-chat-bubble">
-                                        <div class="fw-semibold mb-1">{{ $notification->title }}</div>
-                                        <div class="text-muted small">{{ $notification->message }}</div>
-                                        <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
-                                            @if($notification->action_url)
-                                                <a class="small text-decoration-none" href="{{ $notification->action_url }}">{{ __('app.layout.open_notification') }}</a>
-                                            @endif
-                                            <form method="POST" action="{{ route('role.notifications.read', $notification) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button class="btn btn-link p-0 small text-decoration-none" type="submit">{{ __('app.common.mark_as_read') }}</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="notification-chat-empty">{{ __('app.common.no_new_notifications') }}</div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
+                @include('layouts.app.partials.notifications-menu')
 
                 @auth
                     <div class="dropdown nxl-h-item nxl-user-menu-item">
@@ -136,6 +103,12 @@
         background: #ffffff;
         border: 1px solid #dde7f0;
         box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+    }
+    .notification-chat-bubble.is-read {
+        opacity: .68;
+    }
+    .notification-chat-bubble.is-unread {
+        border-inline-start: 4px solid #dc3545;
     }
     .notification-chat-bubble::after {
         content: '';

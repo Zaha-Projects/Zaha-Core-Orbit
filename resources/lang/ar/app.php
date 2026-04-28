@@ -48,6 +48,48 @@ return [
         'updated' => 'تم تحديث خيار الاعتماد التلقائي.',
         'log_comment' => 'تم الاعتماد تلقائيا حسب تفضيل المستخدم.',
     ],
+    'workflow_notifications' => [
+        'entity' => [
+            'agenda' => 'فعالية',
+            'monthly_activity' => 'نشاط شهري',
+            'item' => 'عنصر',
+        ],
+        'created_draft' => [
+            'title' => 'تم إنشاء مسودة',
+            'message' => 'تم إنشاء :type كمسودة: :item.',
+        ],
+        'submitted' => [
+            'title' => 'تم الإرسال للاعتماد',
+            'message' => 'تم إرسال :item للاعتماد.',
+        ],
+        'approval_requested' => [
+            'title' => 'اعتماد مطلوب',
+            'message' => 'يرجى مراجعة واعتماد: :item.',
+        ],
+        'decision' => [
+            'approved_title' => 'تم الاعتماد',
+            'changes_requested_title' => 'مطلوب تعديل',
+            'rejected_title' => 'تم الرفض',
+            'update_title' => 'تحديث اعتماد',
+            'approved_text' => 'اعتماده',
+            'changes_requested_text' => 'إرجاعه للتعديل',
+            'rejected_text' => 'رفضه',
+            'updated_text' => 'تحديثه',
+            'message' => 'تم :decision لـ :item من قبل :actor.',
+        ],
+        'auto_approved' => [
+            'title' => 'تم الاعتماد تلقائيًا',
+            'message' => 'تم اعتماد :item تلقائيًا من قبل :actor.',
+        ],
+        'published' => [
+            'title' => 'تم النشر',
+            'message' => 'تم نشر :item من قبل :actor.',
+        ],
+        'deleted' => [
+            'title' => 'تم الحذف',
+            'message' => 'تم حذف :item من قبل :actor.',
+        ],
+    ],
     'welcome' => [
         'title' => 'مرحباً بكم في Zaha - Core Orbit',
         'subtitle' => 'منصة موحدة لإدارة العمليات والتقارير والاعتمادات.',

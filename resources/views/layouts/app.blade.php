@@ -136,6 +136,63 @@
         .workflow-auto-approval-toggle input:checked + .workflow-auto-approval-switch::after {
             inset-inline-start: 20px;
         }
+        .topbar-notification-btn {
+            align-items: center;
+            border: 1px solid rgba(148, 163, 184, .35);
+            border-radius: 12px;
+            color: #334155;
+            display: inline-flex;
+            height: 38px;
+            justify-content: center;
+            width: 38px;
+        }
+        .topbar-notification-btn:hover {
+            background: rgba(37, 99, 235, .08);
+            color: #1d4ed8;
+        }
+        .notification-chat-menu {
+            border: 1px solid #d9e4ef;
+            border-radius: 18px;
+            max-width: min(94vw, 420px);
+            min-width: 360px;
+            overflow: hidden;
+            padding: 0;
+        }
+        .notification-chat-head {
+            align-items: center;
+            background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
+            border-bottom: 1px solid #e8eef5;
+            display: flex;
+            justify-content: space-between;
+            padding: .9rem 1rem;
+        }
+        .notification-chat-list {
+            background: #f7fafc;
+            max-height: 420px;
+            overflow-y: auto;
+            padding: .85rem;
+        }
+        .notification-chat-item + .notification-chat-item {
+            margin-top: .75rem;
+        }
+        .notification-chat-bubble {
+            background: #fff;
+            border: 1px solid #dde7f0;
+            border-radius: 16px 16px 16px 6px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+            padding: .85rem .95rem;
+        }
+        .notification-chat-bubble.is-read {
+            opacity: .68;
+        }
+        .notification-chat-bubble.is-unread {
+            border-inline-start: 4px solid #dc3545;
+        }
+        .notification-chat-empty {
+            color: #64748b;
+            padding: 1.25rem 1rem;
+            text-align: center;
+        }
     </style>
     @stack('styles')
 </head>
@@ -233,6 +290,7 @@
                 <button id="sidebarToggle" class="btn topbar-toggle" type="button"><i class="fas fa-bars"></i></button>
 
                 <ul class="nav ms-auto align-items-center gap-2 topbar-actions">
+                    @include('layouts.app.partials.notifications-menu', ['variant' => 'topbar'])
                     <li class="nav-item"><span class="top-avatar top-avatar-icon"><i class="fas fa-user-astronaut"></i></span></li>
                     <li class="nav-item dropdown">
                         <button class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown" type="button">{{ $displayName }}</button>

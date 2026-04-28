@@ -12,7 +12,7 @@ use App\Models\WorkflowActionLog;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
 use App\Services\MonthlyWorkflowPresenter;
-use App\Services\NotificationService;
+use App\Services\WorkflowNotificationService;
 use App\Services\MonthlyActivityLifecycleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
@@ -203,7 +203,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         return response()->json(['html' => $html]);
     }
 
-    public function update(Request $request, NotificationService $notifications, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycleService, DynamicWorkflowService $dynamicWorkflowService)
+    public function update(Request $request, WorkflowNotificationService $workflowNotifications, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycleService, DynamicWorkflowService $dynamicWorkflowService)
     {
         $data = $request->validate([
             'decision' => ['nullable', 'string', 'in:approved,changes_requested,rejected'],
@@ -279,13 +279,11 @@ class MonthlyActivitiesApprovalsController extends Controller
             $lifecycleService->transitionOrFail($monthlyActivity, 'Exec Director Approved');
         }
 
-        $nextRecipients = $dynamicWorkflowService->eligibleUsersForStep($instance);
-
-        $notifications->notifyUsers(
-            collect([$monthlyActivity->creator])->filter()->merge($nextRecipients)->unique('id'),
-            'approval_decision',
-            __('app.roles.programs.monthly_activities.approvals.notifications.title'),
-            __('app.roles.programs.monthly_activities.approvals.notifications.body', ['decision' => $data['decision'], 'step' => $step->step_key]),
+        $workflowNotifications->approvalDecision(
+            $instance,
+            $monthlyActivity->fresh('creator'),
+            $user,
+            $data['decision'],
             route('role.relations.activities.show', $monthlyActivity)
         );
 

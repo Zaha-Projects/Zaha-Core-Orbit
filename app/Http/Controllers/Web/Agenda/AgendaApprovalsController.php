@@ -9,7 +9,7 @@ use App\Models\WorkflowActionLog;
 use App\Services\AgendaWorkflowPresenter;
 use App\Services\AgendaWorkflowBridgeService;
 use App\Services\DynamicWorkflowService;
-use App\Services\NotificationService;
+use App\Services\WorkflowNotificationService;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 
@@ -98,7 +98,7 @@ class AgendaApprovalsController extends Controller
 
     public function update(
         Request $request,
-        NotificationService $notifications,
+        WorkflowNotificationService $workflowNotifications,
         AgendaEvent $agendaEvent,
         DynamicWorkflowService $dynamicWorkflowService,
         AgendaWorkflowBridgeService $agendaWorkflowBridgeService
@@ -137,12 +137,11 @@ class AgendaApprovalsController extends Controller
         $instance = $instance->fresh();
         $agendaEvent = $agendaWorkflowBridgeService->syncApprovalState($agendaEvent, $instance);
 
-        $nextRecipients = $dynamicWorkflowService->eligibleUsersForStep($instance);
-        $notifications->notifyUsers(
-            collect([$agendaEvent->creator])->filter()->merge($nextRecipients)->unique('id'),
-            'approval_decision',
-            'Approval update',
-            'Decision: ' . $data['decision'],
+        $workflowNotifications->approvalDecision(
+            $instance,
+            $agendaEvent->fresh('creator'),
+            $user,
+            $data['decision'],
             route('role.relations.approvals.index')
         );
 

@@ -22,6 +22,7 @@ use App\Services\AgendaWorkflowBridgeService;
 use App\Services\ConflictDetectionService;
 use App\Services\DynamicWorkflowService;
 use App\Services\NotificationService;
+use App\Services\WorkflowNotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -571,7 +572,7 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.create', compact('departments', 'categories', 'branches'));
     }
 
-    public function store(Request $request, ConflictDetectionService $conflicts)
+    public function store(Request $request, ConflictDetectionService $conflicts, WorkflowNotificationService $workflowNotifications)
     {
         $this->assertKhaldaHqAgendaAuthority($request);
 
@@ -647,6 +648,7 @@ class AgendaEventsController extends Controller
                 'updated_by' => $request->user()->id,
             ]);
         }
+        $workflowNotifications->created($event, $request->user(), route('role.relations.agenda.show', $event));
 
         return redirect()
             ->route('role.relations.agenda.index')
@@ -769,7 +771,7 @@ class AgendaEventsController extends Controller
             ->with('warning', $conflictWarning);
     }
 
-    public function destroy(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications)
+    public function destroy(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications, WorkflowNotificationService $workflowNotifications)
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventDeleteAccess($request, $agendaEvent);
@@ -780,8 +782,14 @@ class AgendaEventsController extends Controller
         $monthlyActivities = $agendaEvent->monthlyActivities;
         $eventName = $agendaEvent->event_name;
 
-        DB::transaction(function () use ($agendaEvent, $monthlyActivities, $notifications, $request) {
+        DB::transaction(function () use ($agendaEvent, $monthlyActivities, $notifications, $workflowNotifications, $request) {
             $this->notifyBranchPlanOwnersOfAgendaCancellation($agendaEvent, $monthlyActivities, $notifications);
+            $workflowNotifications->deleted(
+                $agendaEvent,
+                $request->user(),
+                $monthlyActivities->map(fn (MonthlyActivity $activity) => $activity->creator)->filter(),
+                route('role.relations.agenda.index')
+            );
 
             $monthlyActivities->each(function (MonthlyActivity $activity) use ($agendaEvent) {
                 $activity->forceFill([
@@ -814,7 +822,7 @@ class AgendaEventsController extends Controller
     public function submit(
         Request $request,
         AgendaEvent $agendaEvent,
-        NotificationService $notifications,
+        WorkflowNotificationService $workflowNotifications,
         DynamicWorkflowService $dynamicWorkflowService,
         AgendaWorkflowBridgeService $agendaWorkflowBridgeService
     )
@@ -850,13 +858,7 @@ class AgendaEventsController extends Controller
 
         $agendaEvent = $agendaWorkflowBridgeService->syncApprovalState($agendaEvent, $instance);
 
-        $notifications->notifyUsers(
-            $dynamicWorkflowService->eligibleUsersForStep($instance),
-            'approval_requested',
-            'Agenda approval requested',
-            $agendaEvent->event_name,
-            route('role.relations.approvals.index')
-        );
+        $workflowNotifications->approvalRequested($instance, $agendaEvent, route('role.relations.approvals.index'), $request->user());
 
 
         return redirect()
