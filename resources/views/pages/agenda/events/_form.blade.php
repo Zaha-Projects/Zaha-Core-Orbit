@@ -102,6 +102,23 @@
                                 <div class="form-text">{{ __('app.roles.relations.agenda.hints.unified_plan_source') }}</div>
                                 @error('unified_plan_source')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
+                            <div class="col-12 js-unified-plan-source">
+                                <div class="unified-monthly-plan-hint d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
+                                    <div>
+                                        <div class="fw-semibold">الخطة الشهرية الموحدة</div>
+                                        <div class="small text-muted">أدخل بيانات الخطة الشهرية الموحدة قبل حفظ الفعالية السنوية.</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary js-open-unified-monthly-plan-modal">إدخال الخطة الشهرية</button>
+                                </div>
+                                <input type="hidden" name="monthly_plan_template[title]" value="{{ old('monthly_plan_template.title', old('event_name', $existingAgendaEvent?->event_name)) }}" data-monthly-plan-template-field="title">
+                                <input type="hidden" name="monthly_plan_template[proposed_date]" value="{{ old('monthly_plan_template.proposed_date', old('event_date', optional($existingAgendaEvent?->event_date)->format('Y-m-d'))) }}" data-monthly-plan-template-field="proposed_date">
+                                <input type="hidden" name="monthly_plan_template[description]" value="{{ old('monthly_plan_template.description', old('notes', $existingAgendaEvent?->notes)) }}" data-monthly-plan-template-field="description">
+                                <input type="hidden" name="monthly_plan_template[responsible_party]" value="{{ old('monthly_plan_template.responsible_party') }}" data-monthly-plan-template-field="responsible_party">
+                                <input type="hidden" name="monthly_plan_template[target_group]" value="{{ old('monthly_plan_template.target_group') }}" data-monthly-plan-template-field="target_group">
+                                <input type="hidden" name="monthly_plan_template[execution_time]" value="{{ old('monthly_plan_template.execution_time') }}" data-monthly-plan-template-field="execution_time">
+                                <input type="hidden" name="monthly_plan_template[location_details]" value="{{ old('monthly_plan_template.location_details') }}" data-monthly-plan-template-field="location_details">
+                                <input type="hidden" name="monthly_plan_template[required_volunteers]" value="{{ old('monthly_plan_template.required_volunteers') }}" data-monthly-plan-template-field="required_volunteers">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -181,6 +198,59 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="unifiedMonthlyPlanModal" tabindex="-1" aria-labelledby="unifiedMonthlyPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="unifiedMonthlyPlanModalLabel">إدخال الخطة الشهرية</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">سيتم حفظ بيانات الفعالية السنوية في جدول الأجندة، ثم حفظ بيانات الخطة الشهرية في جدول الأنشطة الشهرية بشكل مرتبط.</p>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">عنوان النشاط الشهري <span class="badge text-bg-danger">إجباري</span></label>
+                        <input type="text" class="form-control js-unified-monthly-plan-input" data-target-field="title" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">التاريخ المقترح <span class="badge text-bg-danger">إجباري</span></label>
+                        <input type="date" class="form-control js-unified-monthly-plan-input" data-target-field="proposed_date" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">الجهة المسؤولة <span class="badge text-bg-danger">إجباري</span></label>
+                        <input type="text" class="form-control js-unified-monthly-plan-input" data-target-field="responsible_party" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">الفئة المستهدفة <span class="badge text-bg-danger">إجباري</span></label>
+                        <input type="text" class="form-control js-unified-monthly-plan-input" data-target-field="target_group" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">وصف النشاط <span class="badge text-bg-danger">إجباري</span></label>
+                        <textarea rows="3" class="form-control js-unified-monthly-plan-input" data-target-field="description" required></textarea>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">وقت التنفيذ</label>
+                        <input type="text" class="form-control js-unified-monthly-plan-input" data-target-field="execution_time">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">تفاصيل الموقع</label>
+                        <input type="text" class="form-control js-unified-monthly-plan-input" data-target-field="location_details">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">عدد المتطوعين المطلوب</label>
+                        <input type="number" min="0" class="form-control js-unified-monthly-plan-input" data-target-field="required_volunteers">
+                    </div>
+                </div>
+                <div class="alert alert-warning mt-3 mb-0 d-none js-unified-monthly-plan-errors">يرجى تعبئة جميع الحقول الإجبارية قبل الحفظ.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary js-confirm-unified-monthly-plan">تأكيد وحفظ</button>
+            </div>
         </div>
     </div>
 </div>

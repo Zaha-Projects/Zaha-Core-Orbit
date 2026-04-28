@@ -261,7 +261,12 @@ class AgendaEventsController extends Controller
      *
      * @param array<int|string, string> $branchParticipation
      */
-    protected function syncUnifiedAgendaMonthlyActivities(AgendaEvent $agendaEvent, array $branchParticipation, int $actorId): void
+    protected function syncUnifiedAgendaMonthlyActivities(
+        AgendaEvent $agendaEvent,
+        array $branchParticipation,
+        int $actorId,
+        array $monthlyTemplate = []
+    ): void
     {
         if ((string) ($agendaEvent->plan_type ?? 'non_unified') !== 'unified') {
             return;
@@ -299,17 +304,25 @@ class AgendaEventsController extends Controller
                 'agenda_event_id' => $agendaEvent->id,
                 'branch_id' => $branchId,
             ]);
+            $resolvedProposedDate = (string) ($monthlyTemplate['proposed_date']
+                ?? optional($monthlyActivity->proposed_date)->toDateString()
+                ?? $resolvedDate);
 
             $monthlyActivity->fill([
                 'month' => (int) Carbon::parse($resolvedDate)->format('m'),
                 'day' => (int) Carbon::parse($resolvedDate)->format('d'),
-                'title' => (string) $agendaEvent->event_name,
-                'proposed_date' => (string) (optional($monthlyActivity->proposed_date)->toDateString() ?: $resolvedDate),
+                'title' => (string) ($monthlyTemplate['title'] ?? $agendaEvent->event_name),
+                'proposed_date' => $resolvedProposedDate,
                 'is_in_agenda' => true,
                 'is_from_agenda' => true,
                 'participation_status' => 'participant',
                 'plan_type' => (string) ($agendaEvent->plan_type ?? 'unified'),
-                'description' => $agendaEvent->notes,
+                'description' => $monthlyTemplate['description'] ?? $agendaEvent->notes,
+                'responsible_party' => $monthlyTemplate['responsible_party'] ?? $monthlyActivity->responsible_party,
+                'target_group' => $monthlyTemplate['target_group'] ?? $monthlyActivity->target_group,
+                'execution_time' => $monthlyTemplate['execution_time'] ?? $monthlyActivity->execution_time,
+                'location_details' => $monthlyTemplate['location_details'] ?? $monthlyActivity->location_details,
+                'required_volunteers' => $monthlyTemplate['required_volunteers'] ?? $monthlyActivity->required_volunteers,
                 'location_type' => $monthlyActivity->location_type ?? 'inside_center',
                 'status' => $monthlyActivity->status ?? 'draft',
                 'created_by' => (int) ($monthlyActivity->created_by ?: $actorId),
@@ -663,6 +676,15 @@ class AgendaEventsController extends Controller
             'unified_plan_source' => ['nullable', 'in:monthly_auto'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
+            'monthly_plan_template' => ['array', 'required_if:plan_type,unified'],
+            'monthly_plan_template.title' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.proposed_date' => ['nullable', 'date', 'required_if:plan_type,unified'],
+            'monthly_plan_template.description' => ['nullable', 'string', 'required_if:plan_type,unified'],
+            'monthly_plan_template.responsible_party' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.target_group' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.execution_time' => ['nullable', 'string', 'max:255'],
+            'monthly_plan_template.location_details' => ['nullable', 'string', 'max:255'],
+            'monthly_plan_template.required_volunteers' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
@@ -709,7 +731,12 @@ class AgendaEventsController extends Controller
                 ]);
             }
 
-            $this->syncUnifiedAgendaMonthlyActivities($event, $data['branch_participation'] ?? [], (int) $request->user()->id);
+            $this->syncUnifiedAgendaMonthlyActivities(
+                $event,
+                $data['branch_participation'] ?? [],
+                (int) $request->user()->id,
+                (array) ($data['monthly_plan_template'] ?? [])
+            );
 
             return $event;
         });
@@ -784,6 +811,15 @@ class AgendaEventsController extends Controller
             'unified_plan_source' => ['nullable', 'in:monthly_auto'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
+            'monthly_plan_template' => ['array', 'required_if:plan_type,unified'],
+            'monthly_plan_template.title' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.proposed_date' => ['nullable', 'date', 'required_if:plan_type,unified'],
+            'monthly_plan_template.description' => ['nullable', 'string', 'required_if:plan_type,unified'],
+            'monthly_plan_template.responsible_party' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.target_group' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.execution_time' => ['nullable', 'string', 'max:255'],
+            'monthly_plan_template.location_details' => ['nullable', 'string', 'max:255'],
+            'monthly_plan_template.required_volunteers' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
@@ -833,7 +869,12 @@ class AgendaEventsController extends Controller
                 ]);
             }
 
-            $this->syncUnifiedAgendaMonthlyActivities($agendaEvent, $data['branch_participation'] ?? [], (int) $request->user()->id);
+            $this->syncUnifiedAgendaMonthlyActivities(
+                $agendaEvent,
+                $data['branch_participation'] ?? [],
+                (int) $request->user()->id,
+                (array) ($data['monthly_plan_template'] ?? [])
+            );
         });
 
         Log::info('agenda_event.updated', [
