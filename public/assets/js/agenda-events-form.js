@@ -14,6 +14,21 @@
     const partnerDepartmentEls = Array.from(form.querySelectorAll('.js-partner-department'));
     const toggleRows = Array.from(form.querySelectorAll('.branch-toggle-item'));
     const enableAllBtn = form.querySelector('.js-enable-all-participants');
+    const openUnifiedModalBtn = form.querySelector('.js-open-unified-monthly-plan-modal');
+    const unifiedModalEl = document.getElementById('unifiedMonthlyPlanModal');
+    const confirmUnifiedModalBtn = unifiedModalEl?.querySelector('.js-confirm-unified-monthly-plan');
+    const unifiedModalError = unifiedModalEl?.querySelector('.js-unified-monthly-plan-errors');
+    const hiddenTemplateFields = Array.from(form.querySelectorAll('[data-monthly-plan-template-field]'));
+    const modalTemplateFields = Array.from(unifiedModalEl?.querySelectorAll('.js-unified-monthly-plan-input') || []);
+    const requiredTemplateFields = ['title', 'proposed_date', 'responsible_party', 'target_group', 'description'];
+    let allowSubmitAfterModalConfirm = false;
+    const unifiedModal = (window.bootstrap?.Modal && unifiedModalEl)
+        ? new window.bootstrap.Modal(unifiedModalEl)
+        : null;
+
+    function shouldRequireUnifiedTemplate() {
+        return planTypeEl?.value === 'unified';
+    }
 
     function filterCategories() {
         if (!categoryEl) return;
@@ -60,23 +75,56 @@
         unifiedPlanSourceRows.forEach((row) => {
             row.style.display = isUnified ? '' : 'none';
         });
+
+        if (!isUnified || !shouldRequireUnifiedTemplate()) {
+            allowSubmitAfterModalConfirm = true;
+        }
+    }
+
+    function hiddenFieldByKey(fieldKey) {
+        return hiddenTemplateFields.find((field) => field.dataset.monthlyPlanTemplateField === fieldKey) || null;
+    }
+
+    function modalFieldByKey(fieldKey) {
+        return modalTemplateFields.find((field) => field.dataset.targetField === fieldKey) || null;
+    }
+
+    function syncModalFromHiddenFields() {
+        modalTemplateFields.forEach((field) => {
+            const hidden = hiddenFieldByKey(field.dataset.targetField || '');
+            if (hidden) {
+                field.value = hidden.value || '';
+            }
+        });
+    }
+
+    function syncHiddenFieldsFromModal() {
+        modalTemplateFields.forEach((field) => {
+            const hidden = hiddenFieldByKey(field.dataset.targetField || '');
+            if (hidden) {
+                hidden.value = field.value || '';
+            }
+        });
+    }
+
+    function validateModalFields() {
+        let valid = true;
+
+        requiredTemplateFields.forEach((key) => {
+            const field = modalFieldByKey(key);
+            const fieldValid = String(field?.value || '').trim().length > 0;
+            field?.classList.toggle('is-invalid', !fieldValid);
+            valid = valid && fieldValid;
+        });
+
+        unifiedModalError?.classList.toggle('d-none', valid);
+
+        return valid;
     }
 
     function toggleBranchParticipation() {
-        const isOptional = eventTypeEl?.value === 'optional';
         if (branchParticipationSection) {
-            branchParticipationSection.style.display = isOptional ? 'none' : '';
-        }
-
-        toggleRows.forEach((row) => {
-            const hiddenInput = row.querySelector('.js-branch-status-hidden');
-            const checkbox = row.querySelector('.js-branch-toggle');
-            if (hiddenInput) hiddenInput.disabled = isOptional;
-            if (checkbox) checkbox.disabled = isOptional;
-        });
-
-        if (enableAllBtn) {
-            enableAllBtn.disabled = isOptional;
+            branchParticipationSection.style.display = '';
         }
     }
 
@@ -103,6 +151,12 @@
     partnerDepartmentEls.forEach((el) => el.addEventListener('change', filterCategories));
     planTypeEl?.addEventListener('change', togglePlanFile);
     eventTypeEl?.addEventListener('change', toggleBranchParticipation);
+    planTypeEl?.addEventListener('change', () => {
+        allowSubmitAfterModalConfirm = !shouldRequireUnifiedTemplate();
+    });
+    eventTypeEl?.addEventListener('change', () => {
+        allowSubmitAfterModalConfirm = !shouldRequireUnifiedTemplate();
+    });
 
     toggleRows.forEach((row) => {
         const checkbox = row.querySelector('.js-branch-toggle');
@@ -118,8 +172,38 @@
         });
     });
 
+    openUnifiedModalBtn?.addEventListener('click', () => {
+        if (planTypeEl?.value !== 'unified' || !unifiedModal) return;
+        syncModalFromHiddenFields();
+        unifiedModalError?.classList.add('d-none');
+        modalTemplateFields.forEach((field) => field.classList.remove('is-invalid'));
+        unifiedModal.show();
+    });
+
+    confirmUnifiedModalBtn?.addEventListener('click', () => {
+        if (!validateModalFields()) return;
+        syncHiddenFieldsFromModal();
+        allowSubmitAfterModalConfirm = true;
+        unifiedModal?.hide();
+        form.requestSubmit();
+    });
+
+    form.addEventListener('submit', (event) => {
+        if (!shouldRequireUnifiedTemplate() || allowSubmitAfterModalConfirm || !unifiedModal) {
+            allowSubmitAfterModalConfirm = false;
+            return;
+        }
+
+        event.preventDefault();
+        syncModalFromHiddenFields();
+        unifiedModalError?.classList.add('d-none');
+        modalTemplateFields.forEach((field) => field.classList.remove('is-invalid'));
+        unifiedModal.show();
+    });
+
     syncOwnerVsPartners();
     filterCategories();
     togglePlanFile();
     toggleBranchParticipation();
+    allowSubmitAfterModalConfirm = !shouldRequireUnifiedTemplate();
 })();
