@@ -21,6 +21,7 @@ class User extends Authenticatable
         'phone',
         'branch_id',
         'status',
+        'auto_approve_workflow_steps',
         'password',
     ];
 
@@ -31,6 +32,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'auto_approve_workflow_steps' => 'boolean',
     ];
 
     public function assignedBranches()

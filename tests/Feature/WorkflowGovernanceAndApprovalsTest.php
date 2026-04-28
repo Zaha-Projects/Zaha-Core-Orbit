@@ -112,6 +112,111 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
         $this->assertSame('s2', $activity->workflowInstance->currentStep?->step_key);
     }
 
+    public function test_auto_approval_skips_enabled_approvers_and_continues_to_next_manual_step(): void
+    {
+        $creatorRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
+        $autoRole = Role::query()->firstOrCreate(['name' => 'programs_manager', 'guard_name' => 'web']);
+        $manualRole = Role::query()->firstOrCreate(['name' => 'relations_manager', 'guard_name' => 'web']);
+
+        $workflow = Workflow::query()->create(['module' => 'monthly_activities', 'code' => 'wf_auto_' . uniqid(), 'is_active' => true]);
+
+        foreach ([
+            ['step_key' => 'submit', 'step_order' => 1, 'approval_level' => 1, 'step_type' => 'sub', 'role_id' => $creatorRole->id, 'is_editable' => true],
+            ['step_key' => 'programs', 'step_order' => 2, 'approval_level' => 2, 'step_type' => 'main', 'role_id' => $autoRole->id, 'is_editable' => false],
+            ['step_key' => 'relations', 'step_order' => 3, 'approval_level' => 3, 'step_type' => 'main', 'role_id' => $manualRole->id, 'is_editable' => false],
+        ] as $definition) {
+            WorkflowStep::query()->create(array_merge(['workflow_id' => $workflow->id], $definition));
+        }
+
+        $creator = User::factory()->create();
+        $creator->assignRole($creatorRole);
+
+        $autoApprover = User::factory()->create(['auto_approve_workflow_steps' => true]);
+        $autoApprover->assignRole($autoRole);
+
+        $manualApprover = User::factory()->create();
+        $manualApprover->assignRole($manualRole);
+
+        $activity = MonthlyActivity::factory()->create(['created_by' => $creator->id, 'status' => 'submitted']);
+
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $workflowService->forModel('monthly_activities', $activity);
+        $submitStep = $workflowService->currentStepForUser($instance, $creator);
+
+        $workflowService->recordDecision($instance, $submitStep, $creator, DynamicWorkflowService::DECISION_APPROVED);
+
+        $instance = $instance->fresh()->load('currentStep');
+
+        $this->assertSame('relations', $instance->currentStep?->step_key);
+        $this->assertDatabaseHas('workflow_logs', [
+            'workflow_instance_id' => $instance->id,
+            'workflow_step_id' => WorkflowStep::query()->where('step_key', 'programs')->value('id'),
+            'acted_by' => $autoApprover->id,
+            'action' => DynamicWorkflowService::DECISION_APPROVED,
+        ]);
+        $this->assertNotNull($workflowService->currentStepForUser($instance, $manualApprover));
+    }
+
+    public function test_auto_approval_toggle_processes_items_already_waiting_for_user(): void
+    {
+        [$approver, $activity] = $this->seedApprovalSetup(withActivity: true, withTwoSteps: true);
+
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $activity->workflowInstance;
+        $submitStep = $workflowService->currentStepForUser($instance, $activity->creator);
+        $workflowService->recordDecision($instance, $submitStep, $activity->creator, DynamicWorkflowService::DECISION_APPROVED);
+
+        $this->assertSame('s2', $instance->fresh()->currentStep?->step_key);
+
+        $this->actingAs($approver)
+            ->patch(route('workflow_auto_approval.update'), [
+                'auto_approve_workflow_steps' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertTrue($approver->fresh()->auto_approve_workflow_steps);
+        $this->assertSame(DynamicWorkflowService::DECISION_APPROVED, $instance->fresh()->status);
+    }
+
+    public function test_submit_only_workflow_users_cannot_enable_auto_approval(): void
+    {
+        $submitRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
+        $approverRole = Role::query()->firstOrCreate(['name' => 'relations_manager', 'guard_name' => 'web']);
+
+        $workflow = Workflow::query()->create(['module' => 'agenda', 'code' => 'wf_submit_only_' . uniqid(), 'is_active' => true]);
+        WorkflowStep::query()->create([
+            'workflow_id' => $workflow->id,
+            'step_key' => 'submit',
+            'step_order' => 1,
+            'approval_level' => 1,
+            'step_type' => 'sub',
+            'role_id' => $submitRole->id,
+            'is_editable' => true,
+        ]);
+        WorkflowStep::query()->create([
+            'workflow_id' => $workflow->id,
+            'step_key' => 'review',
+            'step_order' => 2,
+            'approval_level' => 2,
+            'step_type' => 'main',
+            'role_id' => $approverRole->id,
+            'is_editable' => false,
+        ]);
+
+        $submitter = User::factory()->create();
+        $submitter->assignRole($submitRole);
+
+        $this->assertFalse(app(DynamicWorkflowService::class)->userMayAutoApproveWorkflow('agenda', $submitter));
+
+        $this->actingAs($submitter)
+            ->patch(route('workflow_auto_approval.update'), [
+                'auto_approve_workflow_steps' => true,
+            ])
+            ->assertForbidden();
+
+        $this->assertFalse($submitter->fresh()->auto_approve_workflow_steps);
+    }
+
     public function test_agenda_approval_is_driven_by_dynamic_workflow_roles(): void
     {
         $approverRole = Role::query()->firstOrCreate(['name' => 'programs_manager', 'guard_name' => 'web']);

@@ -112,6 +112,30 @@ class DynamicWorkflowService
         });
     }
 
+    public function userMayAutoApproveWorkflow(string $module, User $user): bool
+    {
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        $workflow = $this->findActiveWorkflow($module);
+
+        if (! $workflow) {
+            return false;
+        }
+
+        $workflow->loadMissing('steps.role', 'steps.permission');
+
+        return $workflow->steps
+            ->where('step_type', 'main')
+            ->contains(function (WorkflowStep $step) use ($user): bool {
+                $matchesRole = $step->role && $user->hasRole($step->role->name);
+                $matchesPermission = $step->permission && $user->can($step->permission->name);
+
+                return $matchesRole || $matchesPermission;
+            });
+    }
+
     public function assertPrerequisites(WorkflowInstance $instance, WorkflowStep $step): void
     {
         $instance->loadMissing('workflow.steps');
@@ -219,12 +243,15 @@ class DynamicWorkflowService
                 $this->firstApplicableStep($steps, $entity)
             );
 
+            $this->autoApproveReadySteps($instance->fresh());
+
             return;
         }
 
         $nextStep = $this->firstApplicableStep($steps->slice($currentIndex + 1), $entity);
 
         $this->updateInstanceToStep($instance, $nextStep);
+        $this->autoApproveReadySteps($instance->fresh());
     }
 
     public function currentAssigneeLabel(WorkflowInstance $instance): string
@@ -246,18 +273,26 @@ class DynamicWorkflowService
     {
         $step = $step ?? $this->currentStep($instance);
 
-        if (! $step?->role) {
+        if (! $step) {
             return collect();
         }
 
-        $roleNames = collect([$step->role->name])
-            ->merge($this->equivalentRolesForStep($instance, $step))
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
+        $query = User::query();
 
-        $query = User::query()->role($roleNames);
+        if ($step->role) {
+            $roleNames = collect([$step->role->name])
+                ->merge($this->equivalentRolesForStep($instance, $step))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $query->role($roleNames);
+        } elseif ($step->permission) {
+            $query->permission($step->permission->name);
+        } else {
+            return collect();
+        }
 
         if ($this->isBranchScopedStep($instance, $step)) {
             $branchId = $this->resolveBranchId($instance);
@@ -269,6 +304,61 @@ class DynamicWorkflowService
         }
 
         return $query->get();
+    }
+
+    public function autoApproveReadySteps(WorkflowInstance $instance): void
+    {
+        $processedStepIds = [];
+
+        while ($this->canDecide($instance)) {
+            $step = $this->currentStep($instance);
+
+            if (! $step || (string) $step->step_type !== 'main') {
+                return;
+            }
+
+            if (in_array((int) $step->id, $processedStepIds, true)) {
+                return;
+            }
+
+            $actor = $this->autoApprovalActorForStep($instance, $step);
+
+            if (! $actor) {
+                return;
+            }
+
+            $processedStepIds[] = (int) $step->id;
+
+            WorkflowLog::query()->create([
+                'workflow_instance_id' => $instance->id,
+                'workflow_step_id' => $step->id,
+                'acted_by' => $actor->id,
+                'action' => self::DECISION_APPROVED,
+                'comment' => __('app.workflow_auto_approval.log_comment'),
+                'edit_request_iteration' => (int) $instance->edit_request_count,
+                'acted_at' => now(),
+            ]);
+
+            $instance = $this->advanceInstanceWithoutAutoApproval($instance->fresh());
+        }
+    }
+
+    public function autoApprovePendingStepsForUser(User $user): void
+    {
+        if (! $user->auto_approve_workflow_steps) {
+            return;
+        }
+
+        WorkflowInstance::query()
+            ->with('currentStep.role', 'currentStep.permission', 'workflow.steps.role', 'workflow.steps.permission')
+            ->whereIn('status', ['pending', 'in_progress'])
+            ->whereHas('currentStep', fn ($query) => $query->where('step_type', 'main'))
+            ->get()
+            ->each(function (WorkflowInstance $instance) use ($user): void {
+                if ($this->currentStepForUser($instance, $user)) {
+                    $this->autoApproveReadySteps($instance);
+                }
+            });
     }
 
     /**
@@ -329,6 +419,33 @@ class DynamicWorkflowService
             'status' => 'in_progress',
             'completed_at' => null,
         ]);
+    }
+
+    private function advanceInstanceWithoutAutoApproval(WorkflowInstance $instance): WorkflowInstance
+    {
+        $instance->loadMissing('workflow.steps.role', 'workflow.steps.permission');
+        $entity = $this->resolveEntity($instance);
+        $steps = $instance->workflow->steps->values();
+        $currentIndex = $steps->search(fn (WorkflowStep $step) => $step->id === (int) $instance->current_step_id);
+
+        $nextStep = $currentIndex === false
+            ? $this->firstApplicableStep($steps, $entity)
+            : $this->firstApplicableStep($steps->slice($currentIndex + 1), $entity);
+
+        $this->updateInstanceToStep($instance, $nextStep);
+
+        return $instance->fresh();
+    }
+
+    private function autoApprovalActorForStep(WorkflowInstance $instance, WorkflowStep $step): ?User
+    {
+        $creatorId = (int) data_get($this->resolveEntity($instance), 'created_by');
+
+        return $this->eligibleUsersForStep($instance, $step)
+            ->filter(fn (User $user): bool => (bool) $user->auto_approve_workflow_steps)
+            ->reject(fn (User $user): bool => $creatorId > 0 && (int) $user->id === $creatorId)
+            ->sortBy('id')
+            ->first();
     }
 
     private function firstApplicableStep(Collection $steps, ?Model $entity): ?WorkflowStep

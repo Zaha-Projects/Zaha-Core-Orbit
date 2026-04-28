@@ -42,6 +42,12 @@ return [
         'switch_to_english' => 'English',
         'switch_to_arabic' => 'Arabic',
     ],
+    'workflow_auto_approval' => [
+        'sidebar_label' => 'Automatic approval',
+        'sidebar_hint' => 'Approve my workflow steps automatically',
+        'updated' => 'Auto approval preference updated.',
+        'log_comment' => 'Approved automatically by user preference.',
+    ],
     'welcome' => [
         'title' => 'Welcome to Zaha - Core Orbit',
         'subtitle' => 'A unified platform to manage operations, reports, and approvals.',

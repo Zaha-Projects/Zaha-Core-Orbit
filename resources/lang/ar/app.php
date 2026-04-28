@@ -42,6 +42,12 @@ return [
         'switch_to_english' => 'English',
         'switch_to_arabic' => 'العربية',
     ],
+    'workflow_auto_approval' => [
+        'sidebar_label' => 'الاعتماد التلقائي',
+        'sidebar_hint' => 'اعتماد خطواتي في سير العمل تلقائيا',
+        'updated' => 'تم تحديث خيار الاعتماد التلقائي.',
+        'log_comment' => 'تم الاعتماد تلقائيا حسب تفضيل المستخدم.',
+    ],
     'welcome' => [
         'title' => 'مرحباً بكم في Zaha - Core Orbit',
         'subtitle' => 'منصة موحدة لإدارة العمليات والتقارير والاعتمادات.',

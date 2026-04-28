@@ -55,6 +55,88 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="{{ asset('assets/theme/css/Theme.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/theme/css/Style.css') }}">
+    <style>
+        .workflow-auto-approval-original {
+            border-top: 1px solid rgba(148, 163, 184, .25);
+            margin-top: .65rem;
+            padding-top: .65rem;
+        }
+        .workflow-auto-approval-original .workflow-auto-approval-form {
+            margin: 0 .35rem;
+        }
+        .workflow-auto-approval-original .workflow-auto-approval-toggle {
+            align-items: center;
+            background: rgba(37, 99, 235, .08);
+            border: 1px solid rgba(37, 99, 235, .18);
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            gap: .7rem;
+            margin: 0;
+            min-height: 62px;
+            padding: .7rem .8rem;
+            width: 100%;
+        }
+        .workflow-auto-approval-original .workflow-auto-approval-toggle:hover {
+            background: rgba(37, 99, 235, .13);
+        }
+        .workflow-auto-approval-icon {
+            color: #2563eb;
+            flex: 0 0 auto;
+        }
+        .workflow-auto-approval-copy {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            gap: .12rem;
+            min-width: 0;
+        }
+        .workflow-auto-approval-title {
+            color: #1f2937;
+            font-size: .9rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+        .workflow-auto-approval-help {
+            color: #64748b;
+            font-size: .72rem;
+            font-weight: 500;
+            line-height: 1.25;
+        }
+        .workflow-auto-approval-toggle input {
+            height: 1px;
+            opacity: 0;
+            position: absolute;
+            width: 1px;
+        }
+        .workflow-auto-approval-switch {
+            background: #cfd6e3;
+            border-radius: 999px;
+            flex: 0 0 auto;
+            height: 22px;
+            position: relative;
+            transition: background-color .2s ease;
+            width: 40px;
+        }
+        .workflow-auto-approval-switch::after {
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, .25);
+            content: "";
+            height: 18px;
+            inset-block-start: 2px;
+            inset-inline-start: 2px;
+            position: absolute;
+            transition: inset-inline-start .2s ease;
+            width: 18px;
+        }
+        .workflow-auto-approval-toggle input:checked + .workflow-auto-approval-switch {
+            background: #2563eb;
+        }
+        .workflow-auto-approval-toggle input:checked + .workflow-auto-approval-switch::after {
+            inset-inline-start: 20px;
+        }
+    </style>
     @stack('styles')
 </head>
 <body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }}">
@@ -132,6 +214,8 @@
                     <li class="side-item {{ request()->routeIs('role.reports.enterprise.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.enterprise.branch_performance') }}"><i class="fas fa-arrow-trend-up"></i><span>{{ __('app.enterprise.branch_performance.report_title') }}</span></a></li>
                 @endif
             @endif
+
+            @include('layouts.app.partials.workflow-auto-approval-toggle', ['variant' => 'original'])
         </ul>
 
         <p class="side-comment" data-i18n="language">{{ __('app.layout.language_switch') }}</p>

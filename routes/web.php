@@ -58,6 +58,7 @@ use App\Http\Controllers\Web\Enterprise\EnterpriseDashboardController;
 use App\Http\Controllers\Web\Enterprise\EnterpriseReportsController;
 use App\Http\Controllers\Web\Enterprise\NotificationsController;
 use App\Http\Controllers\Web\Enterprise\ArchiveController;
+use App\Http\Controllers\Web\WorkflowAutoApprovalPreferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +102,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::patch('/workflow-auto-approval-preference', [WorkflowAutoApprovalPreferenceController::class, 'update'])->name('workflow_auto_approval.update');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');

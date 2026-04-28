@@ -72,6 +72,9 @@ class WorkflowGovernanceService
             ->where('module', $module)
             ->when($exceptWorkflowId, fn ($q) => $q->whereKeyNot($exceptWorkflowId))
             ->where('is_active', true)
-            ->update(['is_active' => false]);
+            ->update([
+                'is_active' => false,
+                'active_module' => null,
+            ]);
     }
 }
