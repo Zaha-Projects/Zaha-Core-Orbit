@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Services\AgendaWorkflowBridgeService;
+use App\Services\AgendaMonthlyPlanSyncService;
 use App\Services\ConflictDetectionService;
 use App\Services\DynamicWorkflowService;
 use App\Services\NotificationService;
@@ -254,84 +255,6 @@ class AgendaEventsController extends Controller
 
         return $monthlyActivity;
     }
-
-    /**
-     * عند حفظ فعالية أجندة موحدة: أنشئ/حدّث سجلات الخطة الشهرية المرتبطة مباشرة.
-     * لا نضيف أي حقل جديد في agenda_events؛ الربط يتم عبر agenda_event_id الموجود أساساً.
-     *
-     * @param array<int|string, string> $branchParticipation
-     */
-    protected function syncUnifiedAgendaMonthlyActivities(
-        AgendaEvent $agendaEvent,
-        array $branchParticipation,
-        int $actorId,
-        array $monthlyTemplate = []
-    ): void
-    {
-        if ((string) ($agendaEvent->plan_type ?? 'non_unified') !== 'unified') {
-            return;
-        }
-
-        if (! (bool) ($agendaEvent->is_active ?? true)) {
-            return;
-        }
-
-        $resolvedDate = $this->resolveAgendaEventDate($agendaEvent);
-        $participantBranchIds = collect($branchParticipation)
-            ->filter(fn ($status): bool => (string) $status === 'participant')
-            ->keys()
-            ->map(fn ($id): int => (int) $id)
-            ->filter(fn (int $id): bool => $id > 0)
-            ->unique()
-            ->values();
-
-        if ($participantBranchIds->isEmpty()) {
-            return;
-        }
-
-        MonthlyActivity::query()
-            ->where('agenda_event_id', $agendaEvent->id)
-            ->whereNotIn('branch_id', $participantBranchIds->all())
-            ->update([
-                'agenda_event_id' => null,
-                'is_in_agenda' => false,
-                'is_from_agenda' => false,
-                'participation_status' => 'not_participant',
-            ]);
-
-        foreach ($participantBranchIds as $branchId) {
-            $monthlyActivity = MonthlyActivity::firstOrNew([
-                'agenda_event_id' => $agendaEvent->id,
-                'branch_id' => $branchId,
-            ]);
-            $resolvedProposedDate = (string) ($monthlyTemplate['proposed_date']
-                ?? optional($monthlyActivity->proposed_date)->toDateString()
-                ?? $resolvedDate);
-
-            $monthlyActivity->fill([
-                'month' => (int) Carbon::parse($resolvedDate)->format('m'),
-                'day' => (int) Carbon::parse($resolvedDate)->format('d'),
-                'title' => (string) ($monthlyTemplate['title'] ?? $agendaEvent->event_name),
-                'proposed_date' => $resolvedProposedDate,
-                'is_in_agenda' => true,
-                'is_from_agenda' => true,
-                'participation_status' => 'participant',
-                'plan_type' => (string) ($agendaEvent->plan_type ?? 'unified'),
-                'description' => $monthlyTemplate['description'] ?? $agendaEvent->notes,
-                'responsible_party' => $monthlyTemplate['responsible_party'] ?? $monthlyActivity->responsible_party,
-                'target_group' => $monthlyTemplate['target_group'] ?? $monthlyActivity->target_group,
-                'execution_time' => $monthlyTemplate['execution_time'] ?? $monthlyActivity->execution_time,
-                'location_details' => $monthlyTemplate['location_details'] ?? $monthlyActivity->location_details,
-                'required_volunteers' => $monthlyTemplate['required_volunteers'] ?? $monthlyActivity->required_volunteers,
-                'location_type' => $monthlyActivity->location_type ?? 'inside_center',
-                'status' => $monthlyActivity->status ?? 'draft',
-                'created_by' => (int) ($monthlyActivity->created_by ?: $actorId),
-            ]);
-
-            $monthlyActivity->save();
-        }
-    }
-
 
     protected function applyBranchVisibilityScope($query, User $user)
     {
@@ -649,43 +572,16 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.create', compact('departments', 'categories', 'branches'));
     }
 
-    public function store(Request $request, ConflictDetectionService $conflicts, WorkflowNotificationService $workflowNotifications)
+    public function store(
+        Request $request,
+        ConflictDetectionService $conflicts,
+        WorkflowNotificationService $workflowNotifications,
+        AgendaMonthlyPlanSyncService $agendaMonthlyPlanSync
+    )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
 
-        $data = $request->validate([
-            'event_name' => ['required', 'string', 'max:255'],
-            'event_date' => ['required', 'date', 'after_or_equal:'.$this->minimumAgendaEventDate()],
-            'owner_department_id' => ['required', 'exists:departments,id'],
-            'event_category_id' => [
-                'nullable',
-                Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $ownerDepartmentId = (int) $request->input('owner_department_id');
-
-                    if ($ownerDepartmentId > 0) {
-                        $query->where('department_id', $ownerDepartmentId);
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                }),
-            ],
-            'event_type' => ['required', 'in:mandatory,optional'],
-            'plan_type' => ['required', 'in:unified,non_unified'],
-            'is_active' => ['nullable', 'boolean'],
-            'notes' => ['nullable', 'string'],
-            'unified_plan_source' => ['nullable', 'in:monthly_auto'],
-            'branch_participation' => ['array'],
-            'branch_participation.*' => ['in:participant,not_participant,unspecified'],
-            'monthly_plan_template' => ['array', 'required_if:plan_type,unified'],
-            'monthly_plan_template.title' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
-            'monthly_plan_template.proposed_date' => ['nullable', 'date', 'required_if:plan_type,unified'],
-            'monthly_plan_template.description' => ['nullable', 'string', 'required_if:plan_type,unified'],
-            'monthly_plan_template.responsible_party' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
-            'monthly_plan_template.target_group' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
-            'monthly_plan_template.execution_time' => ['nullable', 'string', 'max:255'],
-            'monthly_plan_template.location_details' => ['nullable', 'string', 'max:255'],
-            'monthly_plan_template.required_volunteers' => ['nullable', 'integer', 'min:0'],
-        ]);
+        $data = $request->validate($this->agendaEventValidationRules($request));
 
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
 
@@ -731,7 +627,7 @@ class AgendaEventsController extends Controller
                 ]);
             }
 
-            $this->syncUnifiedAgendaMonthlyActivities(
+            $agendaMonthlyPlanSync->syncUnifiedAgendaMonthlyActivities(
                 $event,
                 $data['branch_participation'] ?? [],
                 (int) $request->user()->id,
@@ -783,44 +679,17 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
     }
 
-    public function update(Request $request, AgendaEvent $agendaEvent, ConflictDetectionService $conflicts)
+    public function update(
+        Request $request,
+        AgendaEvent $agendaEvent,
+        ConflictDetectionService $conflicts,
+        AgendaMonthlyPlanSyncService $agendaMonthlyPlanSync
+    )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
 
-        $data = $request->validate([
-            'event_name' => ['required', 'string', 'max:255'],
-            'event_date' => ['required', 'date', 'after_or_equal:'.$this->minimumAgendaEventDate()],
-            'owner_department_id' => ['required', 'exists:departments,id'],
-            'event_category_id' => [
-                'nullable',
-                Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
-                    $ownerDepartmentId = (int) $request->input('owner_department_id');
-
-                    if ($ownerDepartmentId > 0) {
-                        $query->where('department_id', $ownerDepartmentId);
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                }),
-            ],
-            'event_type' => ['required', 'in:mandatory,optional'],
-            'plan_type' => ['required', 'in:unified,non_unified'],
-            'is_active' => ['nullable', 'boolean'],
-            'notes' => ['nullable', 'string'],
-            'unified_plan_source' => ['nullable', 'in:monthly_auto'],
-            'branch_participation' => ['array'],
-            'branch_participation.*' => ['in:participant,not_participant,unspecified'],
-            'monthly_plan_template' => ['array', 'required_if:plan_type,unified'],
-            'monthly_plan_template.title' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
-            'monthly_plan_template.proposed_date' => ['nullable', 'date', 'required_if:plan_type,unified'],
-            'monthly_plan_template.description' => ['nullable', 'string', 'required_if:plan_type,unified'],
-            'monthly_plan_template.responsible_party' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
-            'monthly_plan_template.target_group' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
-            'monthly_plan_template.execution_time' => ['nullable', 'string', 'max:255'],
-            'monthly_plan_template.location_details' => ['nullable', 'string', 'max:255'],
-            'monthly_plan_template.required_volunteers' => ['nullable', 'integer', 'min:0'],
-        ]);
+        $data = $request->validate($this->agendaEventValidationRules($request));
 
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
 
@@ -869,7 +738,7 @@ class AgendaEventsController extends Controller
                 ]);
             }
 
-            $this->syncUnifiedAgendaMonthlyActivities(
+            $agendaMonthlyPlanSync->syncUnifiedAgendaMonthlyActivities(
                 $agendaEvent,
                 $data['branch_participation'] ?? [],
                 (int) $request->user()->id,
@@ -887,6 +756,49 @@ class AgendaEventsController extends Controller
             ->route('role.relations.agenda.index')
             ->with('status', __('app.roles.relations.agenda.updated', ['event' => $agendaEvent->event_name]))
             ->with('warning', $conflictWarning);
+    }
+
+    protected function agendaEventValidationRules(Request $request): array
+    {
+        return array_merge([
+            'event_name' => ['required', 'string', 'max:255'],
+            'event_date' => ['required', 'date', 'after_or_equal:'.$this->minimumAgendaEventDate()],
+            'owner_department_id' => ['required', 'exists:departments,id'],
+            'event_category_id' => [
+                'nullable',
+                Rule::exists('event_categories', 'id')->where(function ($query) use ($request) {
+                    $ownerDepartmentId = (int) $request->input('owner_department_id');
+
+                    if ($ownerDepartmentId > 0) {
+                        $query->where('department_id', $ownerDepartmentId);
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                }),
+            ],
+            'event_type' => ['required', 'in:mandatory,optional'],
+            'plan_type' => ['required', 'in:unified,non_unified'],
+            'is_active' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string'],
+            'unified_plan_source' => ['nullable', 'in:monthly_auto'],
+            'branch_participation' => ['array'],
+            'branch_participation.*' => ['in:participant,not_participant,unspecified'],
+        ], $this->monthlyPlanTemplateValidationRules());
+    }
+
+    protected function monthlyPlanTemplateValidationRules(): array
+    {
+        return [
+            'monthly_plan_template' => ['array', 'required_if:plan_type,unified'],
+            'monthly_plan_template.title' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.proposed_date' => ['nullable', 'date', 'required_if:plan_type,unified'],
+            'monthly_plan_template.description' => ['nullable', 'string', 'required_if:plan_type,unified'],
+            'monthly_plan_template.responsible_party' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.target_group' => ['nullable', 'string', 'max:255', 'required_if:plan_type,unified'],
+            'monthly_plan_template.execution_time' => ['nullable', 'string', 'max:255'],
+            'monthly_plan_template.location_details' => ['nullable', 'string', 'max:255'],
+            'monthly_plan_template.required_volunteers' => ['nullable', 'integer', 'min:0'],
+        ];
     }
 
     public function destroy(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications, WorkflowNotificationService $workflowNotifications)
