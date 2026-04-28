@@ -1,5 +1,7 @@
 ﻿@php
     $existingMonthlyActivity = $monthlyActivity ?? null;
+    $executionNeedsPayload = $existingMonthlyActivity?->execution_needs_payload ?? [];
+    $payloadValue = fn (string $key, mixed $default = null) => data_get($executionNeedsPayload, $key, $default);
     $formUser = auth()->user();
     $isBranchScopedUser = $formUser
         && method_exists($formUser, 'hasBranchScopedMonthlyVisibility')
@@ -52,8 +54,8 @@
     $partnersCount = max(1, count($oldPartners));
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
-    $selectedZahaTimeOptions = old('programs_zaha_time_options', []);
-    $oldCeremonyItems = old('ceremony_items', []);
+    $selectedZahaTimeOptions = old('programs_zaha_time_options', data_get($executionNeedsPayload, 'programs.zaha_time_options', []));
+    $oldCeremonyItems = old('ceremony_items', data_get($executionNeedsPayload, 'ceremony.items', []));
     if ($oldCeremonyItems === [] && (filled(old('ceremony_item_name')) || filled(old('ceremony_item_description')) || filled(old('ceremony_time_from')) || filled(old('ceremony_time_to')))) {
         $oldCeremonyItems = [[
             'name' => old('ceremony_item_name'),
@@ -63,12 +65,12 @@
         ]];
     }
     $oldCeremonyItems = $oldCeremonyItems === [] ? [['name' => null, 'description' => null, 'time_from' => null, 'time_to' => null]] : $oldCeremonyItems;
-    $programsNeedTrainerChecked = old('programs_need_trainer', '0') === '1';
-    $programsNeedsZahaTimeChecked = old('programs_needs_zaha_time', $selectedZahaTimeOptions === [] ? '0' : '1') === '1';
-    $programsNeedsShowChecked = old('programs_needs_show', (filled(old('programs_show_name')) || filled(old('programs_show_description'))) ? '1' : '0') === '1';
-    $programsNeedsFunChecked = old('programs_needs_fun', filled(old('programs_fun_note')) ? '1' : '0') === '1';
-    $certificatesDetailsChecked = old('needs_certificates_details', (filled(old('certificates_count')) || filled(old('certificates_template')) || filled(old('certificates_for'))) ? '1' : '0') === '1';
-    $thanksLettersDetailsChecked = old('needs_thanks_letters_details', (filled(old('thanks_letters_count')) || filled(old('thanks_letters_template')) || filled(old('thanks_letters_for'))) ? '1' : '0') === '1';
+    $programsNeedTrainerChecked = (bool) old('programs_need_trainer', data_get($executionNeedsPayload, 'programs.need_trainer', false));
+    $programsNeedsZahaTimeChecked = (bool) old('programs_needs_zaha_time', $selectedZahaTimeOptions === [] ? false : true);
+    $programsNeedsShowChecked = (bool) old('programs_needs_show', filled(data_get($executionNeedsPayload, 'programs.show_name')) || filled(data_get($executionNeedsPayload, 'programs.show_description')));
+    $programsNeedsFunChecked = (bool) old('programs_needs_fun', filled(data_get($executionNeedsPayload, 'programs.fun_note')));
+    $certificatesDetailsChecked = (bool) old('needs_certificates_details', filled(data_get($executionNeedsPayload, 'certificates.count')) || filled(data_get($executionNeedsPayload, 'certificates.template')) || filled(data_get($executionNeedsPayload, 'certificates.for')));
+    $thanksLettersDetailsChecked = (bool) old('needs_thanks_letters_details', filled(data_get($executionNeedsPayload, 'thanks_letters.count')) || filled(data_get($executionNeedsPayload, 'thanks_letters.template')) || filled(data_get($executionNeedsPayload, 'thanks_letters.for')));
     $isUnifiedMandatory = $existingMonthlyActivity
         && (bool) $existingMonthlyActivity->is_from_agenda
         && (string) $existingMonthlyActivity->plan_type === 'unified'
@@ -299,49 +301,49 @@
                             <span>الحاجة لوجود أجندة حفل</span>
                             <input type="hidden" name="needs_ceremony_agenda" value="0">
                             <div class="form-check form-switch m-0">
-                                <input class="form-check-input js-needs-ceremony-agenda" type="checkbox" role="switch" name="needs_ceremony_agenda" value="1" {{ old('needs_ceremony_agenda', '0') === '1' ? 'checked' : '' }}>
+                                <input class="form-check-input js-needs-ceremony-agenda" type="checkbox" role="switch" name="needs_ceremony_agenda" value="1" {{ (bool) old('needs_ceremony_agenda', $payloadValue('needs_ceremony_agenda', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لتأمين مواصلات</span>
                             <input type="hidden" name="needs_transport" value="0">
                             <div class="form-check form-switch m-0">
-                                <input class="form-check-input js-needs-transport" type="checkbox" role="switch" name="needs_transport" value="1" {{ old('needs_transport', '0') === '1' ? 'checked' : '' }}>
+                                <input class="form-check-input js-needs-transport" type="checkbox" role="switch" name="needs_transport" value="1" {{ (bool) old('needs_transport', $payloadValue('needs_transport', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لعمال صيانة بالموقع</span>
                             <input type="hidden" name="needs_maintenance_workers" value="0">
                             <div class="form-check form-switch m-0">
-                                <input class="form-check-input js-needs-maintenance" type="checkbox" role="switch" name="needs_maintenance_workers" value="1" {{ old('needs_maintenance_workers', '0') === '1' ? 'checked' : '' }}>
+                                <input class="form-check-input js-needs-maintenance" type="checkbox" role="switch" name="needs_maintenance_workers" value="1" {{ (bool) old('needs_maintenance_workers', $payloadValue('needs_maintenance_workers', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لهدايا ودروع</span>
                             <input type="hidden" name="needs_gifts" value="0">
                             <div class="form-check form-switch m-0">
-                                <input class="form-check-input js-needs-gifts" type="checkbox" role="switch" name="needs_gifts" value="1" {{ old('needs_gifts', '0') === '1' ? 'checked' : '' }}>
+                                <input class="form-check-input js-needs-gifts" type="checkbox" role="switch" name="needs_gifts" value="1" {{ (bool) old('needs_gifts', $payloadValue('needs_gifts', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لمشاركة البرامج</span>
                             <input type="hidden" name="needs_programs_participation" value="0">
                             <div class="form-check form-switch m-0">
-                                <input class="form-check-input js-needs-programs-participation" type="checkbox" role="switch" name="needs_programs_participation" value="1" {{ old('needs_programs_participation', '0') === '1' ? 'checked' : '' }}>
+                                <input class="form-check-input js-needs-programs-participation" type="checkbox" role="switch" name="needs_programs_participation" value="1" {{ (bool) old('needs_programs_participation', $payloadValue('needs_programs_participation', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة لشهادات وكتب شكر</span>
                             <input type="hidden" name="needs_certificates_and_thanks" value="0">
                             <div class="form-check form-switch m-0">
-                                <input class="form-check-input js-needs-certificates" type="checkbox" role="switch" name="needs_certificates_and_thanks" value="1" {{ old('needs_certificates_and_thanks', '0') === '1' ? 'checked' : '' }}>
+                                <input class="form-check-input js-needs-certificates" type="checkbox" role="switch" name="needs_certificates_and_thanks" value="1" {{ (bool) old('needs_certificates_and_thanks', $payloadValue('needs_certificates_and_thanks', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
                         <label class="monthly-activation-option">
                             <span>الحاجة إلى بطاقات دعوة</span>
                             <input type="hidden" name="needs_invitations" value="0">
                             <div class="form-check form-switch m-0">
-                                <input class="form-check-input js-needs-invitations" type="checkbox" role="switch" name="needs_invitations" value="1" {{ old('needs_invitations', '0') === '1' ? 'checked' : '' }}>
+                                <input class="form-check-input js-needs-invitations" type="checkbox" role="switch" name="needs_invitations" value="1" {{ (bool) old('needs_invitations', $payloadValue('needs_invitations', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
                     </div>
@@ -456,19 +458,19 @@
                         <div class="row g-3">
                             <div class="col-12 col-md-3">
                                 <label class="form-label">عدد المركبات</label>
-                                <input class="form-control" type="number" min="1" name="transport_vehicles_count" value="{{ old('transport_vehicles_count') }}">
+                                <input class="form-control" type="number" min="1" name="transport_vehicles_count" value="{{ old('transport_vehicles_count', $payloadValue('transport.vehicles_count')) }}">
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">نوع المركبة</label>
                                 <select class="form-select" name="transport_vehicle_type">
                                     <option value="">اختر</option>
-                                    <option value="bus" {{ old('transport_vehicle_type') === 'bus' ? 'selected' : '' }}>باص</option>
-                                    <option value="car" {{ old('transport_vehicle_type') === 'car' ? 'selected' : '' }}>سيارة</option>
+                                    <option value="bus" {{ old('transport_vehicle_type', $payloadValue('transport.vehicle_type')) === 'bus' ? 'selected' : '' }}>باص</option>
+                                    <option value="car" {{ old('transport_vehicle_type', $payloadValue('transport.vehicle_type')) === 'car' ? 'selected' : '' }}>سيارة</option>
                                 </select>
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">عدد الركاب</label>
-                                <input class="form-control" type="number" min="1" name="transport_passengers_count" value="{{ old('transport_passengers_count') }}">
+                                <input class="form-control" type="number" min="1" name="transport_passengers_count" value="{{ old('transport_passengers_count', $payloadValue('transport.passengers_count')) }}">
                             </div>
                         </div>
                     </div>
@@ -480,11 +482,11 @@
                         <div class="row g-3">
                             <div class="col-12 col-md-3">
                                 <label class="form-label">عدد العمال</label>
-                                <input class="form-control" type="number" min="1" name="maintenance_workers_count" value="{{ old('maintenance_workers_count') }}">
+                                <input class="form-control" type="number" min="1" name="maintenance_workers_count" value="{{ old('maintenance_workers_count', $payloadValue('maintenance.workers_count')) }}">
                             </div>
                             <div class="col-12 col-md-5">
                                 <label class="form-label">نوع الصيانة</label>
-                                <input class="form-control" name="maintenance_type" value="{{ old('maintenance_type') }}">
+                                <input class="form-control" name="maintenance_type" value="{{ old('maintenance_type', $payloadValue('maintenance.type')) }}">
                             </div>
                         </div>
                     </div>
@@ -496,15 +498,15 @@
                         <div class="row g-3">
                             <div class="col-12 col-md-2">
                                 <label class="form-label">عدد الهدايا</label>
-                                <input class="form-control" type="number" min="1" name="gifts_count" value="{{ old('gifts_count') }}">
+                                <input class="form-control" type="number" min="1" name="gifts_count" value="{{ old('gifts_count', $payloadValue('gifts.count')) }}">
                             </div>
                             <div class="col-12 col-md-5">
                                 <label class="form-label">وصف الهدايا</label>
-                                <input class="form-control" name="gifts_description" value="{{ old('gifts_description') }}">
+                                <input class="form-control" name="gifts_description" value="{{ old('gifts_description', $payloadValue('gifts.description')) }}">
                             </div>
                             <div class="col-12 col-md-5">
                                 <label class="form-label">جهة تسليم الهدايا</label>
-                                <input class="form-control" name="gifts_delivery_entity" value="{{ old('gifts_delivery_entity') }}">
+                                <input class="form-control" name="gifts_delivery_entity" value="{{ old('gifts_delivery_entity', $payloadValue('gifts.delivery_entity')) }}">
                             </div>
                         </div>
                     </div>
@@ -551,11 +553,11 @@
                             </div>
                             <div class="col-12 col-md-4 js-programs-trainer-fields">
                                 <label class="form-label">وصف المحاضر/المدرب</label>
-                                <input class="form-control" name="programs_trainer_description" value="{{ old('programs_trainer_description') }}">
+                                <input class="form-control" name="programs_trainer_description" value="{{ old('programs_trainer_description', $payloadValue('programs.trainer_description')) }}">
                             </div>
                             <div class="col-12 col-md-2 js-programs-trainer-fields">
                                 <label class="form-label">العدد</label>
-                                <input class="form-control" type="number" min="1" name="programs_trainer_count" value="{{ old('programs_trainer_count') }}">
+                                <input class="form-control" type="number" min="1" name="programs_trainer_count" value="{{ old('programs_trainer_count', $payloadValue('programs.trainer_count')) }}">
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">خدمات زها تايم؟</label>
@@ -577,7 +579,7 @@
                             </div>
                             <div class="col-12 col-md-6 js-programs-zaha-fields">
                                 <label class="form-label">تفاصيل إضافية لزها تايم</label>
-                                <input class="form-control" name="programs_zaha_time_other" value="{{ old('programs_zaha_time_other') }}">
+                                <input class="form-control" name="programs_zaha_time_other" value="{{ old('programs_zaha_time_other', $payloadValue('programs.zaha_time_other')) }}">
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">العرض الفني؟</label>
@@ -587,11 +589,11 @@
                             </div>
                             <div class="col-12 col-md-4 js-programs-show-fields">
                                 <label class="form-label">اسم العرض الفني</label>
-                                <input class="form-control" name="programs_show_name" value="{{ old('programs_show_name') }}">
+                                <input class="form-control" name="programs_show_name" value="{{ old('programs_show_name', $payloadValue('programs.show_name')) }}">
                             </div>
                             <div class="col-12 col-md-4 js-programs-show-fields">
                                 <label class="form-label">وصف العرض الفني</label>
-                                <input class="form-control" name="programs_show_description" value="{{ old('programs_show_description') }}">
+                                <input class="form-control" name="programs_show_description" value="{{ old('programs_show_description', $payloadValue('programs.show_description')) }}">
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">بحاجة فان؟</label>
@@ -601,7 +603,7 @@
                             </div>
                             <div class="col-12 col-md-4 js-programs-fun-fields">
                                 <label class="form-label">تفاصيل الفان</label>
-                                <input class="form-control" name="programs_fun_note" value="{{ old('programs_fun_note') }}">
+                                <input class="form-control" name="programs_fun_note" value="{{ old('programs_fun_note', $payloadValue('programs.fun_note')) }}">
                             </div>
                         </div>
                     </div>
@@ -619,15 +621,15 @@
                             </div>
                             <div class="col-12 col-md-3 js-certificates-detail-fields">
                                 <label class="form-label">عددها</label>
-                                <input class="form-control" type="number" min="1" name="certificates_count" value="{{ old('certificates_count') }}">
+                                <input class="form-control" type="number" min="1" name="certificates_count" value="{{ old('certificates_count', $payloadValue('certificates.count')) }}">
                             </div>
                             <div class="col-12 col-md-4 js-certificates-detail-fields">
                                 <label class="form-label">صيغة مقترحة</label>
-                                <input class="form-control" name="certificates_template" value="{{ old('certificates_template') }}">
+                                <input class="form-control" name="certificates_template" value="{{ old('certificates_template', $payloadValue('certificates.template')) }}">
                             </div>
                             <div class="col-12 col-md-5 js-certificates-detail-fields">
                                 <label class="form-label">لمن</label>
-                                <input class="form-control" name="certificates_for" value="{{ old('certificates_for') }}">
+                                <input class="form-control" name="certificates_for" value="{{ old('certificates_for', $payloadValue('certificates.for')) }}">
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">إصدار كتب شكر؟</label>
@@ -637,15 +639,15 @@
                             </div>
                             <div class="col-12 col-md-3 js-thanks-letters-detail-fields">
                                 <label class="form-label">عددها</label>
-                                <input class="form-control" type="number" min="1" name="thanks_letters_count" value="{{ old('thanks_letters_count') }}">
+                                <input class="form-control" type="number" min="1" name="thanks_letters_count" value="{{ old('thanks_letters_count', $payloadValue('thanks_letters.count')) }}">
                             </div>
                             <div class="col-12 col-md-4 js-thanks-letters-detail-fields">
                                 <label class="form-label">صيغة مقترحة</label>
-                                <input class="form-control" name="thanks_letters_template" value="{{ old('thanks_letters_template') }}">
+                                <input class="form-control" name="thanks_letters_template" value="{{ old('thanks_letters_template', $payloadValue('thanks_letters.template')) }}">
                             </div>
                             <div class="col-12 col-md-5 js-thanks-letters-detail-fields">
                                 <label class="form-label">لمن</label>
-                                <input class="form-control" name="thanks_letters_for" value="{{ old('thanks_letters_for') }}">
+                                <input class="form-control" name="thanks_letters_for" value="{{ old('thanks_letters_for', $payloadValue('thanks_letters.for')) }}">
                             </div>
                         </div>
                     </div>
@@ -659,21 +661,21 @@
                                 <label class="form-label">نوع الدعوة</label>
                                 <select class="form-select js-invitation-type" name="invitation_type">
                                     <option value="">اختر</option>
-                                    <option value="paper" {{ old('invitation_type') === 'paper' ? 'selected' : '' }}>ورقية</option>
-                                    <option value="electronic" {{ old('invitation_type') === 'electronic' ? 'selected' : '' }}>إلكترونية</option>
+                                    <option value="paper" {{ old('invitation_type', $payloadValue('invitations.type')) === 'paper' ? 'selected' : '' }}>ورقية</option>
+                                    <option value="electronic" {{ old('invitation_type', $payloadValue('invitations.type')) === 'electronic' ? 'selected' : '' }}>إلكترونية</option>
                                 </select>
                             </div>
                             <div class="col-12 col-md-4 js-invitation-paper-fields">
                                 <label class="form-label">الصيغة المقترحة (ورقية)</label>
-                                <input class="form-control" name="invitation_paper_template" value="{{ old('invitation_paper_template') }}">
+                                <input class="form-control" name="invitation_paper_template" value="{{ old('invitation_paper_template', $payloadValue('invitations.paper_template')) }}">
                             </div>
                             <div class="col-12 col-md-2 js-invitation-paper-fields">
                                 <label class="form-label">عدد النسخ</label>
-                                <input class="form-control" type="number" min="1" name="invitation_paper_copies" value="{{ old('invitation_paper_copies') }}">
+                                <input class="form-control" type="number" min="1" name="invitation_paper_copies" value="{{ old('invitation_paper_copies', $payloadValue('invitations.paper_copies')) }}">
                             </div>
                             <div class="col-12 col-md-4 js-invitation-electronic-fields">
                                 <label class="form-label">الصيغة المقترحة (إلكترونية)</label>
-                                <input class="form-control" name="invitation_electronic_template" value="{{ old('invitation_electronic_template') }}">
+                                <input class="form-control" name="invitation_electronic_template" value="{{ old('invitation_electronic_template', $payloadValue('invitations.electronic_template')) }}">
                             </div>
                         </div>
                     </div>

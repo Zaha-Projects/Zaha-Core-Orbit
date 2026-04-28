@@ -26,6 +26,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Services\ConflictDetectionService;
 use App\Services\WorkflowNotificationService;
+use App\Services\NotificationService;
 use App\Services\MonthlyActivityWorkflowService;
 use App\Services\MonthlyActivityLifecycleService;
 use App\Services\DynamicWorkflowService;
@@ -553,7 +554,7 @@ class MonthlyActivitiesController extends Controller
                 $status = in_array((string) ($row['status'] ?? ''), ['secured', 'not_secured'], true)
                     ? (string) $row['status']
                     : null;
-                $reason = trim((string) ($row['reason'] ?? ''));
+                $reason = trim((string) ($row['reason'] ?? ($row['notes'] ?? '')));
                 $score = $row['effectiveness_score'] ?? null;
                 $score = $score === '' || $score === null ? null : (int) $score;
 
@@ -565,6 +566,7 @@ class MonthlyActivitiesController extends Controller
                     'key' => (string) $key,
                     'status' => $status,
                     'reason' => $reason !== '' ? $reason : null,
+                    'notes' => $reason !== '' ? $reason : null,
                     'effectiveness_score' => $score,
                 ];
             })
@@ -573,6 +575,83 @@ class MonthlyActivitiesController extends Controller
             ->all();
 
         $data['execution_needs_followup'] = $normalized === [] ? null : $normalized;
+    }
+
+    protected function filterExecutionNeedsFollowupToEnabled(MonthlyActivity $monthlyActivity, array &$data): void
+    {
+        if (empty($data['execution_needs_followup'])) {
+            return;
+        }
+
+        $enabledKeys = array_keys($monthlyActivity->enabledExecutionNeeds());
+
+        $data['execution_needs_followup'] = collect($data['execution_needs_followup'])
+            ->filter(fn (array $row) => in_array((string) ($row['key'] ?? ''), $enabledKeys, true))
+            ->values()
+            ->all();
+    }
+
+    protected function notifyExecutionNeedOwners(MonthlyActivity $monthlyActivity): void
+    {
+        $definitions = $monthlyActivity->enabledExecutionNeeds();
+        if ($definitions === []) {
+            return;
+        }
+
+        $notifications = app(NotificationService::class);
+        $activity = $monthlyActivity->fresh(['branch', 'supplies']);
+        $url = route('role.relations.activities.show', $activity);
+
+        collect($definitions)
+            ->map(fn (array $definition, string $key) => array_merge($definition, ['key' => $key]))
+            ->groupBy('owner_role')
+            ->each(function (Collection $needs, ?string $role) use ($activity, $notifications, $url) {
+                if (blank($role)) {
+                    return;
+                }
+
+                $users = $this->executionNeedOwnerUsers($role, $activity);
+                if ($users->isEmpty()) {
+                    return;
+                }
+
+                $labels = $needs->pluck('label')->implode('، ');
+
+                $notifications->notifyUsers(
+                    $users,
+                    'monthly_activity_execution_need',
+                    'احتياج تنفيذ على خطة شهرية',
+                    "النشاط \"{$activity->title}\" بحاجة إلى: {$labels}.",
+                    $url,
+                    [
+                        'monthly_activity_id' => $activity->id,
+                        'branch_id' => $activity->branch_id,
+                        'need_keys' => $needs->pluck('key')->values()->all(),
+                        'role' => $role,
+                    ]
+                );
+            });
+    }
+
+    protected function executionNeedOwnerUsers(string $role, MonthlyActivity $monthlyActivity): Collection
+    {
+        $query = User::role($role)
+            ->where('status', 'active')
+            ->when($role === 'branch_coordinator', function ($query) use ($monthlyActivity) {
+                $query->where(function ($branchQuery) use ($monthlyActivity) {
+                    $branchQuery
+                        ->whereHas('assignedBranches', fn ($assignedQuery) => $assignedQuery->whereKey($monthlyActivity->branch_id))
+                        ->orWhere('branch_id', $monthlyActivity->branch_id);
+                });
+            });
+
+        $users = $query->get();
+
+        if ($users->isEmpty() && $role === 'branch_coordinator') {
+            return User::role($role)->where('status', 'active')->get();
+        }
+
+        return $users;
     }
 
     protected function normalizeSuppliesPayload(array &$data): void
@@ -1458,6 +1537,7 @@ class MonthlyActivitiesController extends Controller
             'execution_needs_followup' => ['nullable', 'array'],
             'execution_needs_followup.*.status' => ['nullable', 'in:secured,not_secured'],
             'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
+            'execution_needs_followup.*.notes' => ['nullable', 'string', 'max:1000'],
             'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
             'needs_ceremony_agenda' => ['nullable', 'boolean'],
             'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
@@ -1602,7 +1682,7 @@ class MonthlyActivitiesController extends Controller
             'requires_programs' => (bool) (($data['requires_programs'] ?? false) || in_array('programs', $data['responsible_entities'] ?? [], true)),
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
-            'requires_communications' => (bool) (($data['requires_communications'] ?? false) || in_array('relations', $data['responsible_entities'] ?? [], true)),
+            'requires_communications' => (bool) (($data['requires_communications'] ?? false) || ($data['needs_media_coverage'] ?? false) || in_array('relations', $data['responsible_entities'] ?? [], true)),
             'execution_needs_payload' => $data['execution_needs_payload'] ?? null,
             'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'lock_at' => $this->buildLockAt($data['proposed_date']),
@@ -1668,6 +1748,7 @@ class MonthlyActivitiesController extends Controller
             $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
         }
         $this->logWorkflowAction('created', $monthlyActivity, $request, $monthlyActivity->status);
+        $this->notifyExecutionNeedOwners($monthlyActivity);
 
         if ($this->shouldSubmitFromRequest($request)) {
             $this->submitActivityForApproval($monthlyActivity, $request->user(), $workflowNotifications, $lifecycle, $dynamicWorkflowService, $request);
@@ -1827,10 +1908,12 @@ class MonthlyActivitiesController extends Controller
                 'execution_needs_followup' => ['nullable', 'array'],
                 'execution_needs_followup.*.status' => ['nullable', 'in:secured,not_secured'],
                 'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
+                'execution_needs_followup.*.notes' => ['nullable', 'string', 'max:1000'],
                 'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
             ]);
 
-            $this->normalizePlanningPayload($data);
+            $this->normalizeExecutionNeedsFollowup($data);
+            $this->filterExecutionNeedsFollowupToEnabled($monthlyActivity->fresh(['supplies']), $data);
             $monthlyActivity->update([
                 'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             ]);
@@ -2182,7 +2265,7 @@ class MonthlyActivitiesController extends Controller
             'requires_programs' => (bool) ($data['requires_programs'] ?? false),
             'is_program_related' => (bool) ($data['is_program_related'] ?? false),
             'requires_workshops' => (bool) ($data['requires_workshops'] ?? false),
-            'requires_communications' => (bool) ($data['requires_communications'] ?? false),
+            'requires_communications' => (bool) (($data['requires_communications'] ?? false) || ($data['needs_media_coverage'] ?? false)),
             'execution_needs_payload' => $data['execution_needs_payload'] ?? null,
             'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
             'branch_id' => $data['branch_id'],
@@ -2417,6 +2500,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->syncSponsorsAndPartners($activityToSave, $data);
+        $this->notifyExecutionNeedOwners($activityToSave);
         if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($activityToSave)) {
             $this->syncEvaluationData($activityToSave, $data, $request->user()->id);
         }

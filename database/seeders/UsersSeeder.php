@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Branch;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,16 @@ class UsersSeeder extends Seeder
 {
     public function run(): void
     {
+        $volunteerCoordinatorRole = Role::query()->updateOrCreate(
+            ['name' => 'volunteer_coordinator', 'guard_name' => 'web'],
+            ['name_ar' => 'منسق التطوع', 'name_en' => 'Volunteer Coordinator']
+        );
+        $volunteerCoordinatorRole->syncPermissions([
+            'monthly_activities.view',
+            'monthly_activities.view_other_branches',
+            'branches.view.all',
+        ]);
+
         $branches = $this->resolveBranches();
 
         foreach ($this->userDefinitions() as $userData) {
@@ -35,6 +46,20 @@ class UsersSeeder extends Seeder
             $user->syncRoles([$userData['role']]);
             $user->assignedBranches()->sync($userData['role'] === 'branch_coordinator' ? [$branch->id] : []);
         }
+
+        $volunteerCoordinatorBranch = $branches['amman'];
+        $volunteerCoordinator = User::query()->updateOrCreate(
+            ['email' => 'volunteer-coordinator@zaha.test'],
+            [
+                'name' => 'منسق التطوع - سارة الخطيب',
+                'phone' => '0790001020',
+                'status' => 'active',
+                'branch_id' => $volunteerCoordinatorBranch->id,
+                'password' => Hash::make('password'),
+            ]
+        );
+        $volunteerCoordinator->syncRoles(['volunteer_coordinator']);
+        $volunteerCoordinator->assignedBranches()->sync([]);
 
         return;
 

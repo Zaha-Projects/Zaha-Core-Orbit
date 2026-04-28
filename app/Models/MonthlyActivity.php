@@ -10,6 +10,61 @@ class MonthlyActivity extends Model
 {
     use HasFactory;
 
+    public const EXECUTION_NEED_DEFINITIONS = [
+        'volunteers' => [
+            'label' => 'الحاجة للمتطوعين',
+            'owner_role' => 'volunteer_coordinator',
+        ],
+        'official_correspondence' => [
+            'label' => 'الحاجة للمخاطبة الرسمية',
+            'owner_role' => 'branch_coordinator',
+        ],
+        'media_coverage' => [
+            'label' => 'الحاجة لتغطية إعلامية',
+            'owner_role' => 'communication_head',
+        ],
+        'supplies' => [
+            'label' => 'الحاجة للمستلزمات',
+            'owner_role' => null,
+        ],
+        'official_sponsorship' => [
+            'label' => 'الحاجة لرعاية رسمية',
+            'owner_role' => null,
+        ],
+        'external_partners' => [
+            'label' => 'الحاجة لشركاء خارجيين',
+            'owner_role' => null,
+        ],
+        'ceremony_agenda' => [
+            'label' => 'الحاجة لوجود أجندة حفل',
+            'owner_role' => null,
+        ],
+        'transport' => [
+            'label' => 'الحاجة لتأمين مواصلات',
+            'owner_role' => null,
+        ],
+        'maintenance_workers' => [
+            'label' => 'الحاجة لعمال صيانة بالموقع',
+            'owner_role' => null,
+        ],
+        'gifts_shields' => [
+            'label' => 'الحاجة لهدايا ودروع',
+            'owner_role' => null,
+        ],
+        'programs_participation' => [
+            'label' => 'الحاجة لمشاركة البرامج',
+            'owner_role' => null,
+        ],
+        'certificates_thanks' => [
+            'label' => 'الحاجة لشهادات وكتب شكر',
+            'owner_role' => null,
+        ],
+        'invitations' => [
+            'label' => 'الحاجة إلى بطاقات دعوة',
+            'owner_role' => null,
+        ],
+    ];
+
     protected $fillable = [
         'month',
         'day',
@@ -157,6 +212,36 @@ class MonthlyActivity extends Model
     public function setPlanningAttachmentAttribute($value): void
     {
         $this->attributes['branch_plan_file'] = $value;
+    }
+
+    public static function executionNeedDefinitions(): array
+    {
+        return self::EXECUTION_NEED_DEFINITIONS;
+    }
+
+    public function enabledExecutionNeeds(): array
+    {
+        $payload = $this->execution_needs_payload ?? [];
+
+        $enabled = [
+            'volunteers' => (bool) $this->needs_volunteers,
+            'official_correspondence' => (bool) $this->needs_official_correspondence,
+            'media_coverage' => (bool) $this->needs_media_coverage,
+            'supplies' => $this->relationLoaded('supplies') ? $this->supplies->isNotEmpty() : $this->supplies()->exists(),
+            'official_sponsorship' => (bool) $this->has_sponsor,
+            'external_partners' => (bool) $this->has_partners,
+            'ceremony_agenda' => (bool) data_get($payload, 'needs_ceremony_agenda', false),
+            'transport' => (bool) data_get($payload, 'needs_transport', false),
+            'maintenance_workers' => (bool) data_get($payload, 'needs_maintenance_workers', false),
+            'gifts_shields' => (bool) data_get($payload, 'needs_gifts', false),
+            'programs_participation' => (bool) data_get($payload, 'needs_programs_participation', false),
+            'certificates_thanks' => (bool) data_get($payload, 'needs_certificates_and_thanks', false),
+            'invitations' => (bool) data_get($payload, 'needs_invitations', false),
+        ];
+
+        return collect(self::executionNeedDefinitions())
+            ->filter(fn (array $definition, string $key) => (bool) ($enabled[$key] ?? false))
+            ->all();
     }
 
 

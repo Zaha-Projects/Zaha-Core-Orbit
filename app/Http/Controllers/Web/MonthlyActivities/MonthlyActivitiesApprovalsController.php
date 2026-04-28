@@ -239,9 +239,7 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         if (
             $request->hasFile('official_correspondence_file')
-            && $user->hasRole('relations_manager')
-            && method_exists($user, 'isKheldaUser')
-            && $user->isKheldaUser()
+            && ($user->hasRole('branch_coordinator') || ($user->hasRole('relations_manager') && method_exists($user, 'isKheldaUser') && $user->isKheldaUser()))
             && (bool) $monthlyActivity->needs_official_correspondence
         ) {
             $path = $request->file('official_correspondence_file')->store("events/{$monthlyActivity->id}/official-correspondence", 'public');
@@ -431,9 +429,7 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         $canUploadOfficialCorrespondence = $viewer
             && method_exists($viewer, 'hasRole')
-            && $viewer->hasRole('relations_manager')
-            && method_exists($viewer, 'isKheldaUser')
-            && $viewer->isKheldaUser()
+            && ($viewer->hasRole('branch_coordinator') || ($viewer->hasRole('relations_manager') && method_exists($viewer, 'isKheldaUser') && $viewer->isKheldaUser()))
             && (bool) $activity->needs_official_correspondence;
 
         return [

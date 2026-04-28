@@ -205,6 +205,18 @@
                         <div class="col-12"><strong>سبب الإلغاء:</strong> {{ $monthlyActivity->cancellation_reason ?? '-' }}</div>
                     @endif
 
+                    @php($enabledExecutionNeeds = $monthlyActivity->enabledExecutionNeeds())
+                    <div class="col-12"><strong>احتياجات التنفيذ المفعلة:</strong></div>
+                    <div class="col-12">
+                        <ul class="mb-0">
+                            @forelse($enabledExecutionNeeds as $need)
+                                <li>{{ $need['label'] }}</li>
+                            @empty
+                                <li>-</li>
+                            @endforelse
+                        </ul>
+                    </div>
+
                     <div class="col-12"><hr></div>
                     <div class="col-12 col-md-4"><strong>نوع المكان:</strong> {{ $monthlyActivity->location_type === 'outside_center' ? 'خارج المركز' : 'داخل المركز' }}</div>
                     <div class="col-12 col-md-4"><strong>القاعة الداخلية:</strong> {{ $monthlyActivity->internal_location ?? '-' }}</div>

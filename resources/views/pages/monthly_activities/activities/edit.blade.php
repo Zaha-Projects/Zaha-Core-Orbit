@@ -58,6 +58,9 @@
         'certificates_thanks' => 'الحاجة لشهادات وكتب شكر',
         'invitations' => 'الحاجة إلى بطاقات دعوة',
     ];
+    $executionNeedsCatalog = collect($monthlyActivity->enabledExecutionNeeds())
+        ->map(fn ($definition) => $definition['label'])
+        ->all();
     $executionNeedsFollowup = collect(old('execution_needs_followup', $monthlyActivity->execution_needs_followup ?? []))
         ->keyBy('key');
 @endphp
@@ -498,7 +501,7 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="post_execution_needs_only" value="1">
-                @foreach($executionNeedsCatalog as $needKey => $needLabel)
+                @forelse($executionNeedsCatalog as $needKey => $needLabel)
                     @php
                         $needData = $executionNeedsFollowup->get($needKey, []);
                     @endphp
@@ -517,8 +520,8 @@
                                 <label class="form-label">سبب عدم التأمين (عند الحاجة)</label>
                                 <input
                                     class="form-control"
-                                    name="execution_needs_followup[{{ $needKey }}][reason]"
-                                    value="{{ old("execution_needs_followup.$needKey.reason", $needData['reason'] ?? '') }}"
+                                    name="execution_needs_followup[{{ $needKey }}][notes]"
+                                    value="{{ old("execution_needs_followup.$needKey.notes", $needData['notes'] ?? ($needData['reason'] ?? '')) }}"
                                 >
                             </div>
                             <div class="col-12 col-md-3">
@@ -534,7 +537,11 @@
                             </div>
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <div class="col-12">
+                        <div class="alert alert-light border mb-0">لا توجد احتياجات مفعلة على هذه الفعالية.</div>
+                    </div>
+                @endforelse
 
                 <div class="col-12 d-flex justify-content-end">
                     <button class="btn btn-outline-primary" type="submit">حفظ متابعة الاحتياجات</button>
