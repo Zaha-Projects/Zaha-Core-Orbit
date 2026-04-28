@@ -14,6 +14,20 @@
     const partnerDepartmentEls = Array.from(form.querySelectorAll('.js-partner-department'));
     const toggleRows = Array.from(form.querySelectorAll('.branch-toggle-item'));
     const enableAllBtn = form.querySelector('.js-enable-all-participants');
+    const openUnifiedModalBtn = form.querySelector('.js-open-unified-monthly-plan-modal');
+    const unifiedModalEl = document.getElementById('unifiedMonthlyPlanModal');
+    const confirmUnifiedModalBtn = unifiedModalEl?.querySelector('.js-confirm-unified-monthly-plan');
+    const unifiedModalError = unifiedModalEl?.querySelector('.js-unified-monthly-plan-errors');
+    const unifiedTemplateHiddenFields = Array.from(form.querySelectorAll('[data-monthly-plan-template-field]'));
+    const unifiedTemplateModalFields = Array.from(unifiedModalEl?.querySelectorAll('.js-unified-monthly-plan-input') || []);
+    const requiredTemplateFields = ['title', 'proposed_date', 'responsible_entities', 'target_groups', 'description'];
+
+    let unifiedModalInstance = null;
+    let allowFormSubmitAfterUnifiedConfirm = false;
+
+    if (window.bootstrap?.Modal && unifiedModalEl) {
+        unifiedModalInstance = new window.bootstrap.Modal(unifiedModalEl);
+    }
 
     function filterCategories() {
         if (!categoryEl) return;
@@ -59,6 +73,56 @@
 
         unifiedPlanSourceRows.forEach((row) => {
             row.style.display = isUnified ? '' : 'none';
+        });
+
+        if (!isUnified) {
+            allowFormSubmitAfterUnifiedConfirm = true;
+            unifiedModalError?.classList.add('d-none');
+        }
+    }
+
+    function hiddenFieldByKey(fieldKey) {
+        return unifiedTemplateHiddenFields.find((field) => field.dataset.monthlyPlanTemplateField === fieldKey) || null;
+    }
+
+    function modalFieldByKey(fieldKey) {
+        return unifiedTemplateModalFields.find((field) => field.dataset.targetField === fieldKey) || null;
+    }
+
+    function syncModalFromHiddenTemplateFields() {
+        unifiedTemplateModalFields.forEach((modalField) => {
+            const hiddenField = hiddenFieldByKey(modalField.dataset.targetField || '');
+            if (hiddenField) {
+                modalField.value = hiddenField.value || '';
+            }
+        });
+    }
+
+    function validateUnifiedTemplateFields() {
+        let valid = true;
+
+        requiredTemplateFields.forEach((fieldKey) => {
+            const modalField = modalFieldByKey(fieldKey);
+            const value = String(modalField?.value || '').trim();
+            const fieldValid = value.length > 0;
+
+            modalField?.classList.toggle('is-invalid', !fieldValid);
+            valid = valid && fieldValid;
+        });
+
+        if (unifiedModalError) {
+            unifiedModalError.classList.toggle('d-none', valid);
+        }
+
+        return valid;
+    }
+
+    function syncHiddenTemplateFieldsFromModal() {
+        unifiedTemplateModalFields.forEach((modalField) => {
+            const hiddenField = hiddenFieldByKey(modalField.dataset.targetField || '');
+            if (hiddenField) {
+                hiddenField.value = modalField.value || '';
+            }
         });
     }
 
@@ -118,8 +182,49 @@
         });
     });
 
+    openUnifiedModalBtn?.addEventListener('click', () => {
+        if (planTypeEl?.value !== 'unified' || !unifiedModalInstance) return;
+
+        syncModalFromHiddenTemplateFields();
+        unifiedModalError?.classList.add('d-none');
+        unifiedTemplateModalFields.forEach((field) => field.classList.remove('is-invalid'));
+        unifiedModalInstance.show();
+    });
+
+    confirmUnifiedModalBtn?.addEventListener('click', () => {
+        if (!validateUnifiedTemplateFields()) return;
+
+        syncHiddenTemplateFieldsFromModal();
+        allowFormSubmitAfterUnifiedConfirm = true;
+        unifiedModalInstance?.hide();
+        form.requestSubmit();
+    });
+
+    planTypeEl?.addEventListener('change', () => {
+        allowFormSubmitAfterUnifiedConfirm = planTypeEl.value !== 'unified';
+    });
+
+    form.addEventListener('submit', (event) => {
+        const isUnified = planTypeEl?.value === 'unified';
+        if (!isUnified || allowFormSubmitAfterUnifiedConfirm) {
+            allowFormSubmitAfterUnifiedConfirm = false;
+            return;
+        }
+
+        if (!unifiedModalInstance) {
+            return;
+        }
+
+        event.preventDefault();
+        syncModalFromHiddenTemplateFields();
+        unifiedModalError?.classList.add('d-none');
+        unifiedTemplateModalFields.forEach((field) => field.classList.remove('is-invalid'));
+        unifiedModalInstance.show();
+    });
+
     syncOwnerVsPartners();
     filterCategories();
     togglePlanFile();
     toggleBranchParticipation();
+    allowFormSubmitAfterUnifiedConfirm = planTypeEl?.value !== 'unified';
 })();
