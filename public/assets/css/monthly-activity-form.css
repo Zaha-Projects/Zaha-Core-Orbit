@@ -9,6 +9,14 @@
 .monthly-plan-form-page .monthly-form-section-head--location { background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); border-color:#bae6fd; }
 .monthly-plan-form-page .monthly-form-section-head--time { background: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%); border-color:#a5f3fc; }
 .monthly-plan-form-page .monthly-form-section-head--execution { background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border-color:#fdba74; }
+
+.monthly-plan-form-page .monthly-location-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
 .monthly-plan-form-page .monthly-activation-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

@@ -160,7 +160,10 @@
 
                 <div class="col-12">
                     <div class="monthly-form-section-head monthly-form-section-head--location">
-                        <h2 class="h6 mb-1">المكان</h2>
+                        <h2 class="h6 mb-1 d-flex align-items-center gap-2">
+                            <img src="{{ asset('assets/images/zaha-core-orbit-mark.svg') }}" alt="Zaha" class="monthly-location-logo">
+                            <span>المكان</span>
+                        </h2>
                     </div>
                 </div>
 
