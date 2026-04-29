@@ -135,6 +135,8 @@ class WorkflowNotificationService
 
     public function published(Model $entity, User $actor, string $url, ?WorkflowInstance $instance = null): void
     {
+        $url = $this->publishedUrl($entity, $url);
+
         $this->notifications->notifyUsers(
             $this->activeUsers(),
             'workflow_published',
@@ -151,6 +153,15 @@ class WorkflowNotificationService
                 ['item' => $this->entityTitle($entity), 'actor' => $actor->name]
             )
         );
+    }
+
+    protected function publishedUrl(Model $entity, string $fallbackUrl): string
+    {
+        if ($entity instanceof AgendaEvent) {
+            return route('role.relations.agenda.show', $entity);
+        }
+
+        return $fallbackUrl;
     }
 
     protected function notifyPreviousActorsAndCreator(WorkflowInstance $instance, Model $entity, User $actor, string $decision, string $url): void

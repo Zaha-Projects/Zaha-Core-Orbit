@@ -70,6 +70,13 @@ class AgendaWorkflowPresenter
             ->filter(fn (WorkflowLog $log): bool => (string) $log->action === DynamicWorkflowService::DECISION_CHANGES_REQUESTED)
             ->sortByDesc(fn (WorkflowLog $log) => $log->acted_at?->timestamp ?? 0)
             ->first();
+        $latestMainApproval = $logs
+            ->filter(fn (WorkflowLog $log): bool =>
+                (string) $log->step?->step_type !== 'sub'
+                && (string) $log->action === DynamicWorkflowService::DECISION_APPROVED
+            )
+            ->sortByDesc(fn (WorkflowLog $log) => $log->acted_at?->timestamp ?? 0)
+            ->first();
 
         $presentedSteps = $steps->map(function (WorkflowStep $step) use ($agendaEvent, $instance, $latestDecisionByStepId, $currentStep) {
             $applies = $this->stepAppliesToAgendaEvent($step, $agendaEvent);
@@ -114,6 +121,10 @@ class AgendaWorkflowPresenter
             'total_steps_count' => $presentedSteps->where('applies', true)->count(),
             'submitted_by_name' => $submitLog?->actor?->name,
             'submitted_at' => $submitLog?->acted_at?->format('Y-m-d H:i'),
+            'latest_approval_actor_name' => $latestMainApproval?->actor?->name,
+            'latest_approval_role_label' => $latestMainApproval?->step?->role?->display_name
+                ?: ($latestMainApproval?->step?->permission?->name ? $this->fallbackLabel($latestMainApproval->step->permission->name) : ($latestMainApproval?->step?->role?->name ? $this->fallbackLabel($latestMainApproval->step->role->name) : null)),
+            'latest_approval_at' => $latestMainApproval?->acted_at?->format('Y-m-d H:i'),
             'latest_change_request' => $latestChangeRequest ? [
                 'step_label' => $latestChangeRequest->step?->name_ar ?: ($latestChangeRequest->step?->name_en ?: __('app.common.na')),
                 'role_label' => $latestChangeRequest->step?->role?->display_name

@@ -154,7 +154,7 @@
 
         return {
             title: 'اشتراك وإضافة للخطة',
-            message: 'هل تريدين اشتراك الفرع في هذه الفعالية وإضافتها مباشرة إلى الخطة الشهرية؟',
+            message: 'هل تريد اشتراك الفرع في هذه الفعالية وإضافتها مباشرة إلى الخطة الشهرية؟',
             confirmLabel: 'اشتراك وإضافة للخطة',
             action: { type: 'submit', url: event.quick_subscribe_url },
         };
@@ -316,6 +316,7 @@
                     <span class="calendar-chip-flags">
                         <span class="calendar-chip-flag calendar-chip-flag--event-${event.event_type || 'default'}">${event.event_type_label || event.event_type || ''}</span>
                         <span class="calendar-chip-flag calendar-chip-flag--plan-${event.plan_type || 'default'}">${event.plan_type_label || event.plan_type || ''}</span>
+                        <span class="calendar-chip-flag calendar-chip-flag--active-${event.is_active ? 'yes' : 'no'}">${event.is_active ? 'نشطة' : 'غير نشطة'}</span>
                     </span>
                     <span class="event-status status-${event.status}">${event.status_label ?? event.status}</span>
                     <span class="agenda-event-chip-units">${unitSquares}</span>
@@ -345,6 +346,8 @@
                         <div class="tooltip-row">🏷️ ${event.category ?? '-'}</div>
                         <div class="tooltip-row">📝 ${(event.event_type_label ?? event.event_type ?? '-') + ' / ' + (event.plan_type_label ?? event.plan_type ?? '-')}</div>
                         <div class="tooltip-row">✅ ${event.status_label ?? event.status}</div>
+                        <div class="tooltip-row">حالة التفعيل: ${event.is_active ? 'نشطة' : 'غير نشطة'}</div>
+                        ${event.latest_approval_actor_name ? `<div class="tooltip-row">معتمد عند: ${event.latest_approval_role_label ?? '-'} - ${event.latest_approval_actor_name}</div>` : ''}
                         <div class="tooltip-row"><strong>الفروع المشاركة:</strong></div>
                         <div class="tooltip-list">${branchPills || '<span class="text-muted">-</span>'}</div>
                         <div class="tooltip-row mt-1"><strong>الأقسام الشريكة:</strong></div>

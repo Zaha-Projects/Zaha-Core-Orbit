@@ -117,6 +117,9 @@
             'workflow_state' => $workflowSummary['workflow_state_label'] ?? __('app.common.na'),
             'current_step_label' => $workflowSummary['current_step_label'] ?? __('app.common.na'),
             'current_role_label' => $workflowSummary['current_role_label'] ?? __('app.common.na'),
+            'latest_approval_actor_name' => $workflowSummary['latest_approval_actor_name'] ?? null,
+            'latest_approval_role_label' => $workflowSummary['latest_approval_role_label'] ?? null,
+            'latest_approval_at' => $workflowSummary['latest_approval_at'] ?? null,
             'edit_url' => $canManageAgenda ? route('role.relations.agenda.edit', $event) : null,
             'view_url' => route('role.relations.agenda.show', $event),
             'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
@@ -366,6 +369,12 @@
                                             <div class="approval-sequence-role">{{ __('workflow_ui.common.assignee') }}</div>
                                             <span>{{ $workflowSummary['current_role_label'] ?? __('app.common.na') }}</span>
                                         </div>
+                                        @if(!empty($workflowSummary['latest_approval_actor_name']))
+                                            <div class="approval-sequence-item">
+                                                <div class="approval-sequence-role">معتمد عند</div>
+                                                <span>{{ $workflowSummary['latest_approval_role_label'] ?? __('app.common.na') }} - {{ $workflowSummary['latest_approval_actor_name'] }}</span>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="module-card-footer">

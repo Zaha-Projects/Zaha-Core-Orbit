@@ -286,7 +286,9 @@ class AgendaEventsController extends Controller
             return $query;
         }
 
-        return $query->forBranchAudience($branchIds, (int) $user->id);
+        return $query
+            ->where('status', 'published')
+            ->forBranchAudience($branchIds, (int) $user->id);
     }
 
     protected function applyDraftVisibilityScope($query, ?User $user)
@@ -297,6 +299,45 @@ class AgendaEventsController extends Controller
             if ($user) {
                 $visibilityQuery->orWhere('created_by', $user->id);
             }
+        });
+    }
+
+    protected function applyPublicationVisibilityScope($query, ?User $user): void
+    {
+        if (! $user || $user->hasRole('super_admin')) {
+            return;
+        }
+
+        $roleIds = $user->roles()->pluck('roles.id')->all();
+        $permissionIds = $user->getAllPermissions()->pluck('id')->all();
+
+        $query->where(function ($visibilityQuery) use ($roleIds, $permissionIds) {
+            $visibilityQuery
+                ->where('status', 'published')
+                ->orWhereHas('workflowInstance', function ($instanceQuery) use ($roleIds, $permissionIds) {
+                    $instanceQuery
+                        ->whereIn('status', ['pending', 'in_progress', DynamicWorkflowService::DECISION_CHANGES_REQUESTED])
+                        ->whereHas('currentStep', function ($stepQuery) use ($roleIds, $permissionIds) {
+                            $stepQuery
+                                ->where('step_type', 'main')
+                                ->where(function ($assigneeQuery) use ($roleIds, $permissionIds) {
+                                    if ($roleIds === [] && $permissionIds === []) {
+                                        $assigneeQuery->whereRaw('1 = 0');
+
+                                        return;
+                                    }
+
+                                    if ($roleIds !== []) {
+                                        $assigneeQuery->whereIn('role_id', $roleIds);
+                                    }
+
+                                    if ($permissionIds !== []) {
+                                        $method = $roleIds === [] ? 'whereIn' : 'orWhereIn';
+                                        $assigneeQuery->{$method}('permission_id', $permissionIds);
+                                    }
+                                });
+                        });
+                });
         });
     }
 
@@ -319,7 +360,9 @@ class AgendaEventsController extends Controller
 
     protected function ensureAgendaVisibleToUser(AgendaEvent $agendaEvent, User $user): void
     {
-        if ((string) $agendaEvent->status === 'draft' && (int) $agendaEvent->created_by !== (int) $user->id) {
+        $canSeeBeforePublication = $this->canSeeAgendaBeforePublication($user, $agendaEvent);
+
+        if ((string) $agendaEvent->status !== 'published' && ! $canSeeBeforePublication) {
             abort(403);
         }
 
@@ -329,11 +372,31 @@ class AgendaEventsController extends Controller
             return;
         }
 
-        if ((int) $agendaEvent->created_by === (int) $user->id) {
+        if ($canSeeBeforePublication) {
             return;
         }
 
         abort_unless($agendaEvent->isVisibleToAnyBranch($branchIds), 403);
+    }
+
+    protected function canSeeAgendaBeforePublication(User $user, ?AgendaEvent $agendaEvent = null): bool
+    {
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        if (! $agendaEvent) {
+            return false;
+        }
+
+        $dynamicWorkflowService = app(DynamicWorkflowService::class);
+        $instance = $dynamicWorkflowService->forModel('agenda', $agendaEvent);
+        $currentStep = $instance ? $dynamicWorkflowService->currentStep($instance) : null;
+
+        return $instance
+            && $dynamicWorkflowService->canDecide($instance)
+            && (string) ($currentStep?->step_type ?? '') === 'main'
+            && $dynamicWorkflowService->currentStepForUser($instance, $user) !== null;
     }
 
     protected function agendaStatusOptions(?string $currentStatus = null)
@@ -445,6 +508,7 @@ class AgendaEventsController extends Controller
             ->enterpriseFilter($agendaFilters)
             ->notArchived();
 
+        $this->applyPublicationVisibilityScope($eventsQuery, $request->user());
         $this->applyBranchVisibilityScope($eventsQuery, $request->user());
         $this->applyDraftVisibilityScope($eventsQuery, $request->user());
         $this->applyAgendaPageStatusFilter($eventsQuery, $selectedStatus);

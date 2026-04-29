@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Department;
 use App\Models\MonthlyActivity;
 use App\Models\User;
+use App\Services\WorkflowNotificationService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -211,6 +212,108 @@ class AgendaBranchInteractionTest extends TestCase
             ->get(route('role.relations.agenda.show', $event))
             ->assertOk()
             ->assertSee('Open Optional Event');
+    }
+
+    public function test_branch_user_cannot_see_optional_agenda_event_before_publication(): void
+    {
+        $branch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa']);
+        $creator = User::factory()->create();
+        $user = $this->createBranchUser($branch);
+
+        $event = AgendaEvent::create([
+            'event_date' => '2026-04-22',
+            'month' => 4,
+            'day' => 22,
+            'event_name' => 'Submitted Optional Event',
+            'event_type' => 'optional',
+            'plan_type' => 'non_unified',
+            'status' => 'submitted',
+            'relations_approval_status' => 'pending',
+            'executive_approval_status' => 'pending',
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.index'))
+            ->assertOk()
+            ->assertDontSee('Submitted Optional Event');
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.show', $event))
+            ->assertForbidden();
+    }
+
+    public function test_branch_user_cannot_see_mandatory_agenda_event_before_publication(): void
+    {
+        $branch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
+        $creator = User::factory()->create();
+        $user = $this->createBranchUser($branch);
+
+        $event = AgendaEvent::create([
+            'event_date' => '2026-04-23',
+            'month' => 4,
+            'day' => 23,
+            'event_name' => 'Submitted Mandatory Event',
+            'event_type' => 'mandatory',
+            'plan_type' => 'unified',
+            'status' => 'submitted',
+            'relations_approval_status' => 'pending',
+            'executive_approval_status' => 'pending',
+            'created_by' => $creator->id,
+        ]);
+
+        AgendaParticipation::create([
+            'agenda_event_id' => $event->id,
+            'entity_type' => 'branch',
+            'entity_id' => $branch->id,
+            'participation_status' => 'participant',
+            'updated_by' => $creator->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.index'))
+            ->assertOk()
+            ->assertDontSee('Submitted Mandatory Event');
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.show', $event))
+            ->assertForbidden();
+    }
+
+    public function test_published_agenda_notification_opens_show_page_for_non_workflow_user(): void
+    {
+        $actor = User::factory()->create(['status' => 'active']);
+        $recipient = User::factory()->create(['status' => 'active']);
+
+        $event = AgendaEvent::create([
+            'event_date' => '2026-04-22',
+            'month' => 4,
+            'day' => 22,
+            'event_name' => 'Published Notification Event',
+            'event_type' => 'optional',
+            'plan_type' => 'non_unified',
+            'status' => 'published',
+            'relations_approval_status' => 'approved',
+            'executive_approval_status' => 'approved',
+            'created_by' => $actor->id,
+        ]);
+
+        app(WorkflowNotificationService::class)->published(
+            $event->fresh('creator'),
+            $actor,
+            route('role.relations.approvals.index')
+        );
+
+        $this->assertDatabaseHas('in_app_notifications', [
+            'user_id' => $recipient->id,
+            'type' => 'workflow_published',
+            'action_url' => route('role.relations.agenda.show', $event),
+        ]);
+
+        $this->actingAs($recipient)
+            ->get(route('role.relations.agenda.show', $event))
+            ->assertOk()
+            ->assertSee('Published Notification Event');
     }
 
     public function test_branch_user_cannot_see_mandatory_event_unless_branch_is_selected_as_participant(): void
