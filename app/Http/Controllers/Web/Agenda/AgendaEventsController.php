@@ -280,15 +280,7 @@ class AgendaEventsController extends Controller
 
     protected function applyBranchVisibilityScope($query, User $user)
     {
-        $branchIds = $this->scopedBranchIds($user);
-
-        if ($branchIds === []) {
-            return $query;
-        }
-
-        return $query
-            ->where('status', 'published')
-            ->forBranchAudience($branchIds, (int) $user->id);
+        return $query;
     }
 
     protected function applyDraftVisibilityScope($query, ?User $user)
@@ -365,18 +357,6 @@ class AgendaEventsController extends Controller
         if ((string) $agendaEvent->status !== 'published' && ! $canSeeBeforePublication) {
             abort(403);
         }
-
-        $branchIds = $this->scopedBranchIds($user);
-
-        if ($branchIds === []) {
-            return;
-        }
-
-        if ($canSeeBeforePublication) {
-            return;
-        }
-
-        abort_unless($agendaEvent->isVisibleToAnyBranch($branchIds), 403);
     }
 
     protected function canSeeAgendaBeforePublication(User $user, ?AgendaEvent $agendaEvent = null): bool
@@ -658,7 +638,12 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.create', compact('departments', 'categories', 'branches'));
     }
 
-    public function store(Request $request, ConflictDetectionService $conflicts, WorkflowNotificationService $workflowNotifications)
+    public function store(
+        Request $request,
+        ConflictDetectionService $conflicts,
+        WorkflowNotificationService $workflowNotifications,
+        AgendaWorkflowBridgeService $agendaWorkflowBridgeService
+    )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
 
@@ -709,10 +694,8 @@ class AgendaEventsController extends Controller
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
-        $template = $this->unifiedTemplatePayload($data);
-
         $event = null;
-        DB::transaction(function () use (&$event, $date, $data, $request, $template) {
+        DB::transaction(function () use (&$event, $date, $data, $request, $agendaWorkflowBridgeService) {
             $event = AgendaEvent::create([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
@@ -745,12 +728,6 @@ class AgendaEventsController extends Controller
             ]);
 
             $selectedStatuses = $data['branch_participation'] ?? [];
-            if (($data['plan_type'] ?? null) === 'unified' && ($data['event_type'] ?? null) === 'mandatory') {
-                $allBranchIds = Branch::query()->pluck('id')->all();
-                foreach ($allBranchIds as $branchId) {
-                    $selectedStatuses[(string) $branchId] = 'participant';
-                }
-            }
 
             foreach ($selectedStatuses as $branchId => $status) {
                 AgendaParticipation::create([
@@ -760,12 +737,9 @@ class AgendaEventsController extends Controller
                     'participation_status' => $status,
                     'updated_by' => $request->user()->id,
                 ]);
-
-                if (($data['plan_type'] ?? null) === 'unified' && $status === 'participant') {
-                    $branchUser = User::query()->where('branch_id', (int) $branchId)->first() ?? $request->user();
-                    $this->upsertBranchMonthlyActivityFromAgenda($event, $branchUser, (string) ($template['proposed_date'] ?? $date->toDateString()), $template);
-                }
             }
+
+            $agendaWorkflowBridgeService->syncMandatoryAgendaToMonthlyPlans($event);
         });
         $workflowNotifications->created($event, $request->user(), route('role.relations.agenda.show', $event));
 
@@ -803,7 +777,12 @@ class AgendaEventsController extends Controller
         return view('pages.agenda.events.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
     }
 
-    public function update(Request $request, AgendaEvent $agendaEvent, ConflictDetectionService $conflicts)
+    public function update(
+        Request $request,
+        AgendaEvent $agendaEvent,
+        ConflictDetectionService $conflicts,
+        AgendaWorkflowBridgeService $agendaWorkflowBridgeService
+    )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
@@ -861,8 +840,7 @@ class AgendaEventsController extends Controller
         }
         $agendaPlanFile = null;
 
-        $template = $this->unifiedTemplatePayload($data);
-        DB::transaction(function () use ($agendaEvent, $date, $data, $request, $template) {
+        DB::transaction(function () use ($agendaEvent, $date, $data, $request, $agendaWorkflowBridgeService) {
             $agendaEvent->update([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
@@ -892,12 +870,6 @@ class AgendaEventsController extends Controller
 
             $agendaEvent->participations()->where('entity_type', 'branch')->delete();
             $selectedStatuses = $data['branch_participation'] ?? [];
-            if (($data['plan_type'] ?? null) === 'unified' && ($data['event_type'] ?? null) === 'mandatory') {
-                $allBranchIds = Branch::query()->pluck('id')->all();
-                foreach ($allBranchIds as $branchId) {
-                    $selectedStatuses[(string) $branchId] = 'participant';
-                }
-            }
 
             foreach ($selectedStatuses as $branchId => $status) {
                 AgendaParticipation::create([
@@ -907,12 +879,9 @@ class AgendaEventsController extends Controller
                     'participation_status' => $status,
                     'updated_by' => $request->user()->id,
                 ]);
-
-                if (($data['plan_type'] ?? null) === 'unified' && $status === 'participant') {
-                    $branchUser = User::query()->where('branch_id', (int) $branchId)->first() ?? $request->user();
-                    $this->upsertBranchMonthlyActivityFromAgenda($agendaEvent, $branchUser, (string) ($template['proposed_date'] ?? $date->toDateString()), $template);
-                }
             }
+
+            $agendaWorkflowBridgeService->syncMandatoryAgendaToMonthlyPlans($agendaEvent);
         });
 
         return redirect()

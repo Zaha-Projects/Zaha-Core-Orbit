@@ -27,14 +27,15 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
     {
         $branch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
         $user = User::factory()->create(['branch_id' => $branch->id]);
-        Role::findOrCreate('relations_officer');
-        $user->assignRole('relations_officer');
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $role->givePermissionTo(Permission::findOrCreate('branches.view.own', 'web'));
+        $user->assignRole($role);
 
         $this->assertFalse($user->isKheldaUser());
         $this->assertTrue($user->hasBranchScopedMonthlyVisibility());
     }
 
-    public function test_branch_scoped_user_can_see_assigned_branches_in_monthly_activities_index(): void
+    public function test_branch_scoped_user_sees_only_own_branch_in_default_monthly_activities_index(): void
     {
         $primaryBranch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
         $secondaryBranch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa']);
@@ -42,8 +43,9 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
 
         $role = Role::findOrCreate('branch_coordinator', 'web');
         $viewPermission = Permission::findOrCreate('monthly_activities.view', 'web');
+        $viewOtherBranchesPermission = Permission::findOrCreate('monthly_activities.view_other_branches', 'web');
         $ownBranchPermission = Permission::findOrCreate('branches.view.own', 'web');
-        $role->givePermissionTo([$viewPermission, $ownBranchPermission]);
+        $role->givePermissionTo([$viewPermission, $viewOtherBranchesPermission, $ownBranchPermission]);
 
         $user = User::factory()->create(['branch_id' => $primaryBranch->id]);
         $user->assignRole($role);
@@ -69,7 +71,49 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
             ->get(route('role.relations.activities.index'))
             ->assertOk()
             ->assertSee('Primary branch activity')
-            ->assertSee('Secondary branch activity')
+            ->assertDontSee('Secondary branch activity')
             ->assertDontSee('Other branch activity');
+    }
+
+    public function test_other_branches_scope_shows_approved_other_branch_plans_not_own_branch_plans(): void
+    {
+        $primaryBranch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
+        $secondaryBranch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa']);
+
+        $role = Role::findOrCreate('branch_coordinator', 'web');
+        $viewPermission = Permission::findOrCreate('monthly_activities.view', 'web');
+        $viewOtherBranchesPermission = Permission::findOrCreate('monthly_activities.view_other_branches', 'web');
+        $ownBranchPermission = Permission::findOrCreate('branches.view.own', 'web');
+        $role->givePermissionTo([$viewPermission, $viewOtherBranchesPermission, $ownBranchPermission]);
+
+        $user = User::factory()->create(['branch_id' => $primaryBranch->id]);
+        $user->assignRole($role);
+
+        MonthlyActivity::factory()->create([
+            'title' => 'Own approved plan',
+            'branch_id' => $primaryBranch->id,
+            'status' => 'approved',
+            'executive_approval_status' => 'approved',
+            'lifecycle_status' => 'Approved',
+        ]);
+        MonthlyActivity::factory()->create([
+            'title' => 'Other approved plan',
+            'branch_id' => $secondaryBranch->id,
+            'status' => 'approved',
+            'executive_approval_status' => 'approved',
+            'lifecycle_status' => 'Approved',
+        ]);
+        MonthlyActivity::factory()->create([
+            'title' => 'Other draft plan',
+            'branch_id' => $secondaryBranch->id,
+            'status' => 'draft',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.activities.index', ['scope' => 'all_branches']))
+            ->assertOk()
+            ->assertSee('Other approved plan')
+            ->assertDontSee('Own approved plan')
+            ->assertDontSee('Other draft plan');
     }
 }

@@ -22,6 +22,14 @@ class EnforceBranchIsolation
             return $next($request);
         }
 
+        if ($request->routeIs('role.relations.agenda.*')) {
+            return $next($request);
+        }
+
+        if ($request->input('scope') === 'all_branches' && $user->can('monthly_activities.view_other_branches')) {
+            return $next($request);
+        }
+
         $allowedBranchIds = method_exists($user, 'scopedBranchIds')
             ? $user->scopedBranchIds()
             : (filled($user->branch_id) ? [(int) $user->branch_id] : []);

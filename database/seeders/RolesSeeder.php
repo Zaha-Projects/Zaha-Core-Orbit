@@ -375,14 +375,14 @@ class RolesSeeder extends Seeder
                 'reports.view',
                 'kpi.view',
             ],
-            'finance_officer' => ['reports.view'],
-            'maintenance_officer' => [],
-            'transport_officer' => [],
-            'reports_viewer' => ['reports.view', 'kpi.view'],
+            'finance_officer' => ['agenda.view', 'reports.view'],
+            'maintenance_officer' => ['agenda.view'],
+            'transport_officer' => ['agenda.view'],
+            'reports_viewer' => ['agenda.view', 'reports.view', 'kpi.view'],
             'staff' => ['agenda.view', 'monthly_activities.view'],
-            'movement_manager' => [],
-            'movement_editor' => [],
-            'movement_viewer' => [],
+            'movement_manager' => ['agenda.view'],
+            'movement_editor' => ['agenda.view'],
+            'movement_viewer' => ['agenda.view'],
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AgendaEvent;
+use App\Models\User;
 use App\Models\MonthlyActivity;
 use App\Models\WorkflowInstance;
 use App\Models\WorkflowLog;
@@ -112,7 +113,7 @@ class AgendaWorkflowBridgeService
         );
     }
 
-    protected function syncMandatoryAgendaToMonthlyPlans(AgendaEvent $agendaEvent): void
+    public function syncMandatoryAgendaToMonthlyPlans(AgendaEvent $agendaEvent): void
     {
         if ((string) $agendaEvent->event_type !== 'mandatory') {
             return;
@@ -135,6 +136,10 @@ class AgendaWorkflowBridgeService
             ->all();
 
         foreach ($branchIds as $branchId) {
+            $branchOwnerId = User::query()
+                ->where('branch_id', $branchId)
+                ->value('id');
+
             $monthlyActivity = MonthlyActivity::firstOrNew([
                 'agenda_event_id' => $agendaEvent->id,
                 'branch_id' => $branchId,
@@ -143,6 +148,7 @@ class AgendaWorkflowBridgeService
             $monthlyActivity->fill([
                 'month' => (int) Carbon::parse($resolvedDate)->format('m'),
                 'day' => (int) Carbon::parse($resolvedDate)->format('d'),
+                'activity_date' => $resolvedDate,
                 'title' => $agendaEvent->event_name,
                 'proposed_date' => $resolvedDate,
                 'is_in_agenda' => true,
@@ -155,7 +161,7 @@ class AgendaWorkflowBridgeService
                 'relations_manager_approval_status' => 'approved',
                 'executive_approval_status' => 'approved',
                 'lifecycle_status' => 'Approved',
-                'created_by' => $monthlyActivity->created_by ?: $agendaEvent->created_by,
+                'created_by' => $monthlyActivity->created_by ?: ($branchOwnerId ?: $agendaEvent->created_by),
             ]);
 
             $monthlyActivity->save();

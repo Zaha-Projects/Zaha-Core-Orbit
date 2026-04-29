@@ -41,6 +41,34 @@ class AgendaBranchInteractionTest extends TestCase
         return $user;
     }
 
+    protected function createAgendaManager(): User
+    {
+        $role = Role::findOrCreate('relations_manager', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.create', 'web'),
+            Permission::findOrCreate('agenda.update', 'web'),
+        ]);
+
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        return $user;
+    }
+
+    protected function createBranchCoordinator(Branch $branch): User
+    {
+        $role = Role::findOrCreate('branch_coordinator', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.view', 'web'),
+            Permission::findOrCreate('branches.view.own', 'web'),
+        ]);
+
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->assignRole($role);
+
+        return $user;
+    }
+
     public function test_branch_user_cannot_set_proposed_date_outside_seven_days(): void
     {
         $branch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa']);
@@ -214,6 +242,87 @@ class AgendaBranchInteractionTest extends TestCase
             ->assertSee('Open Optional Event');
     }
 
+    public function test_creating_active_mandatory_agenda_event_immediately_creates_monthly_plans_for_selected_branches(): void
+    {
+        Carbon::setTestNow('2026-04-01 10:00:00');
+
+        $manager = $this->createAgendaManager();
+        $selectedBranch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
+        $otherBranch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa']);
+        $branchUser = User::factory()->create(['branch_id' => $selectedBranch->id]);
+        $owner = Department::query()->create(['name' => 'Relations']);
+
+        $this->actingAs($manager)
+            ->post(route('role.relations.agenda.store'), [
+                'event_name' => 'Mandatory Selected Branch Event',
+                'event_date' => '2026-04-20',
+                'owner_department_id' => $owner->id,
+                'event_type' => 'mandatory',
+                'plan_type' => 'non_unified',
+                'is_active' => 1,
+                'notes' => 'Auto monthly plan',
+                'branch_participation' => [
+                    $selectedBranch->id => 'participant',
+                    $otherBranch->id => 'not_participant',
+                ],
+            ])
+            ->assertRedirect(route('role.relations.agenda.index'));
+
+        $event = AgendaEvent::query()
+            ->where('event_name', 'Mandatory Selected Branch Event')
+            ->firstOrFail();
+
+        $this->assertDatabaseHas('monthly_activities', [
+            'agenda_event_id' => $event->id,
+            'branch_id' => $selectedBranch->id,
+            'title' => 'Mandatory Selected Branch Event',
+            'proposed_date' => '2026-04-20',
+            'activity_date' => '2026-04-20',
+            'is_in_agenda' => true,
+            'is_from_agenda' => true,
+            'participation_status' => 'participant',
+            'status' => 'approved',
+            'created_by' => $branchUser->id,
+        ]);
+
+        $this->assertDatabaseMissing('monthly_activities', [
+            'agenda_event_id' => $event->id,
+            'branch_id' => $otherBranch->id,
+        ]);
+    }
+
+    public function test_creating_optional_agenda_event_does_not_create_monthly_plan_until_branch_participates(): void
+    {
+        Carbon::setTestNow('2026-04-01 10:00:00');
+
+        $manager = $this->createAgendaManager();
+        $selectedBranch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
+        $owner = Department::query()->create(['name' => 'Relations']);
+
+        $this->actingAs($manager)
+            ->post(route('role.relations.agenda.store'), [
+                'event_name' => 'Optional Selected Branch Event',
+                'event_date' => '2026-04-21',
+                'owner_department_id' => $owner->id,
+                'event_type' => 'optional',
+                'plan_type' => 'non_unified',
+                'is_active' => 1,
+                'branch_participation' => [
+                    $selectedBranch->id => 'participant',
+                ],
+            ])
+            ->assertRedirect(route('role.relations.agenda.index'));
+
+        $event = AgendaEvent::query()
+            ->where('event_name', 'Optional Selected Branch Event')
+            ->firstOrFail();
+
+        $this->assertDatabaseMissing('monthly_activities', [
+            'agenda_event_id' => $event->id,
+            'branch_id' => $selectedBranch->id,
+        ]);
+    }
+
     public function test_branch_user_cannot_see_optional_agenda_event_before_publication(): void
     {
         $branch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa']);
@@ -316,7 +425,7 @@ class AgendaBranchInteractionTest extends TestCase
             ->assertSee('Published Notification Event');
     }
 
-    public function test_branch_user_cannot_see_mandatory_event_unless_branch_is_selected_as_participant(): void
+    public function test_branch_user_can_see_published_mandatory_event_even_when_branch_is_not_selected_as_participant(): void
     {
         $selectedBranch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
         $otherBranch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa']);
@@ -361,11 +470,51 @@ class AgendaBranchInteractionTest extends TestCase
         $this->actingAs($otherUser)
             ->get(route('role.relations.agenda.index'))
             ->assertOk()
-            ->assertDontSee('Selected Mandatory Event');
+            ->assertSee('Selected Mandatory Event');
 
         $this->actingAs($otherUser)
             ->get(route('role.relations.agenda.show', $event))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertSee('Selected Mandatory Event');
+    }
+
+    public function test_branch_coordinator_can_see_published_agenda_event_for_any_branch(): void
+    {
+        $coordinatorBranch = Branch::factory()->create(['name' => 'Aqaba Branch', 'city' => 'Aqaba']);
+        $selectedBranch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid']);
+        $creator = User::factory()->create();
+        $coordinator = $this->createBranchCoordinator($coordinatorBranch);
+
+        $event = AgendaEvent::create([
+            'event_date' => '2026-04-25',
+            'month' => 4,
+            'day' => 25,
+            'event_name' => 'Published Agenda For Everyone',
+            'event_type' => 'mandatory',
+            'plan_type' => 'unified',
+            'status' => 'published',
+            'relations_approval_status' => 'approved',
+            'executive_approval_status' => 'approved',
+            'created_by' => $creator->id,
+        ]);
+
+        AgendaParticipation::create([
+            'agenda_event_id' => $event->id,
+            'entity_type' => 'branch',
+            'entity_id' => $selectedBranch->id,
+            'participation_status' => 'participant',
+            'updated_by' => $creator->id,
+        ]);
+
+        $this->actingAs($coordinator)
+            ->get(route('role.relations.agenda.index'))
+            ->assertOk()
+            ->assertSee('Published Agenda For Everyone');
+
+        $this->actingAs($coordinator)
+            ->get(route('role.relations.agenda.show', $event))
+            ->assertOk()
+            ->assertSee('Published Agenda For Everyone');
     }
 
     public function test_inactive_optional_event_is_visible_but_cannot_be_quick_subscribed(): void

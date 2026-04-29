@@ -48,6 +48,11 @@ class MonthlyActivitiesController extends Controller
         return count($branchIds) === 1 ? $branchIds[0] : null;
     }
 
+    protected function ownBranchId(?User $user): ?int
+    {
+        return filled($user?->branch_id) ? (int) $user->branch_id : null;
+    }
+
     /**
      * @return array<int, int>
      */
@@ -110,10 +115,24 @@ class MonthlyActivitiesController extends Controller
 
     protected function applyBranchVisibilityScope($query, ?User $user)
     {
-        $scopedBranchIds = $this->scopedBranchIds($user);
+        if (! $this->shouldScopeToUserBranch($user)) {
+            return $query;
+        }
 
-        if ($scopedBranchIds !== []) {
-            $query->whereIn('branch_id', $scopedBranchIds);
+        $ownBranchId = $this->ownBranchId($user);
+        if ($ownBranchId) {
+            $query->where('branch_id', $ownBranchId);
+        }
+
+        return $query;
+    }
+
+    protected function applyOtherBranchesScope($query, ?User $user)
+    {
+        $ownBranchId = $this->ownBranchId($user);
+
+        if ($ownBranchId) {
+            $query->where('branch_id', '!=', $ownBranchId);
         }
 
         return $query;
@@ -875,6 +894,8 @@ class MonthlyActivitiesController extends Controller
         $this->applyMonthlyPageStatusFilter($activitiesBaseQuery, $selectedStatus);
 
         if ($viewScope === 'all_branches') {
+            $this->applyOtherBranchesScope($activitiesBaseQuery, $user);
+
             $activitiesBaseQuery
                 ->where('status', 'approved')
                 ->where(function ($query) {
@@ -900,8 +921,12 @@ class MonthlyActivitiesController extends Controller
 
         $branches = Branch::query()->orderBy('name');
         $scopedBranchIds = $this->scopedBranchIds($user);
+        $ownBranchId = $this->ownBranchId($user);
         if ($scopedBranchIds !== [] && $viewScope !== 'all_branches') {
-            $branches->whereIn('id', $scopedBranchIds);
+            $branches->where('id', $ownBranchId);
+        }
+        if ($viewScope === 'all_branches' && $ownBranchId) {
+            $branches->where('id', '!=', $ownBranchId);
         }
         $branches = $branches->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
@@ -915,7 +940,7 @@ class MonthlyActivitiesController extends Controller
         ];
         $canFilterBranches = $viewScope === 'all_branches'
             ? $this->canViewOtherBranches($user)
-            : ($scopedBranchIds === [] || count($scopedBranchIds) > 1);
+            : ($scopedBranchIds === []);
 
         $monthlyStatusOptions = $this->monthlyPageStatusOptions();
 
@@ -2646,6 +2671,8 @@ class MonthlyActivitiesController extends Controller
         $this->applyDraftVisibilityScope($query, $request->user());
 
         if ($viewScope === 'all_branches') {
+            $this->applyOtherBranchesScope($query, $request->user());
+
             $query
                 ->where('status', 'approved')
                 ->where(function ($approvalQuery) {
