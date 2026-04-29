@@ -33,6 +33,23 @@
                 @if (($formMethod ?? 'POST') !== 'POST')
                     @method($formMethod)
                 @endif
+                <input type="hidden" name="monthly_template_title" value="{{ old('monthly_template_title') }}">
+                <input type="hidden" name="monthly_template_proposed_date" value="{{ old('monthly_template_proposed_date') }}">
+                <input type="hidden" name="monthly_template_description" value="{{ old('monthly_template_description') }}">
+                <input type="hidden" name="monthly_template_target_group" value="{{ old('monthly_template_target_group') }}">
+                <input type="hidden" name="monthly_template_execution_time" value="{{ old('monthly_template_execution_time') }}">
+                <input type="hidden" name="monthly_template_location_details" value="{{ old('monthly_template_location_details') }}">
+                <input type="hidden" name="monthly_template_required_volunteers" value="{{ old('monthly_template_required_volunteers') }}">
+
+                <div class="col-12">
+                    <div class="agenda-form-section js-unified-template-section d-none">
+                        <div class="agenda-form-section__head">
+                            <h2 class="agenda-form-section__title">قالب الخطة الشهرية الموحدة</h2>
+                            <p class="agenda-form-section__text">عند اختيار خطة موحدة، يجب تعبئة القالب قبل الإرسال.</p>
+                        </div>
+                        <button class="btn btn-outline-primary" type="button" id="openUnifiedTemplateModal">فتح قالب الخطة الموحدة</button>
+                    </div>
+                </div>
 
                 <div class="col-12">
                     <div class="agenda-form-section">
@@ -185,6 +202,33 @@
     </div>
 </div>
 
+<div class="modal fade" id="unifiedTemplateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إدخال قالب الخطة الشهرية الموحدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6"><label class="form-label">عنوان النشاط الشهري *</label><input class="form-control" id="tpl_title"></div>
+                    <div class="col-12 col-md-6"><label class="form-label">التاريخ المقترح *</label><input class="form-control" type="date" id="tpl_proposed_date"></div>
+                    <div class="col-12"><label class="form-label">الوصف *</label><textarea class="form-control" rows="3" id="tpl_description"></textarea></div>
+                    <div class="col-12 col-md-6"><label class="form-label">الفئة المستهدفة *</label><input class="form-control" id="tpl_target_group"></div>
+                    <div class="col-12 col-md-6"><label class="form-label">وقت التنفيذ</label><input class="form-control" id="tpl_execution_time"></div>
+                    <div class="col-12 col-md-6"><label class="form-label">تفاصيل الموقع</label><input class="form-control" id="tpl_location_details"></div>
+                    <div class="col-12 col-md-6"><label class="form-label">عدد المتطوعين المطلوب</label><input class="form-control" type="number" min="0" id="tpl_required_volunteers"></div>
+                </div>
+                <small class="text-danger d-none" id="tpl_required_error">الحقول الإلزامية غير مكتملة.</small>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">إغلاق</button>
+                <button class="btn btn-primary" type="button" id="saveUnifiedTemplate">حفظ القالب</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
@@ -193,4 +237,38 @@
 
 @push('scripts')
     <script src="{{ asset('assets/js/agenda-events-form.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form.agenda-form');
+            if (!form) return;
+            const planType = form.querySelector('.js-plan-type');
+            const unifiedSection = document.querySelector('.js-unified-template-section');
+            const modalEl = document.getElementById('unifiedTemplateModal');
+            const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+            const requiredError = document.getElementById('tpl_required_error');
+            const map = ['title','proposed_date','description','target_group','execution_time','location_details','required_volunteers'];
+            const hidden = (k) => form.querySelector(`input[name="monthly_template_${k}"]`);
+            const field = (k) => document.getElementById(`tpl_${k}`);
+            const syncUnified = () => unifiedSection?.classList.toggle('d-none', planType?.value !== 'unified');
+            syncUnified();
+            planType?.addEventListener('change', syncUnified);
+            map.forEach((k) => { if (field(k) && hidden(k)) field(k).value = hidden(k).value || ''; });
+            document.getElementById('openUnifiedTemplateModal')?.addEventListener('click', () => modal?.show());
+            document.getElementById('saveUnifiedTemplate')?.addEventListener('click', () => {
+                const ok = ['title','proposed_date','description','target_group'].every((k) => (field(k)?.value || '').trim() !== '');
+                requiredError?.classList.toggle('d-none', ok);
+                if (!ok) return;
+                map.forEach((k) => { if (hidden(k)) hidden(k).value = field(k)?.value || ''; });
+                modal?.hide();
+            });
+            form.addEventListener('submit', function (e) {
+                if (planType?.value !== 'unified') return;
+                const ok = ['title','proposed_date','description','target_group'].every((k) => (hidden(k)?.value || '').trim() !== '');
+                if (!ok) {
+                    e.preventDefault();
+                    modal?.show();
+                }
+            });
+        });
+    </script>
 @endpush
