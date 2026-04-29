@@ -6,3 +6,4 @@
 .monthly-calendar-branch { font-size: 12px; color: #6b7280; margin-bottom: 4px; display: block; }
 .monthly-calendar-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
 .monthly-calendar-icons { display: inline-flex; gap: 4px; font-size: 13px; }
+.monthly-calendar-post-action { align-self: flex-start; font-size: 11px; padding: 3px 8px; line-height: 1.4; }

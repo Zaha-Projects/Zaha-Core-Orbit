@@ -41,6 +41,15 @@ use Illuminate\Support\Str;
 
 class MonthlyActivitiesController extends Controller
 {
+    protected const MONTHLY_ACTIVITY_EDIT_ROLES = [
+        'relations_manager',
+        'relations_officer',
+        'branch_relations_manager',
+        'branch_relations_officer',
+        'followup_officer',
+        'super_admin',
+    ];
+
     protected function currentUserBranchId(?User $user): ?int
     {
         $branchIds = $this->scopedBranchIds($user);
@@ -155,6 +164,41 @@ class MonthlyActivitiesController extends Controller
         });
     }
 
+    protected function isVolunteerCoordinatorOnly(?User $user): bool
+    {
+        return $user !== null
+            && $user->hasRole('volunteer_coordinator')
+            && ! $user->hasRole('super_admin');
+    }
+
+    protected function applyVolunteerCoordinatorVisibilityScope($query, ?User $user)
+    {
+        if (! $this->isVolunteerCoordinatorOnly($user)) {
+            return $query;
+        }
+
+        return $query->where(function ($volunteerQuery) {
+            $volunteerQuery
+                ->where('needs_volunteers', true)
+                ->orWhere('required_volunteers', '>', 0)
+                ->orWhere('volunteers_count', '>', 0)
+                ->orWhere('volunteers_required', true);
+        });
+    }
+
+    protected function canCompleteAfterExecution(MonthlyActivity $monthlyActivity, ?User $user): bool
+    {
+        return $user !== null
+            && $this->canUseMonthlyActivityEditRoute($user)
+            && (int) $monthlyActivity->created_by === (int) $user->id;
+    }
+
+    protected function canUseMonthlyActivityEditRoute(?User $user): bool
+    {
+        return $user !== null
+            && $user->hasAnyRole(self::MONTHLY_ACTIVITY_EDIT_ROLES);
+    }
+
     protected function ensureActivityVisibleToUser(MonthlyActivity $monthlyActivity, User $user): void
     {
         if (! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
@@ -164,6 +208,18 @@ class MonthlyActivitiesController extends Controller
         if ((string) $monthlyActivity->status === 'draft' && (int) $monthlyActivity->created_by !== (int) $user->id) {
             abort(403);
         }
+
+        if ($this->isVolunteerCoordinatorOnly($user) && ! $this->activityNeedsVolunteers($monthlyActivity)) {
+            abort(403);
+        }
+    }
+
+    protected function activityNeedsVolunteers(MonthlyActivity $monthlyActivity): bool
+    {
+        return (bool) $monthlyActivity->needs_volunteers
+            || (int) ($monthlyActivity->required_volunteers ?? 0) > 0
+            || (int) ($monthlyActivity->volunteers_count ?? 0) > 0
+            || (bool) $monthlyActivity->volunteers_required;
     }
 
     protected function monthlyLockDays(): int
@@ -891,6 +947,7 @@ class MonthlyActivitiesController extends Controller
             $this->applyBranchVisibilityScope($activitiesBaseQuery, $user);
         }
         $this->applyDraftVisibilityScope($activitiesBaseQuery, $user);
+        $this->applyVolunteerCoordinatorVisibilityScope($activitiesBaseQuery, $user);
         $this->applyMonthlyPageStatusFilter($activitiesBaseQuery, $selectedStatus);
 
         if ($viewScope === 'all_branches') {
@@ -943,6 +1000,7 @@ class MonthlyActivitiesController extends Controller
             : ($scopedBranchIds === []);
 
         $monthlyStatusOptions = $this->monthlyPageStatusOptions();
+        $monthlyActivityEditRoles = self::MONTHLY_ACTIVITY_EDIT_ROLES;
 
         return view('pages.monthly_activities.activities.index', compact(
             'activities',
@@ -953,6 +1011,7 @@ class MonthlyActivitiesController extends Controller
             'viewScope',
             'monthlyStatusOptions',
             'summaryCards',
+            'monthlyActivityEditRoles',
         ));
     }
 
@@ -2669,6 +2728,7 @@ class MonthlyActivitiesController extends Controller
             $this->applyBranchVisibilityScope($query, $request->user());
         }
         $this->applyDraftVisibilityScope($query, $request->user());
+        $this->applyVolunteerCoordinatorVisibilityScope($query, $request->user());
 
         if ($viewScope === 'all_branches') {
             $this->applyOtherBranchesScope($query, $request->user());
@@ -2690,6 +2750,8 @@ class MonthlyActivitiesController extends Controller
             ->map(function (MonthlyActivity $activity) use ($year, $request) {
             $isReadOnlyUnified = $this->isReadOnlyUnifiedAgendaActivity($activity);
             $canBranchPartialEditUnified = $this->canBranchEditUnifiedNonCoreFields($activity, $request->user());
+            $canCompleteAfterExecution = $this->canCompleteAfterExecution($activity, $request->user());
+            $canOpenEdit = $this->canUseMonthlyActivityEditRoute($request->user());
 
             return [
                 'id' => $activity->id,
@@ -2713,9 +2775,13 @@ class MonthlyActivitiesController extends Controller
                 'requires_workshops' => (bool) $activity->requires_workshops,
                 'requires_communications' => (bool) $activity->requires_communications,
                 'edit_url' => route('role.relations.activities.edit', $activity),
+                'post_execution_url' => $canCompleteAfterExecution
+                    ? route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post'])
+                    : null,
+                'can_complete_after_execution' => $canCompleteAfterExecution,
                 'open_url' => ($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                     ? route('role.relations.activities.show', $activity)
-                    : route('role.relations.activities.edit', $activity),
+                    : ($canOpenEdit ? route('role.relations.activities.edit', $activity) : route('role.relations.activities.show', $activity)),
                 'read_only_unified' => $isReadOnlyUnified && ! $canBranchPartialEditUnified,
             ];
             })->values();

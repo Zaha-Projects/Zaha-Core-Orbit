@@ -53,6 +53,7 @@
         ]);
     $branchFilterSelected = $filters['branch_id'] ?? '';
     $authUser = auth()->user();
+    $monthlyActivityEditRoles = $monthlyActivityEditRoles ?? [];
     $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
     $calendarCreateBranchId = filled($branchFilterSelected)
         ? (int) $branchFilterSelected
@@ -210,6 +211,11 @@
                                     && method_exists($viewer, 'hasBranchScopedMonthlyVisibility')
                                     && $viewer->hasBranchScopedMonthlyVisibility()
                                     && ! $viewer->hasRole('super_admin');
+                                $canCompleteAfterExecution = $viewer
+                                    && $viewer->hasAnyRole($monthlyActivityEditRoles)
+                                    && (int) $activity->created_by === (int) $viewer->id;
+                                $canEditMonthlyActivity = $viewer
+                                    && $viewer->hasAnyRole($monthlyActivityEditRoles);
                             @endphp
                             <article class="monthly-activity-card">
                                 <div class="module-card-header">
@@ -237,9 +243,13 @@
                                     @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                                         <span class="badge bg-success-subtle text-success">موحد معتمد — عرض فقط</span>
                                     @else
-                                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a>
-                                        <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a>
-                                        @if (! $isSubmittedOrBeyond && ! $isReadOnlyUnified)
+                                        @if($canEditMonthlyActivity)
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'form' => 1]) }}">{{ __('app.roles.programs.monthly_activities.actions.edit') }}</a>
+                                        @endif
+                                        @if($canCompleteAfterExecution)
+                                            <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a>
+                                        @endif
+                                        @if ($canEditMonthlyActivity && ! $isSubmittedOrBeyond && ! $isReadOnlyUnified)
                                             <form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">
                                                 @csrf
                                                 @method('PATCH')

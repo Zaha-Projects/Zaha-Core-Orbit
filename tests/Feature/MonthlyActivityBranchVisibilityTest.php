@@ -116,4 +116,82 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
             ->assertDontSee('Own approved plan')
             ->assertDontSee('Other draft plan');
     }
+
+    public function test_volunteer_coordinator_sees_only_monthly_activities_that_need_volunteers(): void
+    {
+        $role = Role::findOrCreate('volunteer_coordinator', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        MonthlyActivity::factory()->create([
+            'title' => 'Needs volunteers',
+            'status' => 'submitted',
+            'needs_volunteers' => true,
+            'required_volunteers' => 4,
+        ]);
+        MonthlyActivity::factory()->create([
+            'title' => 'No volunteers needed',
+            'status' => 'submitted',
+            'needs_volunteers' => false,
+            'required_volunteers' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.activities.index'))
+            ->assertOk()
+            ->assertSee('Needs volunteers')
+            ->assertDontSee('No volunteers needed');
+    }
+
+    public function test_volunteer_coordinator_cannot_open_activity_that_does_not_need_volunteers(): void
+    {
+        $role = Role::findOrCreate('volunteer_coordinator', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        $activity = MonthlyActivity::factory()->create([
+            'status' => 'submitted',
+            'needs_volunteers' => false,
+            'required_volunteers' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.activities.show', $activity))
+            ->assertForbidden();
+    }
+
+    public function test_calendar_exposes_post_execution_button_only_to_activity_creator(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $creator = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $creator->assignRole($role);
+        $otherUser->assignRole($role);
+
+        $activity = MonthlyActivity::factory()->create([
+            'title' => 'Creator calendar activity',
+            'status' => 'submitted',
+            'created_by' => $creator->id,
+            'proposed_date' => '2026-03-19',
+            'month' => 3,
+            'day' => 19,
+        ]);
+
+        $this->actingAs($creator)
+            ->getJson(route('role.relations.activities.calendar', ['year' => 2026, 'month' => 3]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'id' => $activity->id,
+                'can_complete_after_execution' => true,
+            ]);
+
+        $this->actingAs($otherUser)
+            ->getJson(route('role.relations.activities.calendar', ['year' => 2026, 'month' => 3]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'id' => $activity->id,
+                'can_complete_after_execution' => false,
+                'post_execution_url' => null,
+            ]);
+    }
 }

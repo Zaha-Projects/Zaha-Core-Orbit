@@ -133,6 +133,14 @@
                     </div>
                 `;
                 cell.appendChild(activityLink);
+
+                if (item.can_complete_after_execution && item.post_execution_url) {
+                    const postExecutionLink = document.createElement('a');
+                    postExecutionLink.href = item.post_execution_url;
+                    postExecutionLink.className = 'btn btn-sm btn-outline-success monthly-calendar-post-action';
+                    postExecutionLink.textContent = 'إكمال بعد التنفيذ';
+                    cell.appendChild(postExecutionLink);
+                }
             });
 
             gridContainer.appendChild(cell);
