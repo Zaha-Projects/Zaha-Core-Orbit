@@ -8,6 +8,16 @@ use Illuminate\Http\Request;
 
 class BranchesController extends Controller
 {
+    private function validatedBranchData(Request $request): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'icon' => ['nullable', 'string', 'max:32'],
+        ]);
+    }
+
     public function index()
     {
         $branches = Branch::orderBy('name')->get();
@@ -17,13 +27,7 @@ class BranchesController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'icon' => ['nullable', 'string', 'max:32'],
-        ]);
+        $data = $this->validatedBranchData($request);
 
         Branch::create($data);
 
@@ -34,13 +38,7 @@ class BranchesController extends Controller
 
     public function update(Request $request, Branch $branch)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'icon' => ['nullable', 'string', 'max:32'],
-        ]);
+        $data = $this->validatedBranchData($request);
 
         $branch->update($data);
 

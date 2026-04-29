@@ -48,11 +48,7 @@
                             @enderror
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label">اللون</label>
-                            <input class="form-control form-control-color" type="color" name="color_hex" value="{{ old('color_hex', '#2563EB') }}">
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label">الأيقونة</label>
+                            <label class="form-label">رمز الفرع</label>
                             <input class="form-control" name="icon" value="{{ old('icon', '📍') }}" maxlength="32">
                         </div>
                         <div class="col-12 d-flex justify-content-end">
@@ -73,7 +69,7 @@
                                 <tr>
                                     <th>{{ __('app.roles.super_admin.branches.table.name') }}</th>
                                     <th>{{ __('app.roles.super_admin.branches.table.city') }}</th>
-                                    <th>اللون/الأيقونة</th>
+                                    <th>رمز الفرع</th>
                                     <th>{{ __('app.roles.super_admin.branches.table.address') }}</th>
                                     <th class="text-end">{{ __('app.roles.super_admin.branches.table.actions') }}</th>
                                 </tr>
@@ -83,7 +79,7 @@
                                     <tr>
                                         <td>{{ $branch->name }}</td>
                                         <td>{{ $branch->city ?? __('app.roles.super_admin.branches.table.unassigned') }}</td>
-                                        <td><span>{{ $branch->icon ?? '📍' }}</span> <span class="d-inline-block rounded-circle align-middle" style="width:12px;height:12px;background:{{ $branch->color_hex ?? '#2563EB' }}"></span></td>
+                                        <td><span class="fs-5">{{ $branch->icon ?? '📍' }}</span></td>
                                         <td>{{ $branch->address ?? __('app.roles.super_admin.branches.table.unassigned') }}</td>
                                         <td class="text-end">
                                             <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-branch-{{ $branch->id }}">
@@ -116,11 +112,7 @@
                                                     <input class="form-control" name="address" value="{{ $branch->address }}">
                                                 </div>
                                                 <div class="col-12 col-md-6">
-                                                    <label class="form-label">اللون</label>
-                                                    <input class="form-control form-control-color" type="color" name="color_hex" value="{{ $branch->color_hex ?? '#2563EB' }}">
-                                                </div>
-                                                <div class="col-12 col-md-6">
-                                                    <label class="form-label">الأيقونة</label>
+                                                    <label class="form-label">رمز الفرع</label>
                                                     <input class="form-control" name="icon" value="{{ $branch->icon ?? '📍' }}" maxlength="32">
                                                 </div>
                                                 <div class="col-12 d-flex justify-content-end">

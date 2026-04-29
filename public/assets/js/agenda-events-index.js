@@ -215,12 +215,18 @@
                 </span>
             `;
         }).join('');
+        const renderBranchItems = (entries) => Array.from(entries.entries()).map(([id, branch]) => `
+            <span class="legend-item legend-item--branch">
+                <span class="legend-emoji">${iconForEntity(branch, id)}</span>
+                <span>${branch.name}</span>
+            </span>
+        `).join('');
 
         legendTopContainer.innerHTML = `
             ${renderItems(departments, '🏢 ', 'legend-badge--square')}
             ${renderItems(units, '🧩 ', 'legend-badge--square')}
         `;
-        legendBottomContainer.innerHTML = `${renderItems(branches, '🏳️ ', 'legend-badge--circle')}`;
+        legendBottomContainer.innerHTML = renderBranchItems(branches);
     }
 
     function renderWeekdays() {
@@ -291,8 +297,8 @@
                     eventLink.href = event.view_url;
                 }
                 eventLink.className = `agenda-event-chip status-${event.status}`;
-                const branchDots = (event.participant_branches ?? []).slice(0, 5).map((branch) => (
-                    `<span class="agenda-event-chip-dot" style="background:${softenColor(colorForEntity(branch))}" title="${branch.name}"></span>`
+                const branchIcons = (event.participant_branches ?? []).slice(0, 5).map((branch) => (
+                    `<span class="agenda-event-chip-emoji" title="${branch.name}">${iconForEntity(branch)}</span>`
                 )).join('');
                 const unitSquares = [
                     ...(event.department && event.department !== '-' ? [{
@@ -313,7 +319,7 @@
                     </span>
                     <span class="event-status status-${event.status}">${event.status_label ?? event.status}</span>
                     <span class="agenda-event-chip-units">${unitSquares}</span>
-                    <span class="agenda-event-chip-branches">${branchDots}</span>
+                    <span class="agenda-event-chip-branches">${branchIcons}</span>
                 `;
 
                 if (canBranchInteract && event.can_quick_subscribe) {
@@ -326,7 +332,7 @@
                 eventLink.addEventListener('mouseenter', (evt) => {
                     const tooltip = ensureTooltip();
                     const branchPills = (event.participant_branches ?? []).map((branch) => (
-                        `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span class="legend-badge legend-badge--circle" style="background:${softenColor(colorForEntity(branch))}"></span><span>${branch.name}</span></span>`
+                        `<span class="tooltip-pill"><span>${iconForEntity(branch)}</span><span>${branch.name}</span></span>`
                     )).join('');
                     const unitPills = (event.participant_units ?? []).map((unit) => (
                         `<span class="tooltip-pill"><span>${iconForEntity(unit)}</span><span class="legend-badge legend-badge--square" style="background:${softenColor(colorForEntity(unit))}"></span><span>${unit.name}</span></span>`

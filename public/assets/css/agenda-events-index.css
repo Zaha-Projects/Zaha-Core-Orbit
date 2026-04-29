@@ -7,6 +7,8 @@
 .agenda-calendar-legend--top { background: #f8fbfd; }
 .agenda-calendar-legend--bottom { background: #fcfaf7; margin-top: 1rem; }
 .legend-item { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; color: #334155; padding: .4rem .7rem; border-radius: 999px; background: rgba(255,255,255,.7); }
+.legend-item--branch { gap: .4rem; }
+.legend-emoji { font-size: 1.05rem; line-height: 1; }
 .legend-badge { width: 1rem; height: 1rem; display: inline-block; border: 1px solid rgba(0,0,0,.12); }
 .legend-badge--square { border-radius: .2rem; }
 .legend-badge--circle { border-radius: 999px; }
@@ -14,6 +16,7 @@
 .agenda-event-chip-branches { display: flex; align-items: center; gap: .2rem; margin-top: .25rem; }
 .agenda-event-chip-units { display: flex; align-items: center; gap: .2rem; margin-top: .2rem; }
 .agenda-event-chip-dot { width: .5rem; height: .5rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
+.agenda-event-chip-emoji { display: inline-flex; align-items: center; justify-content: center; width: 1rem; height: 1rem; font-size: .82rem; line-height: 1; }
 .agenda-event-chip-square { width: .52rem; height: .52rem; border-radius: .12rem; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
 .agenda-event-tooltip {
     position: fixed; z-index: 1080; pointer-events: none; min-width: 230px; max-width: 320px;

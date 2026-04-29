@@ -51,7 +51,6 @@
         ->mapWithKeys(fn ($branch) => [
             $branch->id => [
                 'name' => $branch->name,
-                'color_hex' => $branch->color_hex,
                 'icon' => $branch->icon,
             ],
         ]);
@@ -84,7 +83,6 @@
                 return [
                     'id' => (int) $participation->entity_id,
                     'name' => $branchesById[$participation->entity_id]['name'] ?? ('#'.$participation->entity_id),
-                    'color_hex' => $branchesById[$participation->entity_id]['color_hex'] ?? null,
                     'icon' => $branchesById[$participation->entity_id]['icon'] ?? null,
                 ];
             })
