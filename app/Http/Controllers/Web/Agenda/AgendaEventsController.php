@@ -222,11 +222,18 @@ class AgendaEventsController extends Controller
     protected function upsertBranchMonthlyActivityFromAgenda(
         AgendaEvent $agendaEvent,
         User $branchActor,
-        string $proposedDate
+        string $proposedDate,
+        array $template = []
     ): MonthlyActivity {
         // هذه هي نقطة الربط الموحدة بين فعالية الأجندة وسجل الخطة الشهرية للفرع.
         $agendaDate = $this->resolveAgendaEventDate($agendaEvent);
         $isUnifiedPlan = (string) ($agendaEvent->plan_type ?? 'non_unified') === 'unified';
+
+        $templateTitle = trim((string) ($template['title'] ?? ''));
+        $templateDescription = trim((string) ($template['description'] ?? ''));
+        $templateExecutionTime = trim((string) ($template['execution_time'] ?? ''));
+        $templateLocationDetails = trim((string) ($template['location_details'] ?? ''));
+        $templateRequiredVolunteers = $template['required_volunteers'] ?? null;
 
         $monthlyActivity = MonthlyActivity::firstOrNew([
             'agenda_event_id' => $agendaEvent->id,
@@ -236,7 +243,7 @@ class AgendaEventsController extends Controller
         $monthlyActivity->fill([
             'month' => (int) Carbon::parse($agendaDate)->format('m'),
             'day' => (int) Carbon::parse($agendaDate)->format('d'),
-            'title' => $agendaEvent->event_name,
+            'title' => $templateTitle !== '' ? $templateTitle : $agendaEvent->event_name,
             'proposed_date' => $isUnifiedPlan
                 ? (optional($monthlyActivity->proposed_date)->toDateString() ?: $proposedDate)
                 : $proposedDate,
@@ -244,8 +251,11 @@ class AgendaEventsController extends Controller
             'is_from_agenda' => true,
             'participation_status' => 'participant',
             'plan_type' => $agendaEvent->plan_type ?? 'non_unified',
-            'description' => $agendaEvent->notes,
+            'description' => $templateDescription !== '' ? $templateDescription : $agendaEvent->notes,
             'location_type' => $monthlyActivity->location_type ?? 'inside_center',
+            'location_details' => $templateLocationDetails !== '' ? $templateLocationDetails : $monthlyActivity->location_details,
+            'execution_time' => $templateExecutionTime !== '' ? $templateExecutionTime : $monthlyActivity->execution_time,
+            'required_volunteers' => is_numeric($templateRequiredVolunteers) ? (int) $templateRequiredVolunteers : $monthlyActivity->required_volunteers,
             'status' => $monthlyActivity->status ?? 'draft',
             'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
         ]);
@@ -253,6 +263,18 @@ class AgendaEventsController extends Controller
         $monthlyActivity->save();
 
         return $monthlyActivity;
+    }
+
+    protected function unifiedTemplatePayload(array $data): array
+    {
+        return [
+            'title' => $data['monthly_template_title'] ?? null,
+            'proposed_date' => $data['monthly_template_proposed_date'] ?? null,
+            'description' => $data['monthly_template_description'] ?? null,
+            'execution_time' => $data['monthly_template_execution_time'] ?? null,
+            'location_details' => $data['monthly_template_location_details'] ?? null,
+            'required_volunteers' => $data['monthly_template_required_volunteers'] ?? null,
+        ];
     }
 
 
@@ -597,18 +619,37 @@ class AgendaEventsController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
             'unified_plan_source' => ['nullable', 'in:monthly_auto'],
+            'monthly_template_title' => ['nullable', 'string', 'max:255'],
+            'monthly_template_proposed_date' => ['nullable', 'date'],
+            'monthly_template_description' => ['nullable', 'string', 'max:2000'],
+            'monthly_template_target_group' => ['nullable', 'string', 'max:255'],
+            'monthly_template_execution_time' => ['nullable', 'string', 'max:255'],
+            'monthly_template_location_details' => ['nullable', 'string', 'max:255'],
+            'monthly_template_required_volunteers' => ['nullable', 'integer', 'min:0'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
+        if (($data['plan_type'] ?? null) === 'unified') {
+            validator($data, [
+                'monthly_template_title' => ['required', 'string', 'max:255'],
+                'monthly_template_proposed_date' => ['required', 'date'],
+                'monthly_template_description' => ['required', 'string', 'max:2000'],
+                'monthly_template_target_group' => ['required', 'string', 'max:255'],
+            ])->validate();
+        }
 
         $date = Carbon::parse($data['event_date']);
 
         $conflictNames = $conflicts->findAgendaConflicts($date->toDateString(), array_keys($data['branch_participation'] ?? []));
         $conflictWarning = empty($conflictNames) ? null : __('Potential conflict with: :events', ['events' => implode(', ', $conflictNames)]);
 
-        $event = AgendaEvent::create([
+        $template = $this->unifiedTemplatePayload($data);
+
+        $event = null;
+        DB::transaction(function () use (&$event, $date, $data, $request, $template) {
+            $event = AgendaEvent::create([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
             'event_date' => $date->toDateString(),
@@ -630,24 +671,38 @@ class AgendaEventsController extends Controller
             'notes' => $data['notes'] ?? null,
             'agenda_plan_file' => null,
             'version' => 1,
-        ]);
-
-        $this->clearPartnerDepartments($event);
-        Log::info('agenda_event.created', [
-            'agenda_event_id' => $event->id,
-            'owner_department_id' => $event->owner_department_id,
-            'created_by' => $request->user()->id,
-        ]);
-
-        foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
-            AgendaParticipation::create([
-                'agenda_event_id' => $event->id,
-                'entity_type' => 'branch',
-                'entity_id' => $branchId,
-                'participation_status' => $status,
-                'updated_by' => $request->user()->id,
             ]);
-        }
+
+            $this->clearPartnerDepartments($event);
+            Log::info('agenda_event.created', [
+                'agenda_event_id' => $event->id,
+                'owner_department_id' => $event->owner_department_id,
+                'created_by' => $request->user()->id,
+            ]);
+
+            $selectedStatuses = $data['branch_participation'] ?? [];
+            if (($data['plan_type'] ?? null) === 'unified' && ($data['event_type'] ?? null) === 'mandatory') {
+                $allBranchIds = Branch::query()->pluck('id')->all();
+                foreach ($allBranchIds as $branchId) {
+                    $selectedStatuses[(string) $branchId] = 'participant';
+                }
+            }
+
+            foreach ($selectedStatuses as $branchId => $status) {
+                AgendaParticipation::create([
+                    'agenda_event_id' => $event->id,
+                    'entity_type' => 'branch',
+                    'entity_id' => $branchId,
+                    'participation_status' => $status,
+                    'updated_by' => $request->user()->id,
+                ]);
+
+                if (($data['plan_type'] ?? null) === 'unified' && $status === 'participant') {
+                    $branchUser = User::query()->where('branch_id', (int) $branchId)->first() ?? $request->user();
+                    $this->upsertBranchMonthlyActivityFromAgenda($event, $branchUser, (string) ($template['proposed_date'] ?? $date->toDateString()), $template);
+                }
+            }
+        });
         $workflowNotifications->created($event, $request->user(), route('role.relations.agenda.show', $event));
 
         return redirect()
@@ -710,11 +765,26 @@ class AgendaEventsController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
             'unified_plan_source' => ['nullable', 'in:monthly_auto'],
+            'monthly_template_title' => ['nullable', 'string', 'max:255'],
+            'monthly_template_proposed_date' => ['nullable', 'date'],
+            'monthly_template_description' => ['nullable', 'string', 'max:2000'],
+            'monthly_template_target_group' => ['nullable', 'string', 'max:255'],
+            'monthly_template_execution_time' => ['nullable', 'string', 'max:255'],
+            'monthly_template_location_details' => ['nullable', 'string', 'max:255'],
+            'monthly_template_required_volunteers' => ['nullable', 'integer', 'min:0'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
 
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
+        if (($data['plan_type'] ?? null) === 'unified') {
+            validator($data, [
+                'monthly_template_title' => ['required', 'string', 'max:255'],
+                'monthly_template_proposed_date' => ['required', 'date'],
+                'monthly_template_description' => ['required', 'string', 'max:2000'],
+                'monthly_template_target_group' => ['required', 'string', 'max:255'],
+            ])->validate();
+        }
 
         $date = Carbon::parse($data['event_date']);
 
@@ -727,7 +797,9 @@ class AgendaEventsController extends Controller
         }
         $agendaPlanFile = null;
 
-        $agendaEvent->update([
+        $template = $this->unifiedTemplatePayload($data);
+        DB::transaction(function () use ($agendaEvent, $date, $data, $request, $template) {
+            $agendaEvent->update([
             'month' => (int) $date->format('m'),
             'day' => (int) $date->format('d'),
             'event_date' => $date->toDateString(),
@@ -745,7 +817,7 @@ class AgendaEventsController extends Controller
             'notes' => $data['notes'] ?? null,
             'agenda_plan_file' => $agendaPlanFile,
             'version' => (int) ($agendaEvent->version ?? 1) + 1,
-        ]);
+            ]);
 
         $this->clearPartnerDepartments($agendaEvent);
         Log::info('agenda_event.updated', [
@@ -754,16 +826,30 @@ class AgendaEventsController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        $agendaEvent->participations()->where('entity_type', 'branch')->delete();
-        foreach (($data['branch_participation'] ?? []) as $branchId => $status) {
-            AgendaParticipation::create([
-                'agenda_event_id' => $agendaEvent->id,
-                'entity_type' => 'branch',
-                'entity_id' => $branchId,
-                'participation_status' => $status,
-                'updated_by' => $request->user()->id,
-            ]);
-        }
+            $agendaEvent->participations()->where('entity_type', 'branch')->delete();
+            $selectedStatuses = $data['branch_participation'] ?? [];
+            if (($data['plan_type'] ?? null) === 'unified' && ($data['event_type'] ?? null) === 'mandatory') {
+                $allBranchIds = Branch::query()->pluck('id')->all();
+                foreach ($allBranchIds as $branchId) {
+                    $selectedStatuses[(string) $branchId] = 'participant';
+                }
+            }
+
+            foreach ($selectedStatuses as $branchId => $status) {
+                AgendaParticipation::create([
+                    'agenda_event_id' => $agendaEvent->id,
+                    'entity_type' => 'branch',
+                    'entity_id' => $branchId,
+                    'participation_status' => $status,
+                    'updated_by' => $request->user()->id,
+                ]);
+
+                if (($data['plan_type'] ?? null) === 'unified' && $status === 'participant') {
+                    $branchUser = User::query()->where('branch_id', (int) $branchId)->first() ?? $request->user();
+                    $this->upsertBranchMonthlyActivityFromAgenda($agendaEvent, $branchUser, (string) ($template['proposed_date'] ?? $date->toDateString()), $template);
+                }
+            }
+        });
 
         return redirect()
             ->route('role.relations.agenda.index')
