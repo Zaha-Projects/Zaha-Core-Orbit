@@ -201,6 +201,11 @@
                     <input class="form-control" name="external_liaison_phone" value="{{ old('external_liaison_phone', $existingMonthlyActivity?->external_liaison_phone) }}">
                 </div>
 
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">العنوان التفصيلي</label>
+                    <input class="form-control" name="outside_address" value="{{ old('outside_address', $existingMonthlyActivity?->outside_address) }}">
+                </div>
+
                 <div class="col-12 mt-2">
                     <div class="monthly-form-section-head monthly-form-section-head--time">
                         <h2 class="h6 mb-1">الوقت</h2>
@@ -217,10 +222,6 @@
                     <input class="form-control" type="time" name="time_to" value="{{ old('time_to', optional($existingMonthlyActivity?->time_to)->format('H:i')) }}">
                 </div>
 
-                <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">العنوان التفصيلي</label>
-                    <input class="form-control" name="outside_address" value="{{ old('outside_address', $existingMonthlyActivity?->outside_address) }}">
-                </div>
 
                 <div class="col-12">
                     <label class="form-label">الوصف التفصيلي</label>
@@ -393,7 +394,12 @@
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الجنس</label>
-                                <input class="form-control @error('volunteer_gender') is-invalid @enderror" name="volunteer_gender" value="{{ old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) }}">
+                                <select class="form-select @error('volunteer_gender') is-invalid @enderror" name="volunteer_gender">
+                                    <option value="">اختر الجنس</option>
+                                    <option value="male" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'male')>ذكر</option>
+                                    <option value="female" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'female')>أنثى</option>
+                                    <option value="both" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'both')>كلاهما</option>
+                                </select>
                                 @error('volunteer_gender')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-3">
