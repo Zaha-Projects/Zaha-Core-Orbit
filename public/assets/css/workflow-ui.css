@@ -232,6 +232,13 @@
   color: #147a50;
 }
 
+.workflow-ui .wf-status-published,
+.workflow-ui .wf-status-relations_approved {
+  background: #eafbf2;
+  border-color: #a9dfc3;
+  color: #0f6b43;
+}
+
 .workflow-ui .wf-status-rejected {
   background: #fff1f1;
   border-color: #f4c4c4;
@@ -247,14 +254,14 @@
 
 .workflow-ui .wf-status-in_progress,
 .workflow-ui .wf-status-current {
-  background: #edf4ff;
-  border-color: #c9dcff;
-  color: #1f4ba6;
+  background: #eef5ff;
+  border-color: #bdd4ff;
+  color: #1d4ed8;
 }
 
 .workflow-ui .wf-status-submitted {
-  background: #eefaf7;
-  border-color: #cfece2;
+  background: #e9fbf8;
+  border-color: #aee6dc;
   color: #0f766e;
 }
 
@@ -262,7 +269,7 @@
 .workflow-ui .wf-status-pending,
 .workflow-ui .wf-status-default {
   background: #f8fafc;
-  border-color: #dbe4ef;
+  border-color: #d9e2ee;
   color: #475569;
 }
 
@@ -449,6 +456,109 @@
   cursor: pointer;
   color: var(--wf-primary);
   font-weight: 800;
+}
+
+.workflow-ui .wf-approval-board {
+  align-items: stretch;
+}
+
+.workflow-ui .wf-state-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workflow-ui .wf-state-card,
+.workflow-ui .wf-side-note-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e3ebf6;
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, .035);
+}
+
+.workflow-ui .wf-state-card::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 5px;
+  background: #94a3b8;
+}
+
+.workflow-ui .wf-state-card.is-current {
+  border-color: #9fc1ff;
+  box-shadow: 0 12px 26px rgba(31, 75, 166, .1);
+}
+
+.workflow-ui .wf-state-card--approved,
+.workflow-ui .wf-state-card--completed {
+  background: linear-gradient(180deg, #f2fff8 0%, #eafbf2 100%);
+  border-color: #bce8d1;
+}
+
+.workflow-ui .wf-state-card--approved::before,
+.workflow-ui .wf-state-card--completed::before {
+  background: #16a34a;
+}
+
+.workflow-ui .wf-state-card--submitted {
+  background: linear-gradient(180deg, #f0fffb 0%, #e7faf5 100%);
+  border-color: #b8eadc;
+}
+
+.workflow-ui .wf-state-card--submitted::before {
+  background: #0f9488;
+}
+
+.workflow-ui .wf-state-card--current,
+.workflow-ui .wf-state-card--in_progress {
+  background: linear-gradient(180deg, #f4f8ff 0%, #edf4ff 100%);
+  border-color: #bcd3ff;
+}
+
+.workflow-ui .wf-state-card--current::before,
+.workflow-ui .wf-state-card--in_progress::before {
+  background: #2563eb;
+}
+
+.workflow-ui .wf-state-card--pending,
+.workflow-ui .wf-state-card--draft,
+.workflow-ui .wf-state-card--default {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: #dbe4ef;
+}
+
+.workflow-ui .wf-state-card--pending::before,
+.workflow-ui .wf-state-card--draft::before,
+.workflow-ui .wf-state-card--default::before {
+  background: #94a3b8;
+}
+
+.workflow-ui .wf-state-card--changes_requested,
+.workflow-ui .wf-state-card--awaiting_resubmission {
+  background: linear-gradient(180deg, #fffaf0 0%, #fff4df 100%);
+  border-color: #ffd796;
+}
+
+.workflow-ui .wf-state-card--changes_requested::before,
+.workflow-ui .wf-state-card--awaiting_resubmission::before {
+  background: #f59e0b;
+}
+
+.workflow-ui .wf-state-card--rejected {
+  background: linear-gradient(180deg, #fff5f5 0%, #fff0f0 100%);
+  border-color: #f3b8b8;
+}
+
+.workflow-ui .wf-state-card--rejected::before {
+  background: #dc2626;
+}
+
+.workflow-ui .wf-side-note-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .workflow-ui .wf-example-stack {

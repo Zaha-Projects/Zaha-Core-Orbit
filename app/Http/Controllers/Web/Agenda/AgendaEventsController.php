@@ -591,6 +591,7 @@ class AgendaEventsController extends Controller
         $branchesById = Branch::query()
             ->get()
             ->mapWithKeys(fn ($branch) => [$branch->id => ['name' => $branch->name, 'color_hex' => $branch->color_hex, 'icon' => $branch->icon]]);
+        $branchesTotalCount = $branchesById->count();
         $unitsById = DepartmentUnit::query()
             ->get()
             ->mapWithKeys(fn ($unit) => [$unit->id => ['name' => $unit->name, 'color_hex' => $unit->color_hex, 'icon' => $unit->icon]]);
@@ -623,7 +624,7 @@ class AgendaEventsController extends Controller
 
         $agendaWorkflowPresenter->attach($agendaEvent, $request->user());
 
-        return view('pages.agenda.events.show', compact('agendaEvent', 'branchParticipations', 'unitParticipations'));
+        return view('pages.agenda.events.show', compact('agendaEvent', 'branchParticipations', 'unitParticipations', 'branchesTotalCount'));
     }
 
     public function create(Request $request)

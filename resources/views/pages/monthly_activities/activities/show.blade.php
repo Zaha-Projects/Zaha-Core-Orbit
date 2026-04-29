@@ -4,6 +4,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-show.css') }}">
 @endpush
 
 @php
@@ -41,8 +42,8 @@
 @endphp
 
 @section('content')
-    <div class="event-module">
-        <div class="card event-card mb-4">
+    <div class="event-module monthly-activity-show-page">
+        <section class="monthly-show-hero mb-4">
             <div class="card-body d-flex justify-content-between align-items-center gap-2 flex-wrap">
                 <div>
                     <h1 class="h4 mb-1"><i class="feather-clipboard me-1"></i>{{ $title }}</h1>
@@ -65,7 +66,7 @@
                     @endif
                 </div>
             </div>
-        </div>
+        </section>
 
         @if(($archivedVersions ?? collect())->isNotEmpty())
             <div class="card event-card mb-4">
@@ -175,7 +176,7 @@
             </div>
         </div>
 
-        <div class="card event-card">
+        <div class="card event-card monthly-show-details-card">
             <div class="card-body">
                 <div class="monthly-summary-grid mb-4">
                     <div class="monthly-summary-item"><span>الحالة</span><strong>{{ $statusLabel($monthlyActivity->status) }}</strong></div>
@@ -184,7 +185,7 @@
                     <div class="monthly-summary-item"><span>الفرع</span><strong>{{ $monthlyActivity->branch?->name ?? '-' }}</strong></div>
                 </div>
 
-                <details class="monthly-full-details">
+                <details class="monthly-full-details" open>
                     <summary><i class="feather-layers me-1"></i>عرض التفاصيل الكاملة</summary>
                     <div class="row g-3 mt-2 monthly-details-content">
                     <div class="col-12 col-md-4"><strong>عنوان النشاط:</strong> {{ $monthlyActivity->title }}</div>
@@ -348,7 +349,4 @@
             </div>
         </div>
     </div>
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-show.css') }}"> 
-@endpush
 @endsection

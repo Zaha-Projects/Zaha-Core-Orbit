@@ -1,24 +1,58 @@
 ﻿@extends('layouts.app')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/agenda-approvals.css') }}">
 @endpush
 
 
 @section('content')
-    <div class="workflow-ui">
-        <div class="wf-card card mb-4">
-            <div class="card-body">
-                <h1 class="wf-page-title mb-1">{{ __('app.roles.relations.approvals.title') }}</h1>
-                <p class="wf-muted mb-0">{{ __('app.roles.relations.approvals.subtitle') }}</p>
+    @php
+        $approvalStats = [
+            [
+                'label' => __('workflow_ui.approvals.filters.my_pending'),
+                'value' => $events->filter(fn ($event) => (bool) data_get($event, 'workflow_summary.can_current_user_decide', $event->can_current_user_decide ?? false))->count(),
+                'tone' => 'blue',
+            ],
+            [
+                'label' => __('app.roles.relations.agenda.status_labels.published'),
+                'value' => $events->filter(fn ($event) => in_array((string) data_get($event, 'workflow_summary.status_key'), ['published', 'approved', 'relations_approved'], true))->count(),
+                'tone' => 'green',
+            ],
+            [
+                'label' => __('app.roles.relations.approvals.filters.status'),
+                'value' => $events->filter(fn ($event) => ! in_array((string) data_get($event, 'workflow_summary.status_key'), ['draft', 'published', 'approved', 'relations_approved'], true))->count(),
+                'tone' => 'amber',
+            ],
+        ];
+    @endphp
+
+    <div class="workflow-ui agenda-approvals-page">
+        <section class="agenda-approvals-hero mb-4">
+            <div>
+                <div class="agenda-approvals-eyebrow">
+                    <i class="feather-check-circle"></i>
+                    <span>{{ __('app.roles.relations.approvals.title') }}</span>
+                </div>
+                <h1>{{ __('app.roles.relations.approvals.title') }}</h1>
+                <p>{{ __('app.roles.relations.approvals.subtitle') }}</p>
             </div>
-        </div>
+            <div class="agenda-approvals-stats">
+                @foreach($approvalStats as $stat)
+                    <div class="agenda-approval-stat agenda-approval-stat--{{ $stat['tone'] }}">
+                        <span>{{ $stat['label'] }}</span>
+                        <strong>{{ $stat['value'] }}</strong>
+                    </div>
+                @endforeach
+            </div>
+        </section>
 
         @if (session('status'))
             <div class="alert alert-success">{{ session('status') }}</div>
         @endif
 
-        <div class="wf-card card mb-4">
+        <div class="wf-card card agenda-approvals-filter mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ route('role.relations.approvals.index') }}" class="row g-3 align-items-end">
                     @include('pages.shared.filters.workflow-status-and-step', [
@@ -49,20 +83,25 @@
             @forelse ($events as $event)
                 @php
                     $workflowSummary = $event->workflow_summary ?? [];
-                    $statusClass = 'wf-status-' . (($workflowSummary['status_key'] ?? '') ?: (($workflowSummary['workflow_state'] ?? '') ?: 'pending'));
+                    $statusKey = (($workflowSummary['status_key'] ?? '') ?: (($workflowSummary['workflow_state'] ?? '') ?: 'pending'));
+                    $statusClass = 'wf-status-' . $statusKey;
                     $canDecide = (bool) ($workflowSummary['can_current_user_decide'] ?? $event->can_current_user_decide ?? false);
                     $currentStepLabel = $workflowSummary['current_step_label'] ?? $event->current_step_label ?? __('app.common.na');
                     $currentRoleLabel = $workflowSummary['current_role_label'] ?? $event->current_role_label ?? __('app.common.na');
                     $timeline = collect($workflowSummary['timeline'] ?? []);
                     $latestChangeRequest = $workflowSummary['latest_change_request'] ?? null;
+                    $progressCurrent = (int) ($workflowSummary['completed_steps_count'] ?? 0);
+                    $progressTotal = max((int) ($workflowSummary['total_steps_count'] ?? 0), 1);
+                    $progressPercent = min(100, round(($progressCurrent / $progressTotal) * 100));
                 @endphp
 
-                <div class="wf-card card">
+                <div class="wf-card card agenda-approval-card agenda-approval-card--{{ $statusKey }}">
                     <div class="card-body">
-                        <div class="wf-summary mb-3">
+                        <div class="wf-summary agenda-approval-summary mb-3">
                             <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                 <div>
-                                    <h3 class="h6 mb-1">{{ $event->event_name }}</h3>
+                                    <div class="agenda-approval-card__eyebrow">{{ $currentRoleLabel }}</div>
+                                    <h3 class="agenda-approval-card__title">{{ $event->event_name }}</h3>
                                     <div class="wf-kv">
                                         {{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}
                                         @if($event->ownerDepartment?->name)
@@ -81,16 +120,19 @@
                                 </span>
                             </div>
 
-                            <div class="wf-chip-row mt-3">
-                                <span class="wf-chip wf-chip-primary">{{ __('workflow_ui.common.current_step') }}: {{ $currentStepLabel }}</span>
-                                <span class="wf-chip wf-chip-soft">التقدم: {{ $workflowSummary['completed_steps_count'] ?? 0 }}/{{ $workflowSummary['total_steps_count'] ?? 0 }}</span>
+                            <div class="agenda-approval-progress mt-3" style="--approval-progress: {{ $progressPercent }}%;">
+                                <div class="agenda-approval-progress__head">
+                                    <span>{{ __('workflow_ui.common.current_step') }}: {{ $currentStepLabel }}</span>
+                                    <strong>{{ $progressCurrent }}/{{ $progressTotal }}</strong>
+                                </div>
+                                <div class="agenda-approval-progress__bar"><span></span></div>
                             </div>
                         </div>
 
                         <div class="accordion" id="agenda-approval-accordion-{{ $event->id }}">
                             <div class="accordion-item border-0">
                                 <h2 class="accordion-header" id="agenda-heading-{{ $event->id }}">
-                                    <button class="accordion-button collapsed p-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#agenda-body-{{ $event->id }}">
+                                    <button class="accordion-button collapsed agenda-approval-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#agenda-body-{{ $event->id }}">
                                         {{ __('app.roles.relations.approvals.actions.review') }}
                                     </button>
                                 </h2>
@@ -98,14 +140,14 @@
                                     <div class="accordion-body px-0 pt-3">
                                         <div class="row g-3">
                                             <div class="col-lg-7">
-                                                <div class="border rounded-3 p-3 h-100">
+                                                <div class="agenda-approval-panel agenda-approval-panel--map h-100">
                                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                                         <h4 class="h6 mb-0">{{ __('workflow_ui.approvals.workflow_map') }}</h4>
                                                         <span class="wf-kv">{{ $currentRoleLabel }}</span>
                                                     </div>
-                                                    <div class="d-flex flex-column gap-2">
+                                                    <div class="wf-state-stack">
                                                         @foreach($workflowSummary['steps'] ?? [] as $step)
-                                                            <div class="border rounded-3 p-3 {{ !empty($step['is_current']) ? 'border-primary-subtle bg-light-subtle' : '' }}">
+                                                            <div class="wf-state-card wf-state-card--{{ $step['state'] }} {{ !empty($step['is_current']) ? 'is-current' : '' }}">
                                                                 <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                                     <div>
                                                                         <div class="fw-semibold">{{ $step['label'] }}</div>
@@ -128,7 +170,7 @@
                                             </div>
 
                                             <div class="col-lg-5">
-                                                <div class="border rounded-3 p-3 mb-3">
+                                                <div class="agenda-approval-panel agenda-approval-panel--changes mb-3">
                                                     <h4 class="h6 mb-2">{{ __('workflow_ui.approvals.change_request_title') }}</h4>
                                                     @if($latestChangeRequest)
                                                         <div class="wf-kv">{{ __('workflow_ui.approvals.requested_by') }}: {{ $latestChangeRequest['actor_name'] }}</div>
@@ -141,12 +183,12 @@
                                                     @endif
                                                 </div>
 
-                                                <div class="border rounded-3 p-3 mb-3">
+                                                <div class="agenda-approval-panel agenda-approval-panel--history mb-3">
                                                     <details>
                                                         <summary class="fw-semibold" style="cursor:pointer;">{{ __('workflow_ui.approvals.workflow_history') }}</summary>
-                                                        <div class="d-flex flex-column gap-2 mt-3">
+                                                        <div class="wf-state-stack mt-3">
                                                             @forelse($timeline as $entry)
-                                                                <div class="border rounded p-2">
+                                                                <div class="wf-state-card wf-state-card--{{ $entry['action'] }}">
                                                                     <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                                         <div>
                                                                             <div class="fw-semibold">{{ $entry['step_label'] }}</div>
@@ -167,7 +209,7 @@
                                                 </div>
 
                                                 @if($canDecide)
-                                                    <form method="POST" action="{{ route('role.relations.approvals.update', $event) }}" class="border rounded-3 p-3">
+                                                    <form method="POST" action="{{ route('role.relations.approvals.update', $event) }}" class="agenda-approval-panel agenda-approval-panel--decision">
                                                         @csrf
                                                         @method('PUT')
                                                         <div class="mb-2">
@@ -187,7 +229,7 @@
                                                         </div>
                                                     </form>
                                                 @else
-                                                    <div class="border rounded-3 p-3 wf-panel-soft">
+                                                    <div class="agenda-approval-panel agenda-approval-panel--waiting">
                                                         <div class="fw-semibold mb-1">{{ __('workflow_ui.approvals.waiting_title') }}</div>
                                                         <div class="wf-kv">{{ __('workflow_ui.approvals.waiting_body', ['role' => $currentRoleLabel]) }}</div>
                                                     </div>
