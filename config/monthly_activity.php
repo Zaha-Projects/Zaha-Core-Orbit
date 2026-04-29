@@ -15,16 +15,11 @@ return [
          |
          */
         'locked_fields' => [
-            'owner_department_id',
             'title',
             'activity_date',
             'proposed_date',
-            'branch_id',
             'agenda_event_id',
-            'planning_attachment',
-            'responsible_entities',
             'target_group_ids',
-            'partner_department_ids',
         ],
     ],
 ];

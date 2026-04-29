@@ -162,10 +162,10 @@
                 <div class="col-12">
                     <div class="agenda-form-section">
                         <div class="agenda-form-section__head">
-                            <h2 class="agenda-form-section__title">{{ __('app.roles.relations.agenda.fields.notes') }}</h2>
-                            <p class="agenda-form-section__text">أضف أي ملاحظات تنظيمية أو توضيحات مهمة للفعالية.</p>
+                            <h2 class="agenda-form-section__title">الوصف التفصيلي</h2>
+                            <p class="agenda-form-section__text">اكتب وصفًا تفصيليًا للفعالية ليتم اعتماده تلقائيًا في النشاط الشهري المرتبط.</p>
                         </div>
-                        <textarea class="form-control @error('notes') is-invalid @enderror" name="notes" rows="4">{{ old('notes', $existingAgendaEvent?->notes) }}</textarea>
+                        <textarea class="form-control @error('notes') is-invalid @enderror" name="notes" rows="4" placeholder="مثال: فكرة الفعالية، الأهداف، الفقرات الرئيسية، الفئة المستهدفة، ومخرجات التنفيذ المتوقعة.">{{ old('notes', $existingAgendaEvent?->notes) }}</textarea>
                         @error('notes')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
                 </div>

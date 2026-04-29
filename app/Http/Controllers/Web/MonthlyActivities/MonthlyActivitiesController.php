@@ -1331,6 +1331,28 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+    protected function applyAgendaLockedFieldValues(array &$data): void
+    {
+        $agendaEventId = (int) ($data['agenda_event_id'] ?? 0);
+        if ($agendaEventId <= 0) {
+            return;
+        }
+
+        $agendaEvent = AgendaEvent::query()->find($agendaEventId);
+        if (! $agendaEvent) {
+            return;
+        }
+
+        $agendaDate = optional($agendaEvent->event_date)?->toDateString()
+            ?? Carbon::create((int) ($data['year'] ?? now()->year), (int) $agendaEvent->month, (int) $agendaEvent->day)->toDateString();
+
+        $data['title'] = (string) $agendaEvent->event_name;
+        $data['description'] = (string) ($agendaEvent->notes ?? '');
+        $data['proposed_date'] = $agendaDate;
+        $data['activity_date'] = $agendaDate;
+        $data['is_in_agenda'] = true;
+    }
+
     public function syncFromAgenda(Request $request)
     {
         if ($branchId = $this->currentUserBranchId($request->user())) {
@@ -1591,6 +1613,8 @@ class MonthlyActivitiesController extends Controller
             'invitation_electronic_template' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
         ]);
+
+        $this->applyAgendaLockedFieldValues($data);
 
         if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
             abort(403);
@@ -2070,6 +2094,7 @@ class MonthlyActivitiesController extends Controller
                 'description' => ['required', 'string', 'max:2000'],
             ]);
 
+        $this->applyAgendaLockedFieldValues($data);
         $this->applyUnifiedLockedFieldValues($monthlyActivity, $data, $request->user());
 
         if (! $this->canAccessScopedBranch($request->user(), (int) $data['branch_id'])) {
