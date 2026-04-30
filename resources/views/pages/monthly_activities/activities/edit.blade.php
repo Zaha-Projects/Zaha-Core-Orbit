@@ -248,10 +248,10 @@
                 <div class="col-12 js-sponsor-wrapper">
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
-                            <input class="form-control" name="sponsors[0][name]" value="{{ old('sponsors.0.name', optional($monthlyActivity->sponsors->first())->name) }}" placeholder="اسم الراعي">
+                            <input class="form-control" name="sponsors[0][name]" value="{{ old('sponsors.0.name', optional($monthlyActivity->sponsors->first())->name) }}" placeholder="اسم الراعي الرسمي">
                         </div>
                         <div class="col-12 col-md-6">
-                            <input class="form-control" name="sponsors[0][title]" value="{{ old('sponsors.0.title', optional($monthlyActivity->sponsors->first())->title) }}" placeholder="صفة الراعي">
+                            <input class="form-control" name="sponsors[0][title]" value="{{ old('sponsors.0.title', optional($monthlyActivity->sponsors->first())->title) }}" placeholder="صفة الراعي الرسمي">
                         </div>
                     </div>
                 </div>

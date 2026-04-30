@@ -431,7 +431,7 @@
                                 @error('official_correspondence_target')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12">
-                                <label class="form-label">بريف مختصر عن المخاطبة</label>
+                                <label class="form-label">وصف مختصر عن المخاطبة</label>
                                 <textarea class="form-control @error('official_correspondence_brief') is-invalid @enderror" name="official_correspondence_brief" rows="3">{{ old('official_correspondence_brief', $existingMonthlyActivity?->official_correspondence_brief) }}</textarea>
                                 @error('official_correspondence_brief')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
@@ -523,14 +523,14 @@
 
                 <div class="col-12 js-sponsor-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--sponsor">
-                        <h3 class="h6 mb-3">بيانات الراعي</h3>
+                        <h3 class="h6 mb-3">بيانات الراعي الرسمي</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <label class="form-label">اسم الراعي</label>
+                                <label class="form-label">اسم الراعي الرسمي</label>
                                 <input class="form-control" name="sponsors[0][name]" value="{{ old('sponsors.0.name', $oldSponsors[0]['name'] ?? null) }}">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label">صفة الراعي</label>
+                                <label class="form-label">صفة الراعي الرسمي</label>
                                 <input class="form-control" name="sponsors[0][title]" value="{{ old('sponsors.0.title', $oldSponsors[0]['title'] ?? null) }}">
                             </div>
                         </div>

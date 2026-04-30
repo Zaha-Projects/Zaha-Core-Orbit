@@ -827,7 +827,7 @@ return [
                     'short_description' => 'وصف مختصر',
                     'need_volunteers' => 'الحاجة إلى متطوعين',
                     'sponsors_open' => 'الرعاة (عدد مفتوح)',
-                    'sponsor_name' => 'اسم الراعي',
+                    'sponsor_name' => 'اسم الراعي الرسمي',
                     'sponsor_title' => 'الصفة/المسمى',
                     'official_sponsor' => 'راعي رسمي',
                     'partners_open' => 'الشركاء (عدد مفتوح)',
