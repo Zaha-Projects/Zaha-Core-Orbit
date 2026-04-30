@@ -596,8 +596,7 @@
                                         </label>
                                     @endforeach
                                 </div>
-                                <small class="text-muted">الخيارات تُدار من شاشة القوائم المرجعية للأدمن.</small>
-                            </div>
+                                                            </div>
                             <div class="col-12 col-md-6 js-programs-zaha-fields">
                                 <label class="form-label">تفاصيل إضافية لزها تايم</label>
                                 <input class="form-control" name="programs_zaha_time_other" value="{{ old('programs_zaha_time_other', $payloadValue('programs.zaha_time_other')) }}">
