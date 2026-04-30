@@ -2,6 +2,17 @@
     $isEditMode = isset($agendaEvent);
     $existingAgendaEvent = $agendaEvent ?? null;
     $minimumEventDate = now()->toDateString();
+    $templatePayload = (array) ($existingAgendaEvent?->monthly_template_payload ?? []);
+    $templateExecutionTime = (string) old('monthly_template_execution_time', data_get($templatePayload, 'execution_time', ''));
+    $templateTimeFrom = (string) old('monthly_template_time_from', data_get($templatePayload, 'time_from', ''));
+    $templateTimeTo = (string) old('monthly_template_time_to', data_get($templatePayload, 'time_to', ''));
+    if ($templateTimeFrom === '' || $templateTimeTo === '') {
+        if (str_contains($templateExecutionTime, '-')) {
+            [$parsedFrom, $parsedTo] = array_map('trim', explode('-', $templateExecutionTime, 2));
+            $templateTimeFrom = $templateTimeFrom !== '' ? $templateTimeFrom : $parsedFrom;
+            $templateTimeTo = $templateTimeTo !== '' ? $templateTimeTo : $parsedTo;
+        }
+    }
 @endphp
 
 <div class="event-module agenda-form-page">
@@ -33,13 +44,13 @@
                 @if (($formMethod ?? 'POST') !== 'POST')
                     @method($formMethod)
                 @endif
-                <input type="hidden" name="monthly_template_title" value="{{ old('monthly_template_title') }}">
-                <input type="hidden" name="monthly_template_proposed_date" value="{{ old('monthly_template_proposed_date') }}">
-                <input type="hidden" name="monthly_template_description" value="{{ old('monthly_template_description') }}">
-                <input type="hidden" name="monthly_template_target_group" value="{{ old('monthly_template_target_group') }}">
-                <input type="hidden" name="monthly_template_execution_time" value="{{ old('monthly_template_execution_time') }}">
-                <input type="hidden" name="monthly_template_time_from" value="{{ old('monthly_template_time_from') }}">
-                <input type="hidden" name="monthly_template_time_to" value="{{ old('monthly_template_time_to') }}">
+                <input type="hidden" name="monthly_template_title" value="{{ old('monthly_template_title', data_get($templatePayload, 'title', $existingAgendaEvent?->event_name)) }}">
+                <input type="hidden" name="monthly_template_proposed_date" value="{{ old('monthly_template_proposed_date', optional($existingAgendaEvent?->event_date)->format('Y-m-d')) }}">
+                <input type="hidden" name="monthly_template_description" value="{{ old('monthly_template_description', data_get($templatePayload, 'description', $existingAgendaEvent?->notes)) }}">
+                <input type="hidden" name="monthly_template_target_group" value="{{ old('monthly_template_target_group', data_get($templatePayload, 'target_group')) }}">
+                <input type="hidden" name="monthly_template_execution_time" value="{{ $templateExecutionTime }}">
+                <input type="hidden" name="monthly_template_time_from" value="{{ $templateTimeFrom }}">
+                <input type="hidden" name="monthly_template_time_to" value="{{ $templateTimeTo }}">
 
                 <div class="col-12">
                     <div class="agenda-form-section js-unified-template-section d-none">

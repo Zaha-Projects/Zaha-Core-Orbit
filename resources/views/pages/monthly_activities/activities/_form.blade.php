@@ -80,7 +80,19 @@
         ->values()
         ->all();
     $isUnifiedBranchEditMode = $isUnifiedMandatory && $isBranchScopedUser && (bool) config('monthly_activity.unified_branch_edit.enabled', true);
-    $isLockedField = fn (string $field): bool => $isUnifiedBranchEditMode && in_array($field, $unifiedLockedFields, true);
+    $isAgendaLinkedActivity = $existingMonthlyActivity
+        && (bool) $existingMonthlyActivity->is_from_agenda
+        && filled($existingMonthlyActivity->agenda_event_id);
+    $agendaLinkedLockedFields = collect(config('monthly_activity.agenda_linked_edit.locked_fields', []))
+        ->filter(fn ($field) => is_string($field) && $field !== '')
+        ->values()
+        ->all();
+    $isAgendaLinkedEditMode = $isAgendaLinkedActivity && (bool) config('monthly_activity.agenda_linked_edit.enabled', true);
+    $isLockedField = fn (string $field): bool => (
+        $isUnifiedBranchEditMode && in_array($field, $unifiedLockedFields, true)
+    ) || (
+        $isAgendaLinkedEditMode && in_array($field, $agendaLinkedLockedFields, true)
+    );
 @endphp
 
 <div class="event-module monthly-plan-form-page">
@@ -225,7 +237,7 @@
 
                 <div class="col-12">
                     <label class="form-label">الوصف التفصيلي</label>
-                    <textarea class="form-control @error('description') is-invalid @enderror" name="description" rows="3" placeholder="اكتب وصفًا تفصيليًا للنشاط (الفكرة، الأهداف، الفقرات، الفئة المستهدفة، المخرجات المتوقعة)">{{ old('description', $existingMonthlyActivity?->description) }}</textarea>
+                    <textarea class="form-control @error('description') is-invalid @enderror" name="description" rows="3" placeholder="اكتب وصفًا تفصيليًا للنشاط (الفكرة، الأهداف، الفقرات، الفئة المستهدفة، المخرجات المتوقعة)" {{ $isLockedField('description') ? 'readonly' : '' }}>{{ old('description', $existingMonthlyActivity?->description) }}</textarea>
                     @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
