@@ -71,15 +71,14 @@
     $programsNeedsFunChecked = (bool) old('programs_needs_fun', filled(data_get($executionNeedsPayload, 'programs.fun_note')));
     $certificatesDetailsChecked = (bool) old('needs_certificates_details', filled(data_get($executionNeedsPayload, 'certificates.count')) || filled(data_get($executionNeedsPayload, 'certificates.template')) || filled(data_get($executionNeedsPayload, 'certificates.for')));
     $thanksLettersDetailsChecked = (bool) old('needs_thanks_letters_details', filled(data_get($executionNeedsPayload, 'thanks_letters.count')) || filled(data_get($executionNeedsPayload, 'thanks_letters.template')) || filled(data_get($executionNeedsPayload, 'thanks_letters.for')));
-    $isUnifiedMandatory = $existingMonthlyActivity
+    $isUnifiedAgendaPlan = $existingMonthlyActivity
         && (bool) $existingMonthlyActivity->is_from_agenda
-        && (string) $existingMonthlyActivity->plan_type === 'unified'
-        && (string) optional($existingMonthlyActivity->agendaEvent)->event_type === 'mandatory';
+        && (string) $existingMonthlyActivity->plan_type === 'unified';
     $unifiedLockedFields = collect(config('monthly_activity.unified_branch_edit.locked_fields', []))
         ->filter(fn ($field) => is_string($field) && $field !== '')
         ->values()
         ->all();
-    $isUnifiedBranchEditMode = $isUnifiedMandatory && $isBranchScopedUser && (bool) config('monthly_activity.unified_branch_edit.enabled', true);
+    $isUnifiedBranchEditMode = $isUnifiedAgendaPlan && $isBranchScopedUser && (bool) config('monthly_activity.unified_branch_edit.enabled', true);
     $isAgendaLinkedActivity = $existingMonthlyActivity
         && (bool) $existingMonthlyActivity->is_from_agenda
         && filled($existingMonthlyActivity->agenda_event_id);
@@ -88,11 +87,12 @@
         ->values()
         ->all();
     $isAgendaLinkedEditMode = $isAgendaLinkedActivity && (bool) config('monthly_activity.agenda_linked_edit.enabled', true);
-    $isLockedField = fn (string $field): bool => (
-        $isUnifiedBranchEditMode && in_array($field, $unifiedLockedFields, true)
-    ) || (
-        $isAgendaLinkedEditMode && in_array($field, $agendaLinkedLockedFields, true)
-    );
+    $isLockedField = fn (string $field): bool => ($isUnifiedBranchEditMode
+        ? (in_array($field, $unifiedLockedFields, true) || in_array($field, $agendaLinkedLockedFields, true))
+        : ($isAgendaLinkedEditMode && in_array($field, $agendaLinkedLockedFields, true)));
+    $showAgendaLockNote = fn (string $field, $value): bool => $isLockedField($field)
+        && $isAgendaLinkedActivity
+        && filled($value);
 @endphp
 
 <div class="event-module monthly-plan-form-page">
@@ -142,12 +142,18 @@
                 <div class="col-12 col-lg-6">
                     <label class="form-label">عنوان النشاط</label>
                     <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title', $existingMonthlyActivity?->title) }}" {{ $isLockedField('title') ? 'readonly' : '' }}>
+                    @if ($showAgendaLockNote('title', old('title', $existingMonthlyActivity?->title)))
+                        <small class="text-muted d-block mt-1"><i class="fas fa-lock me-1"></i>هذا الحقل مقفل لأنه معبأ من الأجندة.</small>
+                    @endif
                     @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12 col-md-4">
                     <label class="form-label">تاريخ النشاط المخطط</label>
                     <input class="form-control js-proposed-date @error('proposed_date') is-invalid @enderror" type="date" name="proposed_date" value="{{ old('proposed_date', optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}" {{ $isLockedField('proposed_date') ? 'readonly' : '' }}>
+                    @if ($showAgendaLockNote('proposed_date', old('proposed_date', optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d'))))
+                        <small class="text-muted d-block mt-1"><i class="fas fa-lock me-1"></i>هذا الحقل مقفل لأنه معبأ من الأجندة.</small>
+                    @endif
                     @error('proposed_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
@@ -238,6 +244,9 @@
                 <div class="col-12">
                     <label class="form-label">الوصف التفصيلي</label>
                     <textarea class="form-control @error('description') is-invalid @enderror" name="description" rows="3" placeholder="اكتب وصفًا تفصيليًا للنشاط (الفكرة، الأهداف، الفقرات، الفئة المستهدفة، المخرجات المتوقعة)" {{ $isLockedField('description') ? 'readonly' : '' }}>{{ old('description', $existingMonthlyActivity?->description) }}</textarea>
+                    @if ($showAgendaLockNote('description', old('description', $existingMonthlyActivity?->description)))
+                        <small class="text-muted d-block mt-1"><i class="fas fa-lock me-1"></i>هذا الحقل مقفل لأنه معبأ من الأجندة.</small>
+                    @endif
                     @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
@@ -251,6 +260,9 @@
                             </label>
                         @endforeach
                     </div>
+                    @if ($showAgendaLockNote('target_group_ids', old('target_group_ids', $existingMonthlyActivity?->targetGroups?->pluck('id')->all() ?? [])))
+                        <small class="text-muted d-block mt-1"><i class="fas fa-lock me-1"></i>هذا الحقل مقفل لأنه معبأ من الأجندة.</small>
+                    @endif
                 </div>
 
                 <div class="col-12 col-md-6 js-target-group-other">
