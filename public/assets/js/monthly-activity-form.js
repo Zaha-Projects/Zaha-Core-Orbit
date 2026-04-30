@@ -367,29 +367,35 @@ document.addEventListener('DOMContentLoaded', function () {
         for (let i = 0; i < count; i += 1) {
             const available = String(oldSupplies?.[i]?.available ?? '1') === '1';
             suppliesContainer.insertAdjacentHTML('beforeend', `
-                <div class="col-12 col-md-4">
-                    <label class="form-label">اسم المستلزم ${i + 1}</label>
-                    <input class="form-control" name="supplies[${i}][item_name]" value="${esc(oldSupplies?.[i]?.item_name)}">
-                </div>
-                <div class="col-12 col-md-2">
-                    <label class="form-label">التوفر</label>
-                    <select class="form-select js-supply-available" data-index="${i}" name="supplies[${i}][available]">
-                        <option value="1" ${available ? 'selected' : ''}>متوفر</option>
-                        <option value="0" ${available ? '' : 'selected'}>غير متوفر</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3 js-supply-provider" data-index="${i}" style="${available ? 'display:none' : ''}">
-                    <label class="form-label">آلية التأمين</label>
-                    <select class="form-select js-supply-insurance" data-index="${i}" name="supplies[${i}][insurance_mechanism]">
-                        <option value="">اختر</option>
-                        <option value="purchase" ${(oldSupplies?.[i]?.insurance_mechanism === 'purchase') ? 'selected' : ''}>شراء</option>
-                        <option value="support" ${(oldSupplies?.[i]?.insurance_mechanism === 'support') ? 'selected' : ''}>دعم</option>
-                        <option value="other" ${(oldSupplies?.[i]?.insurance_mechanism === 'other') ? 'selected' : ''}>أخرى</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3 js-supply-provider js-supply-other-details" data-index="${i}" style="${available || oldSupplies?.[i]?.insurance_mechanism !== 'other' ? 'display:none' : ''}">
-                    <label class="form-label">تفاصيل أخرى</label>
-                    <input class="form-control" name="supplies[${i}][insurance_other_details]" value="${esc(oldSupplies?.[i]?.insurance_other_details)}">
+                <div class="col-12">
+                    <div class="border rounded-3 p-3 mb-2">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">اسم المستلزم ${i + 1}</label>
+                                <input class="form-control" name="supplies[${i}][item_name]" value="${esc(oldSupplies?.[i]?.item_name)}">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">التوفر</label>
+                                <select class="form-select js-supply-available" data-index="${i}" name="supplies[${i}][available]">
+                                    <option value="1" ${available ? 'selected' : ''}>متوفر</option>
+                                    <option value="0" ${available ? '' : 'selected'}>غير متوفر</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3 js-supply-provider" data-index="${i}" style="${available ? 'display:none' : ''}">
+                                <label class="form-label">آلية التأمين</label>
+                                <select class="form-select js-supply-insurance" data-index="${i}" name="supplies[${i}][insurance_mechanism]">
+                                    <option value="">اختر</option>
+                                    <option value="purchase" ${(oldSupplies?.[i]?.insurance_mechanism === 'purchase') ? 'selected' : ''}>شراء</option>
+                                    <option value="support" ${(oldSupplies?.[i]?.insurance_mechanism === 'support') ? 'selected' : ''}>دعم</option>
+                                    <option value="other" ${(oldSupplies?.[i]?.insurance_mechanism === 'other') ? 'selected' : ''}>أخرى</option>
+                                </select>
+                            </div>
+                            <div class="col-12 js-supply-provider js-supply-other-details" data-index="${i}" style="${available || oldSupplies?.[i]?.insurance_mechanism !== 'other' ? 'display:none' : ''}">
+                                <label class="form-label">تفاصيل أخرى</label>
+                                <input class="form-control" name="supplies[${i}][insurance_other_details]" value="${esc(oldSupplies?.[i]?.insurance_other_details)}">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `);
         }
