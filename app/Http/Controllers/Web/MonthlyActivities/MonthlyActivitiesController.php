@@ -276,11 +276,35 @@ class MonthlyActivitiesController extends Controller
         ];
     }
 
+    protected function normalizeChangeLogValue(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($value instanceof \Stringable) {
+            return (string) $value;
+        }
+
+        if (is_object($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        }
+
+        return (string) $value;
+    }
+
     protected function logChanges(MonthlyActivity $monthlyActivity, array $oldValues, array $newValues, int $userId): void
     {
         foreach ($newValues as $field => $newValue) {
             $oldValue = $oldValues[$field] ?? null;
-            if ((string) $oldValue === (string) $newValue) {
+            $oldNormalized = $this->normalizeChangeLogValue($oldValue);
+            $newNormalized = $this->normalizeChangeLogValue($newValue);
+
+            if ($oldNormalized === $newNormalized) {
                 continue;
             }
 
@@ -288,8 +312,8 @@ class MonthlyActivitiesController extends Controller
                 'monthly_activity_id' => $monthlyActivity->id,
                 'changed_by' => $userId,
                 'field_name' => $field,
-                'old_value' => $oldValue !== null ? (string) $oldValue : null,
-                'new_value' => $newValue !== null ? (string) $newValue : null,
+                'old_value' => $oldNormalized,
+                'new_value' => $newNormalized,
                 'changed_at' => now(),
             ]);
         }
