@@ -59,6 +59,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const teamGroupsCount = form.querySelector('.js-team-groups-count');
     const teamGroupsContainer = form.querySelector('.js-team-groups-container');
 
+    const certificatesCount = form.querySelector('[name="certificates_count"]');
+    const thanksLettersCount = form.querySelector('[name="thanks_letters_count"]');
+    const certificatesForHidden = form.querySelector('.js-certificates-for-hidden');
+    const thanksLettersForHidden = form.querySelector('.js-thanks-letters-for-hidden');
+    const certificatesNamesContainer = form.querySelector('.js-certificates-names-container');
+    const thanksLettersNamesContainer = form.querySelector('.js-thanks-letters-names-container');
+
     const oldPartners = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-partners-json', []) : JSON.parse(document.getElementById('monthly-form-old-partners-json')?.textContent ?? '[]');
     const oldSupplies = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-supplies-json', []) : JSON.parse(document.getElementById('monthly-form-old-supplies-json')?.textContent ?? '[]');
     const oldTeamGroups = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-team-groups-json', []) : JSON.parse(document.getElementById('monthly-form-old-team-groups-json')?.textContent ?? '[]');
@@ -225,6 +232,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const active = isEnabled(needsInvitations);
         toggleSection(invitationsFields, active);
         toggleInvitationTypeDetails();
+    }
+
+
+    const splitNames = (value) => String(value || '').split(/[\n،,]+/).map((v) => v.trim()).filter(Boolean);
+
+    function renderNamesByCount(countInput, container, hiddenInput, baseName) {
+        if (!countInput || !container || !hiddenInput) return;
+        const count = Math.max(1, Math.min(100, parseInt(countInput.value || '1', 10)));
+        const existing = splitNames(hiddenInput.value);
+        container.innerHTML = '';
+        for (let i = 0; i < count; i += 1) {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="col-12 col-md-4">
+                    <label class="form-label">الاسم الثلاثي ${i + 1}</label>
+                    <input class="form-control js-dynamic-name-input" data-group="${baseName}" value="${esc(existing[i] || '')}">
+                </div>
+            `);
+        }
+        syncNamesHidden(baseName);
+    }
+
+    function syncNamesHidden(baseName) {
+        const selector = `.js-dynamic-name-input[data-group="${baseName}"]`;
+        const values = Array.from(form.querySelectorAll(selector)).map((i) => i.value.trim()).filter(Boolean);
+        if (baseName === 'certificates' && certificatesForHidden) certificatesForHidden.value = values.join('، ');
+        if (baseName === 'thanks_letters' && thanksLettersForHidden) thanksLettersForHidden.value = values.join('، ');
     }
 
     function toggleInvitationTypeDetails() {
@@ -451,6 +484,12 @@ document.addEventListener('DOMContentLoaded', function () {
     programsFunToggle?.addEventListener('change', toggleProgramsFun);
     needsCertificates?.addEventListener('change', toggleCertificates);
     certificatesDetailToggle?.addEventListener('change', toggleCertificatesDetails);
+    certificatesCount?.addEventListener('input', () => renderNamesByCount(certificatesCount, certificatesNamesContainer, certificatesForHidden, 'certificates'));
+    thanksLettersCount?.addEventListener('input', () => renderNamesByCount(thanksLettersCount, thanksLettersNamesContainer, thanksLettersForHidden, 'thanks_letters'));
+    form.addEventListener('input', (e) => {
+        if (e.target.matches('.js-dynamic-name-input[data-group="certificates"]')) syncNamesHidden('certificates');
+        if (e.target.matches('.js-dynamic-name-input[data-group="thanks_letters"]')) syncNamesHidden('thanks_letters');
+    });
     thanksLettersDetailToggle?.addEventListener('change', toggleThanksLettersDetails);
     needsInvitations?.addEventListener('change', toggleInvitations);
     invitationType?.addEventListener('change', toggleInvitationTypeDetails);
@@ -482,6 +521,8 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleProgramsShow();
     toggleProgramsFun();
     toggleCertificates();
+    renderNamesByCount(certificatesCount, certificatesNamesContainer, certificatesForHidden, 'certificates');
+    renderNamesByCount(thanksLettersCount, thanksLettersNamesContainer, thanksLettersForHidden, 'thanks_letters');
     toggleCertificatesDetails();
     toggleThanksLettersDetails();
     toggleInvitations();

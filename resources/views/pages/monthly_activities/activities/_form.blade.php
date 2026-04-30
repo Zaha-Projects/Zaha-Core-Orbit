@@ -636,9 +636,10 @@
                                 <label class="form-label">صيغة مقترحة</label>
                                 <input class="form-control" name="certificates_template" value="{{ old('certificates_template', $payloadValue('certificates.template')) }}">
                             </div>
-                            <div class="col-12 col-md-5 js-certificates-detail-fields">
-                                <label class="form-label">لمن</label>
-                                <input class="form-control" name="certificates_for" value="{{ old('certificates_for', $payloadValue('certificates.for')) }}">
+                            <div class="col-12 js-certificates-detail-fields">
+                                <label class="form-label">الأسماء الثلاثية</label>
+                                <input type="hidden" name="certificates_for" class="js-certificates-for-hidden" value="{{ old('certificates_for', $payloadValue('certificates.for')) }}">
+                                <div class="row g-2 js-certificates-names-container"></div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">إصدار كتب شكر؟</label>
@@ -654,9 +655,10 @@
                                 <label class="form-label">صيغة مقترحة</label>
                                 <input class="form-control" name="thanks_letters_template" value="{{ old('thanks_letters_template', $payloadValue('thanks_letters.template')) }}">
                             </div>
-                            <div class="col-12 col-md-5 js-thanks-letters-detail-fields">
-                                <label class="form-label">لمن</label>
-                                <input class="form-control" name="thanks_letters_for" value="{{ old('thanks_letters_for', $payloadValue('thanks_letters.for')) }}">
+                            <div class="col-12 js-thanks-letters-detail-fields">
+                                <label class="form-label">الأسماء الثلاثية</label>
+                                <input type="hidden" name="thanks_letters_for" class="js-thanks-letters-for-hidden" value="{{ old('thanks_letters_for', $payloadValue('thanks_letters.for')) }}">
+                                <div class="row g-2 js-thanks-letters-names-container"></div>
                             </div>
                         </div>
                     </div>
