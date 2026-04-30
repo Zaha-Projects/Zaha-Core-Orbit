@@ -160,7 +160,10 @@
 
                 <div class="col-12">
                     <div class="monthly-form-section-head monthly-form-section-head--location">
-                        <h2 class="h6 mb-1">المكان</h2>
+                        <h2 class="h6 mb-1 d-flex align-items-center gap-2">
+                            <img src="{{ asset('assets/images/zaha-core-orbit-mark.svg') }}" alt="Zaha" class="monthly-location-logo">
+                            <span>المكان</span>
+                        </h2>
                     </div>
                 </div>
 
@@ -198,6 +201,11 @@
                     <input class="form-control" name="external_liaison_phone" value="{{ old('external_liaison_phone', $existingMonthlyActivity?->external_liaison_phone) }}">
                 </div>
 
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">العنوان التفصيلي</label>
+                    <input class="form-control" name="outside_address" value="{{ old('outside_address', $existingMonthlyActivity?->outside_address) }}">
+                </div>
+
                 <div class="col-12 mt-2">
                     <div class="monthly-form-section-head monthly-form-section-head--time">
                         <h2 class="h6 mb-1">الوقت</h2>
@@ -214,10 +222,6 @@
                     <input class="form-control" type="time" name="time_to" value="{{ old('time_to', optional($existingMonthlyActivity?->time_to)->format('H:i')) }}">
                 </div>
 
-                <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">العنوان التفصيلي</label>
-                    <input class="form-control" name="outside_address" value="{{ old('outside_address', $existingMonthlyActivity?->outside_address) }}">
-                </div>
 
                 <div class="col-12">
                     <label class="form-label">الوصف التفصيلي</label>
@@ -390,7 +394,12 @@
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الجنس</label>
-                                <input class="form-control @error('volunteer_gender') is-invalid @enderror" name="volunteer_gender" value="{{ old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) }}">
+                                <select class="form-select @error('volunteer_gender') is-invalid @enderror" name="volunteer_gender">
+                                    <option value="">اختر الجنس</option>
+                                    <option value="male" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'male')>ذكر</option>
+                                    <option value="female" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'female')>أنثى</option>
+                                    <option value="both" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'both')>كلاهما</option>
+                                </select>
                                 @error('volunteer_gender')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-3">
@@ -422,7 +431,7 @@
                                 @error('official_correspondence_target')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12">
-                                <label class="form-label">بريف مختصر عن المخاطبة</label>
+                                <label class="form-label">وصف مختصر عن المخاطبة</label>
                                 <textarea class="form-control @error('official_correspondence_brief') is-invalid @enderror" name="official_correspondence_brief" rows="3">{{ old('official_correspondence_brief', $existingMonthlyActivity?->official_correspondence_brief) }}</textarea>
                                 @error('official_correspondence_brief')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
@@ -472,6 +481,22 @@
                                 <label class="form-label">عدد الركاب</label>
                                 <input class="form-control" type="number" min="1" name="transport_passengers_count" value="{{ old('transport_passengers_count', $payloadValue('transport.passengers_count')) }}">
                             </div>
+                            <div class="col-12">
+                                <label class="form-label d-block">اتجاه الرحلة</label>
+                                <div class="d-flex flex-wrap gap-3 pt-1">
+                                    <label class="form-check"><input class="form-check-input" type="radio" name="transport_trip_direction" value="go_only" {{ old('transport_trip_direction', $payloadValue('transport.trip_direction')) === 'go_only' ? 'checked' : '' }}><span class="form-check-label">ذهاب فقط</span></label>
+                                    <label class="form-check"><input class="form-check-input" type="radio" name="transport_trip_direction" value="round_trip" {{ old('transport_trip_direction', $payloadValue('transport.trip_direction')) === 'round_trip' ? 'checked' : '' }}><span class="form-check-label">ذهاب وعودة</span></label>
+                                    <label class="form-check"><input class="form-check-input" type="radio" name="transport_trip_direction" value="return_only" {{ old('transport_trip_direction', $payloadValue('transport.trip_direction')) === 'return_only' ? 'checked' : '' }}><span class="form-check-label">عودة فقط</span></label>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">نقطة الانطلاق من</label>
+                                <input class="form-control" name="transport_start_from" value="{{ old('transport_start_from', $payloadValue('transport.start_from')) }}">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">نقطة الانطلاق إلى</label>
+                                <input class="form-control" name="transport_start_to" value="{{ old('transport_start_to', $payloadValue('transport.start_to')) }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -480,10 +505,6 @@
                     <div class="monthly-subsection-card monthly-subsection-card--maintenance">
                         <h3 class="h6 mb-3">الصيانة بالموقع</h3>
                         <div class="row g-3">
-                            <div class="col-12 col-md-3">
-                                <label class="form-label">عدد العمال</label>
-                                <input class="form-control" type="number" min="1" name="maintenance_workers_count" value="{{ old('maintenance_workers_count', $payloadValue('maintenance.workers_count')) }}">
-                            </div>
                             <div class="col-12 col-md-5">
                                 <label class="form-label">نوع الصيانة</label>
                                 <input class="form-control" name="maintenance_type" value="{{ old('maintenance_type', $payloadValue('maintenance.type')) }}">
@@ -514,14 +535,14 @@
 
                 <div class="col-12 js-sponsor-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--sponsor">
-                        <h3 class="h6 mb-3">بيانات الراعي</h3>
+                        <h3 class="h6 mb-3">بيانات الراعي الرسمي</h3>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <label class="form-label">اسم الراعي</label>
+                                <label class="form-label">اسم الراعي الرسمي</label>
                                 <input class="form-control" name="sponsors[0][name]" value="{{ old('sponsors.0.name', $oldSponsors[0]['name'] ?? null) }}">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label">صفة الراعي</label>
+                                <label class="form-label">صفة الراعي الرسمي</label>
                                 <input class="form-control" name="sponsors[0][title]" value="{{ old('sponsors.0.title', $oldSponsors[0]['title'] ?? null) }}">
                             </div>
                         </div>
@@ -575,8 +596,7 @@
                                         </label>
                                     @endforeach
                                 </div>
-                                <small class="text-muted">الخيارات تُدار من شاشة القوائم المرجعية للأدمن.</small>
-                            </div>
+                                                            </div>
                             <div class="col-12 col-md-6 js-programs-zaha-fields">
                                 <label class="form-label">تفاصيل إضافية لزها تايم</label>
                                 <input class="form-control" name="programs_zaha_time_other" value="{{ old('programs_zaha_time_other', $payloadValue('programs.zaha_time_other')) }}">
@@ -596,7 +616,7 @@
                                 <input class="form-control" name="programs_show_description" value="{{ old('programs_show_description', $payloadValue('programs.show_description')) }}">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label d-block">بحاجة فان؟</label>
+                                <label class="form-label d-block">Zaha Van</label>
                                 <div class="form-check form-switch pt-2">
                                     <input class="form-check-input js-programs-fun-toggle" type="checkbox" role="switch" name="programs_needs_fun" value="1" {{ $programsNeedsFunChecked ? 'checked' : '' }}>
                                 </div>
@@ -627,9 +647,10 @@
                                 <label class="form-label">صيغة مقترحة</label>
                                 <input class="form-control" name="certificates_template" value="{{ old('certificates_template', $payloadValue('certificates.template')) }}">
                             </div>
-                            <div class="col-12 col-md-5 js-certificates-detail-fields">
-                                <label class="form-label">لمن</label>
-                                <input class="form-control" name="certificates_for" value="{{ old('certificates_for', $payloadValue('certificates.for')) }}">
+                            <div class="col-12 js-certificates-detail-fields">
+                                <label class="form-label">الأسماء الثلاثية</label>
+                                <input type="hidden" name="certificates_for" class="js-certificates-for-hidden" value="{{ old('certificates_for', $payloadValue('certificates.for')) }}">
+                                <div class="row g-2 js-certificates-names-container"></div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">إصدار كتب شكر؟</label>
@@ -645,9 +666,10 @@
                                 <label class="form-label">صيغة مقترحة</label>
                                 <input class="form-control" name="thanks_letters_template" value="{{ old('thanks_letters_template', $payloadValue('thanks_letters.template')) }}">
                             </div>
-                            <div class="col-12 col-md-5 js-thanks-letters-detail-fields">
-                                <label class="form-label">لمن</label>
-                                <input class="form-control" name="thanks_letters_for" value="{{ old('thanks_letters_for', $payloadValue('thanks_letters.for')) }}">
+                            <div class="col-12 js-thanks-letters-detail-fields">
+                                <label class="form-label">الأسماء الثلاثية</label>
+                                <input type="hidden" name="thanks_letters_for" class="js-thanks-letters-for-hidden" value="{{ old('thanks_letters_for', $payloadValue('thanks_letters.for')) }}">
+                                <div class="row g-2 js-thanks-letters-names-container"></div>
                             </div>
                         </div>
                     </div>

@@ -276,11 +276,35 @@ class MonthlyActivitiesController extends Controller
         ];
     }
 
+    protected function normalizeChangeLogValue(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        }
+
+        if ($value instanceof \Stringable) {
+            return (string) $value;
+        }
+
+        if (is_object($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        }
+
+        return (string) $value;
+    }
+
     protected function logChanges(MonthlyActivity $monthlyActivity, array $oldValues, array $newValues, int $userId): void
     {
         foreach ($newValues as $field => $newValue) {
             $oldValue = $oldValues[$field] ?? null;
-            if ((string) $oldValue === (string) $newValue) {
+            $oldNormalized = $this->normalizeChangeLogValue($oldValue);
+            $newNormalized = $this->normalizeChangeLogValue($newValue);
+
+            if ($oldNormalized === $newNormalized) {
                 continue;
             }
 
@@ -288,8 +312,8 @@ class MonthlyActivitiesController extends Controller
                 'monthly_activity_id' => $monthlyActivity->id,
                 'changed_by' => $userId,
                 'field_name' => $field,
-                'old_value' => $oldValue !== null ? (string) $oldValue : null,
-                'new_value' => $newValue !== null ? (string) $newValue : null,
+                'old_value' => $oldNormalized,
+                'new_value' => $newNormalized,
                 'changed_at' => now(),
             ]);
         }
@@ -811,13 +835,15 @@ class MonthlyActivitiesController extends Controller
                 'vehicles_count' => $data['transport_vehicles_count'] ?? null,
                 'vehicle_type' => $data['transport_vehicle_type'] ?? null,
                 'passengers_count' => $data['transport_passengers_count'] ?? null,
+                'trip_direction' => $data['transport_trip_direction'] ?? null,
+                'start_from' => $data['transport_start_from'] ?? null,
+                'start_to' => $data['transport_start_to'] ?? null,
             ],
             'needs_maintenance_workers' => $needsMaintenance,
             'maintenance' => [
                 'need_code' => 'maintenance',
                 'future_cycle_id' => null,
-                'workers_count' => $data['maintenance_workers_count'] ?? null,
-                'type' => $data['maintenance_type'] ?? null,
+                                'type' => $data['maintenance_type'] ?? null,
             ],
             'needs_gifts' => $needsGifts,
             'gifts' => [
@@ -1562,7 +1588,7 @@ class MonthlyActivitiesController extends Controller
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
-            'time_to' => ['nullable', 'date_format:H:i', 'after:time_from'],
+            'time_to' => ['nullable', 'date_format:H:i', 'after_or_equal:time_from'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
             'target_group_ids' => ['nullable', 'array'],
@@ -1575,7 +1601,7 @@ class MonthlyActivitiesController extends Controller
             'volunteer_age_from' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1'],
             'volunteer_age_to' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1', 'gte:volunteer_age_from'],
             'volunteer_age_range' => ['nullable', 'string', 'max:255'],
-            'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_gender' => ['nullable', 'in:male,female,both', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
@@ -1633,8 +1659,8 @@ class MonthlyActivitiesController extends Controller
             'supplies' => ['nullable', 'array'],
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.available' => ['nullable', 'boolean'],
-            'supplies.*.provider_type' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,false'],
-            'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,false'],
+            'supplies.*.provider_type' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
+            'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -1648,7 +1674,7 @@ class MonthlyActivitiesController extends Controller
             'needs_ceremony_agenda' => ['nullable', 'boolean'],
             'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
             'ceremony_time_from' => ['nullable', 'date_format:H:i'],
-            'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
+            'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after_or_equal:ceremony_time_from'],
             'ceremony_item_name' => ['nullable', 'string', 'max:255'],
             'ceremony_item_description' => ['nullable', 'string', 'max:500'],
             'ceremony_items' => ['nullable', 'array'],
@@ -1661,9 +1687,11 @@ class MonthlyActivitiesController extends Controller
             'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
             'transport_vehicle_type' => ['nullable', 'in:bus,car'],
             'transport_passengers_count' => ['nullable', 'integer', 'min:1'],
+            'transport_trip_direction' => ['nullable', 'in:go_only,round_trip,return_only'],
+            'transport_start_from' => ['nullable', 'string', 'max:255'],
+            'transport_start_to' => ['nullable', 'string', 'max:255'],
             'needs_maintenance_workers' => ['nullable', 'boolean'],
-            'maintenance_workers_count' => ['nullable', 'integer', 'min:1'],
-            'maintenance_type' => ['nullable', 'string', 'max:255'],
+                        'maintenance_type' => ['nullable', 'string', 'max:255'],
             'needs_gifts' => ['nullable', 'boolean'],
             'gifts_count' => ['nullable', 'integer', 'min:1'],
             'gifts_description' => ['nullable', 'string', 'max:500'],
@@ -2065,7 +2093,7 @@ class MonthlyActivitiesController extends Controller
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
-            'time_to' => ['nullable', 'date_format:H:i', 'after:time_from'],
+            'time_to' => ['nullable', 'date_format:H:i', 'after_or_equal:time_from'],
             'target_group' => ['nullable', 'string', 'max:255'],
             'target_group_id' => ['nullable', 'exists:target_groups,id'],
             'target_group_ids' => ['nullable', 'array'],
@@ -2078,7 +2106,7 @@ class MonthlyActivitiesController extends Controller
             'volunteer_age_from' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1'],
             'volunteer_age_to' => ['nullable', 'integer', 'min:10', 'max:80', 'required_if:needs_volunteers,1', 'gte:volunteer_age_from'],
             'volunteer_age_range' => ['nullable', 'string', 'max:255'],
-            'volunteer_gender' => ['nullable', 'string', 'max:255', 'required_if:needs_volunteers,1'],
+            'volunteer_gender' => ['nullable', 'in:male,female,both', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'expected_attendance' => ['nullable', 'integer', 'min:0'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
@@ -2128,7 +2156,7 @@ class MonthlyActivitiesController extends Controller
                 'needs_ceremony_agenda' => ['nullable', 'boolean'],
                 'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
                 'ceremony_time_from' => ['nullable', 'date_format:H:i'],
-                'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after:ceremony_time_from'],
+                'ceremony_time_to' => ['nullable', 'date_format:H:i', 'after_or_equal:ceremony_time_from'],
                 'ceremony_item_name' => ['nullable', 'string', 'max:255'],
                 'ceremony_item_description' => ['nullable', 'string', 'max:500'],
                 'ceremony_items' => ['nullable', 'array'],
@@ -2141,9 +2169,11 @@ class MonthlyActivitiesController extends Controller
                 'transport_vehicles_count' => ['nullable', 'integer', 'min:1'],
                 'transport_vehicle_type' => ['nullable', 'in:bus,car'],
                 'transport_passengers_count' => ['nullable', 'integer', 'min:1'],
+            'transport_trip_direction' => ['nullable', 'in:go_only,round_trip,return_only'],
+            'transport_start_from' => ['nullable', 'string', 'max:255'],
+            'transport_start_to' => ['nullable', 'string', 'max:255'],
                 'needs_maintenance_workers' => ['nullable', 'boolean'],
-                'maintenance_workers_count' => ['nullable', 'integer', 'min:1'],
-                'maintenance_type' => ['nullable', 'string', 'max:255'],
+                                'maintenance_type' => ['nullable', 'string', 'max:255'],
                 'needs_gifts' => ['nullable', 'boolean'],
                 'gifts_count' => ['nullable', 'integer', 'min:1'],
                 'gifts_description' => ['nullable', 'string', 'max:500'],

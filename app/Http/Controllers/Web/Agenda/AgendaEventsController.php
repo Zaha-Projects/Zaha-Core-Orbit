@@ -14,6 +14,7 @@ use App\Models\MonthlyActivity;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\WorkflowLog;
+use App\Models\TargetGroup;
 use App\Services\AgendaWorkflowPresenter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -272,8 +273,6 @@ class AgendaEventsController extends Controller
             'proposed_date' => $data['monthly_template_proposed_date'] ?? null,
             'description' => $data['monthly_template_description'] ?? null,
             'execution_time' => $data['monthly_template_execution_time'] ?? null,
-            'location_details' => $data['monthly_template_location_details'] ?? null,
-            'required_volunteers' => $data['monthly_template_required_volunteers'] ?? null,
         ];
     }
 
@@ -636,7 +635,9 @@ class AgendaEventsController extends Controller
         $categories = $this->agendaCategoriesForForm();
         $branches = Branch::orderBy('name')->get();
 
-        return view('pages.agenda.events.create', compact('departments', 'categories', 'branches'));
+        $targetGroups = TargetGroup::query()->where('is_active', true)->orderBy('display_order')->orderBy('name')->get();
+
+        return view('pages.agenda.events.create', compact('departments', 'categories', 'branches', 'targetGroups'));
     }
 
     public function store(
@@ -672,10 +673,8 @@ class AgendaEventsController extends Controller
             'monthly_template_title' => ['nullable', 'string', 'max:255'],
             'monthly_template_proposed_date' => ['nullable', 'date'],
             'monthly_template_description' => ['nullable', 'string', 'max:2000'],
-            'monthly_template_target_group' => ['nullable', 'string', 'max:255'],
+            'monthly_template_target_group' => ['nullable', 'exists:target_groups,id'],
             'monthly_template_execution_time' => ['nullable', 'string', 'max:255'],
-            'monthly_template_location_details' => ['nullable', 'string', 'max:255'],
-            'monthly_template_required_volunteers' => ['nullable', 'integer', 'min:0'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
@@ -686,7 +685,7 @@ class AgendaEventsController extends Controller
                 'monthly_template_title' => ['required', 'string', 'max:255'],
                 'monthly_template_proposed_date' => ['required', 'date'],
                 'monthly_template_description' => ['required', 'string', 'max:2000'],
-                'monthly_template_target_group' => ['required', 'string', 'max:255'],
+                'monthly_template_target_group' => ['required', 'exists:target_groups,id'],
             ])->validate();
         }
 
@@ -812,10 +811,8 @@ class AgendaEventsController extends Controller
             'monthly_template_title' => ['nullable', 'string', 'max:255'],
             'monthly_template_proposed_date' => ['nullable', 'date'],
             'monthly_template_description' => ['nullable', 'string', 'max:2000'],
-            'monthly_template_target_group' => ['nullable', 'string', 'max:255'],
+            'monthly_template_target_group' => ['nullable', 'exists:target_groups,id'],
             'monthly_template_execution_time' => ['nullable', 'string', 'max:255'],
-            'monthly_template_location_details' => ['nullable', 'string', 'max:255'],
-            'monthly_template_required_volunteers' => ['nullable', 'integer', 'min:0'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
@@ -826,7 +823,7 @@ class AgendaEventsController extends Controller
                 'monthly_template_title' => ['required', 'string', 'max:255'],
                 'monthly_template_proposed_date' => ['required', 'date'],
                 'monthly_template_description' => ['required', 'string', 'max:2000'],
-                'monthly_template_target_group' => ['required', 'string', 'max:255'],
+                'monthly_template_target_group' => ['required', 'exists:target_groups,id'],
             ])->validate();
         }
 

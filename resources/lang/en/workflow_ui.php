@@ -82,6 +82,7 @@ return [
             'all_statuses' => 'All statuses',
             'from' => 'From date',
             'to' => 'To date',
+            'my_pending' => 'My pending approvals',
             'branch' => 'Branch',
             'apply' => 'Apply filters',
             'reset' => 'Reset',
