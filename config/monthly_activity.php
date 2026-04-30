@@ -22,4 +22,22 @@ return [
             'target_group_ids',
         ],
     ],
+
+    'agenda_linked_edit' => [
+        'enabled' => true,
+
+        /*
+         |-----------------------------------------------------------------
+         | Locked fields for all agenda-sourced monthly activities
+         |-----------------------------------------------------------------
+         |
+         | Any monthly activity created from an agenda event should keep
+         | planning source fields in sync with agenda data.
+         |
+         */
+        'locked_fields' => [
+            'title',
+            'description',
+        ],
+    ],
 ];
