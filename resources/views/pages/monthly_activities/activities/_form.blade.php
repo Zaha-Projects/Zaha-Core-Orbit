@@ -481,6 +481,22 @@
                                 <label class="form-label">عدد الركاب</label>
                                 <input class="form-control" type="number" min="1" name="transport_passengers_count" value="{{ old('transport_passengers_count', $payloadValue('transport.passengers_count')) }}">
                             </div>
+                            <div class="col-12">
+                                <label class="form-label d-block">اتجاه الرحلة</label>
+                                <div class="d-flex flex-wrap gap-3 pt-1">
+                                    <label class="form-check"><input class="form-check-input" type="radio" name="transport_trip_direction" value="go_only" {{ old('transport_trip_direction', $payloadValue('transport.trip_direction')) === 'go_only' ? 'checked' : '' }}><span class="form-check-label">ذهاب فقط</span></label>
+                                    <label class="form-check"><input class="form-check-input" type="radio" name="transport_trip_direction" value="round_trip" {{ old('transport_trip_direction', $payloadValue('transport.trip_direction')) === 'round_trip' ? 'checked' : '' }}><span class="form-check-label">ذهاب وعودة</span></label>
+                                    <label class="form-check"><input class="form-check-input" type="radio" name="transport_trip_direction" value="return_only" {{ old('transport_trip_direction', $payloadValue('transport.trip_direction')) === 'return_only' ? 'checked' : '' }}><span class="form-check-label">عودة فقط</span></label>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">نقطة الانطلاق من</label>
+                                <input class="form-control" name="transport_start_from" value="{{ old('transport_start_from', $payloadValue('transport.start_from')) }}">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">نقطة الانطلاق إلى</label>
+                                <input class="form-control" name="transport_start_to" value="{{ old('transport_start_to', $payloadValue('transport.start_to')) }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -489,10 +505,6 @@
                     <div class="monthly-subsection-card monthly-subsection-card--maintenance">
                         <h3 class="h6 mb-3">الصيانة بالموقع</h3>
                         <div class="row g-3">
-                            <div class="col-12 col-md-3">
-                                <label class="form-label">عدد العمال</label>
-                                <input class="form-control" type="number" min="1" name="maintenance_workers_count" value="{{ old('maintenance_workers_count', $payloadValue('maintenance.workers_count')) }}">
-                            </div>
                             <div class="col-12 col-md-5">
                                 <label class="form-label">نوع الصيانة</label>
                                 <input class="form-control" name="maintenance_type" value="{{ old('maintenance_type', $payloadValue('maintenance.type')) }}">
@@ -605,7 +617,7 @@
                                 <input class="form-control" name="programs_show_description" value="{{ old('programs_show_description', $payloadValue('programs.show_description')) }}">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label d-block">بحاجة فان؟</label>
+                                <label class="form-label d-block">Zaha Van</label>
                                 <div class="form-check form-switch pt-2">
                                     <input class="form-check-input js-programs-fun-toggle" type="checkbox" role="switch" name="programs_needs_fun" value="1" {{ $programsNeedsFunChecked ? 'checked' : '' }}>
                                 </div>
