@@ -27,6 +27,7 @@ use App\Services\WorkflowNotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
 
 class AgendaEventsController extends Controller
@@ -245,9 +246,7 @@ class AgendaEventsController extends Controller
             'month' => (int) Carbon::parse($agendaDate)->format('m'),
             'day' => (int) Carbon::parse($agendaDate)->format('d'),
             'title' => $templateTitle !== '' ? $templateTitle : $agendaEvent->event_name,
-            'proposed_date' => $isUnifiedPlan
-                ? (optional($monthlyActivity->proposed_date)->toDateString() ?: $proposedDate)
-                : $proposedDate,
+            'proposed_date' => $proposedDate,
             'is_in_agenda' => true,
             'is_from_agenda' => true,
             'participation_status' => 'participant',
@@ -272,7 +271,10 @@ class AgendaEventsController extends Controller
             'title' => $data['monthly_template_title'] ?? null,
             'proposed_date' => $data['monthly_template_proposed_date'] ?? null,
             'description' => $data['monthly_template_description'] ?? null,
+            'target_group' => $data['monthly_template_target_group'] ?? null,
             'execution_time' => $data['monthly_template_execution_time'] ?? null,
+            'time_from' => $data['monthly_template_time_from'] ?? null,
+            'time_to' => $data['monthly_template_time_to'] ?? null,
         ];
     }
 
@@ -635,7 +637,11 @@ class AgendaEventsController extends Controller
         $categories = $this->agendaCategoriesForForm();
         $branches = Branch::orderBy('name')->get();
 
-        $targetGroups = TargetGroup::query()->where('is_active', true)->orderBy('display_order')->orderBy('name')->get();
+        $targetGroupsQuery = TargetGroup::query()->where('is_active', true);
+        if (Schema::hasColumn('target_groups', 'display_order')) {
+            $targetGroupsQuery->orderBy('display_order');
+        }
+        $targetGroups = $targetGroupsQuery->orderBy('name')->get();
 
         return view('pages.agenda.events.create', compact('departments', 'categories', 'branches', 'targetGroups'));
     }
@@ -675,6 +681,8 @@ class AgendaEventsController extends Controller
             'monthly_template_description' => ['nullable', 'string', 'max:2000'],
             'monthly_template_target_group' => ['nullable', 'exists:target_groups,id'],
             'monthly_template_execution_time' => ['nullable', 'string', 'max:255'],
+            'monthly_template_time_from' => ['nullable', 'date_format:H:i'],
+            'monthly_template_time_to' => ['nullable', 'date_format:H:i'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
@@ -686,6 +694,8 @@ class AgendaEventsController extends Controller
                 'monthly_template_proposed_date' => ['required', 'date'],
                 'monthly_template_description' => ['required', 'string', 'max:2000'],
                 'monthly_template_target_group' => ['required', 'exists:target_groups,id'],
+                'monthly_template_time_from' => ['required', 'date_format:H:i'],
+                'monthly_template_time_to' => ['required', 'date_format:H:i'],
             ])->validate();
         }
 
@@ -774,7 +784,13 @@ class AgendaEventsController extends Controller
 
         $departmentUnits = $this->departmentUnitsForAgenda($agendaEvent);
 
-        return view('pages.agenda.events.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses'));
+        $targetGroupsQuery = TargetGroup::query()->where('is_active', true);
+        if (Schema::hasColumn('target_groups', 'display_order')) {
+            $targetGroupsQuery->orderBy('display_order');
+        }
+        $targetGroups = $targetGroupsQuery->orderBy('name')->get();
+
+        return view('pages.agenda.events.edit', compact('agendaEvent', 'departments', 'categories', 'branches', 'branchParticipations', 'departmentUnits', 'unitStatuses', 'targetGroups'));
     }
 
     public function update(
@@ -813,6 +829,8 @@ class AgendaEventsController extends Controller
             'monthly_template_description' => ['nullable', 'string', 'max:2000'],
             'monthly_template_target_group' => ['nullable', 'exists:target_groups,id'],
             'monthly_template_execution_time' => ['nullable', 'string', 'max:255'],
+            'monthly_template_time_from' => ['nullable', 'date_format:H:i'],
+            'monthly_template_time_to' => ['nullable', 'date_format:H:i'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
         ]);
@@ -824,6 +842,8 @@ class AgendaEventsController extends Controller
                 'monthly_template_proposed_date' => ['required', 'date'],
                 'monthly_template_description' => ['required', 'string', 'max:2000'],
                 'monthly_template_target_group' => ['required', 'exists:target_groups,id'],
+                'monthly_template_time_from' => ['required', 'date_format:H:i'],
+                'monthly_template_time_to' => ['required', 'date_format:H:i'],
             ])->validate();
         }
 
