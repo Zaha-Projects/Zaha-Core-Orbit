@@ -47,7 +47,7 @@
                 <input type="hidden" name="monthly_template_title" value="{{ old('monthly_template_title', data_get($templatePayload, 'title', $existingAgendaEvent?->event_name)) }}">
                 <input type="hidden" name="monthly_template_proposed_date" value="{{ old('monthly_template_proposed_date', optional($existingAgendaEvent?->event_date)->format('Y-m-d')) }}">
                 <input type="hidden" name="monthly_template_description" value="{{ old('monthly_template_description', data_get($templatePayload, 'description', $existingAgendaEvent?->notes)) }}">
-                <input type="hidden" name="monthly_template_target_group" value="{{ old('monthly_template_target_group', data_get($templatePayload, 'target_group')) }}">
+                <input type="hidden" name="monthly_template_target_group_ids" value="{{ old('monthly_template_target_group_ids', data_get($templatePayload, 'target_group_ids')) }}">
                 <input type="hidden" name="monthly_template_execution_time" value="{{ $templateExecutionTime }}">
                 <input type="hidden" name="monthly_template_time_from" value="{{ $templateTimeFrom }}">
                 <input type="hidden" name="monthly_template_time_to" value="{{ $templateTimeTo }}">
@@ -222,10 +222,10 @@
             </div>
             <div class="modal-body">
                 <div class="row g-3">
-                    <div class="col-12 col-md-6"><label class="form-label">عنوان النشاط الشهري *</label><input class="form-control" id="tpl_title" readonly></div>
-                    <div class="col-12 col-md-6"><label class="form-label">التاريخ المقترح *</label><input class="form-control" type="date" id="tpl_proposed_date" readonly></div>
-                    <div class="col-12"><label class="form-label">الوصف *</label><textarea class="form-control" rows="3" id="tpl_description" readonly></textarea></div>
-                    <div class="col-12 col-md-6"><label class="form-label">الفئة المستهدفة *</label><select class="form-select" id="tpl_target_group"><option value="">اختر الفئة المستهدفة</option>@foreach(($targetGroups ?? collect()) as $group)<option value="{{ $group->id }}">{{ $group->name }}</option>@endforeach</select></div>
+                    <div class="col-12 col-md-6"><label class="form-label">عنوان النشاط الشهري * <i class="fas fa-lock text-muted" title="حقل مقفل"></i></label><input class="form-control" id="tpl_title" readonly></div>
+                    <div class="col-12 col-md-6"><label class="form-label">التاريخ المقترح * <i class="fas fa-lock text-muted" title="حقل مقفل"></i></label><input class="form-control" type="date" id="tpl_proposed_date" readonly></div>
+                    <div class="col-12"><label class="form-label">الوصف * <i class="fas fa-lock text-muted" title="حقل مقفل"></i></label><textarea class="form-control" rows="3" id="tpl_description" readonly></textarea></div>
+                    <div class="col-12"><label class="form-label">الفئة المستهدفة *</label><div class="d-flex flex-wrap gap-3" id="tpl_target_groups">@foreach(($targetGroups ?? collect()) as $group)<label class="form-check d-inline-flex align-items-center gap-2 mb-0"><input class="form-check-input m-0" type="checkbox" value="{{ $group->id }}" data-template-target-group><span class="form-check-label">{{ $group->name }}</span></label>@endforeach</div></div>
                     <div class="col-12 col-md-3"><label class="form-label">الوقت الفعلي للتنفيذ من *</label><input class="form-control" type="time" id="tpl_time_from"></div>
                     <div class="col-12 col-md-3"><label class="form-label">الوقت الفعلي للتنفيذ إلى *</label><input class="form-control" type="time" id="tpl_time_to"></div>
                 </div>
@@ -256,7 +256,7 @@
             const modalEl = document.getElementById('unifiedTemplateModal');
             const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
             const requiredError = document.getElementById('tpl_required_error');
-            const map = ['title','proposed_date','description','target_group','execution_time','time_from','time_to'];
+            const map = ['title','proposed_date','description','execution_time','time_from','time_to'];
             const hidden = (k) => form.querySelector(`input[name="monthly_template_${k}"]`);
             const field = (k) => document.getElementById(`tpl_${k}`);
             const syncUnified = () => unifiedSection?.classList.toggle('d-none', planType?.value !== 'unified');
@@ -274,6 +274,8 @@
             syncUnified();
             planType?.addEventListener('change', syncUnified);
             map.forEach((k) => { if (field(k) && hidden(k)) field(k).value = hidden(k).value || ''; });
+            const initialTargetGroups = (form.querySelector('input[name="monthly_template_target_group_ids"]')?.value || '').split(',').map((v) => v.trim()).filter(Boolean);
+            document.querySelectorAll('[data-template-target-group]').forEach((checkbox) => { checkbox.checked = initialTargetGroups.includes(checkbox.value); });
             syncFromEvent();
             form.querySelector('input[name="event_name"]')?.addEventListener('input', syncFromEvent);
             form.querySelector('input[name="event_date"]')?.addEventListener('input', syncFromEvent);
@@ -282,18 +284,22 @@
             document.getElementById('saveUnifiedTemplate')?.addEventListener('click', () => {
                 const timeFrom = field('time_from')?.value || '';
                 const timeTo = field('time_to')?.value || '';
-                const ok = ['title','proposed_date','description','target_group'].every((k) => (field(k)?.value || '').trim() !== '') && timeFrom !== '' && timeTo !== '';
+                const selectedTargetGroups = Array.from(document.querySelectorAll('[data-template-target-group]:checked')).map((el) => el.value);
+                const ok = ['title','proposed_date','description'].every((k) => (field(k)?.value || '').trim() !== '') && selectedTargetGroups.length > 0 && timeFrom !== '' && timeTo !== '';
                 requiredError?.classList.toggle('d-none', ok);
                 if (!ok) return;
                 if (hidden('execution_time')) hidden('execution_time').value = `${timeFrom} - ${timeTo}`;
                 if (hidden('time_from')) hidden('time_from').value = timeFrom;
                 if (hidden('time_to')) hidden('time_to').value = timeTo;
                 map.forEach((k) => { if (['execution_time','time_from','time_to'].includes(k)) return; if (hidden(k)) hidden(k).value = field(k)?.value || ''; });
+                const hiddenTargetGroups = form.querySelector('input[name="monthly_template_target_group_ids"]');
+                if (hiddenTargetGroups) hiddenTargetGroups.value = selectedTargetGroups.join(',');
                 modal?.hide();
             });
             form.addEventListener('submit', function (e) {
                 if (planType?.value !== 'unified') return;
-                const ok = ['title','proposed_date','description','target_group','execution_time'].every((k) => (hidden(k)?.value || '').trim() !== '');
+                const hiddenTargetGroups = form.querySelector('input[name="monthly_template_target_group_ids"]')?.value || '';
+                const ok = ['title','proposed_date','description','execution_time'].every((k) => (hidden(k)?.value || '').trim() !== '') && hiddenTargetGroups.trim() !== '';
                 if (!ok) {
                     e.preventDefault();
                     modal?.show();
