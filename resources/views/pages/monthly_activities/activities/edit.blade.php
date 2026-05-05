@@ -62,7 +62,15 @@
         ->map(fn ($definition) => $definition['label'])
         ->all();
     $executionNeedsFollowup = collect(old('execution_needs_followup', $monthlyActivity->execution_needs_followup ?? []))
-        ->keyBy('key');
+        ->mapWithKeys(function ($row, $key) {
+            if (! is_array($row)) {
+                return [];
+            }
+
+            $resolvedKey = $row['key'] ?? (is_string($key) ? $key : null);
+
+            return filled($resolvedKey) ? [$resolvedKey => $row] : [];
+        });
 @endphp
 
 @push('styles')
@@ -534,6 +542,26 @@
                                     value="{{ old("execution_needs_followup.$needKey.effectiveness_score", $needData['effectiveness_score'] ?? '') }}"
                                 >
                             </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">تقييم الحالة /100</label>
+                                <input
+                                    class="form-control"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    name="execution_needs_followup[{{ $needKey }}][evaluation_score]"
+                                    value="{{ old("execution_needs_followup.$needKey.evaluation_score", $needData['evaluation_score'] ?? '') }}"
+                                >
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">مبرر التقييم / سبب التقييم</label>
+                                <textarea
+                                    class="form-control"
+                                    name="execution_needs_followup[{{ $needKey }}][evaluation_reason]"
+                                    rows="2"
+                                >{{ old("execution_needs_followup.$needKey.evaluation_reason", $needData['evaluation_reason'] ?? '') }}</textarea>
+                            </div>
                         </div>
                     </div>
                 @empty
@@ -560,28 +588,6 @@
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="evaluation_only" value="1">
-                    <div class="col-12 col-md-4">
-                        <label class="form-label">تقييم الحالة /100</label>
-                        <input
-                            class="form-control @error('evaluation_score') is-invalid @enderror"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            name="evaluation_score"
-                            value="{{ old('evaluation_score', $monthlyActivity->evaluation_score) }}"
-                        >
-                        @error('evaluation_score')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-12 col-md-8">
-                        <label class="form-label">مبرر التقييم / سبب التقييم</label>
-                        <textarea
-                            class="form-control @error('evaluation_reason') is-invalid @enderror"
-                            name="evaluation_reason"
-                            rows="2"
-                        >{{ old('evaluation_reason', $monthlyActivity->evaluation_reason) }}</textarea>
-                        @error('evaluation_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
                     @forelse($evaluationQuestions as $question)
                         @php $response = $evaluationByQuestion->get($question->id); @endphp
                         <div class="col-12 border rounded-3 p-3">
@@ -726,28 +732,6 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">عدد الحضور الفعلي</label>
                     <input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance) }}">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">تقييم الحالة /100</label>
-                    <input
-                        class="form-control @error('evaluation_score') is-invalid @enderror"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        name="evaluation_score"
-                        value="{{ old('evaluation_score', $monthlyActivity->evaluation_score) }}"
-                    >
-                    @error('evaluation_score')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-12">
-                    <label class="form-label">مبرر التقييم / سبب التقييم</label>
-                    <textarea
-                        class="form-control @error('evaluation_reason') is-invalid @enderror"
-                        name="evaluation_reason"
-                        rows="2"
-                    >{{ old('evaluation_reason', $monthlyActivity->evaluation_reason) }}</textarea>
-                    @error('evaluation_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 d-flex justify-content-end align-items-end">
                     <button class="btn btn-outline-primary" type="submit">

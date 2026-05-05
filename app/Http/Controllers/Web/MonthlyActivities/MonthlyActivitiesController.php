@@ -699,8 +699,11 @@ class MonthlyActivitiesController extends Controller
                 $reason = trim((string) ($row['reason'] ?? ($row['notes'] ?? '')));
                 $score = $row['effectiveness_score'] ?? null;
                 $score = $score === '' || $score === null ? null : (int) $score;
+                $evaluationScore = $row['evaluation_score'] ?? null;
+                $evaluationScore = $evaluationScore === '' || $evaluationScore === null ? null : (float) $evaluationScore;
+                $evaluationReason = trim((string) ($row['evaluation_reason'] ?? ''));
 
-                if (! $status && $reason === '' && $score === null) {
+                if (! $status && $reason === '' && $score === null && $evaluationScore === null && $evaluationReason === '') {
                     return null;
                 }
 
@@ -710,6 +713,8 @@ class MonthlyActivitiesController extends Controller
                     'reason' => $reason !== '' ? $reason : null,
                     'notes' => $reason !== '' ? $reason : null,
                     'effectiveness_score' => $score,
+                    'evaluation_score' => $evaluationScore,
+                    'evaluation_reason' => $evaluationReason !== '' ? $evaluationReason : null,
                 ];
             })
             ->filter()
@@ -1716,6 +1721,8 @@ class MonthlyActivitiesController extends Controller
             'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
             'execution_needs_followup.*.notes' => ['nullable', 'string', 'max:1000'],
             'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
+            'execution_needs_followup.*.evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+            'execution_needs_followup.*.evaluation_reason' => ['nullable', 'string', 'max:1000'],
             'needs_ceremony_agenda' => ['nullable', 'boolean'],
             'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
             'ceremony_time_from' => ['nullable', 'date_format:H:i'],
@@ -2119,6 +2126,8 @@ class MonthlyActivitiesController extends Controller
                 'execution_needs_followup.*.reason' => ['nullable', 'string', 'max:1000'],
                 'execution_needs_followup.*.notes' => ['nullable', 'string', 'max:1000'],
                 'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
+                'execution_needs_followup.*.evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+                'execution_needs_followup.*.evaluation_reason' => ['nullable', 'string', 'max:1000'],
             ]);
 
             $this->normalizeExecutionNeedsFollowup($data);
