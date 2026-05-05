@@ -36,6 +36,9 @@
     color: #163d96;
     font-weight: 600;
 }
+.dashboard-calendar-header .h5 {
+    line-height: 1.35;
+}
 .dashboard-calendar-legend {
     display: flex;
     flex-wrap: wrap;
@@ -88,6 +91,13 @@
 
 #calendarSection .fc .fc-toolbar.fc-header-toolbar {
     margin-bottom: 1rem;
+    gap: .65rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+#calendarSection .fc .fc-toolbar-title {
+    font-size: 1.06rem;
+    font-weight: 700;
 }
 
 #calendarSection .fc .fc-button {
@@ -116,8 +126,99 @@
 @media (max-width: 991.98px) {
     .dashboard-calendar-card {
         min-height: auto;
+        padding: 1rem !important;
     }
     .dashboard-calendar-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    #calendarSection .fc .fc-view-harness {
+        min-height: 430px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-calendar-header {
+        padding: .75rem;
+    }
+    .dashboard-calendar-header .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: .55rem !important;
+    }
+    .dashboard-calendar-header .d-flex.align-items-center {
+        justify-content: space-between;
+    }
+    .dashboard-calendar-filter {
+        min-width: 100%;
+    }
+    .dashboard-calendar-chip {
+        font-size: .74rem;
+        padding: .3rem .65rem;
+    }
+    .dashboard-calendar-legend {
+        gap: .5rem .7rem;
+        padding: .7rem;
+    }
+    .legend-item {
+        font-size: .78rem;
+    }
+    .dashboard-calendar-stats {
+        grid-template-columns: 1fr;
+    }
+    .stat-pill {
+        padding: .62rem .7rem;
+    }
+    #calendarSection .fc {
+        font-size: .9rem;
+    }
+    #calendarSection .fc .fc-toolbar.fc-header-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #calendarSection .fc .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+    }
+    #calendarSection .fc .fc-toolbar-chunk:first-child {
+        justify-content: space-between;
+    }
+    #calendarSection .fc .fc-toolbar-chunk:last-child {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: .25rem;
+    }
+    #calendarSection .fc .fc-button-group {
+        display: inline-flex;
+        flex-wrap: nowrap;
+    }
+    #calendarSection .fc .fc-button {
+        font-size: .78rem;
+        padding: .35rem .5rem;
+    }
+    #calendarSection .fc .fc-view-harness {
+        min-height: 360px;
+    }
+    #calendarSection .fc .fc-daygrid-day-number,
+    #calendarSection .fc .fc-col-header-cell-cushion {
+        font-size: .8rem;
+    }
+}
+
+@media (max-width: 479.98px) {
+    .dashboard-calendar-card {
+        border-radius: 16px;
+    }
+    .dashboard-calendar-intro {
+        font-size: .82rem;
+    }
+    .stat-pill strong {
+        font-size: .96rem;
+    }
+    #calendarSection .fc .fc-toolbar-title {
+        font-size: .93rem;
+        text-align: center;
+    }
+    #calendarSection .fc .fc-button {
+        padding: .3rem .45rem;
     }
 }
