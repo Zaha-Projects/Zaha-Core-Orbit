@@ -165,14 +165,38 @@
     }
 
     try {
+      const eventSource = events.map((item) => ({
+        ...item,
+        editable: false,
+        startEditable: false,
+        durationEditable: false
+      }));
+
       calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: state.locale,
         direction: state.locale === 'ar' ? 'rtl' : 'ltr',
-        headerToolbar: { start: 'prev,next today', center: 'title', end: 'dayGridMonth' },
-        events
+        headerToolbar: { start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay' },
+        buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع', day: 'يوم' },
+        eventClick: (info) => info.jsEvent.preventDefault(),
+        events: eventSource,
+        eventDidMount: (info) => {
+          const props = info.event.extendedProps || {};
+          const typeLabel = info.event.extendedProps.type === 'monthly_plan' || info.event._def.extendedProps?.type === 'monthly_plan'
+            ? 'خطة شهرية'
+            : 'أجندة سنوية';
+          info.el.title = `${typeLabel}\nالفرع المالك: ${props.owner_branch || '—'}\nالمشارك: ${props.participant_entity || '—'}`;
+        }
       });
       calendar.render();
+
+      const viewFilter = document.getElementById('dashboardCalendarViewFilter');
+      if (viewFilter) {
+        viewFilter.addEventListener('change', (event) => {
+          const nextView = event.target.value || 'dayGridMonth';
+          calendar.changeView(nextView);
+        });
+      }
     } catch (error) {
       if (el.calendarFallback) el.calendarFallback.classList.remove('d-none');
     }
