@@ -1576,6 +1576,7 @@ class MonthlyActivitiesController extends Controller
                 'execution_status' => 'executed',
                 'relations_manager_approval_status' => $isReadOnlyUnified ? 'approved' : null,
                 'executive_approval_status' => $isReadOnlyUnified ? 'approved' : null,
+                'executive_review_required' => false,
                 'lifecycle_status' => $isReadOnlyUnified ? 'Approved' : null,
                 'lock_at' => $this->buildLockAt(optional($event->event_date)?->toDateString() ?? Carbon::create($data['year'], $event->month, $event->day)->toDateString()),
                 'is_official' => false,
@@ -2514,6 +2515,7 @@ class MonthlyActivitiesController extends Controller
             $newValues['liaison_approval_status'] = 'pending';
             $newValues['hq_relations_manager_approval_status'] = 'pending';
             $newValues['executive_approval_status'] = 'pending';
+            $newValues['executive_review_required'] = false;
         }
 
         $activityToSave = $monthlyActivity;
@@ -2601,6 +2603,7 @@ class MonthlyActivitiesController extends Controller
                 'liaison_approval_status' => $newValues['liaison_approval_status'],
                 'hq_relations_manager_approval_status' => $newValues['hq_relations_manager_approval_status'],
                 'executive_approval_status' => $newValues['executive_approval_status'],
+                'executive_review_required' => $newValues['executive_review_required'] ?? false,
                 'lock_at' => $this->buildLockAt($data['proposed_date']),
                 'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
                 'created_by' => $request->user()->id,
@@ -2697,6 +2700,7 @@ class MonthlyActivitiesController extends Controller
             'liaison_approval_status' => $newValues['liaison_approval_status'],
             'hq_relations_manager_approval_status' => $newValues['hq_relations_manager_approval_status'],
             'executive_approval_status' => $newValues['executive_approval_status'],
+            'executive_review_required' => $newValues['executive_review_required'] ?? false,
             'lock_at' => $this->buildLockAt($data['proposed_date']),
             'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
             ]);

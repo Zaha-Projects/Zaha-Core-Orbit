@@ -11,11 +11,7 @@ class WorkflowAutoApprovalPreferenceController extends Controller
     public function update(Request $request, DynamicWorkflowService $workflowService)
     {
         $user = $request->user();
-        abort_unless(
-            $workflowService->userMayAutoApproveWorkflow('agenda', $user)
-            || $workflowService->userMayAutoApproveWorkflow('monthly_activities', $user),
-            403
-        );
+        abort_unless($user?->hasRole('executive_manager'), 403);
 
         $data = $request->validate([
             'auto_approve_workflow_steps' => ['nullable', 'boolean'],

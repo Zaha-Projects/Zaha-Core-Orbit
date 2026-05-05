@@ -29,6 +29,10 @@
     ];
 
     $conditionMeta = [
+        'monthly_created_by_branch_relations' => 'عندما تكون الخطة منشأة من مسؤول علاقات فرعي',
+        'monthly_created_by_primary_relations' => 'عندما تكون الخطة منشأة من مسؤول علاقات رئيسي',
+        'monthly_branch_coordinator_required' => 'عندما يكون للفرع منسق فروع مسؤول عنه',
+        'executive_review_required' => 'عندما يرسل مدير العلاقات الرئيسي الخطة للمدير التنفيذي',
         'requires_programs' => 'عند الحاجة لاعتماد البرامج',
         'requires_workshops' => 'عند الحاجة لاعتماد المشاغل',
         'requires_communications' => 'عند الحاجة لاعتماد قسم الاتصال',

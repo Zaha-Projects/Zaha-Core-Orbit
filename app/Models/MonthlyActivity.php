@@ -167,6 +167,7 @@ class MonthlyActivity extends Model
         'liaison_approval_status',
         'hq_relations_manager_approval_status',
         'executive_approval_status',
+        'executive_review_required',
         'lock_at',
         'is_official',
         'branch_id',
@@ -189,6 +190,7 @@ class MonthlyActivity extends Model
         'is_program_related' => 'boolean',
         'requires_workshops' => 'boolean',
         'requires_communications' => 'boolean',
+        'executive_review_required' => 'boolean',
         'execution_needs_payload' => 'array',
         'execution_needs_followup' => 'array',
         'proposed_date' => 'date',
@@ -208,6 +210,38 @@ class MonthlyActivity extends Model
     public function getPlanningAttachmentAttribute(): ?string
     {
         return $this->attributes['branch_plan_file'] ?? null;
+    }
+
+    public function getMonthlyCreatedByBranchRelationsAttribute(): bool
+    {
+        $creator = $this->creator()->first();
+
+        return $creator?->hasRole('branch_relations_officer') || $creator?->hasRole('branch_relations_manager');
+    }
+
+    public function getMonthlyCreatedByPrimaryRelationsAttribute(): bool
+    {
+        return (bool) $this->creator()->first()?->hasRole('relations_officer');
+    }
+
+    public function getMonthlyBranchCoordinatorRequiredAttribute(): bool
+    {
+        if (! $this->monthly_created_by_branch_relations || empty($this->branch_id)) {
+            return false;
+        }
+
+        return User::query()
+            ->role('branch_coordinator')
+            ->where(function ($query): void {
+                $query->whereHas('assignedBranches', function ($assignedQuery): void {
+                    $assignedQuery->where('branches.id', $this->branch_id);
+                })->orWhere(function ($fallbackQuery): void {
+                    $fallbackQuery
+                        ->whereDoesntHave('assignedBranches')
+                        ->where('branch_id', $this->branch_id);
+                });
+            })
+            ->exists();
     }
 
     public function setPlanningAttachmentAttribute($value): void

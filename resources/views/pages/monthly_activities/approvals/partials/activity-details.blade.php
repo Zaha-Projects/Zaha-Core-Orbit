@@ -91,9 +91,9 @@
                     <div class="mb-2">
                         <label class="form-label">{{ __('workflow_ui.approvals.timeline.decision') }}</label>
                         <select class="form-select decision-select" name="decision" required>
-                            <option value="approved">{{ __('workflow_ui.approvals.status_labels.approved') }}</option>
-                            <option value="changes_requested">{{ __('workflow_ui.approvals.status_labels.changes_requested') }}</option>
-                            <option value="rejected">{{ __('workflow_ui.approvals.status_labels.rejected') }}</option>
+                            @foreach($card['decision_options'] as $option)
+                                <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="mb-2">

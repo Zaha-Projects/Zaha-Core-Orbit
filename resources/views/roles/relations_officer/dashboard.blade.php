@@ -10,11 +10,6 @@
             'link' => route('role.relations.agenda.index'),
         ],
         [
-            'title' => __('app.roles.relations_officer.actions.notes.title'),
-            'description' => __('app.roles.relations_officer.actions.notes.description'),
-            'link' => route('role.relations.approvals.index'),
-        ],
-        [
             'title' => __('app.roles.relations_officer.actions.readiness.title'),
             'description' => __('app.roles.relations_officer.actions.readiness.description'),
         ],

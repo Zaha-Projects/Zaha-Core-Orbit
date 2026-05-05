@@ -104,18 +104,20 @@ class DynamicWorkflowService
 
         $workflow->loadMissing('steps.role', 'steps.permission');
 
-        return $workflow->steps->contains(function (WorkflowStep $step) use ($user): bool {
+        return $workflow->steps
+            ->where('step_type', 'main')
+            ->contains(function (WorkflowStep $step) use ($user): bool {
             $matchesRole = $step->role && $user->hasRole($step->role->name);
             $matchesPermission = $step->permission && $user->can($step->permission->name);
 
             return $matchesRole || $matchesPermission;
-        });
+            });
     }
 
     public function userMayAutoApproveWorkflow(string $module, User $user): bool
     {
-        if ($user->hasRole('super_admin')) {
-            return true;
+        if (! $user->hasRole('executive_manager')) {
+            return false;
         }
 
         $workflow = $this->findActiveWorkflow($module);
@@ -171,15 +173,7 @@ class DynamicWorkflowService
             abort_if(blank(trim((string) $comment)), 422, __('app.roles.programs.monthly_activities.approvals.errors.comment_required'));
         }
 
-        $log = WorkflowLog::query()->create([
-            'workflow_instance_id' => $instance->id,
-            'workflow_step_id' => $step->id,
-            'acted_by' => $actor->id,
-            'action' => $decision,
-            'comment' => $comment,
-            'edit_request_iteration' => (int) $instance->edit_request_count,
-            'acted_at' => now(),
-        ]);
+        $log = $this->createDecisionLog($instance, $step, $actor, $decision, $comment);
 
         if ($decision === self::DECISION_CHANGES_REQUESTED) {
             $instance->increment('edit_request_count');
@@ -199,6 +193,19 @@ class DynamicWorkflowService
         }
 
         $this->advanceToNextStep($instance->fresh());
+
+        return $log;
+    }
+
+    public function recordFinalApproval(WorkflowInstance $instance, WorkflowStep $step, User $actor, ?string $comment = null): WorkflowLog
+    {
+        $log = $this->createDecisionLog($instance, $step, $actor, self::DECISION_APPROVED, $comment);
+
+        $instance->update([
+            'status' => self::DECISION_APPROVED,
+            'current_step_id' => null,
+            'completed_at' => now(),
+        ]);
 
         return $log;
     }
@@ -345,7 +352,7 @@ class DynamicWorkflowService
 
     public function autoApprovePendingStepsForUser(User $user): void
     {
-        if (! $user->auto_approve_workflow_steps) {
+        if (! $this->userCanUseAutoApproval($user)) {
             return;
         }
 
@@ -442,10 +449,29 @@ class DynamicWorkflowService
         $creatorId = (int) data_get($this->resolveEntity($instance), 'created_by');
 
         return $this->eligibleUsersForStep($instance, $step)
-            ->filter(fn (User $user): bool => (bool) $user->auto_approve_workflow_steps)
+            ->filter(fn (User $user): bool => $this->userCanUseAutoApproval($user))
             ->reject(fn (User $user): bool => $creatorId > 0 && (int) $user->id === $creatorId)
             ->sortBy('id')
             ->first();
+    }
+
+    private function userCanUseAutoApproval(User $user): bool
+    {
+        return (bool) $user->auto_approve_workflow_steps
+            && $user->hasRole('executive_manager');
+    }
+
+    private function createDecisionLog(WorkflowInstance $instance, WorkflowStep $step, User $actor, string $decision, ?string $comment = null): WorkflowLog
+    {
+        return WorkflowLog::query()->create([
+            'workflow_instance_id' => $instance->id,
+            'workflow_step_id' => $step->id,
+            'acted_by' => $actor->id,
+            'action' => $decision,
+            'comment' => $comment,
+            'edit_request_iteration' => (int) $instance->edit_request_count,
+            'acted_at' => now(),
+        ]);
     }
 
     private function firstApplicableStep(Collection $steps, ?Model $entity): ?WorkflowStep

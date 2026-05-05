@@ -17,43 +17,41 @@ class MonthlyActivityWorkflowService
      */
     public function stepsFor(MonthlyActivity $activity): array
     {
-        $steps = [
-            [
+        $steps = [];
+
+        if ($activity->monthly_created_by_branch_relations) {
+            $steps[] = [
                 'key' => 'branch_relations_officer_review',
                 'label' => 'Branch Relations Officer',
                 'status_field' => 'relations_officer_approval_status',
-                'role' => 'relations_officer',
-            ],
-            [
+                'role' => 'branch_relations_officer',
+            ];
+
+            $steps[] = [
                 'key' => 'branch_relations_manager_review',
-                'label' => 'Branch Relations Manager',
+                'label' => 'Supervisor',
                 'status_field' => 'relations_manager_approval_status',
-                'role' => 'relations_manager',
-            ],
-        ];
-
-        if ((bool) $activity->requires_programs) {
-            $steps[] = [
-                'key' => 'hq_programs_officer_review',
-                'label' => 'HQ Programs Officer',
-                'status_field' => 'programs_officer_approval_status',
-                'role' => 'programs_officer',
+                'role' => 'branch_relations_manager',
             ];
 
-            $steps[] = [
-                'key' => 'hq_programs_manager_review',
-                'label' => 'HQ Programs Manager',
-                'status_field' => 'programs_manager_approval_status',
-                'role' => 'programs_manager',
-            ];
+            if ($activity->monthly_branch_coordinator_required) {
+                $steps[] = [
+                    'key' => 'branch_coordinator_review',
+                    'label' => 'Branch Coordinator',
+                    'status_field' => 'liaison_approval_status',
+                    'role' => 'branch_coordinator',
+                ];
+            }
         }
 
-        $steps[] = [
-            'key' => 'hq_liaison_review',
-            'label' => 'HQ Liaison',
-            'status_field' => 'liaison_approval_status',
-            'role' => 'liaison',
-        ];
+        if ($activity->monthly_created_by_primary_relations) {
+            $steps[] = [
+                'key' => 'primary_relations_officer_submit',
+                'label' => 'Primary Relations Officer',
+                'status_field' => 'relations_officer_approval_status',
+                'role' => 'relations_officer',
+            ];
+        }
 
         $steps[] = [
             'key' => 'hq_relations_manager_review',
@@ -62,12 +60,14 @@ class MonthlyActivityWorkflowService
             'role' => 'relations_manager',
         ];
 
-        $steps[] = [
-            'key' => 'executive_review',
-            'label' => 'Executive Manager',
-            'status_field' => 'executive_approval_status',
-            'role' => 'executive_manager',
-        ];
+        if ((bool) $activity->executive_review_required) {
+            $steps[] = [
+                'key' => 'executive_review',
+                'label' => 'Executive Manager',
+                'status_field' => 'executive_approval_status',
+                'role' => 'executive_manager',
+            ];
+        }
 
         return $steps;
     }
@@ -129,10 +129,9 @@ class MonthlyActivityWorkflowService
             }
         }
 
-        if (! $activity->requires_programs) {
-            $updates['programs_officer_approval_status'] = 'skipped';
-            $updates['programs_manager_approval_status'] = 'skipped';
-        }
+        $updates['programs_officer_approval_status'] = 'skipped';
+        $updates['programs_manager_approval_status'] = 'skipped';
+        $updates['executive_approval_status'] = $activity->executive_review_required ? 'pending' : 'skipped';
 
         $activity->update($updates);
     }

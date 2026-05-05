@@ -1,10 +1,6 @@
 @php
     $workflowAutoApprovalUser = auth()->user();
-    $workflowAutoApprovalService = app(\App\Services\DynamicWorkflowService::class);
-    $canUseWorkflowAutoApproval = $workflowAutoApprovalUser && (
-        $workflowAutoApprovalService->userMayAutoApproveWorkflow('agenda', $workflowAutoApprovalUser)
-        || $workflowAutoApprovalService->userMayAutoApproveWorkflow('monthly_activities', $workflowAutoApprovalUser)
-    );
+    $canUseWorkflowAutoApproval = $workflowAutoApprovalUser?->hasRole('executive_manager');
     $workflowAutoApprovalVariant = $variant ?? 'nxl';
 @endphp
 

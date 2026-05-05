@@ -55,14 +55,12 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
             $irbidBranch
         );
         $branchCoordinator = User::query()->where('email', 'branch-coordinator@zaha.test')->first();
-        $relationsOfficer = User::query()->where('email', 'relations-officer@zaha.test')->first();
         $relationsManager = User::query()->where('email', 'relations-manager@zaha.test')->first();
-        $programsManager = User::query()->where('email', 'programs-manager@zaha.test')->first();
         $workshopsSecretary = User::query()->where('email', 'workshops-secretary@zaha.test')->first();
         $communicationHead = User::query()->where('email', 'communication-head@zaha.test')->first();
         $executiveManager = User::query()->where('email', 'executive-manager@zaha.test')->first();
 
-        if (! $creatorZarqa || ! $managerZarqa || ! $creatorIrbid || ! $managerIrbid || ! $branchCoordinator || ! $relationsOfficer || ! $relationsManager || ! $executiveManager) {
+        if (! $creatorZarqa || ! $managerZarqa || ! $creatorIrbid || ! $managerIrbid || ! $branchCoordinator || ! $relationsManager || ! $executiveManager) {
             return;
         }
 
@@ -99,8 +97,8 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         $this->decideMonthly($approvedActivity, $creatorZarqa, DynamicWorkflowService::DECISION_APPROVED, 'Submitted from branch.');
         $this->decideMonthly($approvedActivity, $managerZarqa, DynamicWorkflowService::DECISION_APPROVED, 'Branch manager approved.');
         $this->decideMonthly($approvedActivity, $branchCoordinator, DynamicWorkflowService::DECISION_APPROVED, 'Coordinator approved for assigned branch.');
-        $this->decideMonthly($approvedActivity, $relationsOfficer, DynamicWorkflowService::DECISION_APPROVED, 'HQ relations officer approved.');
-        $this->decideMonthly($approvedActivity, $relationsManager, DynamicWorkflowService::DECISION_APPROVED, 'HQ relations manager approved.');
+        $approvedActivity->forceFill(['executive_review_required' => true])->save();
+        $this->decideMonthly($approvedActivity->fresh(), $relationsManager, DynamicWorkflowService::DECISION_APPROVED, 'HQ relations manager approved and sent to executive.');
         $this->decideMonthly($approvedActivity, $executiveManager, DynamicWorkflowService::DECISION_APPROVED, 'Final approval completed.');
 
         $awaitingCoordinatorActivity = $this->upsertMonthlyActivity([
@@ -133,13 +131,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         $this->decideMonthly($allRequirementsActivity, $creatorZarqa, DynamicWorkflowService::DECISION_APPROVED, 'Submitted from branch.');
         $this->decideMonthly($allRequirementsActivity, $managerZarqa, DynamicWorkflowService::DECISION_APPROVED, 'Branch manager approved.');
         $this->decideMonthly($allRequirementsActivity, $branchCoordinator, DynamicWorkflowService::DECISION_APPROVED, 'Coordinator approved.');
-        $this->decideMonthly($allRequirementsActivity, $relationsOfficer, DynamicWorkflowService::DECISION_APPROVED, 'HQ relations officer approved.');
-        if ($programsManager) {
-            $this->decideMonthly($allRequirementsActivity, $programsManager, DynamicWorkflowService::DECISION_APPROVED, 'Programs review completed.');
-        }
-        if ($workshopsSecretary) {
-            $this->decideMonthly($allRequirementsActivity, $workshopsSecretary, DynamicWorkflowService::DECISION_APPROVED, 'Workshops review completed.');
-        }
+        $this->decideMonthly($allRequirementsActivity, $relationsManager, DynamicWorkflowService::DECISION_APPROVED, 'HQ relations manager final approval.');
 
         $changesRequestedActivity = $this->upsertMonthlyActivity([
             'title' => 'Showcase Monthly Changes Requested - Branch Revision Needed',
@@ -192,6 +184,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
             'liaison_approval_status' => 'pending',
             'hq_relations_manager_approval_status' => 'pending',
             'executive_approval_status' => 'pending',
+            'executive_review_required' => false,
             'branch_id' => $data['branch']->id,
             'created_by' => $data['creator']->id,
         ]);
@@ -217,7 +210,8 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
             'programs_manager_approval_status' => (bool) $activity->requires_programs ? 'pending' : 'skipped',
             'liaison_approval_status' => 'pending',
             'hq_relations_manager_approval_status' => 'pending',
-            'executive_approval_status' => 'pending',
+            'executive_approval_status' => 'skipped',
+            'executive_review_required' => false,
         ]);
     }
 
@@ -262,7 +256,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         $roleFieldMap = [
             'monthly_branch_relations_officer_submit' => 'relations_officer_approval_status',
             'monthly_branch_relations_manager_review' => 'relations_manager_approval_status',
-            'monthly_programs_manager_review' => 'programs_manager_approval_status',
+            'monthly_branch_coordinator_review' => 'liaison_approval_status',
             'monthly_relations_manager_review' => 'hq_relations_manager_approval_status',
             'monthly_executive_manager_final_approval' => 'executive_approval_status',
         ];

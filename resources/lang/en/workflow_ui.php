@@ -112,6 +112,10 @@ return [
         'comment_required' => 'Comment is required for this decision.',
         'confirm_action' => 'Confirm approval action',
         'confirm_action_body' => 'Are you sure you want to submit this action?',
+        'decisions' => [
+            'approved_final' => 'Final approval and publish',
+            'approved_send_executive' => 'Approve and send to executive manager',
+        ],
         'requirements' => [
             'programs' => 'Programs approval required',
             'workshops' => 'Workshops approval required',

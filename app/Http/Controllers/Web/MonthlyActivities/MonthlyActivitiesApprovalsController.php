@@ -206,7 +206,7 @@ class MonthlyActivitiesApprovalsController extends Controller
     public function update(Request $request, WorkflowNotificationService $workflowNotifications, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycleService, DynamicWorkflowService $dynamicWorkflowService)
     {
         $data = $request->validate([
-            'decision' => ['nullable', 'string', 'in:approved,changes_requested,rejected'],
+            'decision' => ['nullable', 'string', 'in:approved,approved_final,approved_send_executive,changes_requested,rejected'],
             'comment' => ['nullable', 'string'],
             'is_edit_request_implemented' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
@@ -237,6 +237,26 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         abort_if(empty($data['decision']), 422, __('app.roles.programs.monthly_activities.approvals.errors.decision_required'));
 
+        $isRelationsManagerFinalStep = $this->isMonthlyRelationsManagerFinalStep($step->step_key);
+        $isFinalApproval = $isRelationsManagerFinalStep && $data['decision'] === 'approved_final';
+        $isSendingToExecutive = $isRelationsManagerFinalStep && $data['decision'] === 'approved_send_executive';
+        $workflowDecision = in_array($data['decision'], ['approved_final', 'approved_send_executive'], true)
+            ? DynamicWorkflowService::DECISION_APPROVED
+            : $data['decision'];
+
+        abort_if(
+            in_array($data['decision'], ['approved_final', 'approved_send_executive'], true) && ! $isRelationsManagerFinalStep,
+            422,
+            __('app.roles.programs.monthly_activities.approvals.errors.invalid_decision')
+        );
+
+        if ($isRelationsManagerFinalStep && $workflowDecision === DynamicWorkflowService::DECISION_APPROVED) {
+            $monthlyActivity->forceFill([
+                'executive_review_required' => $isSendingToExecutive,
+                'executive_approval_status' => $isSendingToExecutive ? 'pending' : 'skipped',
+            ])->save();
+        }
+
         if (
             $request->hasFile('official_correspondence_file')
             && ($user->hasRole('branch_coordinator') || ($user->hasRole('relations_manager') && method_exists($user, 'isKheldaUser') && $user->isKheldaUser()))
@@ -256,7 +276,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         MonthlyActivityApproval::create([
             'monthly_activity_id' => $monthlyActivity->id,
             'step' => $step->step_key,
-            'decision' => $data['decision'],
+            'decision' => $workflowDecision,
             'comment' => $data['comment'] ?? null,
             'approved_by' => $user->id,
             'approved_at' => now(),
@@ -264,24 +284,29 @@ class MonthlyActivitiesApprovalsController extends Controller
             'implemented_at' => ! empty($data['is_edit_request_implemented']) ? now() : null,
         ]);
 
-        $dynamicWorkflowService->recordDecision($instance, $step, $user, $data['decision'], $data['comment'] ?? null);
+        if ($isFinalApproval) {
+            $dynamicWorkflowService->recordFinalApproval($instance, $step, $user, $data['comment'] ?? null);
+        } else {
+            $dynamicWorkflowService->recordDecision($instance, $step, $user, $workflowDecision, $data['comment'] ?? null);
+        }
+
         $instance = $instance->fresh();
 
-        $monthlyActivity->update([
+        $monthlyActivity->update(array_merge([
             'status' => $instance->status === 'changes_requested'
                 ? 'changes_requested'
                 : ($instance->status === 'approved' ? 'approved' : ($instance->status === 'rejected' ? 'rejected' : 'in_review')),
-        ]);
+        ], $this->monthlyLegacyApprovalStatusUpdates((string) $step->step_key, $workflowDecision, $instance->status, $isSendingToExecutive)));
 
         if ($instance->status === 'approved') {
-            $lifecycleService->transitionOrFail($monthlyActivity, 'Exec Director Approved');
+            $this->publishApprovedLifecycle($monthlyActivity, $lifecycleService);
         }
 
         $workflowNotifications->approvalDecision(
             $instance,
             $monthlyActivity->fresh('creator'),
             $user,
-            $data['decision'],
+            $workflowDecision,
             route('role.relations.activities.show', $monthlyActivity)
         );
 
@@ -290,10 +315,11 @@ class MonthlyActivitiesApprovalsController extends Controller
             'entity_type' => MonthlyActivity::class,
             'entity_id' => $monthlyActivity->id,
             'action_type' => 'approval_decision',
-            'status' => $data['decision'],
+            'status' => $workflowDecision,
             'performed_by' => $user->id,
             'meta' => [
                 'step' => $step->step_key,
+                'submitted_decision' => $data['decision'],
                 'comment' => $data['comment'] ?? null,
                 'iteration' => $instance->edit_request_count,
                 'previous_status' => $instance->getOriginal('status'),
@@ -303,6 +329,59 @@ class MonthlyActivitiesApprovalsController extends Controller
         ]);
 
         return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.updated', ['activity' => $monthlyActivity->title]));
+    }
+
+    protected function isMonthlyRelationsManagerFinalStep(string $stepKey): bool
+    {
+        return $stepKey === 'monthly_relations_manager_review';
+    }
+
+    protected function publishApprovedLifecycle(MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycleService): void
+    {
+        foreach (['Submitted', 'Branch Approved', 'Khelda Liaison Approved', 'Khelda Director Approved', 'Exec Director Approved'] as $target) {
+            $monthlyActivity->refresh();
+
+            if ((string) $monthlyActivity->lifecycle_status === 'Exec Director Approved') {
+                return;
+            }
+
+            if ($lifecycleService->canTransition((string) $monthlyActivity->lifecycle_status, $target)) {
+                $lifecycleService->transitionOrFail($monthlyActivity, $target);
+            }
+        }
+
+        $monthlyActivity->refresh();
+
+        if ((string) $monthlyActivity->lifecycle_status !== 'Exec Director Approved') {
+            $monthlyActivity->update(['lifecycle_status' => 'Exec Director Approved']);
+        }
+    }
+
+    protected function monthlyLegacyApprovalStatusUpdates(string $stepKey, string $decision, string $workflowStatus, bool $sentToExecutive): array
+    {
+        $updates = [];
+        $field = match ($stepKey) {
+            'monthly_branch_relations_officer_submit' => 'relations_officer_approval_status',
+            'monthly_branch_relations_manager_review' => 'relations_manager_approval_status',
+            'monthly_branch_coordinator_review' => 'liaison_approval_status',
+            'monthly_relations_manager_review' => 'hq_relations_manager_approval_status',
+            'monthly_executive_manager_final_approval' => 'executive_approval_status',
+            default => null,
+        };
+
+        if ($field) {
+            $updates[$field] = $decision;
+        }
+
+        if ($stepKey === 'monthly_relations_manager_review' && $decision === DynamicWorkflowService::DECISION_APPROVED) {
+            $updates['executive_approval_status'] = $sentToExecutive ? 'pending' : 'skipped';
+        }
+
+        if ($stepKey === 'monthly_executive_manager_final_approval' && $workflowStatus === DynamicWorkflowService::DECISION_APPROVED) {
+            $updates['executive_review_required'] = true;
+        }
+
+        return $updates;
     }
 
     protected function storeDepartmentNoteIfPresent(MonthlyActivity $monthlyActivity, $user, array $data): bool
@@ -481,6 +560,7 @@ class MonthlyActivitiesApprovalsController extends Controller
                 'brief' => $activity->official_correspondence_brief,
                 'attachments' => $attachments,
             ],
+            'decision_options' => $this->decisionOptionsForStep((string) optional(optional($activity->workflowInstance)->currentStep)->step_key),
             'permissions' => [
                 'can_decide' => (bool) ($workflowSummary['can_current_user_decide'] ?? $activity->can_current_user_decide ?? false),
                 'can_add_department_note' => (bool) ($activity->can_add_department_note ?? false),
@@ -490,6 +570,45 @@ class MonthlyActivitiesApprovalsController extends Controller
             'can_current_user_decide' => (bool) ($workflowSummary['can_current_user_decide'] ?? $activity->can_current_user_decide ?? false),
             'update_url' => route('role.programs.approvals.update', $activity),
             'details_url' => route('role.programs.approvals.details', $activity),
+        ];
+    }
+
+    protected function decisionOptionsForStep(string $stepKey): array
+    {
+        if ($this->isMonthlyRelationsManagerFinalStep($stepKey)) {
+            return [
+                [
+                    'value' => 'approved_final',
+                    'label' => __('workflow_ui.approvals.decisions.approved_final'),
+                ],
+                [
+                    'value' => 'approved_send_executive',
+                    'label' => __('workflow_ui.approvals.decisions.approved_send_executive'),
+                ],
+                [
+                    'value' => 'changes_requested',
+                    'label' => __('workflow_ui.approvals.status_labels.changes_requested'),
+                ],
+                [
+                    'value' => 'rejected',
+                    'label' => __('workflow_ui.approvals.status_labels.rejected'),
+                ],
+            ];
+        }
+
+        return [
+            [
+                'value' => 'approved',
+                'label' => __('workflow_ui.approvals.status_labels.approved'),
+            ],
+            [
+                'value' => 'changes_requested',
+                'label' => __('workflow_ui.approvals.status_labels.changes_requested'),
+            ],
+            [
+                'value' => 'rejected',
+                'label' => __('workflow_ui.approvals.status_labels.rejected'),
+            ],
         ];
     }
 }

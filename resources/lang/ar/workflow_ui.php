@@ -104,6 +104,10 @@ return [
         'comment_required' => 'التعليق إلزامي لهذا القرار.',
         'confirm_action' => 'تأكيد إجراء الاعتماد',
         'confirm_action_body' => 'هل أنت متأكد من إرسال هذا الإجراء؟',
+        'decisions' => [
+            'approved_final' => 'اعتماد نهائي ونشر',
+            'approved_send_executive' => 'اعتماد وإرسال للمدير التنفيذي',
+        ],
         'requirements' => [
             'programs' => 'مطلوب اعتماد البرامج',
             'workshops' => 'مطلوب اعتماد الورش',
