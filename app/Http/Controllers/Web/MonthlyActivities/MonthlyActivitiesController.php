@@ -373,6 +373,8 @@ class MonthlyActivitiesController extends Controller
 
     protected function syncEvaluationData(MonthlyActivity $monthlyActivity, array $data, int $userId): void
     {
+        $this->syncEvaluationSummary($monthlyActivity, $data);
+
         $monthlyActivity->evaluationResponses()->delete();
         foreach (($data['evaluations'] ?? []) as $questionId => $payload) {
             if (empty($payload['score']) && empty($payload['answer_value']) && empty($payload['note'])) {
@@ -395,6 +397,47 @@ class MonthlyActivitiesController extends Controller
                 'remarks' => $data['followup_remarks'],
                 'created_by' => $userId,
             ]);
+        }
+    }
+
+    protected function evaluationSummaryRules(): array
+    {
+        return [
+            'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+            'evaluation_reason' => ['nullable', 'string', 'max:5000'],
+        ];
+    }
+
+    protected function syncEvaluationSummary(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        $updates = collect(['evaluation_score', 'evaluation_reason'])
+            ->filter(fn (string $field): bool => array_key_exists($field, $data))
+            ->mapWithKeys(fn (string $field): array => [$field => $data[$field]])
+            ->all();
+
+        if ($updates !== []) {
+            $monthlyActivity->forceFill($updates)->save();
+        }
+    }
+
+    protected function closeLifecycle(MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle): void
+    {
+        foreach (['Executed', 'Evaluated', 'Closed'] as $target) {
+            $monthlyActivity->refresh();
+
+            if ((string) $monthlyActivity->lifecycle_status === 'Closed') {
+                return;
+            }
+
+            if ($lifecycle->canTransition((string) $monthlyActivity->lifecycle_status, $target)) {
+                $lifecycle->transitionOrFail($monthlyActivity, $target);
+            }
+        }
+
+        $monthlyActivity->refresh();
+
+        if ((string) $monthlyActivity->lifecycle_status !== 'Closed') {
+            $monthlyActivity->update(['lifecycle_status' => 'Closed']);
         }
     }
 
@@ -1637,6 +1680,7 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule' => ['nullable', 'boolean'],
             'audience_satisfaction_percent' => ['nullable', 'numeric', 'between:0,100'],
             'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+            'evaluation_reason' => ['nullable', 'string', 'max:5000'],
             'sponsors' => ['array'],
             'sponsors.*.name' => ['nullable', 'string', 'max:255'],
             'sponsors.*.title' => ['nullable', 'string', 'max:255'],
@@ -1813,6 +1857,7 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule' => (bool) ($data['relations_approval_on_reschedule'] ?? false),
             'audience_satisfaction_percent' => $data['audience_satisfaction_percent'] ?? null,
             'evaluation_score' => $data['evaluation_score'] ?? null,
+            'evaluation_reason' => $data['evaluation_reason'] ?? null,
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'requires_programs' => (bool) (($data['requires_programs'] ?? false) || in_array('programs', $data['responsible_entities'] ?? [], true)),
@@ -2020,10 +2065,37 @@ class MonthlyActivitiesController extends Controller
             $request->merge(['branch_id' => $branchId]);
         }
 
+        if ($request->boolean('evaluation_only')) {
+            abort_unless(
+                $request->user()->hasAnyRole(['followup_officer', 'super_admin', 'relations_manager', 'executive_manager']),
+                403
+            );
+            abort_unless($this->canSubmitPostEvaluation($monthlyActivity), 422, 'التقييم متاح فقط بعد تنفيذ الفعالية.');
+
+            $data = $request->validate([
+                ...$this->evaluationSummaryRules(),
+                'evaluations' => ['nullable', 'array'],
+                'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
+                'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
+                'evaluations.*.note' => ['nullable', 'string'],
+                'followup_remarks' => ['nullable', 'string'],
+            ]);
+
+            $this->syncEvaluationData($monthlyActivity, $data, $request->user()->id);
+            $this->logWorkflowAction('evaluation_submitted', $monthlyActivity, $request, $monthlyActivity->status, [
+                'evaluation_score' => $monthlyActivity->evaluation_score,
+            ]);
+
+            return redirect()
+                ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'])
+                ->with('status', 'تم حفظ متابعة وتقييم الفعالية بنجاح.');
+        }
+
         if ($request->user()->hasRole('followup_officer') && ! $request->user()->hasRole('super_admin')) {
             abort_unless($this->canSubmitPostEvaluation($monthlyActivity), 422, 'التقييم متاح فقط بعد تنفيذ الفعالية.');
 
             $data = $request->validate([
+                ...$this->evaluationSummaryRules(),
                 'evaluations' => ['nullable', 'array'],
                 'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
                 'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -2140,6 +2212,7 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule' => ['nullable', 'boolean'],
             'audience_satisfaction_percent' => ['nullable', 'numeric', 'between:0,100'],
             'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+            'evaluation_reason' => ['nullable', 'string', 'max:5000'],
             'sponsors' => ['array'],
             'sponsors.*.name' => ['nullable', 'string', 'max:255'],
             'sponsors.*.title' => ['nullable', 'string', 'max:255'],
@@ -2306,6 +2379,7 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule',
             'audience_satisfaction_percent',
             'evaluation_score',
+            'evaluation_reason',
             'requires_programs',
             'requires_workshops',
             'requires_communications',
@@ -2399,6 +2473,7 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule' => (bool) ($data['relations_approval_on_reschedule'] ?? false),
             'audience_satisfaction_percent' => $data['audience_satisfaction_percent'] ?? null,
             'evaluation_score' => $data['evaluation_score'] ?? null,
+            'evaluation_reason' => $data['evaluation_reason'] ?? null,
             'needs_media_coverage' => (bool) ($data['needs_media_coverage'] ?? false),
             'media_coverage_notes' => $data['media_coverage_notes'] ?? null,
             'requires_programs' => (bool) ($data['requires_programs'] ?? false),
@@ -2508,6 +2583,7 @@ class MonthlyActivitiesController extends Controller
                 'relations_approval_on_reschedule' => $newValues['relations_approval_on_reschedule'],
                 'audience_satisfaction_percent' => $newValues['audience_satisfaction_percent'],
                 'evaluation_score' => $newValues['evaluation_score'],
+                'evaluation_reason' => $newValues['evaluation_reason'],
                 'needs_media_coverage' => $newValues['needs_media_coverage'],
                 'media_coverage_notes' => $newValues['media_coverage_notes'],
                 'requires_programs' => $newValues['requires_programs'],
@@ -2603,6 +2679,7 @@ class MonthlyActivitiesController extends Controller
             'relations_approval_on_reschedule' => $newValues['relations_approval_on_reschedule'],
             'audience_satisfaction_percent' => $newValues['audience_satisfaction_percent'],
             'evaluation_score' => $newValues['evaluation_score'],
+            'evaluation_reason' => $newValues['evaluation_reason'],
             'needs_media_coverage' => $newValues['needs_media_coverage'],
             'media_coverage_notes' => $newValues['media_coverage_notes'],
             'requires_programs' => $newValues['requires_programs'],
@@ -2700,24 +2777,26 @@ class MonthlyActivitiesController extends Controller
         }
 
         $data = $request->validate([
+            ...$this->evaluationSummaryRules(),
             'actual_date' => ['nullable', 'date'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
-            'status' => ['required', 'string', 'max:50'],
         ]);
 
         $monthlyActivity->update([
             'actual_date' => $data['actual_date'] ?? $monthlyActivity->actual_date,
             'actual_attendance' => $data['actual_attendance'] ?? $monthlyActivity->actual_attendance,
-            'status' => $data['status'],
-            'execution_status' => $data['status'] === 'executed' ? 'executed' : $monthlyActivity->execution_status,
+            'evaluation_score' => $data['evaluation_score'] ?? $monthlyActivity->evaluation_score,
+            'evaluation_reason' => $data['evaluation_reason'] ?? $monthlyActivity->evaluation_reason,
+            'status' => 'closed',
+            'execution_status' => 'executed',
             'is_official' => true,
         ]);
 
-        if (($data['status'] ?? null) === 'executed') {
-            $lifecycle->transitionOrFail($monthlyActivity, 'Executed');
-        }
+        $this->closeLifecycle($monthlyActivity, $lifecycle);
 
-        $this->logWorkflowAction('closed', $monthlyActivity, $request, $data['status']);
+        $this->logWorkflowAction('closed', $monthlyActivity, $request, 'closed', [
+            'evaluation_score' => $monthlyActivity->evaluation_score,
+        ]);
 
         return redirect()
             ->route('role.relations.activities.index')

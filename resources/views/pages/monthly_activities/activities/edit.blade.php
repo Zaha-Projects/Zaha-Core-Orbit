@@ -559,6 +559,29 @@
                 <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" class="row g-3 mb-0">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="evaluation_only" value="1">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">تقييم الحالة /100</label>
+                        <input
+                            class="form-control @error('evaluation_score') is-invalid @enderror"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            name="evaluation_score"
+                            value="{{ old('evaluation_score', $monthlyActivity->evaluation_score) }}"
+                        >
+                        @error('evaluation_score')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12 col-md-8">
+                        <label class="form-label">مبرر التقييم / سبب التقييم</label>
+                        <textarea
+                            class="form-control @error('evaluation_reason') is-invalid @enderror"
+                            name="evaluation_reason"
+                            rows="2"
+                        >{{ old('evaluation_reason', $monthlyActivity->evaluation_reason) }}</textarea>
+                        @error('evaluation_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
                     @forelse($evaluationQuestions as $question)
                         @php $response = $evaluationByQuestion->get($question->id); @endphp
                         <div class="col-12 border rounded-3 p-3">
@@ -705,12 +728,26 @@
                     <input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance) }}">
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.status') }}</label>
-                    <select class="form-select" name="status" >
-                        @foreach (($monthlyCloseStatusOptions ?? collect()) as $statusOption)
-                            <option value="{{ $statusOption->code }}" {{ $monthlyActivity->status === $statusOption->code ? 'selected' : '' }}>{{ $statusOption->name }}</option>
-                        @endforeach
-                    </select>
+                    <label class="form-label">تقييم الحالة /100</label>
+                    <input
+                        class="form-control @error('evaluation_score') is-invalid @enderror"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        name="evaluation_score"
+                        value="{{ old('evaluation_score', $monthlyActivity->evaluation_score) }}"
+                    >
+                    @error('evaluation_score')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12">
+                    <label class="form-label">مبرر التقييم / سبب التقييم</label>
+                    <textarea
+                        class="form-control @error('evaluation_reason') is-invalid @enderror"
+                        name="evaluation_reason"
+                        rows="2"
+                    >{{ old('evaluation_reason', $monthlyActivity->evaluation_reason) }}</textarea>
+                    @error('evaluation_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4 d-flex justify-content-end align-items-end">
                     <button class="btn btn-outline-primary" type="submit">

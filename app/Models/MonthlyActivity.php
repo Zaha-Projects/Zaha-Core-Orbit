@@ -138,6 +138,7 @@ class MonthlyActivity extends Model
         'attendance_notes',
         'audience_satisfaction_percent',
         'evaluation_score',
+        'evaluation_reason',
         'media_coverage',
         'needs_media_coverage',
         'media_coverage_notes',
