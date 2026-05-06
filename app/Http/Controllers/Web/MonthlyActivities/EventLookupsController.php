@@ -174,6 +174,12 @@ class EventLookupsController extends Controller
 
     public function updateEvaluationQuestion(Request $request, EvaluationQuestion $evaluationQuestion)
     {
+        if ($request->input('action_type') === 'delete') {
+            $evaluationQuestion->delete();
+
+            return back()->with('status', 'تم حذف سؤال التقييم.');
+        }
+
         $data = $request->validate([
             'question' => ['required', 'string', 'max:255'],
             'answer_type' => ['required', 'in:score_5,text'],

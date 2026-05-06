@@ -139,6 +139,8 @@ class MonthlyActivity extends Model
         'audience_satisfaction_percent',
         'evaluation_score',
         'evaluation_reason',
+        'evaluation_assigned_user_id',
+        'evaluation_assigned_at',
         'media_coverage',
         'needs_media_coverage',
         'media_coverage_notes',
@@ -198,6 +200,7 @@ class MonthlyActivity extends Model
         'modified_proposed_date' => 'date',
         'rescheduled_date' => 'date',
         'actual_date' => 'date',
+        'evaluation_assigned_at' => 'datetime',
         'lock_at' => 'datetime',
         'is_official' => 'boolean',
         'time_from' => 'datetime:H:i',
@@ -251,7 +254,24 @@ class MonthlyActivity extends Model
 
     public static function executionNeedDefinitions(): array
     {
-        return self::EXECUTION_NEED_DEFINITIONS;
+        $matrix = self::executionNeedsDecisionMatrix();
+
+        return collect(self::EXECUTION_NEED_DEFINITIONS)
+            ->map(function (array $definition, string $key) use ($matrix): array {
+                $roles = (array) data_get($matrix, $key.'.roles', []);
+                if ($roles !== []) {
+                    $definition['owner_role'] = $roles[0];
+                    $definition['decision_roles'] = $roles;
+                }
+
+                return $definition;
+            })
+            ->all();
+    }
+
+    public static function executionNeedsDecisionMatrix(): array
+    {
+        return config('execution_needs.decision_matrix', []);
     }
 
     public function enabledExecutionNeeds(): array
@@ -306,6 +326,12 @@ class MonthlyActivity extends Model
                 CommunicationsRequest::firstOrCreate(['event_id' => $activity->id], ['status' => 'pending']);
             }
         });
+    }
+
+
+    public function evaluationAssignee()
+    {
+        return $this->belongsTo(User::class, 'evaluation_assigned_user_id');
     }
 
     public function scopeNotArchived($query)

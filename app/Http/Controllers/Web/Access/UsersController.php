@@ -161,7 +161,7 @@ class UsersController extends Controller
             ->unique()
             ->values();
 
-        if (($data['role'] ?? null) !== 'branch_coordinator') {
+        if (! in_array(($data['role'] ?? null), ['branch_coordinator', 'evaluation_officer', 'evaluation_followup_viewer'], true)) {
             $data['assigned_branch_ids'] = [];
 
             return $data;
@@ -189,7 +189,7 @@ class UsersController extends Controller
 
     protected function ensureBranchCoordinatorAssignments(array $data): void
     {
-        if (($data['role'] ?? null) !== 'branch_coordinator') {
+        if (! in_array(($data['role'] ?? null), ['branch_coordinator', 'evaluation_officer', 'evaluation_followup_viewer'], true)) {
             return;
         }
 
@@ -198,7 +198,7 @@ class UsersController extends Controller
         }
 
         throw ValidationException::withMessages([
-            'assigned_branch_ids' => __('app.roles.super_admin.users.fields.assigned_branches_required'),
+            'assigned_branch_ids' => 'يرجى إسناد فرع واحد على الأقل لهذا الدور.',
         ]);
     }
 }

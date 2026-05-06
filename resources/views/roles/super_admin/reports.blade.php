@@ -190,6 +190,46 @@
     </div>
 
     <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card h-100 stretch stretch-full">
+                <div class="card-body">
+                    <h2 class="h6">سجل العمليات اليومي (آخر 30 يوم)</h2>
+                    <ul class="list-group list-group-flush">
+                        @forelse ($dailyOperationLogs as $item)
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>{{ $item->day }}</span>
+                                <strong>{{ $item->total }}</strong>
+                            </li>
+                        @empty
+                            <li class="list-group-item text-muted">لا توجد بيانات.</li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card h-100 stretch stretch-full">
+                <div class="card-body">
+                    <h2 class="h6">مؤشر الاستجابة حسب المستخدم</h2>
+                    <ul class="list-group list-group-flush">
+                        @forelse ($userDelayStats as $item)
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ $item->user?->name ?? ('#'.$item->user_id) }}</strong>
+                                    <span>{{ $item->total_actions }} عملية</span>
+                                </div>
+                                <small class="text-muted">من {{ $item->first_action_at }} إلى {{ $item->last_action_at }}</small>
+                            </li>
+                        @empty
+                            <li class="list-group-item text-muted">لا توجد بيانات.</li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
         <div class="col-12 col-lg-4">
             <div class="card h-100 stretch stretch-full">
                 <div class="card-body">
