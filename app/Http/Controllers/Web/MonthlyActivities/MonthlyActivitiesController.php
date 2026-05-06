@@ -702,8 +702,14 @@ class MonthlyActivitiesController extends Controller
                 $evaluationScore = $row['evaluation_score'] ?? null;
                 $evaluationScore = $evaluationScore === '' || $evaluationScore === null ? null : (float) $evaluationScore;
                 $evaluationReason = trim((string) ($row['evaluation_reason'] ?? ''));
+                $decisionByRole = trim((string) ($row['decision_by_role'] ?? ''));
+                $decisionByName = trim((string) ($row['decision_by_name'] ?? ''));
+                $allowedRoles = (array) data_get(config('execution_needs.decision_matrix', []), (string) $key.'.roles', []);
+                if ($decisionByRole !== '' && $allowedRoles !== [] && ! in_array($decisionByRole, $allowedRoles, true)) {
+                    $decisionByRole = null;
+                }
 
-                if (! $status && $reason === '' && $score === null && $evaluationScore === null && $evaluationReason === '') {
+                if (! $status && $reason === '' && $score === null && $evaluationScore === null && $evaluationReason === '' && $decisionByRole === '' && $decisionByName === '') {
                     return null;
                 }
 
@@ -715,6 +721,8 @@ class MonthlyActivitiesController extends Controller
                     'effectiveness_score' => $score,
                     'evaluation_score' => $evaluationScore,
                     'evaluation_reason' => $evaluationReason !== '' ? $evaluationReason : null,
+                    'decision_by_role' => $decisionByRole !== '' ? $decisionByRole : null,
+                    'decision_by_name' => $decisionByName !== '' ? $decisionByName : null,
                 ];
             })
             ->filter()
@@ -2806,6 +2814,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->closeLifecycle($monthlyActivity, $lifecycle);
+        $this->assignFollowupOfficer($monthlyActivity);
 
         $this->logWorkflowAction('closed', $monthlyActivity, $request, 'closed', [
             'evaluation_score' => $monthlyActivity->evaluation_score,
@@ -2814,6 +2823,33 @@ class MonthlyActivitiesController extends Controller
         return redirect()
             ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.closed', ['activity' => $monthlyActivity->title]));
+    }
+
+
+    protected function assignFollowupOfficer(MonthlyActivity $monthlyActivity): void
+    {
+        $officer = User::query()
+            ->role('followup_officer')
+            ->where('status', 'active')
+            ->where(function ($query) use ($monthlyActivity): void {
+                $query->whereHas('assignedBranches', fn ($assigned) => $assigned->whereKey($monthlyActivity->branch_id))
+                    ->orWhere('branch_id', $monthlyActivity->branch_id);
+            })
+            ->orderBy('id')
+            ->first();
+
+        if (! $officer) {
+            $officer = User::query()->role('followup_officer')->where('status', 'active')->orderBy('id')->first();
+        }
+
+        if (! $officer) {
+            return;
+        }
+
+        $monthlyActivity->forceFill([
+            'followup_officer_id' => $officer->id,
+            'followup_assigned_at' => now(),
+        ])->save();
     }
 
     public function calendar(Request $request)

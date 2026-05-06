@@ -122,6 +122,15 @@
                             <span>متوسط فعالية التأمين /10</span>
                             <strong>{{ $executionNeedsStats['avg_effectiveness'] ?? '-' }}</strong>
                         </li>
+
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>قرارات موثّقة (الدور/الاسم)</span>
+                            <strong>{{ $executionNeedsStats['decision_tracked_count'] }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>خطط محوّلة لمسؤول متابعة</span>
+                            <strong>{{ $executionNeedsStats['followup_assigned_count'] }}</strong>
+                        </li>
                     </ul>
                 </div>
             </div>

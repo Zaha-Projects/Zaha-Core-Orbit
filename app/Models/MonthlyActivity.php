@@ -251,7 +251,24 @@ class MonthlyActivity extends Model
 
     public static function executionNeedDefinitions(): array
     {
-        return self::EXECUTION_NEED_DEFINITIONS;
+        $matrix = self::executionNeedsDecisionMatrix();
+
+        return collect(self::EXECUTION_NEED_DEFINITIONS)
+            ->map(function (array $definition, string $key) use ($matrix): array {
+                $roles = (array) data_get($matrix, $key.'.roles', []);
+                if ($roles !== []) {
+                    $definition['owner_role'] = $roles[0];
+                    $definition['decision_roles'] = $roles;
+                }
+
+                return $definition;
+            })
+            ->all();
+    }
+
+    public static function executionNeedsDecisionMatrix(): array
+    {
+        return config('execution_needs.decision_matrix', []);
     }
 
     public function enabledExecutionNeeds(): array
@@ -280,6 +297,11 @@ class MonthlyActivity extends Model
     }
 
 
+
+    public function followupOfficer()
+    {
+        return $this->belongsTo(User::class, 'followup_officer_id');
+    }
     protected static function booted(): void
     {
         static::saving(function (self $activity) {
