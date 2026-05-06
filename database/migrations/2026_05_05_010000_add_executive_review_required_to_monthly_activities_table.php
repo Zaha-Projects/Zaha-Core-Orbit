@@ -82,8 +82,8 @@ return new class extends Migration
         $this->upsertWorkflowStep($workflowId, 'monthly_relations_officer_submit', [
             'step_order' => 1,
             'approval_level' => 1,
-            'name_ar' => 'إنشاء وإرسال مسؤول علاقات الفرع',
-            'name_en' => 'Branch Relations Officer Draft & Submit',
+            'name_ar' => 'إنشاء وإرسال مسؤول العلاقات',
+            'name_en' => 'Relations Officer Draft & Submit',
             'step_type' => 'sub',
             'role_id' => $roleIds['relations_officer'] ?? null,
             'condition_field' => 'monthly_created_by_branch_relations',

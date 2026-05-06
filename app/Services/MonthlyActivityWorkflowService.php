@@ -44,14 +44,7 @@ class MonthlyActivityWorkflowService
             }
         }
 
-        if ($activity->monthly_created_by_primary_relations) {
-            $steps[] = [
-                'key' => 'primary_relations_officer_submit',
-                'label' => 'Primary Relations Officer',
-                'status_field' => 'relations_officer_approval_status',
-                'role' => 'relations_officer',
-            ];
-        }
+
 
         $steps[] = [
             'key' => 'hq_relations_manager_review',
