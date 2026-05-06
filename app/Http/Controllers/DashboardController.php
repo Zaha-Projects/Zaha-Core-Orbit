@@ -56,14 +56,16 @@ class DashboardController extends Controller
                     ? Carbon::parse($event->event_date)->toDateString()
                     : Carbon::create(now()->year, max(1, (int) $event->month), max(1, (int) $event->day))->toDateString();
                 $ownerParticipation = $event->participations->first(fn ($row) => (string) $row->participation_status === 'owner');
-                $participant = $event->participations->first(fn ($row) => (string) $row->participation_status === 'participant');
-                $participantName = '—';
-
-                if ($participant) {
-                    $participantName = $participant->entity_type === 'branch'
-                        ? $branchesById->get((int) $participant->entity_id, '—')
-                        : $unitsById->get((int) $participant->entity_id, '—');
-                }
+                $participantEntities = $event->participations
+                    ->filter(fn ($row) => (string) $row->participation_status === 'participant')
+                    ->map(function ($participant) use ($branchesById, $unitsById): string {
+                        return $participant->entity_type === 'branch'
+                            ? (string) $branchesById->get((int) $participant->entity_id, '—')
+                            : (string) $unitsById->get((int) $participant->entity_id, '—');
+                    })
+                    ->filter(fn (string $name) => $name !== '—' && $name !== '')
+                    ->unique()
+                    ->values();
 
                 return [
                     'title' => $event->event_name,
@@ -75,7 +77,9 @@ class DashboardController extends Controller
                         'owner_branch' => $ownerParticipation && $ownerParticipation->entity_type === 'branch'
                             ? $branchesById->get((int) $ownerParticipation->entity_id, '—')
                             : '—',
-                        'participant_entity' => $participantName,
+                        'participant_entity' => $participantEntities->implode('، '),
+                        'participant_entities' => $participantEntities->all(),
+                        'participant_entities_count' => $participantEntities->count(),
                     ],
                 ];
             })
@@ -91,16 +95,26 @@ class DashboardController extends Controller
                 $resolvedDate = $activity->activity_date
                     ? Carbon::parse($activity->activity_date)->toDateString()
                     : Carbon::create(now()->year, max(1, (int) $activity->month), max(1, (int) $activity->day))->toDateString();
+                $timeFrom = $activity->time_from ? Carbon::parse((string) $activity->time_from)->format('H:i') : null;
+                $timeTo = $activity->time_to ? Carbon::parse((string) $activity->time_to)->format('H:i') : null;
+                $resolvedStart = $timeFrom ? "{$resolvedDate}T{$timeFrom}:00" : $resolvedDate;
+                $resolvedEnd = $timeTo ? "{$resolvedDate}T{$timeTo}:00" : null;
+                $isTimedEvent = $timeFrom !== null;
 
                 return [
                     'title' => $activity->title,
-                    'start' => $resolvedDate,
-                    'allDay' => true,
+                    'start' => $resolvedStart,
+                    'end' => $resolvedEnd,
+                    'allDay' => ! $isTimedEvent,
                     'type' => 'monthly_plan',
                     'color' => '#0e9f6e',
                     'extendedProps' => [
                         'owner_branch' => $branchesById->get((int) $activity->branch_id, '—'),
                         'participant_entity' => '—',
+                        'participant_entities' => [],
+                        'participant_entities_count' => 0,
+                        'time_from' => $timeFrom,
+                        'time_to' => $timeTo,
                     ],
                 ];
             })

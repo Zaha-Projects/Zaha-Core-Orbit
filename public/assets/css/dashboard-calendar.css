@@ -224,6 +224,12 @@
 .dashboard-event-meta--secondary {
     opacity: .85;
 }
+.dashboard-event-meta--time {
+    font-weight: 700;
+}
+.dashboard-event-meta i {
+    margin-inline-end: .2rem;
+}
 
 @media (max-width: 991.98px) {
     .dashboard-calendar-card {

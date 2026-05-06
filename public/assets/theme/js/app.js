@@ -186,15 +186,21 @@
           const isMonthlyPlan = props.type === 'monthly_plan' || arg.event._def.extendedProps?.type === 'monthly_plan';
           const typeLabel = isMonthlyPlan ? 'خطة شهرية' : 'أجندة سنوية';
           const owner = props.owner_branch || '—';
-          const participant = props.participant_entity || '—';
+          const participants = Array.isArray(props.participant_entities) && props.participant_entities.length > 0
+            ? props.participant_entities.join('، ')
+            : (props.participant_entity || '—');
+          const timeFrom = props.time_from || '';
+          const timeTo = props.time_to || '';
+          const timeRange = timeFrom && timeTo ? `${timeFrom} - ${timeTo}` : (timeFrom || 'طوال اليوم');
 
           const wrapper = document.createElement('div');
           wrapper.className = 'dashboard-event-card';
           wrapper.innerHTML = `
             <div class="dashboard-event-type ${isMonthlyPlan ? 'dashboard-event-type--monthly' : 'dashboard-event-type--agenda'}">${typeLabel}</div>
             <div class="dashboard-event-title">${arg.event.title || ''}</div>
+            <div class="dashboard-event-meta dashboard-event-meta--time"><i class="fas fa-clock"></i> ${timeRange}</div>
             <div class="dashboard-event-meta">${owner}</div>
-            <div class="dashboard-event-meta dashboard-event-meta--secondary">${participant}</div>
+            <div class="dashboard-event-meta dashboard-event-meta--secondary">${participants}</div>
           `;
 
           return { domNodes: [wrapper] };
@@ -204,7 +210,13 @@
           const typeLabel = info.event.extendedProps.type === 'monthly_plan' || info.event._def.extendedProps?.type === 'monthly_plan'
             ? 'خطة شهرية'
             : 'أجندة سنوية';
-          info.el.title = `${typeLabel}\n${info.event.title || ''}\nالفرع المالك: ${props.owner_branch || '—'}\nالمشارك: ${props.participant_entity || '—'}`;
+          const participants = Array.isArray(props.participant_entities) && props.participant_entities.length > 0
+            ? props.participant_entities.join('، ')
+            : (props.participant_entity || '—');
+          const timeFrom = props.time_from || '';
+          const timeTo = props.time_to || '';
+          const timeRange = timeFrom && timeTo ? `${timeFrom} - ${timeTo}` : (timeFrom || 'طوال اليوم');
+          info.el.title = `${typeLabel}\n${info.event.title || ''}\nالوقت: ${timeRange}\nالفرع المالك: ${props.owner_branch || '—'}\nالجهات المشاركة: ${participants}`;
         }
       });
       calendar.render();
