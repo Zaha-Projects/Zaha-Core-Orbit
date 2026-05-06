@@ -60,11 +60,6 @@ class RolesSeeder extends Seeder
                 'name_en' => 'Relations Manager',
             ],
             [
-                'key' => 'branch_relations_officer',
-                'name_ar' => 'مسؤول علاقات الفروع',
-                'name_en' => 'Branch Relations Officer',
-            ],
-            [
                 'key' => 'relations_officer',
                 'name_ar' => 'مسؤول العلاقات',
                 'name_en' => 'Relations Officer',
@@ -183,7 +178,6 @@ class RolesSeeder extends Seeder
             'executive_manager' => ['agenda.view', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'branches.view.all', 'reports.view'],
             'programs_manager' => ['monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'evaluation.manage', 'branches.view.all', 'reports.view', 'kpi.view'],
             'relations_manager' => ['agenda.view', 'agenda.create', 'agenda.update', 'agenda.delete', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'branches.view.all'],
-            'branch_relations_officer' => ['agenda.view', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'branches.view.own', 'communications.upload_media'],
             'followup_officer' => ['reports.view', 'kpi.view', 'kpi.manage', 'agenda.view', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'evaluation.view', 'branches.view.all'],
             'workshops_secretary' => ['agenda.view', 'agenda.participation.update', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'branches.view.all'],
             'programs_officer' => ['monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'monthly_activities.edit', 'branches.view.all', 'reports.view'],

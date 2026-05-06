@@ -682,7 +682,6 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
 
         $roles = collect([
             'relations_officer',
-            'relations_officer',
             'branch_relations_manager',
             'branch_coordinator',
             'relations_manager',
@@ -699,11 +698,10 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
 
         foreach ([
             ['step_key' => 'monthly_relations_officer_submit', 'step_order' => 1, 'approval_level' => 1, 'step_type' => 'sub', 'role_id' => $roles['relations_officer']->id, 'condition_field' => 'monthly_created_by_branch_relations', 'condition_value' => '1', 'is_editable' => true],
-            ['step_key' => 'monthly_primary_relations_officer_submit', 'step_order' => 2, 'approval_level' => 2, 'step_type' => 'sub', 'role_id' => $roles['relations_officer']->id, 'condition_field' => 'monthly_created_by_primary_relations', 'condition_value' => '1', 'is_editable' => true],
-            ['step_key' => 'monthly_branch_relations_manager_review', 'step_order' => 3, 'approval_level' => 3, 'step_type' => 'main', 'role_id' => $roles['branch_relations_manager']->id, 'condition_field' => 'monthly_created_by_branch_relations', 'condition_value' => '1', 'is_editable' => false],
-            ['step_key' => 'monthly_branch_coordinator_review', 'step_order' => 4, 'approval_level' => 4, 'step_type' => 'main', 'role_id' => $roles['branch_coordinator']->id, 'condition_field' => 'monthly_branch_coordinator_required', 'condition_value' => '1', 'is_editable' => false],
-            ['step_key' => 'monthly_relations_manager_review', 'step_order' => 5, 'approval_level' => 5, 'step_type' => 'main', 'role_id' => $roles['relations_manager']->id, 'is_editable' => false],
-            ['step_key' => 'monthly_executive_manager_final_approval', 'step_order' => 6, 'approval_level' => 6, 'step_type' => 'main', 'role_id' => $roles['executive_manager']->id, 'condition_field' => 'executive_review_required', 'condition_value' => '1', 'is_editable' => false],
+            ['step_key' => 'monthly_branch_relations_manager_review', 'step_order' => 2, 'approval_level' => 2, 'step_type' => 'main', 'role_id' => $roles['branch_relations_manager']->id, 'condition_field' => 'monthly_created_by_branch_relations', 'condition_value' => '1', 'is_editable' => false],
+            ['step_key' => 'monthly_branch_coordinator_review', 'step_order' => 3, 'approval_level' => 3, 'step_type' => 'main', 'role_id' => $roles['branch_coordinator']->id, 'condition_field' => 'monthly_branch_coordinator_required', 'condition_value' => '1', 'is_editable' => false],
+            ['step_key' => 'monthly_relations_manager_review', 'step_order' => 4, 'approval_level' => 4, 'step_type' => 'main', 'role_id' => $roles['relations_manager']->id, 'is_editable' => false],
+            ['step_key' => 'monthly_executive_manager_final_approval', 'step_order' => 5, 'approval_level' => 5, 'step_type' => 'main', 'role_id' => $roles['executive_manager']->id, 'condition_field' => 'executive_review_required', 'condition_value' => '1', 'is_editable' => false],
         ] as $definition) {
             WorkflowStep::query()->create(array_merge(['workflow_id' => $workflow->id], $definition));
         }
