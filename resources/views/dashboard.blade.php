@@ -42,14 +42,46 @@
 
     @if(($calendarEvents ?? collect())->isNotEmpty())
         <section class="row g-3">
-            <div class="col-12 col-xxl-8">
+            <div class="col-12">
                 <div class="card dashboard-calendar-card p-3 p-lg-4" id="calendarSection">
                     <div class="dashboard-calendar-header mb-3 mb-lg-4">
-                        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
                             <h2 class="h5 mb-0">{{ __('app.roles.relations.agenda.calendar.calendar_view') }}</h2>
-                            <span class="dashboard-calendar-chip">{{ ($calendarEvents ?? collect())->count() }} فعالية سنوية</span>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <span class="dashboard-calendar-chip">{{ ($calendarEvents ?? collect())->count() }} فعالية سنوية</span>
+                                <select id="dashboardCalendarViewFilter" class="form-select form-select-sm dashboard-calendar-filter" aria-label="فلترة عرض التقويم">
+                                    <option value="dayGridMonth">عرض شهري</option>
+                                    <option value="timeGridWeek">عرض أسبوعي</option>
+                                    <option value="timeGridDay">عرض يومي</option>
+                                </select>
+                            </div>
                         </div>
-                        <p class="dashboard-calendar-intro mb-0">تقويم عام يلخّص أهم الفعاليات القادمة خلال العام.</p>
+                        <p class="dashboard-calendar-intro mb-0">تقويم عام (عرض فقط) يجمع الأجندة السنوية والخطط الشهرية لكل الفروع.</p>
+                    </div>
+                    <div class="dashboard-calendar-legend mb-3" id="dashboardCalendarLegend">
+                        <span class="legend-item"><span class="legend-dot legend-dot--agenda"></span> أجندة سنوية</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot--monthly"></span> خطة شهرية</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot--owner"></span> الفرع المالك</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot--participant"></span> الفرع/الوحدة المشاركة</span>
+                    </div>
+                    <div class="dashboard-calendar-stats mb-3">
+                        <div class="stat-pill stat-pill--total">
+                            <span class="label">إجمالي السجلات</span>
+                            <strong>{{ data_get($dashboardCalendarStats ?? [], 'total', 0) }}</strong>
+                        </div>
+                        <div class="stat-pill stat-pill--agenda">
+                            <span class="label">فعاليات الأجندة</span>
+                            <strong>{{ data_get($dashboardCalendarStats ?? [], 'agenda', 0) }}</strong>
+                        </div>
+                        <div class="stat-pill stat-pill--monthly">
+                            <span class="label">الخطط الشهرية</span>
+                            <strong>{{ data_get($dashboardCalendarStats ?? [], 'monthly', 0) }}</strong>
+                        </div>
+                        <div class="stat-pill stat-pill--branch">
+                            <span class="label">الأكثر مشاركة</span>
+                            <strong>{{ data_get($dashboardCalendarStats ?? [], 'top_branch_name', '—') }}</strong>
+                            <small>{{ data_get($dashboardCalendarStats ?? [], 'top_branch_count', 0) }} سجل</small>
+                        </div>
                     </div>
                     <div id="calendar"></div>
                     <div id="calendarFallback" class="alert alert-warning mt-3 d-none">
