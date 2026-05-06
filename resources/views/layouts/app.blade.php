@@ -1,4 +1,10 @@
 @php
+    $versionedAsset = static function (string $path): string {
+        $absolutePath = public_path($path);
+        $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
+
+        return asset($path) . '?v=' . $version;
+    };
     $locale = app()->getLocale();
     $isArabic = $locale === 'ar';
     $theme = session('ui.theme', 'light');
@@ -53,8 +59,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <link rel="stylesheet" href="{{ asset('assets/theme/css/Theme.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/theme/css/Style.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/theme/css/Theme.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/theme/css/Style.css') }}">
     <style>
         .workflow-auto-approval-original {
             border-top: 1px solid rgba(148, 163, 184, .25);
@@ -336,7 +342,7 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<script src="{{ asset('assets/theme/js/app.js') }}"></script>
+<script src="{{ $versionedAsset('assets/theme/js/app.js') }}"></script>
 @stack('scripts')
 </body>
 </html>

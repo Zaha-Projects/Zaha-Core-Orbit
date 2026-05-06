@@ -134,6 +134,7 @@
       calendar.setOption('locale', locale === 'ar' ? 'ar' : 'en');
       calendar.setOption('direction', locale === 'ar' ? 'rtl' : 'ltr');
       calendar.render();
+      calendar.updateSize();
     }
 
     localStorage.setItem('app_locale', locale);
@@ -207,12 +208,16 @@
         }
       });
       calendar.render();
+      window.addEventListener('resize', () => {
+        if (calendar) calendar.updateSize();
+      });
 
       const viewFilter = document.getElementById('dashboardCalendarViewFilter');
       if (viewFilter) {
         viewFilter.addEventListener('change', (event) => {
           const nextView = event.target.value || 'dayGridMonth';
           calendar.changeView(nextView);
+          calendar.updateSize();
         });
       }
     } catch (error) {

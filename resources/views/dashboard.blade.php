@@ -66,21 +66,21 @@
                     </div>
                     <div class="dashboard-calendar-stats mb-3">
                         <div class="stat-pill stat-pill--total">
-                            <span class="label">إجمالي السجلات</span>
+                            <span class="label"><i class="fas fa-database"></i> إجمالي السجلات</span>
                             <strong>{{ data_get($dashboardCalendarStats ?? [], 'total', 0) }}</strong>
                         </div>
                         <div class="stat-pill stat-pill--agenda">
-                            <span class="label">فعاليات الأجندة</span>
+                            <span class="label"><i class="fas fa-calendar-check"></i> فعاليات الأجندة</span>
                             <strong>{{ data_get($dashboardCalendarStats ?? [], 'agenda', 0) }}</strong>
                         </div>
                         <div class="stat-pill stat-pill--monthly">
-                            <span class="label">الخطط الشهرية</span>
+                            <span class="label"><i class="fas fa-list-check"></i> الخطط الشهرية</span>
                             <strong>{{ data_get($dashboardCalendarStats ?? [], 'monthly', 0) }}</strong>
                         </div>
                         <div class="stat-pill stat-pill--branch">
-                            <span class="label">الأكثر مشاركة</span>
+                            <span class="label"><i class="fas fa-users"></i> الأكثر مشاركة</span>
                             <strong>{{ data_get($dashboardCalendarStats ?? [], 'top_branch_name', '—') }}</strong>
-                            <small>{{ data_get($dashboardCalendarStats ?? [], 'top_branch_count', 0) }} سجل</small>
+                            <small><i class="fas fa-hashtag"></i> {{ data_get($dashboardCalendarStats ?? [], 'top_branch_count', 0) }} سجل</small>
                         </div>
                     </div>
                     <div id="calendar"></div>
