@@ -26,7 +26,7 @@ return [
         'role' => 'الدور',
         'permission' => 'الصلاحية',
         'type' => 'النوع',
-        'coverage_not_required' => 'غير مطلوب',
+        'coverage_not_required' => 'تم التجاوز',
         'coverage_planned' => 'مخطط',
         'coverage_in_progress' => 'قيد التنفيذ',
         'coverage_completed' => 'مكتمل',

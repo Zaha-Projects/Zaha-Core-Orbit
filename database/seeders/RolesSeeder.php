@@ -29,11 +29,6 @@ class RolesSeeder extends Seeder
             );
         }
 
-        Role::query()
-            ->where('guard_name', 'web')
-            ->where('name', 'branch_relations_officer')
-            ->delete();
-
         $this->syncRolePermissions();
     }
 
