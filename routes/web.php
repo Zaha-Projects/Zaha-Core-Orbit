@@ -18,6 +18,7 @@ use App\Http\Controllers\Web\Access\UsersController as SuperAdminUsersManagement
 use App\Http\Controllers\Web\Access\ApprovalsController as SuperAdminApprovalsController;
 use App\Http\Controllers\Web\Access\WorkflowsController as SuperAdminWorkflowsController;
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
+use App\Http\Controllers\Roles\SuperAdmin\EvaluationAssignmentsController as SuperAdminEvaluationAssignmentsController;
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
 use App\Http\Controllers\Web\Agenda\AgendaEventsController as RelationsAgendaEventsController;
@@ -107,6 +108,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');
+    Route::get('/dashboard/admin/evaluation-assignments', [SuperAdminEvaluationAssignmentsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.evaluation_assignments.index');
+    Route::put('/dashboard/admin/evaluation-assignments/{user}', [SuperAdminEvaluationAssignmentsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.evaluation_assignments.update');
     Route::get('/dashboard/admin/roles', [SuperAdminRolesManagementController::class, 'index'])->middleware('role_or_permission:super_admin|roles.view')->name('role.super_admin.roles');
     Route::post('/dashboard/admin/roles', [SuperAdminRolesManagementController::class, 'store'])->middleware('role_or_permission:super_admin|roles.manage')->name('role.super_admin.roles.store');
     Route::put('/dashboard/admin/roles/{role}', [SuperAdminRolesManagementController::class, 'update'])->middleware('role_or_permission:super_admin|roles.manage')->name('role.super_admin.roles.update');

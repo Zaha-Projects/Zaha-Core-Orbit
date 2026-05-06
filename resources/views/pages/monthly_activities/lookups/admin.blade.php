@@ -107,7 +107,7 @@
                                                         <span class="form-check-label">{{ $department->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
+                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -186,7 +186,7 @@
                                                         <span class="form-check-label">{{ $unit->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
+                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -261,7 +261,7 @@
                                                         <span class="form-check-label">{{ $category->active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
+                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -327,7 +327,7 @@
                                                         <span class="form-check-label">{{ $group->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
+                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -405,7 +405,7 @@
                                                                         <span class="form-check-label">{{ $statusLookup->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                                     </label>
                                                                 </td>
-                                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
+                                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                                             </form>
                                                         </tr>
                                                     @empty
@@ -477,7 +477,7 @@
                                                         <span class="form-check-label">{{ $option->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
+                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
                                             </form>
                                         </tr>
                                     @empty
