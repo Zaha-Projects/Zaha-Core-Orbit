@@ -61,6 +61,7 @@
     $executionNeedsCatalog = collect($monthlyActivity->enabledExecutionNeeds())
         ->map(fn ($definition) => $definition['label'])
         ->all();
+    $executionNeedDecisionMatrix = config('execution_needs.decision_matrix', []);
     $executionNeedsFollowup = collect(old('execution_needs_followup', $monthlyActivity->execution_needs_followup ?? []))
         ->mapWithKeys(function ($row, $key) {
             if (! is_array($row)) {
@@ -515,6 +516,20 @@
                     <div class="col-12 border rounded-3 p-3">
                         <div class="fw-semibold mb-2">{{ $needLabel }}</div>
                         <div class="row g-3">
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">الدور الذي اتخذ القرار</label>
+                                @php($decisionRoles = (array) data_get($executionNeedDecisionMatrix, $needKey.'.roles', []))
+                                <select class="form-select" name="execution_needs_followup[{{ $needKey }}][decision_by_role]">
+                                    <option value="">يدوي/غير محدد</option>
+                                    @foreach($decisionRoles as $roleKey)
+                                        <option value="{{ $roleKey }}" {{ old("execution_needs_followup.$needKey.decision_by_role", $needData['decision_by_role'] ?? '') === $roleKey ? 'selected' : '' }}>{{ $roleKey }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label">اسم متخذ القرار</label>
+                                <input class="form-control" name="execution_needs_followup[{{ $needKey }}][decision_by_name]" value="{{ old("execution_needs_followup.$needKey.decision_by_name", $needData['decision_by_name'] ?? '') }}">
+                            </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">حالة التأمين</label>
                                 <select class="form-select" name="execution_needs_followup[{{ $needKey }}][status]">
