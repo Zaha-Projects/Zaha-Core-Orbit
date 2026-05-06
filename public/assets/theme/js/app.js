@@ -180,12 +180,30 @@
         buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع', day: 'يوم' },
         eventClick: (info) => info.jsEvent.preventDefault(),
         events: eventSource,
+        eventContent: (arg) => {
+          const props = arg.event.extendedProps || {};
+          const isMonthlyPlan = props.type === 'monthly_plan' || arg.event._def.extendedProps?.type === 'monthly_plan';
+          const typeLabel = isMonthlyPlan ? 'خطة شهرية' : 'أجندة سنوية';
+          const owner = props.owner_branch || '—';
+          const participant = props.participant_entity || '—';
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'dashboard-event-card';
+          wrapper.innerHTML = `
+            <div class="dashboard-event-type ${isMonthlyPlan ? 'dashboard-event-type--monthly' : 'dashboard-event-type--agenda'}">${typeLabel}</div>
+            <div class="dashboard-event-title">${arg.event.title || ''}</div>
+            <div class="dashboard-event-meta">${owner}</div>
+            <div class="dashboard-event-meta dashboard-event-meta--secondary">${participant}</div>
+          `;
+
+          return { domNodes: [wrapper] };
+        },
         eventDidMount: (info) => {
           const props = info.event.extendedProps || {};
           const typeLabel = info.event.extendedProps.type === 'monthly_plan' || info.event._def.extendedProps?.type === 'monthly_plan'
             ? 'خطة شهرية'
             : 'أجندة سنوية';
-          info.el.title = `${typeLabel}\nالفرع المالك: ${props.owner_branch || '—'}\nالمشارك: ${props.participant_entity || '—'}`;
+          info.el.title = `${typeLabel}\n${info.event.title || ''}\nالفرع المالك: ${props.owner_branch || '—'}\nالمشارك: ${props.participant_entity || '—'}`;
         }
       });
       calendar.render();
