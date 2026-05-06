@@ -539,7 +539,7 @@ class DynamicWorkflowService
         }
 
         return in_array((string) $step->role?->name, [
-            'branch_relations_officer',
+            'relations_officer',
             'branch_relations_manager',
             'branch_coordinator',
         ], true);

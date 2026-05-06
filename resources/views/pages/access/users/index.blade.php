@@ -231,7 +231,7 @@
                                         <td>{{ $user->name }}</td>
                                         <td>{{ $user->email }}</td>
                                         <td>
-                                            {{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }}
+                                            {{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }} @if($user->branch?->is_main)<span class="badge bg-primary ms-1">{{ __('app.common.main_branch_label') }}</span>@endif
                                             @if ($user->roles->contains('name', $branchCoordinatorRole) && $user->assignedBranches->isNotEmpty())
                                                 <div class="small text-muted mt-1">
                                                     {{ __('app.roles.super_admin.users.fields.assigned_branches_short') }}:
@@ -239,7 +239,7 @@
                                                 </div>
                                             @endif
                                         </td>
-                                        <td>{{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }}</td>
+                                        <td>{{ $user->branch?->name ?? __('app.roles.super_admin.users.table.unassigned') }} @if($user->branch?->is_main)<span class="badge bg-primary ms-1">{{ __('app.common.main_branch_label') }}</span>@endif</td>
                                         <td>{{ $user->roles->pluck('name')->join(', ') }}</td>
                                         <td>{{ $user->status }}</td>
                                         <td class="text-end">

@@ -2,7 +2,7 @@
 
 return [
     'decision_matrix' => [
-        'volunteers' => ['roles' => ['volunteer_coordinator', 'branch_relations_officer']],
+        'volunteers' => ['roles' => ['volunteer_coordinator', 'relations_officer']],
         'official_correspondence' => ['roles' => ['branch_coordinator', 'branch_relations_manager']],
         'media_coverage' => ['roles' => ['communication_head']],
         'supplies' => ['roles' => ['branch_relations_manager']],

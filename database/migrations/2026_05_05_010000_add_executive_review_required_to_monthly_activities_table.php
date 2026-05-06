@@ -60,7 +60,6 @@ return new class extends Migration
             ]);
 
         $roleIds = $this->roleIds([
-            'branch_relations_officer',
             'relations_officer',
             'branch_relations_manager',
             'branch_coordinator',
@@ -80,33 +79,21 @@ return new class extends Migration
                 ->update(['step_key' => 'monthly_relations_manager_review']);
         }
 
-        $this->upsertWorkflowStep($workflowId, 'monthly_branch_relations_officer_submit', [
+        $this->upsertWorkflowStep($workflowId, 'monthly_relations_officer_submit', [
             'step_order' => 1,
             'approval_level' => 1,
-            'name_ar' => 'إنشاء وإرسال مسؤول علاقات الفرع',
-            'name_en' => 'Branch Relations Officer Draft & Submit',
+            'name_ar' => 'إنشاء وإرسال مسؤول العلاقات',
+            'name_en' => 'Relations Officer Draft & Submit',
             'step_type' => 'sub',
-            'role_id' => $roleIds['branch_relations_officer'] ?? null,
+            'role_id' => $roleIds['relations_officer'] ?? null,
             'condition_field' => 'monthly_created_by_branch_relations',
             'condition_value' => '1',
             'is_editable' => true,
         ]);
 
-        $this->upsertWorkflowStep($workflowId, 'monthly_primary_relations_officer_submit', [
+        $this->upsertWorkflowStep($workflowId, 'monthly_branch_relations_manager_review', [
             'step_order' => 2,
             'approval_level' => 2,
-            'name_ar' => 'إنشاء وإرسال مسؤول العلاقات الرئيسي',
-            'name_en' => 'Primary Relations Officer Draft & Submit',
-            'step_type' => 'sub',
-            'role_id' => $roleIds['relations_officer'] ?? null,
-            'condition_field' => 'monthly_created_by_primary_relations',
-            'condition_value' => '1',
-            'is_editable' => true,
-        ]);
-
-        $this->upsertWorkflowStep($workflowId, 'monthly_branch_relations_manager_review', [
-            'step_order' => 3,
-            'approval_level' => 3,
             'name_ar' => 'اعتماد رئيس الفرع',
             'name_en' => 'Supervisor Approval',
             'step_type' => 'main',
@@ -117,8 +104,8 @@ return new class extends Migration
         ]);
 
         $this->upsertWorkflowStep($workflowId, 'monthly_branch_coordinator_review', [
-            'step_order' => 4,
-            'approval_level' => 4,
+            'step_order' => 3,
+            'approval_level' => 3,
             'name_ar' => 'اعتماد منسق الفروع',
             'name_en' => 'Branch Coordinator Approval',
             'step_type' => 'main',
@@ -129,8 +116,8 @@ return new class extends Migration
         ]);
 
         $this->upsertWorkflowStep($workflowId, 'monthly_relations_manager_review', [
-            'step_order' => 5,
-            'approval_level' => 5,
+            'step_order' => 4,
+            'approval_level' => 4,
             'name_ar' => 'اعتماد مدير العلاقات الرئيسي',
             'name_en' => 'Primary Relations Manager Approval',
             'step_type' => 'main',
@@ -141,8 +128,8 @@ return new class extends Migration
         ]);
 
         $this->upsertWorkflowStep($workflowId, 'monthly_executive_manager_final_approval', [
-            'step_order' => 6,
-            'approval_level' => 6,
+            'step_order' => 5,
+            'approval_level' => 5,
             'name_ar' => 'الاعتماد النهائي من المدير التنفيذي',
             'name_en' => 'Executive Manager Final Approval',
             'step_type' => 'main',

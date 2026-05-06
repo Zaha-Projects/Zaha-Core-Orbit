@@ -60,13 +60,7 @@ class User extends Authenticatable
 
     public function isKheldaUser(): bool
     {
-        $branchText = mb_strtolower(trim((string) optional($this->branch)->name . ' ' . (string) optional($this->branch)->city));
-
-        return str_contains($branchText, 'khalda')
-            || str_contains($branchText, 'خلدا')
-            || str_contains($branchText, 'amman')
-            || str_contains($branchText, 'عمان')
-            || str_contains($branchText, 'عمّان');
+        return (bool) optional($this->branch)->is_main;
     }
 
     public function hasBranchScopedMonthlyVisibility(): bool

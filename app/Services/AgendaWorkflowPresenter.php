@@ -315,7 +315,7 @@ class AgendaWorkflowPresenter
                 'submitted' => 'مرسل',
                 'draft' => 'مسودة',
                 'current' => 'عند هذه الخطوة',
-                'skipped' => 'غير مطلوب',
+                'skipped' => 'تم التجاوز',
                 'awaiting_resubmission' => 'بانتظار إعادة الإرسال',
                 default => $this->workflowStateLabel($state),
             };

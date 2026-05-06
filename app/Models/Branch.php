@@ -9,12 +9,17 @@ class Branch extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'is_main' => 'boolean',
+    ];
+
     protected $fillable = [
         'name',
         'city',
         'address',
         'color_hex',
         'icon',
+        'is_main',
     ];
 
 

@@ -113,7 +113,6 @@
                         <div class="mb-2">
                             <label class="form-label">{{ __('workflow_ui.common.coverage_status') }}</label>
                             <select class="form-select" name="coverage_status">
-                                <option value="not_required">{{ __('workflow_ui.common.coverage_not_required') }}</option>
                                 <option value="planned">{{ __('workflow_ui.common.coverage_planned') }}</option>
                                 <option value="in_progress">{{ __('workflow_ui.common.coverage_in_progress') }}</option>
                                 <option value="completed">{{ __('workflow_ui.common.coverage_completed') }}</option>

@@ -361,7 +361,7 @@ class MonthlyActivitiesApprovalsController extends Controller
     {
         $updates = [];
         $field = match ($stepKey) {
-            'monthly_branch_relations_officer_submit' => 'relations_officer_approval_status',
+            'monthly_relations_officer_submit' => 'relations_officer_approval_status',
             'monthly_branch_relations_manager_review' => 'relations_manager_approval_status',
             'monthly_branch_coordinator_review' => 'liaison_approval_status',
             'monthly_relations_manager_review' => 'hq_relations_manager_approval_status',
