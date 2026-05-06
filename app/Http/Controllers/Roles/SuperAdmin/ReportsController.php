@@ -72,6 +72,7 @@ class ReportsController extends Controller
         $securedCount = 0;
         $notSecuredCount = 0;
         $scores = [];
+        $decisionTrackedCount = 0;
         foreach ($activitiesWithNeedsFollowup as $activity) {
             foreach ((array) $activity->execution_needs_followup as $row) {
                 if (($row['status'] ?? null) === 'secured') {
@@ -82,6 +83,10 @@ class ReportsController extends Controller
 
                 if (isset($row['effectiveness_score']) && $row['effectiveness_score'] !== null && $row['effectiveness_score'] !== '') {
                     $scores[] = (float) $row['effectiveness_score'];
+                }
+
+                if (filled($row['decision_by_role'] ?? null) || filled($row['decision_by_name'] ?? null)) {
+                    $decisionTrackedCount++;
                 }
             }
         }
@@ -116,6 +121,8 @@ class ReportsController extends Controller
             'secured_count' => $securedCount,
             'not_secured_count' => $notSecuredCount,
             'avg_effectiveness' => count($scores) > 0 ? round(array_sum($scores) / count($scores), 2) : null,
+            'decision_tracked_count' => $decisionTrackedCount,
+            'followup_assigned_count' => MonthlyActivity::query()->whereNotNull('followup_officer_id')->count(),
         ];
 
         $year = (int) $request->input('year', now()->year);

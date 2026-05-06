@@ -2814,6 +2814,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->closeLifecycle($monthlyActivity, $lifecycle);
+        $this->assignFollowupOfficer($monthlyActivity);
 
         $this->logWorkflowAction('closed', $monthlyActivity, $request, 'closed', [
             'evaluation_score' => $monthlyActivity->evaluation_score,
@@ -2822,6 +2823,33 @@ class MonthlyActivitiesController extends Controller
         return redirect()
             ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.closed', ['activity' => $monthlyActivity->title]));
+    }
+
+
+    protected function assignFollowupOfficer(MonthlyActivity $monthlyActivity): void
+    {
+        $officer = User::query()
+            ->role('followup_officer')
+            ->where('status', 'active')
+            ->where(function ($query) use ($monthlyActivity): void {
+                $query->whereHas('assignedBranches', fn ($assigned) => $assigned->whereKey($monthlyActivity->branch_id))
+                    ->orWhere('branch_id', $monthlyActivity->branch_id);
+            })
+            ->orderBy('id')
+            ->first();
+
+        if (! $officer) {
+            $officer = User::query()->role('followup_officer')->where('status', 'active')->orderBy('id')->first();
+        }
+
+        if (! $officer) {
+            return;
+        }
+
+        $monthlyActivity->forceFill([
+            'followup_officer_id' => $officer->id,
+            'followup_assigned_at' => now(),
+        ])->save();
     }
 
     public function calendar(Request $request)

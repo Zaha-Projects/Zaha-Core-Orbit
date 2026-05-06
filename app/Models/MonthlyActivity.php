@@ -297,6 +297,11 @@ class MonthlyActivity extends Model
     }
 
 
+
+    public function followupOfficer()
+    {
+        return $this->belongsTo(User::class, 'followup_officer_id');
+    }
     protected static function booted(): void
     {
         static::saving(function (self $activity) {
