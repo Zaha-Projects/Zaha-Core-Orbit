@@ -88,7 +88,7 @@
                                         <th>اللون</th>
                                         <th>الأيقونة</th>
                                         <th>الحالة</th>
-                                        <th class="text-end">حفظ</th>
+                                        <th class="text-end">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -107,7 +107,7 @@
                                                         <span class="form-check-label">{{ $department->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -165,7 +165,7 @@
                                         <th>اللون</th>
                                         <th>الأيقونة</th>
                                         <th>الحالة</th>
-                                        <th class="text-end">حفظ</th>
+                                        <th class="text-end">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -186,7 +186,7 @@
                                                         <span class="form-check-label">{{ $unit->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -237,7 +237,7 @@
                                         <th>القسم المرتبط</th>
                                         <th>الترتيب</th>
                                         <th>الحالة</th>
-                                        <th class="text-end">حفظ</th>
+                                        <th class="text-end">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -261,7 +261,7 @@
                                                         <span class="form-check-label">{{ $category->active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -304,7 +304,7 @@
                                         <th>الترتيب</th>
                                         <th>خيار أخرى</th>
                                         <th>الحالة</th>
-                                        <th class="text-end">حفظ</th>
+                                        <th class="text-end">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -327,7 +327,7 @@
                                                         <span class="form-check-label">{{ $group->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
                                             </form>
                                         </tr>
                                     @endforeach
@@ -386,7 +386,7 @@
                                                         <th>الاسم</th>
                                                         <th>الترتيب</th>
                                                         <th>الحالة</th>
-                                                        <th class="text-end">حفظ</th>
+                                                        <th class="text-end">إجراءات</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -405,7 +405,7 @@
                                                                         <span class="form-check-label">{{ $statusLookup->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                                     </label>
                                                                 </td>
-                                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
                                                             </form>
                                                         </tr>
                                                     @empty
@@ -459,7 +459,7 @@
                                         <th>الاسم</th>
                                         <th>الترتيب</th>
                                         <th>الحالة</th>
-                                        <th class="text-end">حفظ</th>
+                                        <th class="text-end">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -477,7 +477,7 @@
                                                         <span class="form-check-label">{{ $option->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
                                             </form>
                                         </tr>
                                     @empty
@@ -518,7 +518,7 @@
                                         <th>نوع الإجابة</th>
                                         <th>الترتيب</th>
                                         <th>الحالة</th>
-                                        <th class="text-end">حفظ</th>
+                                        <th class="text-end">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -541,7 +541,7 @@
                                                         <span class="form-check-label">{{ $question->is_active ? 'مفعّل' : 'غير مفعّل' }}</span>
                                                     </label>
                                                 </td>
-                                                <td class="text-end"><button class="btn btn-outline-primary btn-sm" type="submit">حفظ</button></td>
+                                                <td class="text-end"><div class="d-flex gap-2 justify-content-end"><button class="btn btn-outline-primary btn-sm" type="submit" name="action_type" value="save">حفظ</button><button class="btn btn-outline-danger btn-sm" type="submit" name="action_type" value="delete" onclick="return confirm('تأكيد حذف السؤال؟')">حذف</button></div></td>
                                             </form>
                                         </tr>
                                     @endforeach

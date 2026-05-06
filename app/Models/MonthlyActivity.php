@@ -139,6 +139,8 @@ class MonthlyActivity extends Model
         'audience_satisfaction_percent',
         'evaluation_score',
         'evaluation_reason',
+        'evaluation_assigned_user_id',
+        'evaluation_assigned_at',
         'media_coverage',
         'needs_media_coverage',
         'media_coverage_notes',
@@ -198,6 +200,7 @@ class MonthlyActivity extends Model
         'modified_proposed_date' => 'date',
         'rescheduled_date' => 'date',
         'actual_date' => 'date',
+        'evaluation_assigned_at' => 'datetime',
         'lock_at' => 'datetime',
         'is_official' => 'boolean',
         'time_from' => 'datetime:H:i',
@@ -323,6 +326,12 @@ class MonthlyActivity extends Model
                 CommunicationsRequest::firstOrCreate(['event_id' => $activity->id], ['status' => 'pending']);
             }
         });
+    }
+
+
+    public function evaluationAssignee()
+    {
+        return $this->belongsTo(User::class, 'evaluation_assigned_user_id');
     }
 
     public function scopeNotArchived($query)

@@ -2810,15 +2810,35 @@ class MonthlyActivitiesController extends Controller
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
         ]);
 
+                $evaluationOfficer = User::query()
+            ->role('evaluation_officer')
+            ->where('status', 'active')
+            ->where(function ($query) use ($monthlyActivity) {
+                $query->whereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($monthlyActivity->branch_id))
+                    ->orWhere('branch_id', $monthlyActivity->branch_id);
+            })
+            ->first();
+
         $monthlyActivity->update([
             'actual_date' => $data['actual_date'] ?? $monthlyActivity->actual_date,
             'actual_attendance' => $data['actual_attendance'] ?? $monthlyActivity->actual_attendance,
             'evaluation_score' => $data['evaluation_score'] ?? $monthlyActivity->evaluation_score,
             'evaluation_reason' => $data['evaluation_reason'] ?? $monthlyActivity->evaluation_reason,
+            'evaluation_assigned_user_id' => $evaluationOfficer?->id,
+            'evaluation_assigned_at' => $evaluationOfficer ? now() : null,
             'status' => 'closed',
             'execution_status' => 'executed',
             'is_official' => true,
         ]);
+
+        if ($evaluationOfficer) {
+            app(NotificationService::class)->sendToUser(
+                $evaluationOfficer,
+                'تم تحويل نشاط مغلق للتقييم',
+                "تم تحويل النشاط ({$monthlyActivity->title}) إليك للتقييم.",
+                route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity->id, 'mode' => 'post'])
+            );
+        }
 
         $this->closeLifecycle($monthlyActivity, $lifecycle);
 

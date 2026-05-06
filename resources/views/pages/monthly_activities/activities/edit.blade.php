@@ -5,7 +5,7 @@
     $title = __('app.roles.programs.monthly_activities.edit_title');
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
     $isPostMode = request('mode') === 'post';
-    $canManageEvaluation = auth()->user()?->hasAnyRole(['followup_officer', 'super_admin', 'relations_manager', 'executive_manager']);
+    $canManageEvaluation = auth()->user()?->hasAnyRole(['followup_officer', 'evaluation_officer', 'super_admin', 'relations_manager', 'executive_manager']);
     $evaluationEnabled = $isPostMode && $canManageEvaluation && (
         in_array($monthlyActivity->status, ['executed', 'completed', 'closed'], true)
         || ! empty($monthlyActivity->actual_date)
