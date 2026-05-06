@@ -33,6 +33,7 @@ return [
         'theme_toggle' => 'وضع المظهر',
         'language_switch' => 'تبديل اللغة',
         'notifications' => 'الإشعارات',
+        'main_branch_label' => 'فرع رئيسي',
         'new_notifications_count' => ':count جديدة',
         'open_notification' => 'فتح الإشعار',
         'close_sidebar' => 'إغلاق القائمة الجانبية',

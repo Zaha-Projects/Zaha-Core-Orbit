@@ -33,6 +33,7 @@ return [
         'theme_toggle' => 'Theme mode',
         'language_switch' => 'Language switch',
         'notifications' => 'Notifications',
+        'main_branch_label' => 'Main Branch',
         'new_notifications_count' => ':count new',
         'open_notification' => 'Open notification',
         'close_sidebar' => 'Close sidebar',
