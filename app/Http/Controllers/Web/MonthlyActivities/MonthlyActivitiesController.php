@@ -702,8 +702,21 @@ class MonthlyActivitiesController extends Controller
                 $evaluationScore = $row['evaluation_score'] ?? null;
                 $evaluationScore = $evaluationScore === '' || $evaluationScore === null ? null : (float) $evaluationScore;
                 $evaluationReason = trim((string) ($row['evaluation_reason'] ?? ''));
+                $decisionByRole = trim((string) ($row['decision_by_role'] ?? ''));
+                $decisionByName = trim((string) ($row['decision_by_name'] ?? ''));
+                $allowedRoles = (array) data_get(config('execution_needs.decision_matrix', []), (string) $key.'.roles', []);
+                $currentUser = auth()->user();
+                if ($decisionByRole === '' && $currentUser) {
+                    $decisionByRole = collect($allowedRoles)->first(fn (string $role) => $currentUser->hasRole($role)) ?? '';
+                }
+                if ($decisionByName === '' && $currentUser) {
+                    $decisionByName = (string) ($currentUser->name ?? '');
+                }
+                if ($decisionByRole !== '' && $allowedRoles !== [] && ! in_array($decisionByRole, $allowedRoles, true)) {
+                    $decisionByRole = null;
+                }
 
-                if (! $status && $reason === '' && $score === null && $evaluationScore === null && $evaluationReason === '') {
+                if (! $status && $reason === '' && $score === null && $evaluationScore === null && $evaluationReason === '' && $decisionByRole === '' && $decisionByName === '') {
                     return null;
                 }
 
@@ -715,6 +728,8 @@ class MonthlyActivitiesController extends Controller
                     'effectiveness_score' => $score,
                     'evaluation_score' => $evaluationScore,
                     'evaluation_reason' => $evaluationReason !== '' ? $evaluationReason : null,
+                    'decision_by_role' => $decisionByRole !== '' ? $decisionByRole : null,
+                    'decision_by_name' => $decisionByName !== '' ? $decisionByName : null,
                 ];
             })
             ->filter()
@@ -753,7 +768,7 @@ class MonthlyActivitiesController extends Controller
             ->map(fn (array $definition, string $key) => array_merge($definition, ['key' => $key]))
             ->groupBy('owner_role')
             ->each(function (Collection $needs, ?string $role) use ($activity, $notifications, $url) {
-                if (blank($role)) {
+                if (blank($role) || in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)) {
                     return;
                 }
 
