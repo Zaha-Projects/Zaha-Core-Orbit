@@ -62,9 +62,9 @@
     flex-direction: column;
     gap: .1rem;
 }
-.stat-pill .label { font-size: .75rem; color: #4b5f8e; font-weight: 700; }
+.stat-pill .label { font-size: .75rem; color: #4b5f8e; font-weight: 700; display: inline-flex; align-items: center; gap: .35rem; }
 .stat-pill strong { font-size: 1.05rem; color: #142f7a; }
-.stat-pill small { font-size: .74rem; color: #5e6f99; }
+.stat-pill small { font-size: .74rem; color: #5e6f99; display: inline-flex; align-items: center; gap: .3rem; }
 .stat-pill--total { background: linear-gradient(130deg, #eaf2ff, #ffffff); }
 .stat-pill--agenda { background: linear-gradient(130deg, #e8f0ff, #f6f9ff); border-color: #bfd4ff; }
 .stat-pill--monthly { background: linear-gradient(130deg, #e8fff6, #f4fffb); border-color: #bce9d8; }
@@ -77,8 +77,8 @@
 .legend-dot--participant { background: #7c3aed; }
 
 #calendarSection #calendar {
+    width: 100%;
     max-width: 100%;
-    margin-inline: auto;
 }
 
 #calendarSection .fc {
@@ -94,6 +94,19 @@
 
 #calendarSection .fc .fc-view-harness {
     min-height: 620px;
+    width: 100%;
+}
+
+#calendarSection .fc .fc-scrollgrid,
+#calendarSection .fc .fc-col-header,
+#calendarSection .fc .fc-daygrid-body,
+#calendarSection .fc .fc-timegrid-body {
+    width: 100% !important;
+}
+
+#calendarSection .fc .fc-scrollgrid table {
+    width: 100% !important;
+    table-layout: fixed;
 }
 
 #calendarSection .fc .fc-toolbar.fc-header-toolbar {
@@ -210,6 +223,12 @@
 }
 .dashboard-event-meta--secondary {
     opacity: .85;
+}
+.dashboard-event-meta--time {
+    font-weight: 700;
+}
+.dashboard-event-meta i {
+    margin-inline-end: .2rem;
 }
 
 @media (max-width: 991.98px) {
