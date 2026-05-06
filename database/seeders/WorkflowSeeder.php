@@ -25,7 +25,7 @@ class WorkflowSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $steps
+     * @param array<int, array<string, mixed>> $steps
      */
     private function seedWorkflow(string $code, string $module, string $nameAr, string $nameEn, array $steps): void
     {
@@ -42,6 +42,7 @@ class WorkflowSeeder extends Seeder
         );
 
         $stepKeys = collect($steps)->pluck('step_key')->all();
+
         WorkflowStep::query()
             ->where('workflow_id', $workflow->id)
             ->whereNotIn('step_key', $stepKeys)
@@ -79,7 +80,7 @@ class WorkflowSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $steps
+     * @param array<int, array<string, mixed>> $steps
      */
     private function validateSteps(string $workflowCode, array $steps): void
     {
@@ -117,44 +118,43 @@ class WorkflowSeeder extends Seeder
     {
         return [
             [
-             [
-    'code' => 'agenda_approval',
-    'module' => 'agenda',
-    'name_ar' => 'سير اعتماد الأجندة السنوية',
-    'name_en' => 'Annual Agenda Approval Workflow',
-    'steps' => [
-        [
-            'step_key' => 'agenda_relations_officer_submit',
-            'step_order' => 1,
-            'approval_level' => 1,
-            'name_ar' => 'إنشاء وإرسال مسؤول العلاقات',
-            'name_en' => 'Relations Officer Draft & Submit',
-            'step_type' => 'sub',
-            'role' => 'relations_officer',
-            'is_editable' => true,
-        ],
-        [
-            'step_key' => 'agenda_relations_manager_review',
-            'step_order' => 2,
-            'approval_level' => 2,
-            'name_ar' => 'اعتماد مدير العلاقات الرئيسي',
-            'name_en' => 'Primary Relations Manager Approval',
-            'step_type' => 'main',
-            'role' => 'relations_manager',
-            'is_editable' => false,
-        ],
-        [
-            'step_key' => 'agenda_executive_manager_final_approval',
-            'step_order' => 3,
-            'approval_level' => 3,
-            'name_ar' => 'الاعتماد النهائي من المدير التنفيذي',
-            'name_en' => 'Executive Manager Final Approval',
-            'step_type' => 'main',
-            'role' => 'executive_manager',
-            'is_editable' => false,
-        ],
-    ],
-],
+                'code' => 'agenda_approval',
+                'module' => 'agenda',
+                'name_ar' => 'سير اعتماد الأجندة السنوية',
+                'name_en' => 'Annual Agenda Approval Workflow',
+                'steps' => [
+                    [
+                        'step_key' => 'agenda_relations_officer_submit',
+                        'step_order' => 1,
+                        'approval_level' => 1,
+                        'name_ar' => 'إنشاء وإرسال مسؤول العلاقات',
+                        'name_en' => 'Relations Officer Draft & Submit',
+                        'step_type' => 'sub',
+                        'role' => 'relations_officer',
+                        'is_editable' => true,
+                    ],
+                    [
+                        'step_key' => 'agenda_relations_manager_review',
+                        'step_order' => 2,
+                        'approval_level' => 2,
+                        'name_ar' => 'اعتماد مدير العلاقات الرئيسي',
+                        'name_en' => 'Primary Relations Manager Approval',
+                        'step_type' => 'main',
+                        'role' => 'relations_manager',
+                        'is_editable' => false,
+                    ],
+                    [
+                        'step_key' => 'agenda_executive_manager_final_approval',
+                        'step_order' => 3,
+                        'approval_level' => 3,
+                        'name_ar' => 'الاعتماد النهائي من المدير التنفيذي',
+                        'name_en' => 'Executive Manager Final Approval',
+                        'step_type' => 'main',
+                        'role' => 'executive_manager',
+                        'is_editable' => false,
+                    ],
+                ],
+            ],
             [
                 'code' => 'monthly_activity_approval',
                 'module' => 'monthly_activities',
