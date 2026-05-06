@@ -32,7 +32,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         $creatorZarqa = $this->ensureWorkflowUser(
             'showcase-branch-relations-officer-zarqa@zaha.test',
             'Showcase Branch Relations Officer Zarqa',
-            'branch_relations_officer',
+            'relations_officer',
             $zarqaBranch
         );
         $managerZarqa = $this->ensureWorkflowUser(
@@ -45,7 +45,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
             ?? $this->ensureWorkflowUser(
                 'showcase-branch-relations-officer-irbid@zaha.test',
                 'Showcase Branch Relations Officer Irbid',
-                'branch_relations_officer',
+                'relations_officer',
                 $irbidBranch
             );
         $managerIrbid = $this->ensureWorkflowUser(
@@ -254,7 +254,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         ];
 
         $roleFieldMap = [
-            'monthly_branch_relations_officer_submit' => 'relations_officer_approval_status',
+            'monthly_relations_officer_submit' => 'relations_officer_approval_status',
             'monthly_branch_relations_manager_review' => 'relations_manager_approval_status',
             'monthly_branch_coordinator_review' => 'liaison_approval_status',
             'monthly_relations_manager_review' => 'hq_relations_manager_approval_status',

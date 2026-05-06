@@ -21,10 +21,10 @@ class MonthlyActivityWorkflowService
 
         if ($activity->monthly_created_by_branch_relations) {
             $steps[] = [
-                'key' => 'branch_relations_officer_review',
+                'key' => 'relations_officer_review',
                 'label' => 'Branch Relations Officer',
                 'status_field' => 'relations_officer_approval_status',
-                'role' => 'branch_relations_officer',
+                'role' => 'relations_officer',
             ];
 
             $steps[] = [

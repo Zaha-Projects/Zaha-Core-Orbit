@@ -43,6 +43,7 @@ class BranchSeeder extends Seeder
                 'name' => $name,
                 'city' => trim((string) Str::of($name)->afterLast('-')),
                 'address' => null,
+                'is_main' => str_contains($name, 'خلدا'),
             ])
             ->all();
 
@@ -54,6 +55,7 @@ class BranchSeeder extends Seeder
                 [
                     'city' => $branch['city'],
                     'address' => $branch['address'],
+                    'is_main' => $branch['is_main'],
                 ]
             );
         }

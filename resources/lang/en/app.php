@@ -164,7 +164,7 @@ return [
             'super_admin' => 'Super Admin',
             'relations_manager' => 'Relations Manager',
             'relations_officer' => 'Relations Officer',
-            'branch_relations_officer' => 'Branch Relations Officer',
+            'relations_officer' => 'Branch Relations Officer',
             'programs_manager' => 'Programs Manager',
             'programs_officer' => 'Programs Officer',
             'finance_officer' => 'Finance Officer',

@@ -164,7 +164,7 @@ return [
             'super_admin' => 'مدير عام',
             'relations_manager' => 'مدير العلاقات',
             'relations_officer' => 'موظف العلاقات',
-            'branch_relations_officer' => 'موظف علاقات الفرع',
+            'relations_officer' => 'موظف علاقات الفرع',
             'programs_manager' => 'مدير البرامج',
             'programs_officer' => 'موظف البرامج',
             'finance_officer' => 'موظف المالية',

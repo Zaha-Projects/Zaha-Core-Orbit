@@ -11,14 +11,28 @@ class RolesSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->roleDefinitions() as $roleData) {
+            $attributes = ['guard_name' => 'web'];
+
+            if (isset($roleData['id'])) {
+                $attributes['id'] = $roleData['id'];
+            } else {
+                $attributes['name'] = $roleData['key'];
+            }
+
             Role::query()->updateOrCreate(
-                ['name' => $roleData['key'], 'guard_name' => 'web'],
+                $attributes,
                 [
+                    'name' => $roleData['key'],
                     'name_ar' => $roleData['name_ar'],
                     'name_en' => $roleData['name_en'],
                 ]
             );
         }
+
+        Role::query()
+            ->where('guard_name', 'web')
+            ->where('name', 'branch_relations_officer')
+            ->delete();
 
         $this->syncRolePermissions();
 
@@ -124,8 +138,9 @@ class RolesSeeder extends Seeder
 
         foreach ($roles as $roleData) {
             Role::query()->updateOrCreate(
-                ['name' => $roleData['key'], 'guard_name' => 'web'],
+                ['id' => $roleData['id'] ?? null, 'guard_name' => 'web'],
                 [
+                    'name' => $roleData['key'],
                     'name_ar' => $roleData['name_ar'],
                     'name_en' => $roleData['name_en'],
                 ]
@@ -169,7 +184,6 @@ class RolesSeeder extends Seeder
             'programs_manager' => ['monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'evaluation.manage', 'branches.view.all', 'reports.view', 'kpi.view'],
             'relations_manager' => ['agenda.view', 'agenda.create', 'agenda.update', 'agenda.delete', 'agenda.approve', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'branches.view.all'],
             'branch_relations_officer' => ['agenda.view', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'branches.view.own', 'communications.upload_media'],
-            'relations_officer' => ['agenda.view', 'agenda.create', 'agenda.update', 'agenda.delete', 'monthly_activities.view', 'monthly_activities.create', 'monthly_activities.edit', 'branches.view.own'],
             'followup_officer' => ['reports.view', 'kpi.view', 'kpi.manage', 'agenda.view', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'evaluation.view', 'branches.view.all'],
             'workshops_secretary' => ['agenda.view', 'agenda.participation.update', 'monthly_activities.view', 'monthly_activities.view_other_branches', 'branches.view.all'],
             'programs_officer' => ['monthly_activities.view', 'monthly_activities.view_other_branches', 'monthly_activities.approve', 'monthly_activities.edit', 'branches.view.all', 'reports.view'],
@@ -220,8 +234,7 @@ class RolesSeeder extends Seeder
             ['key' => 'programs_manager', 'name_ar' => 'مدير البرامج', 'name_en' => 'Programs Manager'],
             ['key' => 'relations_manager', 'name_ar' => 'مدير علاقات رئيسي', 'name_en' => 'Primary Relations Manager'],
             ['key' => 'branch_relations_manager', 'name_ar' => 'رئيس فرع', 'name_en' => 'Supervisor'],
-            ['key' => 'branch_relations_officer', 'name_ar' => 'مسؤول علاقات الفروع', 'name_en' => 'Branch Relations Officer'],
-            ['key' => 'relations_officer', 'name_ar' => 'مسؤول علاقات رئيسي', 'name_en' => 'Primary Relations Officer'],
+            ['id' => (int) config('roles.ids.relations_officer', 6), 'key' => config('roles.keys.relations_officer', 'relations_officer'), 'name_ar' => 'مسؤول العلاقات', 'name_en' => 'Relations Officer'],
             ['key' => 'followup_officer', 'name_ar' => 'مسؤول المتابعة', 'name_en' => 'Follow-up Officer'],
             ['key' => 'evaluation_officer', 'name_ar' => 'مسؤول التقييم', 'name_en' => 'Evaluation Officer'],
             ['key' => 'evaluation_followup_viewer', 'name_ar' => 'مسؤول التقييم والمتابعة (عرض)', 'name_en' => 'Evaluation Follow-up Viewer'],
@@ -303,7 +316,7 @@ class RolesSeeder extends Seeder
                 'branches.view.own',
                 'communications.view_media',
             ],
-            'branch_relations_officer' => [
+            config('roles.keys.relations_officer', 'relations_officer') => [
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',
@@ -312,23 +325,6 @@ class RolesSeeder extends Seeder
                 'monthly_activities.edit',
                 'monthly_activities.delete',
                 'branches.view.own',
-                'communications.view_media',
-                'communications.upload_media',
-            ],
-            'relations_officer' => [
-                'agenda.view',
-                'agenda.create',
-                'agenda.update',
-                'agenda.delete',
-                'agenda.approve',
-                'agenda.participation.update',
-                'monthly_activities.view',
-                'monthly_activities.view_other_branches',
-                'monthly_activities.create',
-                'monthly_activities.edit',
-                'monthly_activities.delete',
-                'monthly_activities.approve',
-                'branches.view.all',
                 'communications.view_media',
                 'communications.upload_media',
             ],

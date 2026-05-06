@@ -342,7 +342,7 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
     {
         $branch = Branch::factory()->create();
 
-        $creatorRole = Role::query()->firstOrCreate(['name' => 'branch_relations_officer', 'guard_name' => 'web']);
+        $creatorRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
         $branchManagerRole = Role::query()->firstOrCreate(['name' => 'branch_relations_manager', 'guard_name' => 'web']);
         $branchCoordinatorRole = Role::query()->firstOrCreate(['name' => 'branch_coordinator', 'guard_name' => 'web']);
         $relationsOfficerRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
@@ -578,7 +578,7 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
 
     public function test_monthly_presenter_marks_submission_step_as_awaiting_resubmission_after_changes_requested(): void
     {
-        $creatorRole = Role::query()->firstOrCreate(['name' => 'branch_relations_officer', 'guard_name' => 'web']);
+        $creatorRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
         $approverRole = Role::query()->firstOrCreate(['name' => 'relations_manager', 'guard_name' => 'web']);
         $branch = Branch::factory()->create();
 
@@ -681,7 +681,7 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
         $branch = Branch::factory()->create();
 
         $roles = collect([
-            'branch_relations_officer',
+            'relations_officer',
             'relations_officer',
             'branch_relations_manager',
             'branch_coordinator',
@@ -698,7 +698,7 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
         ]);
 
         foreach ([
-            ['step_key' => 'monthly_branch_relations_officer_submit', 'step_order' => 1, 'approval_level' => 1, 'step_type' => 'sub', 'role_id' => $roles['branch_relations_officer']->id, 'condition_field' => 'monthly_created_by_branch_relations', 'condition_value' => '1', 'is_editable' => true],
+            ['step_key' => 'monthly_relations_officer_submit', 'step_order' => 1, 'approval_level' => 1, 'step_type' => 'sub', 'role_id' => $roles['relations_officer']->id, 'condition_field' => 'monthly_created_by_branch_relations', 'condition_value' => '1', 'is_editable' => true],
             ['step_key' => 'monthly_primary_relations_officer_submit', 'step_order' => 2, 'approval_level' => 2, 'step_type' => 'sub', 'role_id' => $roles['relations_officer']->id, 'condition_field' => 'monthly_created_by_primary_relations', 'condition_value' => '1', 'is_editable' => true],
             ['step_key' => 'monthly_branch_relations_manager_review', 'step_order' => 3, 'approval_level' => 3, 'step_type' => 'main', 'role_id' => $roles['branch_relations_manager']->id, 'condition_field' => 'monthly_created_by_branch_relations', 'condition_value' => '1', 'is_editable' => false],
             ['step_key' => 'monthly_branch_coordinator_review', 'step_order' => 4, 'approval_level' => 4, 'step_type' => 'main', 'role_id' => $roles['branch_coordinator']->id, 'condition_field' => 'monthly_branch_coordinator_required', 'condition_value' => '1', 'is_editable' => false],
@@ -716,7 +716,7 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
             'executive_manager' => User::factory()->create(),
         ];
 
-        $actors['creator']->assignRole($primaryCreator ? $roles['relations_officer'] : $roles['branch_relations_officer']);
+        $actors['creator']->assignRole($primaryCreator ? $roles['relations_officer'] : $roles['relations_officer']);
         $actors['branch_manager']->assignRole($roles['branch_relations_manager']);
         $actors['branch_coordinator']->assignRole($roles['branch_coordinator']);
         if ($withCoordinatorAssignment) {

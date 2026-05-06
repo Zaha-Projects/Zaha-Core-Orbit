@@ -45,7 +45,7 @@ class MonthlyActivitiesController extends Controller
         'relations_manager',
         'relations_officer',
         'branch_relations_manager',
-        'branch_relations_officer',
+        'relations_officer',
         'followup_officer',
         'super_admin',
     ];
