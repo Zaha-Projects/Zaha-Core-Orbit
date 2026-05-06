@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Roles\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\AgendaApproval;
 use App\Models\AgendaEvent;
+use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Branch;
 use App\Models\DonationCash;
@@ -118,6 +119,23 @@ class ReportsController extends Controller
             'avg_effectiveness' => count($scores) > 0 ? round(array_sum($scores) / count($scores), 2) : null,
         ];
 
+
+        $dailyOperationLogs = AuditLog::query()
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->whereDate('created_at', '>=', now()->subDays(30)->toDateString())
+            ->groupByRaw('DATE(created_at)')
+            ->orderBy('day')
+            ->get();
+
+        $userDelayStats = AuditLog::query()
+            ->selectRaw('user_id, MIN(created_at) as first_action_at, MAX(created_at) as last_action_at, COUNT(*) as total_actions')
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->with('user:id,name')
+            ->orderByDesc('total_actions')
+            ->limit(25)
+            ->get();
+
         $year = (int) $request->input('year', now()->year);
         $analytics = $analyticsService->build($year);
         $branchMetrics = $analyticsService->branchMetrics($year);
@@ -137,7 +155,9 @@ class ReportsController extends Controller
             'branchMetrics',
             'year',
             'years',
-            'enterpriseFilters'
+            'enterpriseFilters',
+            'dailyOperationLogs',
+            'userDelayStats'
         ));
     }
 }
