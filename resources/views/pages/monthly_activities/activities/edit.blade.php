@@ -518,14 +518,18 @@
                         <div class="row g-3">
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الدور الذي اتخذ القرار</label>
-                                @php($decisionRoles = (array) data_get($executionNeedDecisionMatrix, $needKey.'.roles', []))
-                                @php($autoDecisionRole = old("execution_needs_followup.$needKey.decision_by_role", $needData['decision_by_role'] ?? ($decisionRoles[0] ?? '')))
+                                @php
+                                    $decisionRoles = (array) data_get($executionNeedDecisionMatrix, $needKey.'.roles', []);
+                                    $autoDecisionRole = old("execution_needs_followup.$needKey.decision_by_role", $needData['decision_by_role'] ?? ($decisionRoles[0] ?? ''));
+                                @endphp
                                 <input class="form-control" value="{{ $autoDecisionRole ?: '—' }}" readonly>
                                 <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_role]" value="{{ $autoDecisionRole }}">
                             </div>
                             <div class="col-12 col-md-3">
                                 <label class="form-label">اسم متخذ القرار</label>
-                                @php($autoDecisionName = old("execution_needs_followup.$needKey.decision_by_name", $needData['decision_by_name'] ?? auth()->user()?->name))
+                                @php
+                                    $autoDecisionName = old("execution_needs_followup.$needKey.decision_by_name", $needData['decision_by_name'] ?? auth()->user()?->name);
+                                @endphp
                                 <input class="form-control" value="{{ $autoDecisionName ?: '—' }}" readonly>
                                 <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_name]" value="{{ $autoDecisionName }}">
                             </div>
