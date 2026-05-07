@@ -566,6 +566,7 @@ return [
                     'edit' => 'Edit',
                     'delete' => 'Delete',
                     'save' => 'Save changes',
+                    'save_draft' => 'Save as draft',
                     'submit' => 'Submit for approval',
                     'update' => 'Update',
                     'view_current_attachment' => 'View current attachment',

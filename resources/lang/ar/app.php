@@ -571,6 +571,7 @@ return [
                     'edit' => 'تعديل',
                     'delete' => 'حذف',
                     'save' => 'حفظ التعديلات',
+                    'save_draft' => 'حفظ كمسودة',
                     'submit' => 'إرسال للاعتماد',
                     'update' => 'تحديث',
                     'view_current_attachment' => 'عرض المرفق الحالي',

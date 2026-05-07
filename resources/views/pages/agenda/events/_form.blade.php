@@ -205,7 +205,8 @@
                         @else
                             <a class="btn btn-outline-secondary" href="{{ route('role.relations.agenda.index') }}">رجوع للقائمة</a>
                         @endif
-                        <button class="btn btn-primary" type="submit">{{ $submitLabel }}</button>
+                        <button class="btn btn-outline-primary" type="submit" name="submit_action" value="draft">{{ __('app.roles.relations.agenda.actions.save_draft') }}</button>
+                        <button class="btn btn-primary" type="submit" name="submit_action" value="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
                     </div>
                 </div>
             </form>
@@ -297,7 +298,7 @@
                 modal?.hide();
             });
             form.addEventListener('submit', function (e) {
-                if (planType?.value !== 'unified') return;
+                if (e.submitter?.value !== 'submit' || planType?.value !== 'unified') return;
                 const hiddenTargetGroups = form.querySelector('input[name="monthly_template_target_group_ids"]')?.value || '';
                 const ok = ['title','proposed_date','description','execution_time'].every((k) => (hidden(k)?.value || '').trim() !== '') && hiddenTargetGroups.trim() !== '';
                 if (!ok) {

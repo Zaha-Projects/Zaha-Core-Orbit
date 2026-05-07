@@ -315,9 +315,12 @@ class AgendaEventsController extends Controller
         $roleIds = $user->roles()->pluck('roles.id')->all();
         $permissionIds = $user->getAllPermissions()->pluck('id')->all();
 
-        $query->where(function ($visibilityQuery) use ($roleIds, $permissionIds) {
+        $userId = (int) $user->id;
+
+        $query->where(function ($visibilityQuery) use ($roleIds, $permissionIds, $userId) {
             $visibilityQuery
                 ->where('status', 'published')
+                ->orWhere('created_by', $userId)
                 ->orWhereHas('workflowInstance', function ($instanceQuery) use ($roleIds, $permissionIds) {
                     $instanceQuery
                         ->whereIn('status', ['pending', 'in_progress', DynamicWorkflowService::DECISION_CHANGES_REQUESTED])
@@ -374,6 +377,10 @@ class AgendaEventsController extends Controller
     protected function canSeeAgendaBeforePublication(User $user, ?AgendaEvent $agendaEvent = null): bool
     {
         if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        if ($agendaEvent && (int) $agendaEvent->created_by === (int) $user->id) {
             return true;
         }
 
@@ -580,6 +587,51 @@ class AgendaEventsController extends Controller
         return $scopedBranchIds === [] || count($scopedBranchIds) > 1;
     }
 
+    protected function shouldSubmitFromRequest(Request $request): bool
+    {
+        return $request->input('submit_action') === 'submit';
+    }
+
+    protected function submitAgendaEventForApproval(
+        AgendaEvent $agendaEvent,
+        Request $request,
+        WorkflowNotificationService $workflowNotifications,
+        DynamicWorkflowService $dynamicWorkflowService,
+        AgendaWorkflowBridgeService $agendaWorkflowBridgeService
+    ): AgendaEvent {
+        $instance = $dynamicWorkflowService->forModel('agenda', $agendaEvent);
+        abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
+
+        $currentStep = $dynamicWorkflowService->currentStep($instance);
+
+        if ($instance->status === DynamicWorkflowService::DECISION_CHANGES_REQUESTED && $currentStep?->step_type !== 'sub') {
+            $dynamicWorkflowService->markResubmitted($instance);
+            $instance = $instance->fresh();
+            $currentStep = $dynamicWorkflowService->currentStep($instance);
+        }
+
+        if ($currentStep?->step_type === 'sub') {
+            WorkflowLog::query()->create([
+                'workflow_instance_id' => $instance->id,
+                'workflow_step_id' => $currentStep->id,
+                'acted_by' => $request->user()->id,
+                'action' => DynamicWorkflowService::DECISION_APPROVED,
+                'comment' => null,
+                'edit_request_iteration' => (int) $instance->edit_request_count,
+                'acted_at' => now(),
+            ]);
+
+            $dynamicWorkflowService->advanceToNextStep($instance->fresh());
+            $instance = $instance->fresh();
+        }
+
+        $agendaEvent = $agendaWorkflowBridgeService->syncApprovalState($agendaEvent, $instance);
+
+        $workflowNotifications->approvalRequested($instance, $agendaEvent, route('role.relations.approvals.index'), $request->user());
+
+        return $agendaEvent;
+    }
+
     public function show(Request $request, AgendaEvent $agendaEvent, AgendaWorkflowPresenter $agendaWorkflowPresenter)
     {
         $agendaEvent = AgendaEvent::query()
@@ -661,7 +713,8 @@ class AgendaEventsController extends Controller
         Request $request,
         ConflictDetectionService $conflicts,
         WorkflowNotificationService $workflowNotifications,
-        AgendaWorkflowBridgeService $agendaWorkflowBridgeService
+        AgendaWorkflowBridgeService $agendaWorkflowBridgeService,
+        DynamicWorkflowService $dynamicWorkflowService
     )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
@@ -696,10 +749,12 @@ class AgendaEventsController extends Controller
             'monthly_template_time_to' => ['nullable', 'date_format:H:i'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
+            'submit_action' => ['nullable', 'in:draft,submit'],
         ]);
 
+        $shouldSubmit = $this->shouldSubmitFromRequest($request);
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
-        if (($data['plan_type'] ?? null) === 'unified') {
+        if ($shouldSubmit && ($data['plan_type'] ?? null) === 'unified') {
             validator($data, [
                 'monthly_template_title' => ['required', 'string', 'max:255'],
                 'monthly_template_proposed_date' => ['required', 'date'],
@@ -762,6 +817,22 @@ class AgendaEventsController extends Controller
 
             $agendaWorkflowBridgeService->syncMandatoryAgendaToMonthlyPlans($event);
         });
+
+        if ($shouldSubmit) {
+            $event = $this->submitAgendaEventForApproval(
+                $event,
+                $request,
+                $workflowNotifications,
+                $dynamicWorkflowService,
+                $agendaWorkflowBridgeService
+            );
+
+            return redirect()
+                ->route('role.relations.agenda.index')
+                ->with('status', __('app.roles.relations.agenda.submitted', ['event' => $event->event_name]))
+                ->with('warning', $conflictWarning);
+        }
+
         $workflowNotifications->created($event, $request->user(), route('role.relations.agenda.show', $event));
 
         return redirect()
@@ -808,7 +879,9 @@ class AgendaEventsController extends Controller
         Request $request,
         AgendaEvent $agendaEvent,
         ConflictDetectionService $conflicts,
-        AgendaWorkflowBridgeService $agendaWorkflowBridgeService
+        AgendaWorkflowBridgeService $agendaWorkflowBridgeService,
+        WorkflowNotificationService $workflowNotifications,
+        DynamicWorkflowService $dynamicWorkflowService
     )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
@@ -844,10 +917,12 @@ class AgendaEventsController extends Controller
             'monthly_template_time_to' => ['nullable', 'date_format:H:i'],
             'branch_participation' => ['array'],
             'branch_participation.*' => ['in:participant,not_participant,unspecified'],
+            'submit_action' => ['nullable', 'in:draft,submit'],
         ]);
 
+        $shouldSubmit = $this->shouldSubmitFromRequest($request);
         $data['unified_plan_source'] = ($data['plan_type'] ?? null) === 'unified' ? 'monthly_auto' : null;
-        if (($data['plan_type'] ?? null) === 'unified') {
+        if ($shouldSubmit && ($data['plan_type'] ?? null) === 'unified') {
             validator($data, [
                 'monthly_template_title' => ['required', 'string', 'max:255'],
                 'monthly_template_proposed_date' => ['required', 'date'],
@@ -912,6 +987,21 @@ class AgendaEventsController extends Controller
 
             $agendaWorkflowBridgeService->syncMandatoryAgendaToMonthlyPlans($agendaEvent);
         });
+
+        if ($shouldSubmit) {
+            $agendaEvent = $this->submitAgendaEventForApproval(
+                $agendaEvent->fresh(),
+                $request,
+                $workflowNotifications,
+                $dynamicWorkflowService,
+                $agendaWorkflowBridgeService
+            );
+
+            return redirect()
+                ->route('role.relations.agenda.index')
+                ->with('status', __('app.roles.relations.agenda.submitted', ['event' => $agendaEvent->event_name]))
+                ->with('warning', $conflictWarning);
+        }
 
         return redirect()
             ->route('role.relations.agenda.index')
@@ -978,36 +1068,13 @@ class AgendaEventsController extends Controller
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
 
-        $instance = $dynamicWorkflowService->forModel('agenda', $agendaEvent);
-        abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
-
-        $currentStep = $dynamicWorkflowService->currentStep($instance);
-
-        if ($instance->status === DynamicWorkflowService::DECISION_CHANGES_REQUESTED && $currentStep?->step_type !== 'sub') {
-            $dynamicWorkflowService->markResubmitted($instance);
-            $instance = $instance->fresh();
-            $currentStep = $dynamicWorkflowService->currentStep($instance);
-        }
-
-        if ($currentStep?->step_type === 'sub') {
-            WorkflowLog::query()->create([
-                'workflow_instance_id' => $instance->id,
-                'workflow_step_id' => $currentStep->id,
-                'acted_by' => $request->user()->id,
-                'action' => DynamicWorkflowService::DECISION_APPROVED,
-                'comment' => null,
-                'edit_request_iteration' => (int) $instance->edit_request_count,
-                'acted_at' => now(),
-            ]);
-
-            $dynamicWorkflowService->advanceToNextStep($instance->fresh());
-            $instance = $instance->fresh();
-        }
-
-        $agendaEvent = $agendaWorkflowBridgeService->syncApprovalState($agendaEvent, $instance);
-
-        $workflowNotifications->approvalRequested($instance, $agendaEvent, route('role.relations.approvals.index'), $request->user());
-
+        $agendaEvent = $this->submitAgendaEventForApproval(
+            $agendaEvent,
+            $request,
+            $workflowNotifications,
+            $dynamicWorkflowService,
+            $agendaWorkflowBridgeService
+        );
 
         return redirect()
             ->route('role.relations.agenda.index')
