@@ -66,7 +66,7 @@ class UsersSeeder extends Seeder
             ['name' => 'مدير علاقات رئيسي - ديمة السالم', 'email' => 'relations-manager@zaha.test', 'role' => 'relations_manager', 'branch' => 'amman', 'phone' => '0790001004'],
             ['name' => 'رئيس فرع - يوسف العبادي', 'email' => 'branch-relations-manager@zaha.test', 'role' => 'branch_relations_manager', 'branch' => 'zarqa', 'phone' => '0790001005'],
             ['name' => 'مسؤول العلاقات - عمر الشوابكة', 'email' => 'relations-officer@zaha.test', 'role' => 'relations_officer', 'branch' => 'amman', 'phone' => '0790001006'],
-            ['name' => 'مسؤول علاقات الفروع - نهى الزعبي', 'email' => 'branch-relations-officer@zaha.test', 'role' => 'relations_officer', 'branch' => 'irbid', 'phone' => '0790001007'],
+            ['name' => 'مسؤول علاقات الفروع - نهى الزعبي', 'email' => 'branch-relations-officer@zaha.test', 'role' => 'relations_officer_branch', 'branch' => 'irbid', 'phone' => '0790001007'],
             ['name' => 'مسؤول المتابعة - هاجر الرواشدة', 'email' => 'followup-officer@zaha.test', 'role' => 'followup_officer', 'branch' => 'amman', 'phone' => '0790001008'],
             ['name' => 'سكرتير الورش - ندى الخصاونة', 'email' => 'workshops-secretary@zaha.test', 'role' => 'workshops_secretary', 'branch' => 'amman', 'phone' => '0790001009'],
             ['name' => 'منسق الفروع - أحمد العزام', 'email' => 'branch-coordinator@zaha.test', 'role' => 'branch_coordinator', 'branch' => 'irbid', 'phone' => '0790001010'],

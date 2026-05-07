@@ -78,11 +78,11 @@ class AgendaEventsController extends Controller
     {
         $user = $request->user();
 
-        if ($user->hasRole(config('roles.keys.super_admin', 'super_admin'))) {
+        if ($user->hasRole('super_admin')) {
             return;
         }
 
-        if ($user->hasRole(config('roles.keys.relations_officer', 'relations_officer'))
+        if ($user->hasRole('relations_officer')
             && config('roles.features.main_branch_relations_can_manage_annual_agenda', true)) {
             abort_unless((bool) optional($user->branch)->is_main, 403);
         }
@@ -98,7 +98,7 @@ class AgendaEventsController extends Controller
             return;
         }
 
-        if ($user->hasRole(config('roles.keys.relations_officer', 'relations_officer'))
+        if ($user->hasRole('relations_officer')
             && config('roles.features.main_branch_relations_can_manage_annual_agenda', true)) {
             abort_unless((bool) optional($user->branch)->is_main, 403);
         }
