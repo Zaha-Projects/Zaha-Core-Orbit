@@ -6,6 +6,7 @@
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
     $isPostMode = request('mode') === 'post';
     $canManageEvaluation = auth()->user()?->hasAnyRole(['followup_officer', 'evaluation_officer', 'super_admin', 'relations_manager', 'executive_manager']);
+    $isExecutionNeedDecisionOnly = $isPostMode && request()->boolean('need_decision');
     $evaluationEnabled = $isPostMode && $canManageEvaluation && (
         in_array($monthlyActivity->status, ['executed', 'completed', 'closed'], true)
         || ! empty($monthlyActivity->actual_date)
@@ -115,7 +116,7 @@
     @if (session('status'))
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
-    @if (request('mode') === 'post')
+    @if (request('mode') === 'post' && ! $isExecutionNeedDecisionOnly)
         <div class="alert alert-info">أنت الآن في وضع <strong>إكمال التعبئة بعد التنفيذ</strong>. أكمل الحقول التنفيذية في أسفل الصفحة.</div>
     @endif
 
@@ -520,6 +521,7 @@
                     <div class="col-12 border rounded-3 p-3">
                         <div class="fw-semibold mb-2">{{ $needLabel }}</div>
                         <div class="row g-3">
+                            @unless($isExecutionNeedDecisionOnly)
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الدور الذي اتخذ القرار</label>
                                 @php
@@ -537,15 +539,24 @@
                                 <input class="form-control" value="{{ $autoDecisionName ?: '—' }}" readonly>
                                 <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_name]" value="{{ $autoDecisionName }}">
                             </div>
-                            <div class="col-12 col-md-3">
+                            @else
+                                @php
+                                    $decisionRoles = (array) ($executionNeedDecisionRoles[$needKey] ?? []);
+                                    $autoDecisionRole = old("execution_needs_followup.$needKey.decision_by_role", $needData['decision_by_role'] ?? ($decisionRoles[0] ?? ''));
+                                    $autoDecisionName = old("execution_needs_followup.$needKey.decision_by_name", $needData['decision_by_name'] ?? auth()->user()?->name);
+                                @endphp
+                                <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_role]" value="{{ $autoDecisionRole }}">
+                                <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_name]" value="{{ $autoDecisionName }}">
+                            @endunless
+                            <div class="col-12 {{ $isExecutionNeedDecisionOnly ? 'col-md-4' : 'col-md-3' }}">
                                 <label class="form-label">حالة التأمين</label>
                                 <select class="form-select" name="execution_needs_followup[{{ $needKey }}][status]">
                                     <option value="">اختر</option>
-                                    <option value="secured" {{ old("execution_needs_followup.$needKey.status", $needData['status'] ?? '') === 'secured' ? 'selected' : '' }}>تم التأمين</option>
-                                    <option value="not_secured" {{ old("execution_needs_followup.$needKey.status", $needData['status'] ?? '') === 'not_secured' ? 'selected' : '' }}>لم يتم التأمين</option>
+                                    <option value="secured" {{ old("execution_needs_followup.$needKey.status", $needData['status'] ?? '') === 'secured' ? 'selected' : '' }}>سيتم التأمين</option>
+                                    <option value="not_secured" {{ old("execution_needs_followup.$needKey.status", $needData['status'] ?? '') === 'not_secured' ? 'selected' : '' }}>لن يتم التأمين</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 {{ $isExecutionNeedDecisionOnly ? 'col-md-8' : 'col-md-6' }}">
                                 <label class="form-label">سبب عدم التأمين (عند الحاجة)</label>
                                 <input
                                     class="form-control"
@@ -553,6 +564,7 @@
                                     value="{{ old("execution_needs_followup.$needKey.notes", $needData['notes'] ?? ($needData['reason'] ?? '')) }}"
                                 >
                             </div>
+                            @unless($isExecutionNeedDecisionOnly)
                             <div class="col-12 col-md-3">
                                 <label class="form-label">تقييم فعالية التأمين /10</label>
                                 <input
@@ -584,6 +596,7 @@
                                     rows="2"
                                 >{{ old("execution_needs_followup.$needKey.evaluation_reason", $needData['evaluation_reason'] ?? '') }}</textarea>
                             </div>
+                            @endunless
                         </div>
                     </div>
                 @empty
@@ -593,13 +606,13 @@
                 @endforelse
 
                 <div class="col-12 d-flex justify-content-end">
-                    <button class="btn btn-outline-primary" type="submit">حفظ متابعة الاحتياجات</button>
+                    <button class="btn btn-outline-primary" type="submit">{{ $isExecutionNeedDecisionOnly ? 'إرسال تأكيد الاحتياج' : 'حفظ متابعة الاحتياجات' }}</button>
                 </div>
             </form>
         </div>
     </div>
 
-    @if ($canManageEvaluation)
+    @if ($canManageEvaluation && ! $isExecutionNeedDecisionOnly)
     <div class="card event-card mb-4" id="post-execution-evaluation">
         <div class="card-body">
             <h2 class="h6 mb-3">المتابعة والتقييم</h2>
@@ -658,6 +671,7 @@
     </div>
     @endif
 
+    @unless($isExecutionNeedDecisionOnly)
     <div class="card event-card mb-4" id="post-execution-attachments">
         <div class="card-body">
             <div class="alert alert-light border mb-3">
@@ -763,6 +777,7 @@
             </form>
         </div>
     </div>
+    @endunless
     @endif
     </div>
 

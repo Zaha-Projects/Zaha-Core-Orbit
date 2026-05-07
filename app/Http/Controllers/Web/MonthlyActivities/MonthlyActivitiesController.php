@@ -900,7 +900,11 @@ class MonthlyActivitiesController extends Controller
 
         $notifications = app(NotificationService::class);
         $activity = $monthlyActivity->fresh(['branch', 'creator', 'supplies']);
-        $url = route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']).'#execution-needs-decisions';
+        $url = route('role.relations.activities.edit', [
+            'monthlyActivity' => $activity,
+            'mode' => 'post',
+            'need_decision' => 1,
+        ]).'#execution-needs-decisions';
 
         collect($definitions)
             ->flatMap(function (array $definition, string $key) use ($activity): array {
