@@ -87,7 +87,7 @@
                             <label class="form-label">{{ __('app.roles.super_admin.users.fields.role') }}</label>
                             <select class="form-select" name="role" data-user-role-select>
                                 @foreach ($roles as $role)
-                                    <option value="{{ $role->name }}" @selected(old('role') === $role->name)>{{ $role->display_name }}</option>
+                                    <option value="{{ $role->name }}" @selected(old('role') === $role->name)>{{ $role->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -292,7 +292,7 @@
                                                     <select class="form-select" name="role" data-user-role-select>
                                                         @foreach ($roles as $role)
                                                             <option value="{{ $role->name }}" @selected($user->roles->contains('name', $role->name))>
-                                                                {{ $role->display_name }}
+                                                                {{ $role->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
