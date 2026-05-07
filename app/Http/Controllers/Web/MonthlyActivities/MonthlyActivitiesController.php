@@ -881,7 +881,7 @@ class MonthlyActivitiesController extends Controller
             'monthly_activity_execution_need_decision',
             'ØªÙ… ØªØ­Ø¯ÙŠØ« Ù‚Ø±Ø§Ø± Ø§Ø­ØªÙŠØ§Ø¬ ØªÙ†ÙÙŠØ°',
             "ØªÙ… ØªØ­Ø¯ÙŠØ« Ù‚Ø±Ø§Ø± Ø§Ø­ØªÙŠØ§Ø¬Ø§Øª Ø§Ù„ØªÙ†ÙÙŠØ° ({$labels}) Ù„Ù„Ù†Ø´Ø§Ø· \"{$monthlyActivity->title}\" Ø¨ÙˆØ§Ø³Ø·Ø© {$actor->name}.",
-            route('role.relations.activities.show', $monthlyActivity),
+            route('role.relations.activities.show', $monthlyActivity).'#execution-needs-summary',
             [
                 'monthly_activity_id' => $monthlyActivity->id,
                 'branch_id' => $monthlyActivity->branch_id,

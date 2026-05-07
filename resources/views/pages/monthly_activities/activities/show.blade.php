@@ -216,12 +216,48 @@
                         <div class="col-12"><strong>سبب الإلغاء:</strong> {{ $monthlyActivity->cancellation_reason ?? '-' }}</div>
                     @endif
 
-                    @php($enabledExecutionNeeds = $monthlyActivity->enabledExecutionNeeds())
-                    <div class="col-12"><strong>احتياجات التنفيذ المفعلة:</strong></div>
+                    @php
+                        $enabledExecutionNeeds = $monthlyActivity->enabledExecutionNeeds();
+                        $executionNeedsFollowupByKey = collect($monthlyActivity->execution_needs_followup ?? [])
+                            ->filter(fn ($row) => is_array($row) && filled($row['key'] ?? null))
+                            ->keyBy(fn ($row) => (string) $row['key']);
+                        $executionNeedStatusLabel = fn (?string $status) => match ($status) {
+                            'secured' => 'سيتم التأمين',
+                            'not_secured' => 'لن يتم التأمين',
+                            default => 'بانتظار الرد',
+                        };
+                        $executionNeedStatusClass = fn (?string $status) => match ($status) {
+                            'secured' => 'bg-success',
+                            'not_secured' => 'bg-danger',
+                            default => 'bg-secondary',
+                        };
+                    @endphp
+                    <div class="col-12" id="execution-needs-summary"><strong>احتياجات التنفيذ المفعلة:</strong></div>
                     <div class="col-12">
-                        <ul class="mb-0">
-                            @forelse($enabledExecutionNeeds as $need)
-                                <li>{{ $need['label'] }}</li>
+                        <ul class="mb-0 d-flex flex-column gap-2">
+                            @forelse($enabledExecutionNeeds as $needKey => $need)
+                                @php($needDecision = $executionNeedsFollowupByKey->get($needKey, []))
+                                <li>
+                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                        <span>{{ $need['label'] }}</span>
+                                        <span class="badge {{ $executionNeedStatusClass($needDecision['status'] ?? null) }}">
+                                            {{ $executionNeedStatusLabel($needDecision['status'] ?? null) }}
+                                        </span>
+                                    </div>
+                                    @if(!empty($needDecision['decision_by_name']) || !empty($needDecision['decision_by_role']))
+                                        <div class="small text-muted mt-1">
+                                            تم الرد بواسطة: {{ $needDecision['decision_by_name'] ?? '-' }}
+                                            @if(!empty($needDecision['decision_by_role']))
+                                                / {{ $needDecision['decision_by_role'] }}
+                                            @endif
+                                        </div>
+                                    @endif
+                                    @if(!empty($needDecision['reason']) || !empty($needDecision['notes']))
+                                        <div class="small text-muted mt-1">
+                                            سبب عدم التأمين: {{ $needDecision['reason'] ?? $needDecision['notes'] }}
+                                        </div>
+                                    @endif
+                                </li>
                             @empty
                                 <li>-</li>
                             @endforelse
