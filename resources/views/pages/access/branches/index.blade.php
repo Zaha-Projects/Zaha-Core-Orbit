@@ -77,7 +77,7 @@
                             <tbody>
                                 @forelse ($branches as $branch)
                                     <tr>
-                                        <td>{{ $branch->name }} @if($branch->is_main)<span class="badge bg-primary ms-1">{{ __('app.common.main_branch_label') }}</span>@endif</td>
+                                        <td>{{ $branch->name }} @if($branch->is_main)<span class="badge bg-warning text-dark ms-1">{{ __('app.common.main_branch_label') }}</span>@endif</td>
                                         <td>{{ $branch->city ?? __('app.roles.super_admin.branches.table.unassigned') }}</td>
                                         <td><span class="fs-5">{{ $branch->icon ?? '📍' }}</span></td>
                                         <td>{{ $branch->address ?? __('app.roles.super_admin.branches.table.unassigned') }}</td>

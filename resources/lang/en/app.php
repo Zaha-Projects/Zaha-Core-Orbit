@@ -124,6 +124,8 @@ return [
                     'description' => 'Add users and assign roles, branches, and centers.',
                 ],
                 'workflows' => [
+                'title' => 'Workflow management',
+                'description' => 'Configure approval workflows, steps, and permissions.',
                 'created' => 'Workflow created successfully.',
                 'updated' => 'Workflow updated successfully.',
                 'deleted' => 'Workflow deleted successfully.',

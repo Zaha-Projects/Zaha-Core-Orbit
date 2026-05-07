@@ -420,9 +420,9 @@
                                 <label class="form-label">الجنس</label>
                                 <select class="form-select @error('volunteer_gender') is-invalid @enderror" name="volunteer_gender">
                                     <option value="">اختر الجنس</option>
-                                    <option value="male" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'male')>ذكر</option>
-                                    <option value="female" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'female')>أنثى</option>
-                                    <option value="both" @selected(old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'both')>كلاهما</option>
+                                    <option value="male" {{ old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'male' ? 'selected' : '' }}>ذكر</option>
+                                    <option value="female" {{ old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'female' ? 'selected' : '' }}>أنثى</option>
+                                    <option value="both" {{ old('volunteer_gender', $existingMonthlyActivity?->volunteer_gender) === 'both' ? 'selected' : '' }}>كلاهما</option>
                                 </select>
                                 @error('volunteer_gender')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
