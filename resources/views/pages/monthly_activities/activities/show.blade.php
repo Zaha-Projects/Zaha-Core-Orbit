@@ -17,6 +17,14 @@
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
     $viewer = auth()->user();
+    $canOpenPlanningForm = $viewer?->hasAnyRole([
+        'relations_manager',
+        'relations_officer',
+        'branch_relations_manager',
+        'followup_officer',
+        'evaluation_officer',
+        'super_admin',
+    ]);
     $canBranchPartialEditUnified = $isReadOnlyUnified
         && (bool) config('monthly_activity.unified_branch_edit.enabled', true)
         && $viewer
@@ -59,10 +67,12 @@
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.activities.index') }}">رجوع</a>
                     @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                         <span class="btn btn-outline-success disabled">عرض فقط (موحد معتمد)</span>
-                    @elseif($editMirrorMode)
+                    @elseif($editMirrorMode && $canOpenPlanningForm)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">فتح نموذج التعديل</a>
-                    @else
+                    @elseif($canOpenPlanningForm)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">تعديل</a>
+                    @else
+                        <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post']) }}#execution-needs-decisions">تحديث قرار الاحتياج</a>
                     @endif
                 </div>
             </div>

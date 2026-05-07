@@ -61,7 +61,11 @@
     $executionNeedsCatalog = collect($monthlyActivity->enabledExecutionNeeds())
         ->map(fn ($definition) => $definition['label'])
         ->all();
-    $executionNeedDecisionMatrix = config('execution_needs.decision_matrix', []);
+    $executionNeedDecisionKeys = $executionNeedDecisionKeys ?? [];
+    $executionNeedsCatalog = collect($executionNeedsCatalog)
+        ->only($executionNeedDecisionKeys)
+        ->all();
+    $executionNeedDecisionRoles = $executionNeedDecisionRoles ?? [];
     $executionNeedsFollowup = collect(old('execution_needs_followup', $monthlyActivity->execution_needs_followup ?? []))
         ->mapWithKeys(function ($row, $key) {
             if (! is_array($row)) {
@@ -502,7 +506,7 @@
     @endif
 
     @if ($isPostMode)
-    <div class="card event-card mb-4" id="post-execution-needs-followup">
+    <div class="card event-card mb-4" id="execution-needs-decisions">
         <div class="card-body">
             <h2 class="h6 mb-3">تأكيد تأمين احتياجات التنفيذ</h2>
             <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" class="row g-3 mb-0">
@@ -519,7 +523,7 @@
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الدور الذي اتخذ القرار</label>
                                 @php
-                                    $decisionRoles = (array) data_get($executionNeedDecisionMatrix, $needKey.'.roles', []);
+                                    $decisionRoles = (array) ($executionNeedDecisionRoles[$needKey] ?? []);
                                     $autoDecisionRole = old("execution_needs_followup.$needKey.decision_by_role", $needData['decision_by_role'] ?? ($decisionRoles[0] ?? ''));
                                 @endphp
                                 <input class="form-control" value="{{ $autoDecisionRole ?: '—' }}" readonly>

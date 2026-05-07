@@ -47,6 +47,22 @@ class MonthlyActivitiesController extends Controller
         'branch_relations_manager',
         'relations_officer',
         'followup_officer',
+        'evaluation_officer',
+        'volunteer_coordinator',
+        'branch_coordinator',
+        'communication_head',
+        'transport_officer',
+        'movement_manager',
+        'administrative_unit_manager',
+        'super_admin',
+    ];
+
+    protected const MONTHLY_ACTIVITY_PLANNING_EDIT_ROLES = [
+        'relations_manager',
+        'relations_officer',
+        'branch_relations_manager',
+        'followup_officer',
+        'evaluation_officer',
         'super_admin',
     ];
 
@@ -199,17 +215,86 @@ class MonthlyActivitiesController extends Controller
             && $user->hasAnyRole(self::MONTHLY_ACTIVITY_EDIT_ROLES);
     }
 
+    protected function canUseMonthlyActivityPlanningEdit(?User $user): bool
+    {
+        return $user !== null
+            && $user->hasAnyRole(self::MONTHLY_ACTIVITY_PLANNING_EDIT_ROLES);
+    }
+
+    protected function creatorIsPrimaryBranchRelationsOfficer(MonthlyActivity $monthlyActivity): bool
+    {
+        $creator = $monthlyActivity->relationLoaded('creator')
+            ? $monthlyActivity->creator
+            : $monthlyActivity->creator()->first();
+
+        return (bool) $creator?->hasRole('relations_officer')
+            && (bool) optional($creator->branch)->is_main;
+    }
+
+    protected function executionNeedDecisionRoles(MonthlyActivity $monthlyActivity, string $needKey): array
+    {
+        $roles = (array) data_get(config('execution_needs.decision_matrix', []), $needKey.'.roles', []);
+
+        if ($this->creatorIsPrimaryBranchRelationsOfficer($monthlyActivity)) {
+            $roles = collect($roles)
+                ->map(fn (string $role): string => in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)
+                    ? 'relations_manager'
+                    : $role)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        return $roles;
+    }
+
+    protected function executionNeedDecisionKeysForUser(MonthlyActivity $monthlyActivity, ?User $user): array
+    {
+        if (! $user) {
+            return [];
+        }
+
+        if ($user->hasRole('super_admin')) {
+            return array_keys($monthlyActivity->enabledExecutionNeeds());
+        }
+
+        return collect($monthlyActivity->enabledExecutionNeeds())
+            ->filter(function (array $definition, string $needKey) use ($monthlyActivity, $user): bool {
+                $roles = $this->executionNeedDecisionRoles($monthlyActivity, $needKey);
+
+                if ($roles === [] || ! $user->hasAnyRole($roles)) {
+                    return false;
+                }
+
+                if ($user->hasAnyRole(['branch_coordinator', 'branch_relations_manager']) && ! $user->can('branches.view.all')) {
+                    return $user->hasAccessToScopedBranch((int) $monthlyActivity->branch_id);
+                }
+
+                return true;
+            })
+            ->keys()
+            ->values()
+            ->all();
+    }
+
+    protected function canDecideAnyExecutionNeed(MonthlyActivity $monthlyActivity, ?User $user): bool
+    {
+        return $this->executionNeedDecisionKeysForUser($monthlyActivity, $user) !== [];
+    }
+
     protected function ensureActivityVisibleToUser(MonthlyActivity $monthlyActivity, User $user): void
     {
-        if (! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
+        $canDecideExecutionNeed = $this->canDecideAnyExecutionNeed($monthlyActivity, $user);
+
+        if (! $canDecideExecutionNeed && ! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
             abort(403);
         }
 
-        if ((string) $monthlyActivity->status === 'draft' && (int) $monthlyActivity->created_by !== (int) $user->id) {
+        if ((string) $monthlyActivity->status === 'draft' && (int) $monthlyActivity->created_by !== (int) $user->id && ! $canDecideExecutionNeed) {
             abort(403);
         }
 
-        if ($this->isVolunteerCoordinatorOnly($user) && ! $this->activityNeedsVolunteers($monthlyActivity)) {
+        if ($this->isVolunteerCoordinatorOnly($user) && ! $this->activityNeedsVolunteers($monthlyActivity) && ! $canDecideExecutionNeed) {
             abort(403);
         }
     }
@@ -679,7 +764,7 @@ class MonthlyActivitiesController extends Controller
         return [null, null];
     }
 
-    protected function normalizeExecutionNeedsFollowup(array &$data): void
+    protected function normalizeExecutionNeedsFollowup(array &$data, ?MonthlyActivity $monthlyActivity = null): void
     {
         $rows = $data['execution_needs_followup'] ?? null;
         if (! is_array($rows)) {
@@ -704,7 +789,9 @@ class MonthlyActivitiesController extends Controller
                 $evaluationReason = trim((string) ($row['evaluation_reason'] ?? ''));
                 $decisionByRole = trim((string) ($row['decision_by_role'] ?? ''));
                 $decisionByName = trim((string) ($row['decision_by_name'] ?? ''));
-                $allowedRoles = (array) data_get(config('execution_needs.decision_matrix', []), (string) $key.'.roles', []);
+                $allowedRoles = $monthlyActivity
+                    ? $this->executionNeedDecisionRoles($monthlyActivity, (string) $key)
+                    : (array) data_get(config('execution_needs.decision_matrix', []), (string) $key.'.roles', []);
                 $currentUser = auth()->user();
                 if ($decisionByRole === '' && $currentUser) {
                     $decisionByRole = collect($allowedRoles)->first(fn (string $role) => $currentUser->hasRole($role)) ?? '';
@@ -753,6 +840,57 @@ class MonthlyActivitiesController extends Controller
             ->all();
     }
 
+    protected function mergeExecutionNeedsFollowupForDecisionUser(MonthlyActivity $monthlyActivity, array $incomingRows, User $user): array
+    {
+        $allowedKeys = $this->executionNeedDecisionKeysForUser($monthlyActivity, $user);
+        abort_unless($allowedKeys !== [], 403);
+
+        $incomingByKey = collect($incomingRows)
+            ->filter(fn (array $row) => in_array((string) ($row['key'] ?? ''), $allowedKeys, true))
+            ->keyBy(fn (array $row) => (string) $row['key']);
+
+        abort_unless($incomingByKey->isNotEmpty(), 403);
+
+        $existingByKey = collect($monthlyActivity->execution_needs_followup ?? [])
+            ->filter(fn ($row) => is_array($row) && filled($row['key'] ?? null))
+            ->keyBy(fn (array $row) => (string) $row['key']);
+
+        foreach ($incomingByKey as $key => $row) {
+            $existingByKey->put($key, $row);
+        }
+
+        return $existingByKey->values()->all();
+    }
+
+    protected function notifyExecutionNeedsDecisionSubmitted(MonthlyActivity $monthlyActivity, array $decisionRows, User $actor): void
+    {
+        $creator = $monthlyActivity->creator()->first();
+        if (! $creator || (int) $creator->id === (int) $actor->id) {
+            return;
+        }
+
+        $definitions = $monthlyActivity->enabledExecutionNeeds();
+        $labels = collect($decisionRows)
+            ->pluck('key')
+            ->unique()
+            ->map(fn (string $key) => $definitions[$key]['label'] ?? $key)
+            ->implode('ØŒ ');
+
+        app(NotificationService::class)->notifyUsers(
+            collect([$creator]),
+            'monthly_activity_execution_need_decision',
+            'ØªÙ… ØªØ­Ø¯ÙŠØ« Ù‚Ø±Ø§Ø± Ø§Ø­ØªÙŠØ§Ø¬ ØªÙ†ÙÙŠØ°',
+            "ØªÙ… ØªØ­Ø¯ÙŠØ« Ù‚Ø±Ø§Ø± Ø§Ø­ØªÙŠØ§Ø¬Ø§Øª Ø§Ù„ØªÙ†ÙÙŠØ° ({$labels}) Ù„Ù„Ù†Ø´Ø§Ø· \"{$monthlyActivity->title}\" Ø¨ÙˆØ§Ø³Ø·Ø© {$actor->name}.",
+            route('role.relations.activities.show', $monthlyActivity),
+            [
+                'monthly_activity_id' => $monthlyActivity->id,
+                'branch_id' => $monthlyActivity->branch_id,
+                'need_keys' => collect($decisionRows)->pluck('key')->unique()->values()->all(),
+                'actor_id' => $actor->id,
+            ]
+        );
+    }
+
     protected function notifyExecutionNeedOwners(MonthlyActivity $monthlyActivity): void
     {
         $definitions = $monthlyActivity->enabledExecutionNeeds();
@@ -761,16 +899,21 @@ class MonthlyActivitiesController extends Controller
         }
 
         $notifications = app(NotificationService::class);
-        $activity = $monthlyActivity->fresh(['branch', 'supplies']);
-        $url = route('role.relations.activities.show', $activity);
+        $activity = $monthlyActivity->fresh(['branch', 'creator', 'supplies']);
+        $url = route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']).'#execution-needs-decisions';
 
         collect($definitions)
-            ->map(fn (array $definition, string $key) => array_merge($definition, ['key' => $key]))
-            ->groupBy('owner_role')
-            ->each(function (Collection $needs, ?string $role) use ($activity, $notifications, $url) {
-                if (blank($role) || in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)) {
-                    return;
-                }
+            ->flatMap(function (array $definition, string $key) use ($activity): array {
+                return collect($this->executionNeedDecisionRoles($activity, $key))
+                    ->map(fn (string $role): array => array_merge($definition, [
+                        'key' => $key,
+                        'decision_role' => $role,
+                    ]))
+                    ->all();
+            })
+            ->groupBy('decision_role')
+            ->each(function (Collection $needs, string $role) use ($activity, $notifications, $url) {
+                $role = trim($role);
 
                 $users = $this->executionNeedOwnerUsers($role, $activity);
                 if ($users->isEmpty()) {
@@ -799,7 +942,7 @@ class MonthlyActivitiesController extends Controller
     {
         $query = User::role($role)
             ->where('status', 'active')
-            ->when($role === 'branch_coordinator', function ($query) use ($monthlyActivity) {
+            ->when(in_array($role, ['branch_coordinator', 'branch_relations_manager'], true), function ($query) use ($monthlyActivity) {
                 $query->where(function ($branchQuery) use ($monthlyActivity) {
                     $branchQuery
                         ->whereHas('assignedBranches', fn ($assignedQuery) => $assignedQuery->whereKey($monthlyActivity->branch_id))
@@ -809,7 +952,7 @@ class MonthlyActivitiesController extends Controller
 
         $users = $query->get();
 
-        if ($users->isEmpty() && $role === 'branch_coordinator') {
+        if ($users->isEmpty() && in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)) {
             return User::role($role)->where('status', 'active')->get();
         }
 
@@ -1994,7 +2137,11 @@ class MonthlyActivitiesController extends Controller
             ]);
         }
 
-        $monthlyActivity->load(['agendaEvent', 'supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
+        $monthlyActivity->load(['agendaEvent', 'creator', 'supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
+        if (request()->boolean('form') && ! $this->canUseMonthlyActivityPlanningEdit(request()->user())) {
+            abort(403);
+        }
+
         if (request()->boolean('form')) {
             $this->flashFormPrefill($monthlyActivity);
         }
@@ -2011,6 +2158,10 @@ class MonthlyActivitiesController extends Controller
         $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);
         $monthlyCloseStatusOptions = $this->monthlyCloseStatusOptions((string) $monthlyActivity->status);
         $executionStatusLabels = $this->executionStatusLabels();
+        $executionNeedDecisionKeys = $this->executionNeedDecisionKeysForUser($monthlyActivity, request()->user());
+        $executionNeedDecisionRoles = collect(array_keys($monthlyActivity->enabledExecutionNeeds()))
+            ->mapWithKeys(fn (string $needKey): array => [$needKey => $this->executionNeedDecisionRoles($monthlyActivity, $needKey)])
+            ->all();
 
         return view('pages.monthly_activities.activities.edit', compact(
             'monthlyActivity',
@@ -2022,6 +2173,8 @@ class MonthlyActivitiesController extends Controller
             'monthlyStatusOptions',
             'monthlyCloseStatusOptions',
             'executionStatusLabels',
+            'executionNeedDecisionKeys',
+            'executionNeedDecisionRoles',
         ));
     }
 
@@ -2090,7 +2243,7 @@ class MonthlyActivitiesController extends Controller
 
         if ($request->boolean('evaluation_only')) {
             abort_unless(
-                $request->user()->hasAnyRole(['followup_officer', 'super_admin', 'relations_manager', 'executive_manager']),
+                $request->user()->hasAnyRole(['followup_officer', 'evaluation_officer', 'super_admin', 'relations_manager', 'executive_manager']),
                 403
             );
             abort_unless($this->canSubmitPostEvaluation($monthlyActivity), 422, 'التقييم متاح فقط بعد تنفيذ الفعالية.');
@@ -2143,19 +2296,30 @@ class MonthlyActivitiesController extends Controller
                 'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
                 'execution_needs_followup.*.evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
                 'execution_needs_followup.*.evaluation_reason' => ['nullable', 'string', 'max:1000'],
+                'execution_needs_followup.*.decision_by_role' => ['nullable', 'string', 'max:255'],
+                'execution_needs_followup.*.decision_by_name' => ['nullable', 'string', 'max:255'],
             ]);
 
-            $this->normalizeExecutionNeedsFollowup($data);
-            $this->filterExecutionNeedsFollowupToEnabled($monthlyActivity->fresh(['supplies']), $data);
+            $activityForNeeds = $monthlyActivity->fresh(['creator', 'supplies']);
+            $this->normalizeExecutionNeedsFollowup($data, $activityForNeeds);
+            $this->filterExecutionNeedsFollowupToEnabled($activityForNeeds, $data);
+            $mergedRows = $this->mergeExecutionNeedsFollowupForDecisionUser(
+                $activityForNeeds,
+                $data['execution_needs_followup'] ?? [],
+                $request->user()
+            );
             $monthlyActivity->update([
-                'execution_needs_followup' => $data['execution_needs_followup'] ?? null,
+                'execution_needs_followup' => $mergedRows === [] ? null : $mergedRows,
             ]);
+            $this->notifyExecutionNeedsDecisionSubmitted($monthlyActivity->fresh(), $data['execution_needs_followup'] ?? [], $request->user());
             $this->logWorkflowAction('execution_needs_followup_updated', $monthlyActivity, $request, $monthlyActivity->status);
 
             return redirect()
                 ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'])
                 ->with('status', 'تم حفظ متابعة احتياجات التنفيذ بنجاح.');
         }
+
+        abort_unless($this->canUseMonthlyActivityPlanningEdit($request->user()), 403);
 
         $isCreator = (int) $monthlyActivity->created_by === (int) $request->user()->id;
 
