@@ -26,6 +26,7 @@ return [
         'pagination' => 'Pagination',
         'communications_requests' => 'Communications requests',
         'permissions' => 'Permissions',
+        'main_branch_label' => 'Main branch',
     ],
     'layout' => [
         'sidebar_title' => 'Application menu',

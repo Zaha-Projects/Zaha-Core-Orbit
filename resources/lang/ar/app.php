@@ -26,6 +26,7 @@ return [
         'pagination' => 'ترقيم الصفحات',
         'communications_requests' => 'طلبات الاتصال',
         'permissions' => 'الصلاحيات',
+        'main_branch_label' => 'الفرع الرئيسي',
     ],
     'layout' => [
         'sidebar_title' => 'قائمة التطبيق',
