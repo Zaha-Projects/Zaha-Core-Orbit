@@ -6,7 +6,8 @@
     $subtitle = __('app.roles.programs.monthly_activities.subtitle');
     $isPostMode = request('mode') === 'post';
     $canManageEvaluation = auth()->user()?->hasAnyRole(['followup_officer', 'evaluation_officer', 'super_admin', 'relations_manager', 'executive_manager']);
-    $isExecutionNeedDecisionOnly = $isPostMode && request()->boolean('need_decision');
+    $canCompleteAfterExecution = $canCompleteAfterExecution ?? false;
+    $isExecutionNeedDecisionOnly = $isPostMode && (bool) ($isExecutionNeedDecisionRequest ?? request()->boolean('need_decision'));
     $evaluationEnabled = $isPostMode && $canManageEvaluation && (
         in_array($monthlyActivity->status, ['executed', 'completed', 'closed'], true)
         || ! empty($monthlyActivity->actual_date)
@@ -116,7 +117,7 @@
     @if (session('status'))
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
-    @if (request('mode') === 'post' && ! $isExecutionNeedDecisionOnly)
+    @if (request('mode') === 'post' && $canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
         <div class="alert alert-info">أنت الآن في وضع <strong>إكمال التعبئة بعد التنفيذ</strong>. أكمل الحقول التنفيذية في أسفل الصفحة.</div>
     @endif
 
@@ -127,7 +128,9 @@
             <div class="alert alert-light border mb-3">
                 <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                     <span>هذا النموذج مخصص لتعديل بيانات التخطيط قبل التنفيذ.</span>
-                    <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post']) }}">الانتقال إلى إكمال بعد التنفيذ</a>
+                    @if($canCompleteAfterExecution)
+                        <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post']) }}">الانتقال إلى إكمال بعد التنفيذ</a>
+                    @endif
                 </div>
             </div>
             <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" enctype="multipart/form-data" class="row g-3">
@@ -671,7 +674,7 @@
     </div>
     @endif
 
-    @unless($isExecutionNeedDecisionOnly)
+    @if($canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
     <div class="card event-card mb-4" id="post-execution-attachments">
         <div class="card-body">
             <div class="alert alert-light border mb-3">
@@ -777,7 +780,7 @@
             </form>
         </div>
     </div>
-    @endunless
+    @endif
     @endif
     </div>
 

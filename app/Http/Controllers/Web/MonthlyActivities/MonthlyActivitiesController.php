@@ -2162,10 +2162,16 @@ class MonthlyActivitiesController extends Controller
         $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);
         $monthlyCloseStatusOptions = $this->monthlyCloseStatusOptions((string) $monthlyActivity->status);
         $executionStatusLabels = $this->executionStatusLabels();
+        $canCompleteAfterExecution = $this->canCompleteAfterExecution($monthlyActivity, request()->user());
         $executionNeedDecisionKeys = $this->executionNeedDecisionKeysForUser($monthlyActivity, request()->user());
         $executionNeedDecisionRoles = collect(array_keys($monthlyActivity->enabledExecutionNeeds()))
             ->mapWithKeys(fn (string $needKey): array => [$needKey => $this->executionNeedDecisionRoles($monthlyActivity, $needKey)])
             ->all();
+        $isPostMode = request('mode') === 'post';
+        $isExecutionNeedDecisionRequest = request()->boolean('need_decision')
+            || ($isPostMode
+                && ! $canCompleteAfterExecution
+                && $executionNeedDecisionKeys !== []);
 
         return view('pages.monthly_activities.activities.edit', compact(
             'monthlyActivity',
@@ -2177,8 +2183,10 @@ class MonthlyActivitiesController extends Controller
             'monthlyStatusOptions',
             'monthlyCloseStatusOptions',
             'executionStatusLabels',
+            'canCompleteAfterExecution',
             'executionNeedDecisionKeys',
             'executionNeedDecisionRoles',
+            'isExecutionNeedDecisionRequest',
         ));
     }
 
@@ -2318,8 +2326,13 @@ class MonthlyActivitiesController extends Controller
             $this->notifyExecutionNeedsDecisionSubmitted($monthlyActivity->fresh(), $data['execution_needs_followup'] ?? [], $request->user());
             $this->logWorkflowAction('execution_needs_followup_updated', $monthlyActivity, $request, $monthlyActivity->status);
 
+            $redirectParams = ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'];
+            if (! $this->canCompleteAfterExecution($monthlyActivity, $request->user())) {
+                $redirectParams['need_decision'] = 1;
+            }
+
             return redirect()
-                ->route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'])
+                ->route('role.relations.activities.edit', $redirectParams)
                 ->with('status', 'تم حفظ متابعة احتياجات التنفيذ بنجاح.');
         }
 
@@ -2959,6 +2972,7 @@ class MonthlyActivitiesController extends Controller
     public function close(Request $request, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+        abort_unless($this->canCompleteAfterExecution($monthlyActivity, $request->user()), 403);
 
         if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
             return redirect()
