@@ -43,7 +43,7 @@ class UsersSeeder extends Seeder
                 ]
             );
 
-            $user->syncRoles([$userData['role']]);
+            $user->syncRoles([$this->normalizeRoleKey($userData['role'])]);
             $user->assignedBranches()->sync($userData['role'] === 'branch_coordinator' ? [$branch->id] : []);
         }
 
@@ -206,5 +206,14 @@ $user = User::query()->updateOrCreate(
             ['name' => 'محرر الحركة - رامي النعيمات', 'email' => 'movement-editor@zaha.test', 'role' => 'movement_editor', 'branch' => 'amman', 'phone' => '0790001018'],
             ['name' => 'مستعرض الحركة - نورس الحجايا', 'email' => 'movement-viewer@zaha.test', 'role' => 'movement_viewer', 'branch' => 'amman', 'phone' => '0790001019'],
         ];
+    }
+
+    private function normalizeRoleKey(string $role): string
+    {
+        if ($role === 'relations_officer_branch') {
+            return 'relations_officer';
+        }
+
+        return $role;
     }
 }
