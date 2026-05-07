@@ -169,8 +169,6 @@ class WorkflowSeeder extends Seeder
                         'name_en' => 'Relations Officer Draft & Submit',
                         'step_type' => 'sub',
                         'role' => 'relations_officer',
-                        'condition_field' => 'monthly_created_by_branch_relations',
-                        'condition_value' => '1',
                         'is_editable' => true,
                     ],
                     [
