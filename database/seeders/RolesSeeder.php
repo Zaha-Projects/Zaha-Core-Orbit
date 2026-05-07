@@ -154,6 +154,8 @@ class RolesSeeder extends Seeder
             ],
             config('roles.keys.relations_officer', 'relations_officer') => [
                 'agenda.view',
+                'agenda.create',
+                'agenda.update',
                 'agenda.participation.update',
                 'monthly_activities.view',
                 'monthly_activities.create',

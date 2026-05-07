@@ -98,6 +98,11 @@ class AgendaEventsController extends Controller
             return;
         }
 
+        if ($user->hasRole(config('roles.keys.relations_officer', 'relations_officer'))
+            && config('roles.features.main_branch_relations_can_manage_annual_agenda', true)) {
+            abort_unless((bool) optional($user->branch)->is_main, 403);
+        }
+
         if ($user->can('agenda.update')) {
             return;
         }
