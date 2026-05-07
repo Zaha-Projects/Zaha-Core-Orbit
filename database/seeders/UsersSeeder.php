@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Branch;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -13,16 +12,6 @@ class UsersSeeder extends Seeder
 {
     public function run(): void
     {
-        $volunteerCoordinatorRole = Role::query()->updateOrCreate(
-            ['name' => 'volunteer_coordinator', 'guard_name' => 'web'],
-            ['name_ar' => 'منسق التطوع', 'name_en' => 'Volunteer Coordinator']
-        );
-        $volunteerCoordinatorRole->syncPermissions([
-            'monthly_activities.view',
-            'monthly_activities.view_other_branches',
-            'branches.view.all',
-        ]);
-
         $branches = $this->resolveBranches();
 
         foreach ($this->userDefinitions() as $userData) {
@@ -43,124 +32,9 @@ class UsersSeeder extends Seeder
                 ]
             );
 
-            $user->syncRoles([$this->normalizeRoleKey($userData['role'])]);
-            $user->assignedBranches()->sync($userData['role'] === 'branch_coordinator' ? [$branch->id] : []);
-        }
-
-        $volunteerCoordinatorBranch = $branches['amman'];
-        $volunteerCoordinator = User::query()->updateOrCreate(
-            ['email' => 'volunteer-coordinator@zaha.test'],
-            [
-                'name' => 'منسق التطوع - سارة الخطيب',
-                'phone' => '0790001020',
-                'status' => 'active',
-                'branch_id' => $volunteerCoordinatorBranch->id,
-                'password' => Hash::make('password'),
-            ]
-        );
-        $volunteerCoordinator->syncRoles(['volunteer_coordinator']);
-        $volunteerCoordinator->assignedBranches()->sync([]);
-
-        return;
-
-        $users = [
-            [
-                'name' => 'مدير النظام - مروان الخطيب (Marwan Al-Khatib)',
-                'email' => 'super-admin@zaha.test',
-                'role' => 'super_admin',
-                'branch' => 'amman',
-                'phone' => '0790001001',
-            ],
-            [
-                'name' => 'المدير التنفيذي - رنا المجالي (Rana Al-Majali)',
-                'email' => 'executive-manager@zaha.test',
-                'role' => 'executive_manager',
-                'branch' => 'amman',
-                'phone' => '0790001002',
-            ],
-            [
-                'name' => 'مدير البرامج - ليث الحمود (Laith Al-Hmoud)',
-                'email' => 'programs-manager@zaha.test',
-                'role' => 'programs_manager',
-                'branch' => 'amman',
-                'phone' => '0790001003',
-            ],
-            [
-                'name' => 'مدير العلاقات - ديمة السالم (Deema Al-Salem)',
-                'email' => 'relations-manager@zaha.test',
-                'role' => 'relations_manager',
-                'branch' => 'amman',
-                'phone' => '0790001004',
-            ],
-            [
-                'name' => 'مسؤول العلاقات - عمر الشوابكة (Omar Al-Shawabkeh)',
-                'email' => 'relations-officer-amman@zaha.test',
-                'role' => 'relations_officer',
-                'branch' => 'amman',
-                'phone' => '0790001005',
-            ],
-            [
-                'name' => 'مسؤول علاقات الفروع - نهى الزعبي (Noha Al-Zoubi)',
-                'email' => 'branch-relations-officer-irbid@zaha.test',
-                'role' => 'relations_officer',
-                'branch' => 'irbid',
-                'phone' => '0790001006',
-            ],
-            [
-                'name' => 'مسؤول علاقات الفروع - سالم العبداللات (Salem Al-Abdallat)',
-                'email' => 'branch-relations-officer-zarqa@zaha.test',
-                'role' => 'relations_officer',
-                'branch' => 'zarqa',
-                'phone' => '0790001007',
-            ],
-            [
-                'name' => 'مسؤول المتابعة - هاجر الرواشدة (Hajar Al-Rawashdeh)',
-                'email' => 'followup-officer@zaha.test',
-                'role' => 'followup_officer',
-                'branch' => 'amman',
-                'phone' => '0790001008',
-            ],
-            [
-                'name' => 'سكرتير الورش - ندى الخصاونة (Nada Al-Khasawneh)',
-                'email' => 'workshops-secretary@zaha.test',
-                'role' => 'workshops_secretary',
-                'branch' => 'amman',
-                'phone' => '0790001009',
-            ],
-            [
-                'name' => 'مسؤول العلاقات - إسراء السرحان (Esraa Al-Sarhan)',
-                'email' => 'relations-officer-zarqa@zaha.test',
-                'role' => 'relations_officer',
-                'branch' => 'zarqa',
-                'phone' => '0790001010',
-            ],
-            [
-                'name' => 'مسؤول العلاقات - محمد عبابنة (Mohammad Ababneh)',
-                'email' => 'relations-officer-irbid@zaha.test',
-                'role' => 'relations_officer',
-                'branch' => 'irbid',
-                'phone' => '0790001011',
-            ],
-        ];
-
-        foreach ($users as $userData) {
-            $branch = $branches[$userData['branch']] ?? null;
-
-            if (! $branch) {
-                throw new InvalidArgumentException('Unknown branch key [' . $userData['branch'] . '] in UsersSeeder.');
-            }
-
-$user = User::query()->updateOrCreate(
-    ['email' => $userData['email']],
-    [
-        'name' => $userData['name'],
-        'phone' => $userData['phone'],
-        'status' => 'active',
-        'branch_id' => $branch->id,
-        'password' => Hash::make('password'),
-    ]
-);
-            $user->syncRoles([$userData['role']]);
+            $roleKey = $this->normalizeRoleKey($userData['role']);
+            $user->syncRoles([$roleKey]);
+            $user->assignedBranches()->sync($roleKey === 'branch_coordinator' ? [$branch->id] : []);
         }
     }
 
@@ -191,7 +65,7 @@ $user = User::query()->updateOrCreate(
             ['name' => 'مدير البرامج - ليث الحمود', 'email' => 'programs-manager@zaha.test', 'role' => 'programs_manager', 'branch' => 'amman', 'phone' => '0790001003'],
             ['name' => 'مدير علاقات رئيسي - ديمة السالم', 'email' => 'relations-manager@zaha.test', 'role' => 'relations_manager', 'branch' => 'amman', 'phone' => '0790001004'],
             ['name' => 'رئيس فرع - يوسف العبادي', 'email' => 'branch-relations-manager@zaha.test', 'role' => 'branch_relations_manager', 'branch' => 'zarqa', 'phone' => '0790001005'],
-            ['name' => 'مسؤول علاقات رئيسي - عمر الشوابكة', 'email' => 'relations-officer@zaha.test', 'role' => 'relations_officer', 'branch' => 'amman', 'phone' => '0790001006'],
+            ['name' => 'مسؤول العلاقات - عمر الشوابكة', 'email' => 'relations-officer@zaha.test', 'role' => 'relations_officer', 'branch' => 'amman', 'phone' => '0790001006'],
             ['name' => 'مسؤول علاقات الفروع - نهى الزعبي', 'email' => 'branch-relations-officer@zaha.test', 'role' => 'relations_officer', 'branch' => 'irbid', 'phone' => '0790001007'],
             ['name' => 'مسؤول المتابعة - هاجر الرواشدة', 'email' => 'followup-officer@zaha.test', 'role' => 'followup_officer', 'branch' => 'amman', 'phone' => '0790001008'],
             ['name' => 'سكرتير الورش - ندى الخصاونة', 'email' => 'workshops-secretary@zaha.test', 'role' => 'workshops_secretary', 'branch' => 'amman', 'phone' => '0790001009'],
@@ -205,6 +79,7 @@ $user = User::query()->updateOrCreate(
             ['name' => 'مدير الحركة - معتصم الرحامنة', 'email' => 'movement-manager@zaha.test', 'role' => 'movement_manager', 'branch' => 'amman', 'phone' => '0790001017'],
             ['name' => 'محرر الحركة - رامي النعيمات', 'email' => 'movement-editor@zaha.test', 'role' => 'movement_editor', 'branch' => 'amman', 'phone' => '0790001018'],
             ['name' => 'مستعرض الحركة - نورس الحجايا', 'email' => 'movement-viewer@zaha.test', 'role' => 'movement_viewer', 'branch' => 'amman', 'phone' => '0790001019'],
+            ['name' => 'منسق التطوع - سارة الخطيب', 'email' => 'volunteer-coordinator@zaha.test', 'role' => 'volunteer_coordinator', 'branch' => 'amman', 'phone' => '0790001020'],
         ];
     }
 
