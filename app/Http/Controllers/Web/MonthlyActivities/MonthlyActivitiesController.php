@@ -773,7 +773,7 @@ class MonthlyActivitiesController extends Controller
         }
 
         $normalized = collect($rows)
-            ->map(function ($row, $key) {
+            ->map(function ($row, $key) use ($monthlyActivity) {
                 if (! is_array($row)) {
                     return null;
                 }
