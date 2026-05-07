@@ -32,9 +32,8 @@ class UsersSeeder extends Seeder
                 ]
             );
 
-            $roleKey = $this->normalizeRoleKey($userData['role']);
-            $user->syncRoles([$roleKey]);
-            $user->assignedBranches()->sync($roleKey === 'branch_coordinator' ? [$branch->id] : []);
+            $user->syncRoles([$userData['role']]);
+            $user->assignedBranches()->sync($userData['role'] === 'branch_coordinator' ? [$branch->id] : []);
         }
     }
 
@@ -83,12 +82,4 @@ class UsersSeeder extends Seeder
         ];
     }
 
-    private function normalizeRoleKey(string $role): string
-    {
-        if ($role === 'relations_officer_branch') {
-            return 'relations_officer';
-        }
-
-        return $role;
-    }
 }

@@ -219,7 +219,15 @@ class MonthlyActivity extends Model
     {
         $creator = $this->creator()->first();
 
-        return $creator?->hasRole('relations_officer') || $creator?->hasRole('branch_relations_manager');
+        if ($creator?->hasRole('branch_relations_manager')) {
+            return true;
+        }
+
+        if (! $creator?->hasRole('relations_officer')) {
+            return false;
+        }
+
+        return ! (bool) optional($creator->branch)->is_main;
     }
 
     public function getMonthlyCreatedByPrimaryRelationsAttribute(): bool
