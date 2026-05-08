@@ -79,6 +79,7 @@ class UsersSeeder extends Seeder
             ['name' => 'محرر الحركة - رامي النعيمات', 'email' => 'movement-editor@zaha.test', 'role' => 'movement_editor', 'branch' => 'amman', 'phone' => '0790001018'],
             ['name' => 'مستعرض الحركة - نورس الحجايا', 'email' => 'movement-viewer@zaha.test', 'role' => 'movement_viewer', 'branch' => 'amman', 'phone' => '0790001019'],
             ['name' => 'منسق التطوع - سارة الخطيب', 'email' => 'volunteer-coordinator@zaha.test', 'role' => 'volunteer_coordinator', 'branch' => 'amman', 'phone' => '0790001020'],
+            ['name' => 'مدير الوحدة الإدارية - علاء العساف', 'email' => 'administrative-unit-manager@zaha.test', 'role' => 'administrative_unit_manager', 'branch' => 'amman', 'phone' => '0790001021'],
         ];
     }
 
