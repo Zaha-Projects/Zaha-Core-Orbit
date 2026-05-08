@@ -35,6 +35,7 @@
         ? $existingMonthlyActivity->supplies->map(fn ($supply) => [
             'item_name' => $supply->item_name,
             'available' => (int) $supply->available,
+            'quantity' => (int) ($supply->quantity ?? 1),
             'insurance_mechanism' => $supply->provider_type,
             'insurance_other_details' => $supply->provider_name,
         ])->values()->all()

@@ -1484,6 +1484,7 @@ class MonthlyActivitiesController extends Controller
                 ? $monthlyActivity->supplies->map(fn ($supply) => [
                     'item_name' => $supply->item_name,
                     'available' => (int) $supply->available,
+                    'quantity' => (int) ($supply->quantity ?? 1),
                     'provider_type' => $supply->provider_type,
                     'provider_name' => $supply->provider_name,
                 ])->values()->all()
@@ -1871,6 +1872,7 @@ class MonthlyActivitiesController extends Controller
             'supplies' => ['nullable', 'array'],
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.available' => ['nullable', 'boolean'],
+            'supplies.*.quantity' => ['nullable', 'integer', 'min:1'],
             'supplies.*.provider_type' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
             'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
             'evaluations' => ['nullable', 'array'],
@@ -2093,6 +2095,7 @@ class MonthlyActivitiesController extends Controller
                 'status' => $available ? 'available' : 'needed',
                 'provider_type' => $available ? null : ($supply['provider_type'] ?? null),
                 'provider_name' => $available ? null : ($supply['provider_name'] ?? null),
+                'quantity' => max(1, (int) ($supply['quantity'] ?? 1)),
             ]);
         }
         if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
