@@ -20,7 +20,7 @@
     $canOpenPlanningForm = $viewer?->hasAnyRole([
         'relations_manager',
         'relations_officer',
-        'branch_relations_manager',
+        'supervisor',
         'followup_officer',
         'evaluation_officer',
         'super_admin',

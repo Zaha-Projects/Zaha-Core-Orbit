@@ -44,7 +44,7 @@ class MonthlyActivitiesController extends Controller
     protected const MONTHLY_ACTIVITY_EDIT_ROLES = [
         'relations_manager',
         'relations_officer',
-        'branch_relations_manager',
+        'supervisor',
         'relations_officer',
         'followup_officer',
         'evaluation_officer',
@@ -60,7 +60,7 @@ class MonthlyActivitiesController extends Controller
     protected const MONTHLY_ACTIVITY_PLANNING_EDIT_ROLES = [
         'relations_manager',
         'relations_officer',
-        'branch_relations_manager',
+        'supervisor',
         'followup_officer',
         'evaluation_officer',
         'super_admin',
@@ -237,7 +237,7 @@ class MonthlyActivitiesController extends Controller
 
         if ($this->creatorIsPrimaryBranchRelationsOfficer($monthlyActivity)) {
             $roles = collect($roles)
-                ->map(fn (string $role): string => in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)
+                ->map(fn (string $role): string => in_array($role, ['branch_coordinator', 'supervisor'], true)
                     ? 'relations_manager'
                     : $role)
                 ->unique()
@@ -266,7 +266,7 @@ class MonthlyActivitiesController extends Controller
                     return false;
                 }
 
-                if ($user->hasAnyRole(['branch_coordinator', 'branch_relations_manager']) && ! $user->can('branches.view.all')) {
+                if ($user->hasAnyRole(['branch_coordinator', 'supervisor']) && ! $user->can('branches.view.all')) {
                     return $user->hasAccessToScopedBranch((int) $monthlyActivity->branch_id);
                 }
 
@@ -952,7 +952,7 @@ class MonthlyActivitiesController extends Controller
     {
         $query = User::role($role)
             ->where('status', 'active')
-            ->when(in_array($role, ['branch_coordinator', 'branch_relations_manager'], true), function ($query) use ($monthlyActivity) {
+            ->when(in_array($role, ['branch_coordinator', 'supervisor'], true), function ($query) use ($monthlyActivity) {
                 $query->where(function ($branchQuery) use ($monthlyActivity) {
                     $branchQuery
                         ->whereHas('assignedBranches', fn ($assignedQuery) => $assignedQuery->whereKey($monthlyActivity->branch_id))
@@ -962,7 +962,7 @@ class MonthlyActivitiesController extends Controller
 
         $users = $query->get();
 
-        if ($users->isEmpty() && in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)) {
+        if ($users->isEmpty() && in_array($role, ['branch_coordinator', 'supervisor'], true)) {
             return User::role($role)->where('status', 'active')->get();
         }
 

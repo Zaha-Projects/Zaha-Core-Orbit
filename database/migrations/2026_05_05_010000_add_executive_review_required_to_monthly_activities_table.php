@@ -17,7 +17,7 @@ return new class extends Migration
 
         DB::table('roles')
             ->where('guard_name', 'web')
-            ->where('name', 'branch_relations_manager')
+            ->where('name', 'supervisor')
             ->update([
                 'name_ar' => 'رئيس فرع',
                 'name_en' => 'Supervisor',
@@ -61,7 +61,7 @@ return new class extends Migration
 
         $roleIds = $this->roleIds([
             'relations_officer',
-            'branch_relations_manager',
+            'supervisor',
             'branch_coordinator',
             'relations_manager',
             'executive_manager',
@@ -91,13 +91,13 @@ return new class extends Migration
             'is_editable' => true,
         ]);
 
-        $this->upsertWorkflowStep($workflowId, 'monthly_branch_relations_manager_review', [
+        $this->upsertWorkflowStep($workflowId, 'monthly_supervisor_review', [
             'step_order' => 2,
             'approval_level' => 2,
             'name_ar' => 'اعتماد رئيس الفرع',
             'name_en' => 'Supervisor Approval',
             'step_type' => 'main',
-            'role_id' => $roleIds['branch_relations_manager'] ?? null,
+            'role_id' => $roleIds['supervisor'] ?? null,
             'condition_field' => 'monthly_created_by_branch_relations',
             'condition_value' => '1',
             'is_editable' => false,

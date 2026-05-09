@@ -64,7 +64,7 @@ class RolesSeeder extends Seeder
             ['key' => 'executive_manager', 'name_ar' => 'المدير التنفيذي', 'name_en' => 'Executive Manager'],
             ['key' => 'programs_manager', 'name_ar' => 'مدير البرامج', 'name_en' => 'Programs Manager'],
             ['key' => 'relations_manager', 'name_ar' => 'مدير علاقات رئيسي', 'name_en' => 'Primary Relations Manager'],
-            ['key' => 'branch_relations_manager', 'name_ar' => 'رئيس فرع', 'name_en' => 'Supervisor'],
+            ['key' => 'supervisor', 'name_ar' => 'رئيس فرع', 'name_en' => 'Supervisor'],
             ['key' => 'relations_officer', 'name_ar' => 'مسؤول العلاقات', 'name_en' => 'Relations Officer'],
             ['key' => 'followup_officer', 'name_ar' => 'مسؤول المتابعة', 'name_en' => 'Follow-up Officer'],
             ['key' => 'evaluation_officer', 'name_ar' => 'مسؤول التقييم', 'name_en' => 'Evaluation Officer'],
@@ -135,7 +135,7 @@ class RolesSeeder extends Seeder
                 'reports.view',
                 'kpi.view',
             ],
-            'branch_relations_manager' => [
+            'supervisor' => [
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',
