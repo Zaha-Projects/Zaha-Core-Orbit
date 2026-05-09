@@ -57,6 +57,7 @@
             createUrl = '',
             createLabel = `إضافة عنصر جديد بتاريخ ${dateStr}`,
             extraParams = {},
+            allowPastCreate = false,
         } = options;
 
         const header = document.createElement('div');
@@ -68,7 +69,12 @@
         header.appendChild(dayNumber);
 
         const dayCreateUrl = buildCalendarCreateUrl(createUrl, dateStr, extraParams);
-        if (dayCreateUrl) {
+        const cellDate = new Date(`${dateStr}T00:00:00`);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const canCreateForDate = allowPastCreate || Number.isNaN(cellDate.getTime()) || cellDate >= today;
+
+        if (dayCreateUrl && canCreateForDate) {
             const addButton = document.createElement('a');
             addButton.href = dayCreateUrl;
             addButton.className = 'agenda-calendar-add-btn';
