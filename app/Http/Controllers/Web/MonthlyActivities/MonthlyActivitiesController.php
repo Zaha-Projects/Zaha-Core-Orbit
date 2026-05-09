@@ -285,8 +285,14 @@ class MonthlyActivitiesController extends Controller
     protected function ensureActivityVisibleToUser(MonthlyActivity $monthlyActivity, User $user): void
     {
         $canDecideExecutionNeed = $this->canDecideAnyExecutionNeed($monthlyActivity, $user);
+        $canViewOtherBranches = $this->canViewOtherBranches($user)
+            && (int) ($monthlyActivity->branch_id ?? 0) !== (int) ($this->ownBranchId($user) ?? 0)
+            && ((string) $monthlyActivity->status === 'approved'
+                || (string) $monthlyActivity->executive_approval_status === 'approved'
+                || in_array((string) $monthlyActivity->lifecycle_status, ['Exec Director Approved', 'Approved', 'Published'], true)
+                || $monthlyActivity->workflowInstance()?->where('status', 'approved')->exists());
 
-        if (! $canDecideExecutionNeed && ! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
+        if (! $canDecideExecutionNeed && ! $canViewOtherBranches && ! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
             abort(403);
         }
 
@@ -3089,7 +3095,7 @@ class MonthlyActivitiesController extends Controller
             ->orderBy('day')
             ->orderBy('proposed_date')
             ->get()
-            ->map(function (MonthlyActivity $activity) use ($year, $request) {
+            ->map(function (MonthlyActivity $activity) use ($year, $request, $viewScope) {
             $isReadOnlyUnified = $this->isReadOnlyUnifiedAgendaActivity($activity);
             $canBranchPartialEditUnified = $this->canBranchEditUnifiedNonCoreFields($activity, $request->user());
             $canCompleteAfterExecution = $this->canCompleteAfterExecution($activity, $request->user());
@@ -3121,9 +3127,11 @@ class MonthlyActivitiesController extends Controller
                     ? route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post'])
                     : null,
                 'can_complete_after_execution' => $canCompleteAfterExecution,
-                'open_url' => ($isReadOnlyUnified && ! $canBranchPartialEditUnified)
+                'open_url' => $viewScope === 'all_branches'
                     ? route('role.relations.activities.show', $activity)
-                    : ($canOpenEdit ? route('role.relations.activities.edit', $activity) : route('role.relations.activities.show', $activity)),
+                    : (($isReadOnlyUnified && ! $canBranchPartialEditUnified)
+                        ? route('role.relations.activities.show', $activity)
+                        : ($canOpenEdit ? route('role.relations.activities.edit', $activity) : route('role.relations.activities.show', $activity))),
                 'read_only_unified' => $isReadOnlyUnified && ! $canBranchPartialEditUnified,
             ];
             })->values();
