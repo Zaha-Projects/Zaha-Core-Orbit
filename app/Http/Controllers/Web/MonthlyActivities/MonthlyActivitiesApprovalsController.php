@@ -231,8 +231,6 @@ class MonthlyActivitiesApprovalsController extends Controller
             return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.notes_saved'));
         }
 
-        abort_if((int) $monthlyActivity->created_by === (int) $user->id, 422, __('app.roles.programs.monthly_activities.approvals.errors.self_approval_forbidden'));
-
         $dynamicWorkflowService->assertPrerequisites($instance, $step);
 
         abort_if(empty($data['decision']), 422, __('app.roles.programs.monthly_activities.approvals.errors.decision_required'));
