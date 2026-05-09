@@ -16,6 +16,7 @@ class MonthlyActivitySupply extends Model
         'available',
         'provider_type',
         'provider_name',
+        'quantity',
     ];
 
     protected $casts = [

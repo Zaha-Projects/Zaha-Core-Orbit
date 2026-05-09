@@ -44,7 +44,7 @@ class MonthlyActivitiesController extends Controller
     protected const MONTHLY_ACTIVITY_EDIT_ROLES = [
         'relations_manager',
         'relations_officer',
-        'branch_relations_manager',
+        'supervisor',
         'relations_officer',
         'followup_officer',
         'evaluation_officer',
@@ -60,7 +60,7 @@ class MonthlyActivitiesController extends Controller
     protected const MONTHLY_ACTIVITY_PLANNING_EDIT_ROLES = [
         'relations_manager',
         'relations_officer',
-        'branch_relations_manager',
+        'supervisor',
         'followup_officer',
         'evaluation_officer',
         'super_admin',
@@ -237,7 +237,7 @@ class MonthlyActivitiesController extends Controller
 
         if ($this->creatorIsPrimaryBranchRelationsOfficer($monthlyActivity)) {
             $roles = collect($roles)
-                ->map(fn (string $role): string => in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)
+                ->map(fn (string $role): string => in_array($role, ['branch_coordinator', 'supervisor'], true)
                     ? 'relations_manager'
                     : $role)
                 ->unique()
@@ -266,7 +266,7 @@ class MonthlyActivitiesController extends Controller
                     return false;
                 }
 
-                if ($user->hasAnyRole(['branch_coordinator', 'branch_relations_manager']) && ! $user->can('branches.view.all')) {
+                if ($user->hasAnyRole(['branch_coordinator', 'supervisor']) && ! $user->can('branches.view.all')) {
                     return $user->hasAccessToScopedBranch((int) $monthlyActivity->branch_id);
                 }
 
@@ -285,8 +285,14 @@ class MonthlyActivitiesController extends Controller
     protected function ensureActivityVisibleToUser(MonthlyActivity $monthlyActivity, User $user): void
     {
         $canDecideExecutionNeed = $this->canDecideAnyExecutionNeed($monthlyActivity, $user);
+        $canViewOtherBranches = $this->canViewOtherBranches($user)
+            && (int) ($monthlyActivity->branch_id ?? 0) !== (int) ($this->ownBranchId($user) ?? 0)
+            && ((string) $monthlyActivity->status === 'approved'
+                || (string) $monthlyActivity->executive_approval_status === 'approved'
+                || in_array((string) $monthlyActivity->lifecycle_status, ['Exec Director Approved', 'Approved', 'Published'], true)
+                || $monthlyActivity->workflowInstance()?->where('status', 'approved')->exists());
 
-        if (! $canDecideExecutionNeed && ! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
+        if (! $canDecideExecutionNeed && ! $canViewOtherBranches && ! $this->canAccessScopedBranch($user, $monthlyActivity->branch_id)) {
             abort(403);
         }
 
@@ -946,7 +952,7 @@ class MonthlyActivitiesController extends Controller
     {
         $query = User::role($role)
             ->where('status', 'active')
-            ->when(in_array($role, ['branch_coordinator', 'branch_relations_manager'], true), function ($query) use ($monthlyActivity) {
+            ->when(in_array($role, ['branch_coordinator', 'supervisor'], true), function ($query) use ($monthlyActivity) {
                 $query->where(function ($branchQuery) use ($monthlyActivity) {
                     $branchQuery
                         ->whereHas('assignedBranches', fn ($assignedQuery) => $assignedQuery->whereKey($monthlyActivity->branch_id))
@@ -956,7 +962,7 @@ class MonthlyActivitiesController extends Controller
 
         $users = $query->get();
 
-        if ($users->isEmpty() && in_array($role, ['branch_coordinator', 'branch_relations_manager'], true)) {
+        if ($users->isEmpty() && in_array($role, ['branch_coordinator', 'supervisor'], true)) {
             return User::role($role)->where('status', 'active')->get();
         }
 
@@ -1484,6 +1490,7 @@ class MonthlyActivitiesController extends Controller
                 ? $monthlyActivity->supplies->map(fn ($supply) => [
                     'item_name' => $supply->item_name,
                     'available' => (int) $supply->available,
+                    'quantity' => (int) ($supply->quantity ?? 1),
                     'provider_type' => $supply->provider_type,
                     'provider_name' => $supply->provider_name,
                 ])->values()->all()
@@ -1871,6 +1878,7 @@ class MonthlyActivitiesController extends Controller
             'supplies' => ['nullable', 'array'],
             'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.available' => ['nullable', 'boolean'],
+            'supplies.*.quantity' => ['nullable', 'integer', 'min:1'],
             'supplies.*.provider_type' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
             'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
             'evaluations' => ['nullable', 'array'],
@@ -2093,6 +2101,7 @@ class MonthlyActivitiesController extends Controller
                 'status' => $available ? 'available' : 'needed',
                 'provider_type' => $available ? null : ($supply['provider_type'] ?? null),
                 'provider_name' => $available ? null : ($supply['provider_name'] ?? null),
+                'quantity' => max(1, (int) ($supply['quantity'] ?? 1)),
             ]);
         }
         if ($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) {
@@ -3086,7 +3095,7 @@ class MonthlyActivitiesController extends Controller
             ->orderBy('day')
             ->orderBy('proposed_date')
             ->get()
-            ->map(function (MonthlyActivity $activity) use ($year, $request) {
+            ->map(function (MonthlyActivity $activity) use ($year, $request, $viewScope) {
             $isReadOnlyUnified = $this->isReadOnlyUnifiedAgendaActivity($activity);
             $canBranchPartialEditUnified = $this->canBranchEditUnifiedNonCoreFields($activity, $request->user());
             $canCompleteAfterExecution = $this->canCompleteAfterExecution($activity, $request->user());
@@ -3118,9 +3127,11 @@ class MonthlyActivitiesController extends Controller
                     ? route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post'])
                     : null,
                 'can_complete_after_execution' => $canCompleteAfterExecution,
-                'open_url' => ($isReadOnlyUnified && ! $canBranchPartialEditUnified)
+                'open_url' => $viewScope === 'all_branches'
                     ? route('role.relations.activities.show', $activity)
-                    : ($canOpenEdit ? route('role.relations.activities.edit', $activity) : route('role.relations.activities.show', $activity)),
+                    : (($isReadOnlyUnified && ! $canBranchPartialEditUnified)
+                        ? route('role.relations.activities.show', $activity)
+                        : ($canOpenEdit ? route('role.relations.activities.edit', $activity) : route('role.relations.activities.show', $activity))),
                 'read_only_unified' => $isReadOnlyUnified && ! $canBranchPartialEditUnified,
             ];
             })->values();

@@ -27,7 +27,7 @@
         return \App\Models\EventStatusLookup::labelFor('agenda', $status);
     };
     $ownerDepartment = $agendaEvent->ownerDepartment ?? $agendaEvent->department;
-    $eventDateLabel = optional($agendaEvent->event_date)->format('Y-m-d') ?? '-';
+    $eventDateLabel = optional($agendaEvent->event_date)->format('d/m/Y') ?? '-';
     $reviewStatusLabel = $workflowSummary['status_label'] ?? $statusLabel($agendaEvent->status);
     $currentStepLabel = $workflowSummary['current_step_label'] ?? __('app.common.na');
     $completedStepsCount = (int) ($workflowSummary['completed_steps_count'] ?? 0);
@@ -123,7 +123,7 @@
                                 <div>
                                     <h2 class="h6 mb-1"><i class="feather-star me-1"></i>{{ $agendaEvent->event_name }}</h2>
                                     <div class="wf-kv">
-                                        {{ optional($agendaEvent->event_date)->format('Y-m-d') ?? '-' }}
+                                        {{ optional($agendaEvent->event_date)->format('d/m/Y') ?? '-' }}
                                         | {{ $agendaEvent->ownerDepartment?->name ?? $agendaEvent->department?->name ?? '-' }}
                                     </div>
                                     <div class="wf-kv">
@@ -265,8 +265,8 @@
                                                     {{ $branch['icon'] ?? '' }} {{ $branch['name'] }}
                                                 </td>
                                                 <td><span class="event-status status-{{ $branch['status'] ?? 'unspecified' }}">{{ __('app.roles.relations.agenda.participation.' . ($branch['status'] ?? 'unspecified')) }}</span></td>
-                                                <td>{{ optional($branch['proposed_date'])->format('Y-m-d') ?? '-' }}</td>
-                                                <td>{{ optional($branch['actual_execution_date'])->format('Y-m-d') ?? '-' }}</td>
+                                                <td>{{ optional($branch['proposed_date'])->format('d/m/Y') ?? '-' }}</td>
+                                                <td>{{ optional($branch['actual_execution_date'])->format('d/m/Y') ?? '-' }}</td>
                                             </tr>
                                         @empty
                                             <tr><td colspan="4" class="text-muted">-</td></tr>

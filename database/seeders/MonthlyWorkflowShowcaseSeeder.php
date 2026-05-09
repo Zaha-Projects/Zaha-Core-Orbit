@@ -38,7 +38,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         $managerZarqa = $this->ensureWorkflowUser(
             'showcase-branch-relations-manager-zarqa@zaha.test',
             'Showcase Branch Relations Manager Zarqa',
-            'branch_relations_manager',
+            'supervisor',
             $zarqaBranch
         );
         $creatorIrbid = User::query()->where('email', 'branch-relations-officer@zaha.test')->first()
@@ -51,7 +51,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         $managerIrbid = $this->ensureWorkflowUser(
             'showcase-branch-relations-manager-irbid@zaha.test',
             'Showcase Branch Relations Manager Irbid',
-            'branch_relations_manager',
+            'supervisor',
             $irbidBranch
         );
         $branchCoordinator = User::query()->where('email', 'branch-coordinator@zaha.test')->first();
@@ -255,7 +255,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
 
         $roleFieldMap = [
             'monthly_relations_officer_submit' => 'relations_officer_approval_status',
-            'monthly_branch_relations_manager_review' => 'relations_manager_approval_status',
+            'monthly_supervisor_review' => 'relations_manager_approval_status',
             'monthly_branch_coordinator_review' => 'liaison_approval_status',
             'monthly_relations_manager_review' => 'hq_relations_manager_approval_status',
             'monthly_executive_manager_final_approval' => 'executive_approval_status',

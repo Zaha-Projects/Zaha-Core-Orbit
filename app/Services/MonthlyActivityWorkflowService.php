@@ -28,10 +28,10 @@ class MonthlyActivityWorkflowService
             ];
 
             $steps[] = [
-                'key' => 'branch_relations_manager_review',
+                'key' => 'supervisor_review',
                 'label' => 'Supervisor',
                 'status_field' => 'relations_manager_approval_status',
-                'role' => 'branch_relations_manager',
+                'role' => 'supervisor',
             ];
 
             if ($activity->monthly_branch_coordinator_required) {

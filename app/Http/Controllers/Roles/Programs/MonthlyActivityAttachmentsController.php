@@ -10,6 +10,23 @@ use Illuminate\Support\Facades\Storage;
 
 class MonthlyActivityAttachmentsController extends Controller
 {
+    public function download(MonthlyActivityAttachment $monthlyActivityAttachment)
+    {
+        if (! $monthlyActivityAttachment->file_path) {
+            abort(404);
+        }
+
+        if (filter_var($monthlyActivityAttachment->file_path, FILTER_VALIDATE_URL)) {
+            return redirect()->away($monthlyActivityAttachment->file_path);
+        }
+
+        if (! Storage::disk('public')->exists($monthlyActivityAttachment->file_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->response($monthlyActivityAttachment->file_path);
+    }
+
     public function store(Request $request, MonthlyActivity $monthlyActivity)
     {
         $data = $request->validate([

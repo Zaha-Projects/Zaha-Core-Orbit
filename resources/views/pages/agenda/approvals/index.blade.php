@@ -103,7 +103,7 @@
                                     <div class="agenda-approval-card__eyebrow">{{ $currentRoleLabel }}</div>
                                     <h3 class="agenda-approval-card__title">{{ $event->event_name }}</h3>
                                     <div class="wf-kv">
-                                        {{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}
+                                        {{ optional($event->event_date)->format('d/m/Y') ?? sprintf('%02d/%02d', $event->day, $event->month) }}
                                         @if($event->ownerDepartment?->name)
                                             | {{ $event->ownerDepartment->name }}
                                         @endif

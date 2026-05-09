@@ -230,7 +230,7 @@
                                         {{ $activity->agendaEvent?->event_name ? 'فعالية مرتبطة: '.$activity->agendaEvent->event_name : 'فعالية مستقلة' }}
                                     </div>
                                     <div class="monthly-activity-meta">
-                                        <span>{{ sprintf('%02d-%02d', $activity->month, $activity->day) }}</span>
+                                        <span>{{ sprintf('%02d/%02d', $activity->day, $activity->month) }}</span>
                                         <span>{{ $activity->branch?->name ?? '-' }}</span>
                                         <span>{{ $activity->is_in_agenda ? 'من الأجندة' : 'إدخال يدوي' }}</span>
                                         <span>نسخة {{ (int) ($activity->plan_version ?: 1) }}</span>

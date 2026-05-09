@@ -17,6 +17,11 @@
     $hasPartnersChecked = (bool) old('has_partners', $existingMonthlyActivity?->has_partners ?? false);
     $selectedExecutionStatus = old('execution_status', $existingMonthlyActivity?->execution_status ?? 'executed');
     $selectedTargetGroupIds = array_map('intval', old('target_group_ids', $existingMonthlyActivity?->targetGroups?->pluck('id')->all() ?? []));
+    $selectedTargetGroupNames = $targetGroups
+        ->whereIn('id', $selectedTargetGroupIds)
+        ->pluck('name')
+        ->values()
+        ->all();
     $oldSponsors = old('sponsors', $existingMonthlyActivity
         ? $existingMonthlyActivity->sponsors->map(fn ($sponsor) => [
             'name' => $sponsor->name,
@@ -35,6 +40,7 @@
         ? $existingMonthlyActivity->supplies->map(fn ($supply) => [
             'item_name' => $supply->item_name,
             'available' => (int) $supply->available,
+            'quantity' => (int) ($supply->quantity ?? 1),
             'insurance_mechanism' => $supply->provider_type,
             'insurance_other_details' => $supply->provider_name,
         ])->values()->all()
@@ -252,14 +258,23 @@
 
                 <div class="col-12">
                     <label class="form-label">الفئة المستهدفة</label>
-                    <div class="partner-departments-box">
-                        @foreach($targetGroups as $group)
-                            <label class="partner-department-item">
-                                <input class="form-check-input m-0 js-target-group-checkbox" type="checkbox" name="target_group_ids[]" value="{{ $group->id }}" data-is-other="{{ $group->is_other ? 1 : 0 }}" {{ in_array((int) $group->id, $selectedTargetGroupIds, true) ? 'checked' : '' }} {{ $isLockedField('target_group_ids') ? 'disabled' : '' }}>
-                                <span>{{ $group->name }}</span>
-                            </label>
+                    @if ($isLockedField('target_group_ids'))
+                        @foreach ($selectedTargetGroupIds as $targetGroupId)
+                            <input type="hidden" name="target_group_ids[]" value="{{ $targetGroupId }}">
                         @endforeach
-                    </div>
+                        <div class="form-control" readonly style="min-height: 44px; background-color: #f8f9fa;">
+                            {{ $selectedTargetGroupNames !== [] ? implode('، ', $selectedTargetGroupNames) : '—' }}
+                        </div>
+                    @else
+                        <div class="partner-departments-box">
+                            @foreach($targetGroups as $group)
+                                <label class="partner-department-item">
+                                    <input class="form-check-input m-0 js-target-group-checkbox" type="checkbox" name="target_group_ids[]" value="{{ $group->id }}" data-is-other="{{ $group->is_other ? 1 : 0 }}" {{ in_array((int) $group->id, $selectedTargetGroupIds, true) ? 'checked' : '' }}>
+                                    <span>{{ $group->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
                     @if ($showAgendaLockNote('target_group_ids', old('target_group_ids', $existingMonthlyActivity?->targetGroups?->pluck('id')->all() ?? [])))
                         <small class="text-muted d-block mt-1"><i class="fas fa-lock me-1"></i>هذا الحقل مقفل لأنه معبأ من الأجندة.</small>
                     @endif
@@ -267,7 +282,12 @@
 
                 <div class="col-12 col-md-6 js-target-group-other">
                     <label class="form-label">أخرى (توضيح)</label>
-                    <input class="form-control" name="target_group_other" value="{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) }}" {{ $isLockedField('target_group_ids') ? 'readonly' : '' }}>
+                    @if ($isLockedField('target_group_ids'))
+                        <input type="hidden" name="target_group_other" value="{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) }}">
+                        <div class="form-control" readonly style="min-height: 44px; background-color: #f8f9fa;">{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) ?: '—' }}</div>
+                    @else
+                        <input class="form-control" name="target_group_other" value="{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) }}">
+                    @endif
                 </div>
 
                 <div class="col-12 col-md-6">

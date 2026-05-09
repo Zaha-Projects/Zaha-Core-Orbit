@@ -219,7 +219,7 @@ class MonthlyActivity extends Model
     {
         $creator = $this->creator()->first();
 
-        if ($creator?->hasRole('branch_relations_manager')) {
+        if ($creator?->hasRole('supervisor')) {
             return true;
         }
 

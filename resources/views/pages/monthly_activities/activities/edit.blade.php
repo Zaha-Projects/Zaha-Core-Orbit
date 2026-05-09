@@ -733,7 +733,7 @@
                                 <td>{{ $attachment->title ?: '--' }}</td>
                                 <td>
                                     @php $isExternalUrl = filter_var($attachment->file_path, FILTER_VALIDATE_URL); @endphp
-                                    <a href="{{ $isExternalUrl ? $attachment->file_path : asset('storage/'.$attachment->file_path) }}" target="_blank" rel="noopener">
+                                    <a href="{{ $isExternalUrl ? $attachment->file_path : route('role.programs.attachments.download', $attachment) }}" target="_blank" rel="noopener">
                                         {{ $isExternalUrl ? $attachment->file_path : 'عرض المرفق' }}
                                     </a>
                                 </td>

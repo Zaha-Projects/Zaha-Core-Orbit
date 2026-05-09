@@ -375,6 +375,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input class="form-control" name="supplies[${i}][item_name]" value="${esc(oldSupplies?.[i]?.item_name)}">
                             </div>
                             <div class="col-12 col-md-3">
+                                <label class="form-label">العدد ${i + 1}</label>
+                                <input class="form-control" type="number" min="1" name="supplies[${i}][quantity]" value="${esc(oldSupplies?.[i]?.quantity ?? 1)}">
+                            </div>
+                            <div class="col-12 col-md-3">
                                 <label class="form-label">التوفر</label>
                                 <select class="form-select js-supply-available" data-index="${i}" name="supplies[${i}][available]">
                                     <option value="1" ${available ? 'selected' : ''}>متوفر</option>

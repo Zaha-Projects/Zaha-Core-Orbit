@@ -63,7 +63,7 @@ class UsersSeeder extends Seeder
             ['name' => 'المدير التنفيذي - رنا المجالي', 'email' => 'executive-manager@zaha.test', 'role' => 'executive_manager', 'branch' => 'amman', 'phone' => '0790001002'],
             ['name' => 'مدير البرامج - ليث الحمود', 'email' => 'programs-manager@zaha.test', 'role' => 'programs_manager', 'branch' => 'amman', 'phone' => '0790001003'],
             ['name' => 'مدير علاقات رئيسي - ديمة السالم', 'email' => 'relations-manager@zaha.test', 'role' => 'relations_manager', 'branch' => 'amman', 'phone' => '0790001004'],
-            ['name' => 'رئيس فرع - يوسف العبادي', 'email' => 'branch-relations-manager@zaha.test', 'role' => 'branch_relations_manager', 'branch' => 'zarqa', 'phone' => '0790001005'],
+            ['name' => 'رئيس فرع - يوسف العبادي', 'email' => 'branch-relations-manager@zaha.test', 'role' => 'supervisor', 'branch' => 'zarqa', 'phone' => '0790001005'],
             ['name' => 'مسؤول العلاقات - عمر الشوابكة', 'email' => 'relations-officer@zaha.test', 'role' => 'relations_officer', 'branch' => 'amman', 'phone' => '0790001006'],
             ['name' => 'مسؤول علاقات الفروع - نهى الزعبي', 'email' => 'branch-relations-officer@zaha.test', 'role' => 'relations_officer', 'branch' => 'irbid', 'phone' => '0790001007'],
             ['name' => 'مسؤول المتابعة - هاجر الرواشدة', 'email' => 'followup-officer@zaha.test', 'role' => 'followup_officer', 'branch' => 'amman', 'phone' => '0790001008'],
@@ -79,6 +79,7 @@ class UsersSeeder extends Seeder
             ['name' => 'محرر الحركة - رامي النعيمات', 'email' => 'movement-editor@zaha.test', 'role' => 'movement_editor', 'branch' => 'amman', 'phone' => '0790001018'],
             ['name' => 'مستعرض الحركة - نورس الحجايا', 'email' => 'movement-viewer@zaha.test', 'role' => 'movement_viewer', 'branch' => 'amman', 'phone' => '0790001019'],
             ['name' => 'منسق التطوع - سارة الخطيب', 'email' => 'volunteer-coordinator@zaha.test', 'role' => 'volunteer_coordinator', 'branch' => 'amman', 'phone' => '0790001020'],
+            ['name' => 'مدير الوحدة الإدارية - علاء العساف', 'email' => 'administrative-unit-manager@zaha.test', 'role' => 'administrative_unit_manager', 'branch' => 'amman', 'phone' => '0790001021'],
         ];
     }
 

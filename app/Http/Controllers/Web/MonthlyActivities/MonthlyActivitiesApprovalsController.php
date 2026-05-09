@@ -231,8 +231,6 @@ class MonthlyActivitiesApprovalsController extends Controller
             return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.notes_saved'));
         }
 
-        abort_if((int) $monthlyActivity->created_by === (int) $user->id, 422, __('app.roles.programs.monthly_activities.approvals.errors.self_approval_forbidden'));
-
         $dynamicWorkflowService->assertPrerequisites($instance, $step);
 
         abort_if(empty($data['decision']), 422, __('app.roles.programs.monthly_activities.approvals.errors.decision_required'));
@@ -362,7 +360,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         $updates = [];
         $field = match ($stepKey) {
             'monthly_relations_officer_submit' => 'relations_officer_approval_status',
-            'monthly_branch_relations_manager_review' => 'relations_manager_approval_status',
+            'monthly_supervisor_review' => 'relations_manager_approval_status',
             'monthly_branch_coordinator_review' => 'liaison_approval_status',
             'monthly_relations_manager_review' => 'hq_relations_manager_approval_status',
             'monthly_executive_manager_final_approval' => 'executive_approval_status',
@@ -500,7 +498,9 @@ class MonthlyActivitiesApprovalsController extends Controller
 
                 return [
                     'title' => $attachment->title ?: __('workflow_ui.approvals.official.view_attachment'),
-                    'url' => $isExternal ? $attachment->file_path : asset('storage/'.$attachment->file_path),
+                    'url' => $isExternal
+                        ? $attachment->file_path
+                        : route('role.programs.attachments.download', $attachment),
                 ];
             })
             ->values()
