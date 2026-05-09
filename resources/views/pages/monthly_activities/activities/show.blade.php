@@ -378,7 +378,7 @@
                             <div class="d-flex flex-column gap-2">
                                 @forelse($officialCorrespondenceAttachments as $attachment)
                                     @php($isExternal = filter_var($attachment->file_path, FILTER_VALIDATE_URL))
-                                    <a class="btn btn-sm btn-outline-primary text-start" href="{{ $isExternal ? $attachment->file_path : asset('storage/' . $attachment->file_path) }}" target="_blank" rel="noopener">
+                                    <a class="btn btn-sm btn-outline-primary text-start" href="{{ $isExternal ? $attachment->file_path : route('role.programs.attachments.download', $attachment) }}" target="_blank" rel="noopener">
                                         {{ $attachment->title ?: 'عرض المخاطبة الرسمية' }}
                                     </a>
                                     <div class="small text-muted">

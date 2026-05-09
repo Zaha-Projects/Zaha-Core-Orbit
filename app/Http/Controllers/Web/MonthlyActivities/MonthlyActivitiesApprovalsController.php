@@ -498,7 +498,9 @@ class MonthlyActivitiesApprovalsController extends Controller
 
                 return [
                     'title' => $attachment->title ?: __('workflow_ui.approvals.official.view_attachment'),
-                    'url' => $isExternal ? $attachment->file_path : asset('storage/'.$attachment->file_path),
+                    'url' => $isExternal
+                        ? $attachment->file_path
+                        : route('role.programs.attachments.download', $attachment),
                 ];
             })
             ->values()
