@@ -191,7 +191,7 @@
                 <div class="monthly-summary-grid mb-4">
                     <div class="monthly-summary-item"><span>الحالة</span><strong>{{ $statusLabel($monthlyActivity->status) }}</strong></div>
                     <div class="monthly-summary-item"><span>حالة التنفيذ</span><strong>{{ $executionLabel($monthlyActivity->execution_status) }}</strong></div>
-                    <div class="monthly-summary-item"><span>التاريخ</span><strong>{{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</strong></div>
+                    <div class="monthly-summary-item"><span>التاريخ</span><strong>{{ sprintf('%02d/%02d', $monthlyActivity->day, $monthlyActivity->month) }}</strong></div>
                     <div class="monthly-summary-item"><span>الفرع</span><strong>{{ $monthlyActivity->branch?->name ?? '-' }}</strong></div>
                 </div>
 
@@ -199,8 +199,8 @@
                     <summary><i class="feather-layers me-1"></i>عرض التفاصيل الكاملة</summary>
                     <div class="row g-3 mt-2 monthly-details-content">
                     <div class="col-12 col-md-4"><strong>عنوان النشاط:</strong> {{ $monthlyActivity->title }}</div>
-                    <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d-%02d', $monthlyActivity->month, $monthlyActivity->day) }}</div>
-                    <div class="col-12 col-md-4"><strong>التاريخ المقترح:</strong> {{ optional($monthlyActivity->proposed_date)->format('Y-m-d') ?? '-' }}</div>
+                    <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d/%02d', $monthlyActivity->day, $monthlyActivity->month) }}</div>
+                    <div class="col-12 col-md-4"><strong>التاريخ المقترح:</strong> {{ optional($monthlyActivity->proposed_date)->format('d/m/Y') ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>الحالة:</strong> {{ $statusLabel($monthlyActivity->status) }}</div>
                     <div class="col-12 col-md-4"><strong>حالة التنفيذ:</strong> {{ $executionLabel($monthlyActivity->execution_status) }}</div>
                     <div class="col-12 col-md-4"><strong>الفرع:</strong> {{ $monthlyActivity->branch?->name ?? '-' }}</div>
@@ -209,7 +209,7 @@
                     <div class="col-12 col-md-4"><strong>مصدر النشاط:</strong> {{ $monthlyActivity->is_from_agenda ? 'من الأجندة' : 'إدخال يدوي' }}</div>
                     <div class="col-12 col-md-4"><strong>نوع الخطة:</strong> {{ $monthlyActivity->plan_type ?? '-' }}</div>
                     @if ($monthlyActivity->execution_status === 'postponed')
-                        <div class="col-12 col-md-4"><strong>تاريخ التأجيل:</strong> {{ optional($monthlyActivity->rescheduled_date)->format('Y-m-d') ?? '-' }}</div>
+                        <div class="col-12 col-md-4"><strong>تاريخ التأجيل:</strong> {{ optional($monthlyActivity->rescheduled_date)->format('d/m/Y') ?? '-' }}</div>
                         <div class="col-12 col-md-8"><strong>سبب التأجيل:</strong> {{ $monthlyActivity->reschedule_reason ?? '-' }}</div>
                     @endif
                     @if ($monthlyActivity->execution_status === 'cancelled')

@@ -350,7 +350,7 @@
                                 </div>
                                 <div class="module-card-body">
                                     <div class="agenda-card-meta">
-                                        <span>📅 {{ optional($event->event_date)->format('Y-m-d') ?? sprintf('%02d-%02d', $event->month, $event->day) }}</span>
+                                        <span>📅 {{ optional($event->event_date)->format('d/m/Y') ?? sprintf('%02d/%02d', $event->day, $event->month) }}</span>
                                         <span>V{{ (int) ($event->version ?? 1) }}</span>
                                         <span>{{ $event->department?->name ?? '-' }}</span>
                                         <span>{{ $event->eventCategory?->name ?? $event->event_category ?? '-' }}</span>

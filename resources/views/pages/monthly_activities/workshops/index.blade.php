@@ -65,7 +65,7 @@
                                     </a>
                                     <div class="small text-muted mt-1">{{ $event?->short_description ?: 'لا يوجد وصف مختصر.' }}</div>
                                 </td>
-                                <td>{{ optional($event?->proposed_date)->format('Y-m-d') ?: '-' }}</td>
+                                <td>{{ optional($event?->proposed_date)->format('d/m/Y') ?: '-' }}</td>
                                 <td>{{ $event?->branch?->name ?? '-' }}</td>
                                 <td>
                                     <div class="small">تحتاج مشاغل: {{ $event?->requires_workshops ? 'نعم' : 'لا' }}</div>
