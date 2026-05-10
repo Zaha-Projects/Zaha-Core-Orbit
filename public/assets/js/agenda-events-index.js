@@ -2,7 +2,7 @@
     const module = document.querySelector('.agenda-module');
     if (!module) return;
 
-    const isRtl = module.dataset.rtl === '1';
+    const weekStart = Number.parseInt(module.dataset.weekStart || '0', 10);
     const createUrl = module.dataset.createUrl || '';
     const canBranchInteract = module.dataset.branchInteract === '1';
     const initialView = module.dataset.initialView || 'table';
@@ -11,7 +11,6 @@
     const weekDayLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-weekdays-json', []) : JSON.parse(document.getElementById('agenda-weekdays-json')?.textContent ?? '[]');
     const monthNames = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('agenda-months-json', []) : JSON.parse(document.getElementById('agenda-months-json')?.textContent ?? '[]');
     const createCalendarDayHeader = window.ZahaUi?.createCalendarDayHeader;
-    const renderCalendarWeekdays = window.ZahaUi?.renderCalendarWeekdays;
 
     const selectedYear = Number(module.dataset.selectedYear || 0);
     const selectedMonth = Number(module.dataset.selectedMonth || 0);
@@ -28,6 +27,7 @@
     const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
     const gridContainer = module.querySelector('[data-calendar-grid]');
     const titleContainer = module.querySelector('[data-calendar-title]');
+    const calendarPickerInput = module.querySelector('[data-calendar-picker]');
     const legendTopContainer = module.querySelector('[data-calendar-legend-top]');
     const legendBottomContainer = module.querySelector('[data-calendar-legend-bottom]');
     const quickSubscribeForm = document.querySelector('[data-quick-subscribe-form]');
@@ -57,8 +57,10 @@
         return new Date(value);
     }
 
+    const normalizedWeekStart = Number.isInteger(weekStart) ? ((weekStart % 7) + 7) % 7 : 0;
+
     function mapDayPosition(jsDayIndex) {
-        return isRtl ? 6 - jsDayIndex : jsDayIndex;
+        return (jsDayIndex - normalizedWeekStart + 7) % 7;
     }
 
     function createDayHeader(day, dateStr) {
@@ -230,13 +232,12 @@
     }
 
     function renderWeekdays() {
-        if (renderCalendarWeekdays) {
-            renderCalendarWeekdays(weekdaysContainer, weekDayLabels);
-            return;
-        }
-
+        const orderedWeekdays = weekDayLabels
+            .slice(normalizedWeekStart)
+            .concat(weekDayLabels.slice(0, normalizedWeekStart));
         weekdaysContainer.innerHTML = '';
-        weekDayLabels.forEach((label, jsDayIndex) => {
+        orderedWeekdays.forEach((label, index) => {
+            const jsDayIndex = (normalizedWeekStart + index) % 7;
             const item = document.createElement('div');
             item.className = 'agenda-weekday';
             if (jsDayIndex === 5) item.classList.add('agenda-weekday--friday');
@@ -379,6 +380,35 @@
             renderCalendar();
         });
     });
+
+    if (calendarPickerInput && typeof window.flatpickr === 'function') {
+        const monthSelectPluginFactory = window.monthSelectPlugin || window.flatpickr.monthSelectPlugin;
+        const pickerConfig = {
+            dateFormat: 'Y-m',
+            altInput: true,
+            altFormat: 'F Y',
+            altInputClass: 'form-control form-control-sm calendar-month-input',
+            defaultDate: currentDate,
+            disableMobile: true,
+            onChange: (selectedDates) => {
+                const selectedDate = selectedDates?.[0];
+                if (!selectedDate) return;
+                currentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                renderCalendar();
+            },
+        };
+
+        if (typeof monthSelectPluginFactory === 'function') {
+            pickerConfig.plugins = [monthSelectPluginFactory({
+                shorthand: false,
+                dateFormat: 'Y-m',
+                altFormat: 'F Y',
+                theme: 'light',
+            })];
+        }
+
+        window.flatpickr(calendarPickerInput, pickerConfig);
+    }
 
     if (quickSubscribeConfirmButton) {
         quickSubscribeConfirmButton.addEventListener('click', () => {

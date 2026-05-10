@@ -74,6 +74,7 @@
         class="event-module monthly-activities-module"
         data-calendar-endpoint="{{ route('role.relations.activities.calendar') }}"
         data-rtl="{{ app()->getLocale() === 'ar' ? '1' : '0' }}"
+        data-week-start="{{ app()->getLocale() === 'ar' ? '6' : '0' }}"
         data-create-url="{{ route('role.relations.activities.create') }}"
         data-default-branch-id="{{ $calendarCreateBranchId ?: '' }}"
         data-initial-view="{{ $isBranchCalendarOnly ? 'calendar' : 'table' }}"
@@ -286,7 +287,10 @@
                     <div class="agenda-calendar-toolbar mb-3 d-flex justify-content-between align-items-center">
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">السابق</button>
                         <h2 class="h6 mb-0" data-calendar-title></h2>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">التالي</button>
+                        <div class="d-flex align-items-center gap-2 calendar-picker-wrap">
+                            <input type="text" class="form-control form-control-sm" style="max-width: 140px;" data-calendar-picker placeholder="اختر شهر">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">التالي</button>
+                        </div>
                     </div>
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
                     <div class="agenda-calendar-grid" data-calendar-grid></div>
@@ -301,6 +305,7 @@
 
 @push('scripts')
     <script type="application/json" id="monthly-status-labels-json">@json($calendarStatusLabels)</script>
+    <script type="application/json" id="monthly-weekdays-json">@json(__('app.roles.relations.agenda.calendar.weekdays'))</script>
     <script src="{{ $versionedAsset('assets/js/ui-shared.js') }}"></script>
     <script src="{{ $versionedAsset('assets/js/monthly-activities-index.js') }}"></script>
 @endpush

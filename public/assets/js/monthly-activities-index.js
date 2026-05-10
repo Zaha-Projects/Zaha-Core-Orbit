@@ -2,28 +2,31 @@
     const module = document.querySelector('.monthly-activities-module');
     if (!module) return;
 
-    const isRtl = module.dataset.rtl === '1';
     const initialView = module.dataset.initialView || 'table';
+    const weekStart = Number.parseInt(module.dataset.weekStart || '0', 10);
     const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, initialView) : (() => {});
     const statusLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-status-labels-json', {}) : JSON.parse(document.getElementById('monthly-status-labels-json')?.textContent ?? '{}');
+    const weekDayLabels = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-weekdays-json', []) : JSON.parse(document.getElementById('monthly-weekdays-json')?.textContent ?? '[]');
     const createCalendarDayHeader = window.ZahaUi?.createCalendarDayHeader;
-    const renderCalendarWeekdays = window.ZahaUi?.renderCalendarWeekdays;
     const createUrl = module.dataset.createUrl || '';
     const defaultBranchId = module.dataset.defaultBranchId || '';
 
     const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
     const gridContainer = module.querySelector('[data-calendar-grid]');
     const titleContainer = module.querySelector('[data-calendar-title]');
+    const calendarPickerInput = module.querySelector('[data-calendar-picker]');
     const endpoint = module.dataset.calendarEndpoint;
 
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    if (renderCalendarWeekdays) {
-        renderCalendarWeekdays(weekdaysContainer, weekdays);
-    } else {
-        weekdaysContainer.innerHTML = weekdays
-            .map((label, jsDayIndex) => `<div class="agenda-weekday ${jsDayIndex === 5 ? 'agenda-weekday--friday' : ''} ${jsDayIndex === 6 ? 'agenda-weekday--saturday' : ''}">${label}</div>`)
-            .join('');
-    }
+    const fallbackWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekdays = Array.isArray(weekDayLabels) && weekDayLabels.length === 7 ? weekDayLabels : fallbackWeekdays;
+    const normalizedWeekStart = Number.isInteger(weekStart) ? ((weekStart % 7) + 7) % 7 : 0;
+    const orderedWeekdays = weekdays.slice(normalizedWeekStart).concat(weekdays.slice(0, normalizedWeekStart));
+    weekdaysContainer.innerHTML = orderedWeekdays
+        .map((label, index) => {
+            const actualDayIndex = (normalizedWeekStart + index) % 7;
+            return `<div class="agenda-weekday ${actualDayIndex === 5 ? 'agenda-weekday--friday' : ''} ${actualDayIndex === 6 ? 'agenda-weekday--saturday' : ''}">${label}</div>`;
+        })
+        .join('');
 
     const now = new Date();
     const searchParams = new URLSearchParams(window.location.search);
@@ -35,7 +38,7 @@
     let currentYear = Number.parseInt(searchParams.get('year') || '', 10) || now.getFullYear();
     let currentMonth = Number.parseInt(searchParams.get('month') || '', 10) || (now.getMonth() + 1);
 
-    function mapPos(day) { return isRtl ? 6 - day : day; }
+    function mapPos(day) { return (day - normalizedWeekStart + 7) % 7; }
 
     function createDayHeader(day, dateStr) {
         if (createCalendarDayHeader) {
@@ -155,6 +158,36 @@
             await loadCalendar();
         });
     });
+
+    if (calendarPickerInput && typeof window.flatpickr === 'function') {
+        const monthSelectPluginFactory = window.monthSelectPlugin || window.flatpickr.monthSelectPlugin;
+        const pickerConfig = {
+            dateFormat: 'Y-m',
+            altInput: true,
+            altFormat: 'F Y',
+            altInputClass: 'form-control form-control-sm calendar-month-input',
+            defaultDate: new Date(currentYear, currentMonth - 1, 1),
+            disableMobile: true,
+            onChange: async (selectedDates) => {
+                const selectedDate = selectedDates?.[0];
+                if (!selectedDate) return;
+                currentYear = selectedDate.getFullYear();
+                currentMonth = selectedDate.getMonth() + 1;
+                await loadCalendar();
+            },
+        };
+
+        if (typeof monthSelectPluginFactory === 'function') {
+            pickerConfig.plugins = [monthSelectPluginFactory({
+                shorthand: false,
+                dateFormat: 'Y-m',
+                altFormat: 'F Y',
+                theme: 'light',
+            })];
+        }
+
+        window.flatpickr(calendarPickerInput, pickerConfig);
+    }
 
     switchView(initialView);
     loadCalendar();

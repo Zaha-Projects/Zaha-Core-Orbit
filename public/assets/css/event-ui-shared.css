@@ -26,7 +26,7 @@
 }
 
 .event-section-title {
-    font-size: 1rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--event-text);
     margin-bottom: .75rem;
@@ -254,8 +254,27 @@
     color: #6d28d9;
 }
 
+
+
+.agenda-calendar-day--week-0 { background: linear-gradient(180deg, #f8fbff 0%, #ffffff 70%); }
+.agenda-calendar-day--week-1 { background: linear-gradient(180deg, #f4f9ff 0%, #ffffff 70%); }
+.agenda-calendar-day--week-2 { background: linear-gradient(180deg, #f3fbf8 0%, #ffffff 70%); }
+.agenda-calendar-day--week-3 { background: linear-gradient(180deg, #faf7ff 0%, #ffffff 70%); }
+.agenda-calendar-day--week-4 { background: linear-gradient(180deg, #fffaf3 0%, #ffffff 70%); }
+.agenda-calendar-day--week-5 { background: linear-gradient(180deg, #fef7fb 0%, #ffffff 70%); }
+
 .agenda-calendar-day--friday {
     border-color: #67e8f9;
+}
+
+.agenda-calendar-day--friday::after {
+    content: '🕌';
+    position: absolute;
+    inset-inline-start: .5rem;
+    inset-block-end: .35rem;
+    font-size: 1.5rem;
+    opacity: .22;
+    pointer-events: none;
 }
 
 .event-module .pagination {
@@ -492,4 +511,14 @@
     .agenda-calendar-day--empty {
         display: none;
     }
+}
+
+
+.calendar-picker-wrap .flatpickr-input[readonly] {
+    min-width: 140px;
+    cursor: pointer;
+}
+
+.calendar-picker-wrap .flatpickr-input[type="hidden"] {
+    display: none;
 }
