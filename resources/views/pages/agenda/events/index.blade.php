@@ -156,6 +156,7 @@
     <div
         class="event-module agenda-module"
         data-rtl="{{ $isRtl ? '1' : '0' }}"
+        data-week-start="{{ $isRtl ? '6' : '0' }}"
         data-selected-year="{{ (int) request('year', 0) }}"
         data-selected-month="{{ (int) request('month', 0) }}"
         data-create-url="{{ $canManageAgenda ? route('role.relations.agenda.create') : '' }}"

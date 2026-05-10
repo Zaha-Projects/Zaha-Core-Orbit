@@ -2,7 +2,6 @@
     const module = document.querySelector('.monthly-activities-module');
     if (!module) return;
 
-    const isRtl = module.dataset.rtl === '1';
     const initialView = module.dataset.initialView || 'table';
     const weekStart = Number.parseInt(module.dataset.weekStart || '0', 10);
     const switchView = window.ZahaUi?.initViewToggle ? window.ZahaUi.initViewToggle(module, initialView) : (() => {});
