@@ -74,6 +74,7 @@
         class="event-module monthly-activities-module"
         data-calendar-endpoint="{{ route('role.relations.activities.calendar') }}"
         data-rtl="{{ app()->getLocale() === 'ar' ? '1' : '0' }}"
+        data-week-start="{{ app()->getLocale() === 'ar' ? '6' : '0' }}"
         data-create-url="{{ route('role.relations.activities.create') }}"
         data-default-branch-id="{{ $calendarCreateBranchId ?: '' }}"
         data-initial-view="{{ $isBranchCalendarOnly ? 'calendar' : 'table' }}"
@@ -304,6 +305,7 @@
 
 @push('scripts')
     <script type="application/json" id="monthly-status-labels-json">@json($calendarStatusLabels)</script>
+    <script type="application/json" id="monthly-weekdays-json">@json(__('app.roles.relations.agenda.calendar.weekdays'))</script>
     <script src="{{ $versionedAsset('assets/js/ui-shared.js') }}"></script>
     <script src="{{ $versionedAsset('assets/js/monthly-activities-index.js') }}"></script>
 @endpush
