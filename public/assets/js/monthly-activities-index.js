@@ -14,6 +14,7 @@
     const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
     const gridContainer = module.querySelector('[data-calendar-grid]');
     const titleContainer = module.querySelector('[data-calendar-title]');
+    const calendarPickerInput = module.querySelector('[data-calendar-picker]');
     const endpoint = module.dataset.calendarEndpoint;
 
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -155,6 +156,21 @@
             await loadCalendar();
         });
     });
+
+    if (calendarPickerInput && typeof window.flatpickr === 'function') {
+        window.flatpickr(calendarPickerInput, {
+            dateFormat: 'Y-m-d',
+            defaultDate: new Date(currentYear, currentMonth - 1, 1),
+            disableMobile: true,
+            onClose: async (selectedDates) => {
+                const selectedDate = selectedDates?.[0];
+                if (!selectedDate) return;
+                currentYear = selectedDate.getFullYear();
+                currentMonth = selectedDate.getMonth() + 1;
+                await loadCalendar();
+            },
+        });
+    }
 
     switchView(initialView);
     loadCalendar();

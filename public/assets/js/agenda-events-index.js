@@ -28,6 +28,7 @@
     const weekdaysContainer = module.querySelector('[data-calendar-weekdays]');
     const gridContainer = module.querySelector('[data-calendar-grid]');
     const titleContainer = module.querySelector('[data-calendar-title]');
+    const calendarPickerInput = module.querySelector('[data-calendar-picker]');
     const legendTopContainer = module.querySelector('[data-calendar-legend-top]');
     const legendBottomContainer = module.querySelector('[data-calendar-legend-bottom]');
     const quickSubscribeForm = document.querySelector('[data-quick-subscribe-form]');
@@ -76,7 +77,7 @@
     }
 
     function decorateCalendarDayCell(cell, year, month, day) {
-        const jsDayIndex = new Date(year, month, day).getDay();
+        const jsDayIndex = new Date(year, month - 1, day).getDay();
         cell.classList.add(`agenda-calendar-day--weekday-${jsDayIndex}`);
         if (jsDayIndex === 5) {
             cell.classList.add('agenda-calendar-day--friday');
@@ -379,6 +380,20 @@
             renderCalendar();
         });
     });
+
+    if (calendarPickerInput && typeof window.flatpickr === 'function') {
+        window.flatpickr(calendarPickerInput, {
+            dateFormat: 'Y-m-d',
+            defaultDate: currentDate,
+            disableMobile: true,
+            onClose: (selectedDates) => {
+                const selectedDate = selectedDates?.[0];
+                if (!selectedDate) return;
+                currentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                renderCalendar();
+            },
+        });
+    }
 
     if (quickSubscribeConfirmButton) {
         quickSubscribeConfirmButton.addEventListener('click', () => {
