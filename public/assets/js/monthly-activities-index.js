@@ -165,6 +165,7 @@
             dateFormat: 'Y-m',
             altInput: true,
             altFormat: 'F Y',
+            altInputClass: 'form-control form-control-sm calendar-month-input',
             defaultDate: new Date(currentYear, currentMonth - 1, 1),
             disableMobile: true,
             onChange: async (selectedDates) => {

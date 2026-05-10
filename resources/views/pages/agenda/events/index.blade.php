@@ -422,7 +422,7 @@
                     <div class="agenda-calendar-toolbar">
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">{{ __('app.roles.relations.agenda.calendar.previous_month') }}</button>
                         <h2 class="h6 mb-0" data-calendar-title></h2>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 calendar-picker-wrap">
                             <input type="text" class="form-control form-control-sm" style="max-width: 140px;" data-calendar-picker placeholder="اختر شهر">
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">{{ __('app.roles.relations.agenda.calendar.next_month') }}</button>
                         </div>
