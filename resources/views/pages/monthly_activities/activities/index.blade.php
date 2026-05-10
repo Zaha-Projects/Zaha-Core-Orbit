@@ -288,7 +288,7 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="prev">السابق</button>
                         <h2 class="h6 mb-0" data-calendar-title></h2>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="text" class="form-control form-control-sm" style="max-width: 140px;" data-calendar-picker placeholder="اختر تاريخ">
+                            <input type="text" class="form-control form-control-sm" style="max-width: 140px;" data-calendar-picker placeholder="اختر شهر">
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-nav="next">التالي</button>
                         </div>
                     </div>

@@ -160,18 +160,32 @@
     });
 
     if (calendarPickerInput && typeof window.flatpickr === 'function') {
-        window.flatpickr(calendarPickerInput, {
-            dateFormat: 'Y-m-d',
+        const monthSelectPluginFactory = window.monthSelectPlugin || window.flatpickr.monthSelectPlugin;
+        const pickerConfig = {
+            dateFormat: 'Y-m',
+            altInput: true,
+            altFormat: 'F Y',
             defaultDate: new Date(currentYear, currentMonth - 1, 1),
             disableMobile: true,
-            onClose: async (selectedDates) => {
+            onChange: async (selectedDates) => {
                 const selectedDate = selectedDates?.[0];
                 if (!selectedDate) return;
                 currentYear = selectedDate.getFullYear();
                 currentMonth = selectedDate.getMonth() + 1;
                 await loadCalendar();
             },
-        });
+        };
+
+        if (typeof monthSelectPluginFactory === 'function') {
+            pickerConfig.plugins = [monthSelectPluginFactory({
+                shorthand: false,
+                dateFormat: 'Y-m',
+                altFormat: 'F Y',
+                theme: 'light',
+            })];
+        }
+
+        window.flatpickr(calendarPickerInput, pickerConfig);
     }
 
     switchView(initialView);

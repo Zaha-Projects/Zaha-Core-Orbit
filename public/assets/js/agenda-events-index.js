@@ -382,17 +382,31 @@
     });
 
     if (calendarPickerInput && typeof window.flatpickr === 'function') {
-        window.flatpickr(calendarPickerInput, {
-            dateFormat: 'Y-m-d',
+        const monthSelectPluginFactory = window.monthSelectPlugin || window.flatpickr.monthSelectPlugin;
+        const pickerConfig = {
+            dateFormat: 'Y-m',
+            altInput: true,
+            altFormat: 'F Y',
             defaultDate: currentDate,
             disableMobile: true,
-            onClose: (selectedDates) => {
+            onChange: (selectedDates) => {
                 const selectedDate = selectedDates?.[0];
                 if (!selectedDate) return;
                 currentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
                 renderCalendar();
             },
-        });
+        };
+
+        if (typeof monthSelectPluginFactory === 'function') {
+            pickerConfig.plugins = [monthSelectPluginFactory({
+                shorthand: false,
+                dateFormat: 'Y-m',
+                altFormat: 'F Y',
+                theme: 'light',
+            })];
+        }
+
+        window.flatpickr(calendarPickerInput, pickerConfig);
     }
 
     if (quickSubscribeConfirmButton) {
