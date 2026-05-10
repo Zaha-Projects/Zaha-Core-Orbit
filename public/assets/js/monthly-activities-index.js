@@ -36,7 +36,7 @@
     let currentYear = Number.parseInt(searchParams.get('year') || '', 10) || now.getFullYear();
     let currentMonth = Number.parseInt(searchParams.get('month') || '', 10) || (now.getMonth() + 1);
 
-    function mapPos(day) { return isRtl ? 6 - day : day; }
+    function mapPos(day) { return day; }
 
     function createDayHeader(day, dateStr) {
         if (createCalendarDayHeader) {
