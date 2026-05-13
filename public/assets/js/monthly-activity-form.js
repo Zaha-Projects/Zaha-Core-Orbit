@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const suppliesFields = form.querySelectorAll('.js-supplies-fields');
     const hasSponsor = form.querySelector('.js-has-sponsor');
     const sponsorFields = form.querySelectorAll('.js-sponsor-fields');
+    const sponsorsCount = form.querySelector('.js-sponsors-count');
+    const sponsorsContainer = form.querySelector('.js-sponsors-container');
     const hasPartners = form.querySelector('.js-has-partners');
     const partnersFields = form.querySelectorAll('.js-partners-fields');
     const partnersCount = form.querySelector('.js-partners-count');
@@ -67,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const thanksLettersNamesContainer = form.querySelector('.js-thanks-letters-names-container');
 
     const oldPartners = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-partners-json', []) : JSON.parse(document.getElementById('monthly-form-old-partners-json')?.textContent ?? '[]');
+    const oldSponsors = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-sponsors-json', []) : JSON.parse(document.getElementById('monthly-form-old-sponsors-json')?.textContent ?? '[]');
     const oldSupplies = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-supplies-json', []) : JSON.parse(document.getElementById('monthly-form-old-supplies-json')?.textContent ?? '[]');
     const oldTeamGroups = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-team-groups-json', []) : JSON.parse(document.getElementById('monthly-form-old-team-groups-json')?.textContent ?? '[]');
     const oldCeremonyItems = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-ceremony-items-json', []) : JSON.parse(document.getElementById('monthly-form-old-ceremony-items-json')?.textContent ?? '[]');
@@ -94,6 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
         elements.forEach((element) => {
             element.querySelectorAll('input, select, textarea, button').forEach((field) => {
                 const shouldSkip = field.classList.contains('js-partners-count')
+                    || field.classList.contains('js-sponsors-count')
                     || field.classList.contains('js-supplies-count')
                     || field.classList.contains('js-team-groups-count');
                 if (shouldSkip) return;
@@ -181,7 +185,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleSponsor() {
-        toggleSection(sponsorFields, isEnabled(hasSponsor));
+        const active = isEnabled(hasSponsor);
+        toggleSection(sponsorFields, active);
+        if (sponsorsCount) {
+            sponsorsCount.disabled = !active;
+        }
     }
 
     function togglePartners() {
@@ -290,6 +298,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="col-12 col-md-4">
                     <label class="form-label">بيانات التواصل</label>
                     <input class="form-control" name="partners[${i}][contact_info]" value="${esc(oldPartners?.[i]?.contact_info)}">
+                </div>
+            `);
+        }
+    }
+
+    function renderSponsors() {
+        if (!sponsorsContainer) return;
+
+        const count = Math.max(1, Math.min(10, parseInt(sponsorsCount?.value || '1', 10)));
+        sponsorsContainer.innerHTML = '';
+
+        for (let i = 0; i < count; i += 1) {
+            sponsorsContainer.insertAdjacentHTML('beforeend', `
+                <div class="col-12 col-md-6">
+                    <label class="form-label">اسم الراعي الرسمي ${i + 1}</label>
+                    <input class="form-control" name="sponsors[${i}][name]" value="${esc(oldSponsors?.[i]?.name)}">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">صفة الراعي الرسمي ${i + 1}</label>
+                    <input class="form-control" name="sponsors[${i}][title]" value="${esc(oldSponsors?.[i]?.title)}">
                 </div>
             `);
         }
@@ -504,12 +532,14 @@ document.addEventListener('DOMContentLoaded', function () {
     needsInvitations?.addEventListener('change', toggleInvitations);
     invitationType?.addEventListener('change', toggleInvitationTypeDetails);
     ceremonyItemsCount?.addEventListener('input', renderCeremonyItems);
+    sponsorsCount?.addEventListener('input', renderSponsors);
     partnersCount?.addEventListener('input', renderPartners);
     suppliesCount?.addEventListener('input', renderSupplies);
     teamGroupsCount?.addEventListener('input', renderTeamGroups);
 
     syncActivityDate();
     renderPartners();
+    renderSponsors();
     renderCeremonyItems();
     renderSupplies();
     renderTeamGroups();

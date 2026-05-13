@@ -131,6 +131,8 @@ class MonthlyActivity extends Model
         'volunteer_gender',
         'volunteer_tasks_summary',
         'expected_attendance',
+        'expected_attendance_from',
+        'expected_attendance_to',
         'actual_attendance',
         'attendance_rate',
         'attendance_gap',
@@ -150,6 +152,7 @@ class MonthlyActivity extends Model
         'requires_communications',
         'execution_needs_payload',
         'execution_needs_followup',
+        'post_execution_payload',
         'status',
         'execution_status',
         'plan_stage',
@@ -195,6 +198,7 @@ class MonthlyActivity extends Model
         'executive_review_required' => 'boolean',
         'execution_needs_payload' => 'array',
         'execution_needs_followup' => 'array',
+        'post_execution_payload' => 'array',
         'proposed_date' => 'date',
         'activity_date' => 'date',
         'modified_proposed_date' => 'date',
@@ -311,7 +315,11 @@ class MonthlyActivity extends Model
     protected static function booted(): void
     {
         static::saving(function (self $activity) {
-            $expected = (int) ($activity->expected_attendance ?? 0);
+            if ($activity->expected_attendance_from !== null || $activity->expected_attendance_to !== null) {
+                $activity->expected_attendance = $activity->expected_attendance_to ?? $activity->expected_attendance_from;
+            }
+
+            $expected = (int) ($activity->expected_attendance_to ?? $activity->expected_attendance ?? 0);
             $actual = (int) ($activity->actual_attendance ?? 0);
 
             if ($expected > 0) {
@@ -334,6 +342,18 @@ class MonthlyActivity extends Model
                 CommunicationsRequest::firstOrCreate(['event_id' => $activity->id], ['status' => 'pending']);
             }
         });
+    }
+
+    public function getExpectedAttendanceRangeLabelAttribute(): string
+    {
+        $from = $this->expected_attendance_from;
+        $to = $this->expected_attendance_to;
+
+        if ($from !== null && $to !== null && (int) $from !== (int) $to) {
+            return $from . ' - ' . $to;
+        }
+
+        return (string) ($from ?? $to ?? $this->expected_attendance ?? '-');
     }
 
 

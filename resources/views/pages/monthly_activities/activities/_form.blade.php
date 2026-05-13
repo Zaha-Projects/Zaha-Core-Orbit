@@ -2,6 +2,19 @@
     $existingMonthlyActivity = $monthlyActivity ?? null;
     $executionNeedsPayload = $existingMonthlyActivity?->execution_needs_payload ?? [];
     $payloadValue = fn (string $key, mixed $default = null) => data_get($executionNeedsPayload, $key, $default);
+    $needAvailability = fn (string $key) => old('need_availability.'.$key, data_get($executionNeedsPayload, 'availability.'.$key));
+    $availabilityField = function (string $key) use ($needAvailability) {
+        $selected = $needAvailability($key);
+
+        return '<div class="col-12 col-md-4">'
+            .'<label class="form-label">التوفر داخل المركز</label>'
+            .'<select class="form-select" name="need_availability['.$key.']">'
+            .'<option value="">اختر</option>'
+            .'<option value="available" '.($selected === 'available' ? 'selected' : '').'>متوفر داخل المركز</option>'
+            .'<option value="not_available" '.($selected === 'not_available' ? 'selected' : '').'>غير متوفر داخل المركز</option>'
+            .'</select>'
+            .'</div>';
+    };
     $formUser = auth()->user();
     $isBranchScopedUser = $formUser
         && method_exists($formUser, 'hasBranchScopedMonthlyVisibility')
@@ -58,6 +71,7 @@
         ];
     })->all());
     $partnersCount = max(1, count($oldPartners));
+    $sponsorsCount = max(1, count($oldSponsors));
     $suppliesCount = max(1, count($oldSupplies));
     $teamGroupsCount = max(1, count($oldTeamGroups));
     $selectedZahaTimeOptions = old('programs_zaha_time_options', data_get($executionNeedsPayload, 'programs.zaha_time_options', []));
@@ -292,7 +306,16 @@
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">عدد الحضور المتوقع</label>
-                    <input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance', $existingMonthlyActivity?->expected_attendance) }}">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input class="form-control @error('expected_attendance_from') is-invalid @enderror" type="number" min="0" name="expected_attendance_from" placeholder="من" value="{{ old('expected_attendance_from', $existingMonthlyActivity?->expected_attendance_from ?? $existingMonthlyActivity?->expected_attendance) }}">
+                            @error('expected_attendance_from')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-6">
+                            <input class="form-control @error('expected_attendance_to') is-invalid @enderror" type="number" min="0" name="expected_attendance_to" placeholder="إلى" value="{{ old('expected_attendance_to', $existingMonthlyActivity?->expected_attendance_to ?? $existingMonthlyActivity?->expected_attendance) }}">
+                            @error('expected_attendance_to')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-12">
@@ -401,6 +424,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--volunteers">
                         <h3 class="h6 mb-3">احتياج المتطوعين</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('volunteers') !!}
                             <div class="col-12 col-md-3">
                                 <label class="form-label">عدد المتطوعين</label>
                                 <input class="form-control js-required-volunteers @error('required_volunteers') is-invalid @enderror" type="number" min="1" name="required_volunteers" value="{{ old('required_volunteers', $existingMonthlyActivity?->required_volunteers) }}">
@@ -486,9 +510,14 @@
                 <div class="col-12 js-media-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--media">
                         <h3 class="h6 mb-3">التغطية الإعلامية</h3>
-                        <label class="form-label">ملاحظات التغطية الإعلامية</label>
-                        <textarea class="form-control @error('media_coverage_notes') is-invalid @enderror" name="media_coverage_notes" rows="2">{{ old('media_coverage_notes', $existingMonthlyActivity?->media_coverage_notes) }}</textarea>
-                        @error('media_coverage_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="row g-3">
+                            {!! $availabilityField('media_coverage') !!}
+                            <div class="col-12">
+                                <label class="form-label">ملاحظات التغطية الإعلامية</label>
+                                <textarea class="form-control @error('media_coverage_notes') is-invalid @enderror" name="media_coverage_notes" rows="2">{{ old('media_coverage_notes', $existingMonthlyActivity?->media_coverage_notes) }}</textarea>
+                                @error('media_coverage_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -496,6 +525,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--ceremony">
                         <h3 class="h6 mb-3">أجندة الحفل</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('ceremony') !!}
                             <div class="col-12 col-md-3">
                                 <label class="form-label">عدد الفقرات</label>
                                 <input class="form-control js-ceremony-items-count" type="number" min="1" max="20" name="ceremony_items_count" value="{{ old('ceremony_items_count', count($oldCeremonyItems)) }}">
@@ -509,6 +539,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--transport">
                         <h3 class="h6 mb-3">تأمين المواصلات</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('transport') !!}
                             <div class="col-12 col-md-3">
                                 <label class="form-label">عدد المركبات</label>
                                 <input class="form-control" type="number" min="1" name="transport_vehicles_count" value="{{ old('transport_vehicles_count', $payloadValue('transport.vehicles_count')) }}">
@@ -549,6 +580,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--maintenance">
                         <h3 class="h6 mb-3">الصيانة بالموقع</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('maintenance') !!}
                             <div class="col-12 col-md-5">
                                 <label class="form-label">نوع الصيانة</label>
                                 <input class="form-control" name="maintenance_type" value="{{ old('maintenance_type', $payloadValue('maintenance.type')) }}">
@@ -561,6 +593,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--gifts">
                         <h3 class="h6 mb-3">الهدايا والدروع</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('gifts') !!}
                             <div class="col-12 col-md-2">
                                 <label class="form-label">عدد الهدايا</label>
                                 <input class="form-control" type="number" min="1" name="gifts_count" value="{{ old('gifts_count', $payloadValue('gifts.count')) }}">
@@ -579,17 +612,17 @@
 
                 <div class="col-12 js-sponsor-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--sponsor">
-                        <h3 class="h6 mb-3">بيانات الراعي الرسمي</h3>
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
-                                <label class="form-label">اسم الراعي الرسمي</label>
-                                <input class="form-control" name="sponsors[0][name]" value="{{ old('sponsors.0.name', $oldSponsors[0]['name'] ?? null) }}">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label">صفة الراعي الرسمي</label>
-                                <input class="form-control" name="sponsors[0][title]" value="{{ old('sponsors.0.title', $oldSponsors[0]['title'] ?? null) }}">
+                        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+                            <h3 class="h6 mb-0">بيانات الرعاة الرسميين</h3>
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="form-label mb-0">عدد الرعاة</label>
+                                <input class="form-control form-control-sm js-sponsors-count" type="number" min="1" max="10" value="{{ old('sponsors_count', $sponsorsCount) }}" style="width: 90px;">
                             </div>
                         </div>
+                        <div class="row g-3">
+                            {!! $availabilityField('official_sponsorship') !!}
+                        </div>
+                        <div class="row g-3 mt-1 js-sponsors-container"></div>
                     </div>
                 </div>
 
@@ -602,6 +635,9 @@
                                 <input class="form-control form-control-sm js-partners-count" type="number" min="1" max="10" value="{{ old('partners_count', $partnersCount) }}" style="width: 90px;">
                             </div>
                         </div>
+                        <div class="row g-3 mb-1">
+                            {!! $availabilityField('external_partners') !!}
+                        </div>
                         <div class="row g-3 js-partners-container"></div>
                     </div>
                 </div>
@@ -610,6 +646,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--programs">
                         <h3 class="h6 mb-3">مشاركة البرامج</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('programs') !!}
                             <div class="col-12 col-md-4">
                                 <label class="form-label">بحاجة محاضر/مدرب؟</label>
                                 <div class="form-check form-switch pt-2">
@@ -677,6 +714,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--certificates">
                         <h3 class="h6 mb-3">الشهادات وكتب الشكر</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('certificates') !!}
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">إصدار شهادات؟</label>
                                 <div class="form-check form-switch pt-2">
@@ -723,6 +761,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--invitations">
                         <h3 class="h6 mb-3">بطاقات الدعوة</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('invitations') !!}
                             <div class="col-12 col-md-4">
                                 <label class="form-label">نوع الدعوة</label>
                                 <select class="form-select js-invitation-type" name="invitation_type">
@@ -792,6 +831,7 @@
 
 @push('scripts')
     <script type="application/json" id="monthly-form-old-ceremony-items-json">@json($oldCeremonyItems)</script>
+    <script type="application/json" id="monthly-form-old-sponsors-json">@json($oldSponsors)</script>
     <script type="application/json" id="monthly-form-old-partners-json">@json($oldPartners)</script>
     <script type="application/json" id="monthly-form-old-supplies-json">@json($oldSupplies)</script>
     <script type="application/json" id="monthly-form-old-team-groups-json">@json($oldTeamGroups)</script>

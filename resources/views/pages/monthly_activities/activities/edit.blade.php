@@ -63,10 +63,14 @@
     $executionNeedsCatalog = collect($monthlyActivity->enabledExecutionNeeds())
         ->map(fn ($definition) => $definition['label'])
         ->all();
+    $allEnabledExecutionNeedsCatalog = $executionNeedsCatalog;
     $executionNeedDecisionKeys = $executionNeedDecisionKeys ?? [];
     $executionNeedsCatalog = collect($executionNeedsCatalog)
         ->only($executionNeedDecisionKeys)
         ->all();
+    $executionNeedsConfirmationCatalog = ($isPostMode && $canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
+        ? $allEnabledExecutionNeedsCatalog
+        : $executionNeedsCatalog;
     $executionNeedDecisionRoles = $executionNeedDecisionRoles ?? [];
     $executionNeedsFollowup = collect(old('execution_needs_followup', $monthlyActivity->execution_needs_followup ?? []))
         ->mapWithKeys(function ($row, $key) {
@@ -78,6 +82,20 @@
 
             return filled($resolvedKey) ? [$resolvedKey => $row] : [];
         });
+    $postExecutionPayload = old('post_execution', $monthlyActivity->post_execution_payload ?? []);
+    $postExecutionTeams = collect($postExecutionPayload['teams'] ?? [])->keyBy(fn ($row) => $row['team_name'] ?? '');
+    $postExecutionCeremonyItems = collect($postExecutionPayload['ceremony_items'] ?? [])->keyBy(fn ($row) => (string) ($row['order'] ?? ''));
+    $postExecutionTeamGroups = $monthlyActivity->team
+        ->groupBy(fn ($member) => $member->team_name ?: 'فريق')
+        ->values()
+        ->map(fn ($members, $index) => [
+            'index' => $index,
+            'name' => $members->first()->team_name ?: 'فريق',
+            'members' => $members,
+        ]);
+    $ceremonyItemsForPostExecution = collect(data_get($monthlyActivity->execution_needs_payload, 'ceremony.items', []))
+        ->filter(fn ($item) => is_array($item) && filled($item['name'] ?? null))
+        ->values();
 @endphp
 
 @push('styles')
@@ -320,7 +338,14 @@
 
                 <hr class="my-2">
                 <div class="col-12"><h2 class="h6 mb-1">الحضور والمتطوعون</h2></div>
-                <div class="col-12 col-md-3"><label class="form-label">الحضور المتوقع</label><input class="form-control" type="number" min="0" name="expected_attendance" value="{{ old('expected_attendance', $monthlyActivity->expected_attendance ) }}"></div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">الحضور المتوقع من</label>
+                    <input class="form-control" type="number" min="0" name="expected_attendance_from" value="{{ old('expected_attendance_from', $monthlyActivity->expected_attendance_from ?? $monthlyActivity->expected_attendance ) }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">الحضور المتوقع إلى</label>
+                    <input class="form-control" type="number" min="0" name="expected_attendance_to" value="{{ old('expected_attendance_to', $monthlyActivity->expected_attendance_to ?? $monthlyActivity->expected_attendance ) }}">
+                </div>
                 <div class="col-12 col-md-3"><label class="form-label">الحضور الفعلي</label><input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance ) }}"></div>
                 <div class="col-12 col-md-3 d-flex align-items-center"><div class="form-check form-switch mt-4"><input class="form-check-input js-needs-volunteers" type="checkbox" name="needs_volunteers" value="1" id="needs_volunteers" @checked(old('needs_volunteers', $monthlyActivity->needs_volunteers))><label class="form-check-label" for="needs_volunteers">نحتاج متطوعين</label></div></div>
                 <div class="col-12 col-md-3 js-volunteers-required-wrapper"><label class="form-label">عدد المتطوعين المطلوب</label><input class="form-control js-required-volunteers" type="number" min="1" name="required_volunteers" value="{{ old('required_volunteers', $monthlyActivity->required_volunteers ) }}"></div>
@@ -517,7 +542,7 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="post_execution_needs_only" value="1">
-                @forelse($executionNeedsCatalog as $needKey => $needLabel)
+                @forelse($executionNeedsConfirmationCatalog as $needKey => $needLabel)
                     @php
                         $needData = $executionNeedsFollowup->get($needKey, []);
                     @endphp
@@ -551,6 +576,7 @@
                                 <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_role]" value="{{ $autoDecisionRole }}">
                                 <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_name]" value="{{ $autoDecisionName }}">
                             @endunless
+                            @unless($canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
                             <div class="col-12 {{ $isExecutionNeedDecisionOnly ? 'col-md-4' : 'col-md-3' }}">
                                 <label class="form-label">حالة التأمين</label>
                                 <select class="form-select" name="execution_needs_followup[{{ $needKey }}][status]">
@@ -567,7 +593,9 @@
                                     value="{{ old("execution_needs_followup.$needKey.notes", $needData['notes'] ?? ($needData['reason'] ?? '')) }}"
                                 >
                             </div>
+                            @endunless
                             @unless($isExecutionNeedDecisionOnly)
+                            @unless($canCompleteAfterExecution)
                             <div class="col-12 col-md-3">
                                 <label class="form-label">تقييم فعالية التأمين /10</label>
                                 <input
@@ -600,6 +628,21 @@
                                 >{{ old("execution_needs_followup.$needKey.evaluation_reason", $needData['evaluation_reason'] ?? '') }}</textarea>
                             </div>
                             @endunless
+                            @endunless
+                            @if($canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">هل تم تنفيذ الاحتياج؟</label>
+                                    <select class="form-select" name="execution_needs_followup[{{ $needKey }}][post_status]">
+                                        <option value="">اختر</option>
+                                        <option value="provided" {{ old("execution_needs_followup.$needKey.post_status", $needData['post_status'] ?? '') === 'provided' ? 'selected' : '' }}>نعم، تم تنفيذه</option>
+                                        <option value="not_provided" {{ old("execution_needs_followup.$needKey.post_status", $needData['post_status'] ?? '') === 'not_provided' ? 'selected' : '' }}>لا، لم يتم تنفيذه</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">فيدباك بعد التنفيذ</label>
+                                    <textarea class="form-control" name="execution_needs_followup[{{ $needKey }}][post_feedback]" rows="2">{{ old("execution_needs_followup.$needKey.post_feedback", $needData['post_feedback'] ?? '') }}</textarea>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @empty
@@ -772,7 +815,90 @@
                     <label class="form-label">عدد الحضور الفعلي</label>
                     <input class="form-control" type="number" min="0" name="actual_attendance" value="{{ old('actual_attendance', $monthlyActivity->actual_attendance) }}">
                 </div>
-                <div class="col-12 col-md-4 d-flex justify-content-end align-items-end">
+                <div class="col-12"><hr class="my-2"></div>
+                <div class="col-12">
+                    <h3 class="h6 mb-2">متابعة حضور الفرق وإنجاز المهام</h3>
+                </div>
+                @if($postExecutionTeamGroups->isNotEmpty())
+                @foreach($postExecutionTeamGroups as $teamGroup)
+                    @php
+                        $teamIndex = $teamGroup['index'];
+                        $teamName = $teamGroup['name'];
+                        $members = $teamGroup['members'];
+                        $teamRow = $postExecutionTeams->get($teamName, []);
+                        $teamAllAttendedValue = old(
+                            "post_execution.teams.$teamIndex.all_members_attended",
+                            data_get($teamRow, 'all_members_attended') === null ? '' : (data_get($teamRow, 'all_members_attended') ? '1' : '0')
+                        );
+                    @endphp
+                    <div class="col-12 border rounded-3 p-3">
+                        <input type="hidden" name="post_execution[teams][{{ $teamIndex }}][team_name]" value="{{ $teamName }}">
+                        <input type="hidden" name="post_execution[teams][{{ $teamIndex }}][planned_members_count]" value="{{ $members->count() }}">
+                        <div class="fw-semibold mb-2">{{ $teamName }} <span class="text-muted small">({{ $members->count() }} أعضاء مخططين)</span></div>
+                        <div class="small text-muted mb-3">{{ $members->pluck('member_name')->implode('، ') }}</div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">هل حضر جميع أعضاء الفريق؟</label>
+                                <select class="form-select" name="post_execution[teams][{{ $teamIndex }}][all_members_attended]">
+                                    <option value="">اختر</option>
+                                    <option value="1" {{ (string) $teamAllAttendedValue === '1' ? 'selected' : '' }}>نعم</option>
+                                    <option value="0" {{ (string) $teamAllAttendedValue === '0' ? 'selected' : '' }}>لا</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">عدد الحضور الفعلي بالفريق</label>
+                                <input class="form-control" type="number" min="0" name="post_execution[teams][{{ $teamIndex }}][actual_attendance_count]" value="{{ old("post_execution.teams.$teamIndex.actual_attendance_count", data_get($teamRow, 'actual_attendance_count')) }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">ماذا أنجزوا من مهام؟</label>
+                                <textarea class="form-control" name="post_execution[teams][{{ $teamIndex }}][accomplished_tasks]" rows="2">{{ old("post_execution.teams.$teamIndex.accomplished_tasks", data_get($teamRow, 'accomplished_tasks')) }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+                @else
+                    <div class="col-12">
+                        <div class="alert alert-light border mb-0">لم يتم إدخال فرق لهذه الفعالية.</div>
+                    </div>
+                @endif
+
+                @if($ceremonyItemsForPostExecution->isNotEmpty())
+                    <div class="col-12"><hr class="my-2"></div>
+                    <div class="col-12">
+                        <h3 class="h6 mb-2">متابعة فقرات الفعالية</h3>
+                    </div>
+                    @foreach($ceremonyItemsForPostExecution as $itemIndex => $item)
+                        @php
+                            $itemOrder = (int) ($item['order'] ?? ($itemIndex + 1));
+                            $itemRow = $postExecutionCeremonyItems->get((string) $itemOrder, []);
+                            $itemImplementedValue = old(
+                                "post_execution.ceremony_items.$itemIndex.was_implemented",
+                                data_get($itemRow, 'was_implemented') === null ? '' : (data_get($itemRow, 'was_implemented') ? '1' : '0')
+                            );
+                        @endphp
+                        <div class="col-12 border rounded-3 p-3">
+                            <input type="hidden" name="post_execution[ceremony_items][{{ $itemIndex }}][order]" value="{{ $itemOrder }}">
+                            <input type="hidden" name="post_execution[ceremony_items][{{ $itemIndex }}][name]" value="{{ $item['name'] }}">
+                            <div class="fw-semibold mb-2">{{ $itemOrder }}. {{ $item['name'] }}</div>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">هل تم تطبيق الفقرة؟</label>
+                                    <select class="form-select" name="post_execution[ceremony_items][{{ $itemIndex }}][was_implemented]">
+                                        <option value="">اختر</option>
+                                        <option value="1" {{ (string) $itemImplementedValue === '1' ? 'selected' : '' }}>نعم</option>
+                                        <option value="0" {{ (string) $itemImplementedValue === '0' ? 'selected' : '' }}>لا</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label">فيدباك الفقرة</label>
+                                    <textarea class="form-control" name="post_execution[ceremony_items][{{ $itemIndex }}][feedback]" rows="2">{{ old("post_execution.ceremony_items.$itemIndex.feedback", data_get($itemRow, 'feedback')) }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
+
+                <div class="col-12 d-flex justify-content-end align-items-end">
                     <button class="btn btn-outline-primary" type="submit">
                         {{ __('app.roles.programs.monthly_activities.actions.close') }}
                     </button>
@@ -784,6 +910,7 @@
     @endif
     </div>
 
+    @endif
 
 @push('scripts')
 <script type="application/json" id="monthly-edit-old-partners-json">@json($oldPartners)</script>
@@ -792,6 +919,4 @@
 <script src="{{ asset('assets/js/monthly-activity-edit.js') }}"></script>
 @endpush
 
-
-    @endif
 @endsection

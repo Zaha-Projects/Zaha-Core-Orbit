@@ -675,6 +675,7 @@ class MonthlyActivitiesController extends Controller
     protected function normalizePlanningPayload(array &$data): void
     {
         $this->normalizeVolunteerAgeRange($data);
+        $this->normalizeExpectedAttendanceRange($data);
         $this->normalizeExecutionNeedsFollowup($data);
         $this->normalizeExecutionNeedsPayload($data);
         $this->normalizeSuppliesPayload($data);
@@ -740,6 +741,49 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+    protected function normalizeExpectedAttendanceRange(array &$data): void
+    {
+        $from = $data['expected_attendance_from'] ?? null;
+        $to = $data['expected_attendance_to'] ?? null;
+
+        $from = $from === '' || $from === null ? null : (int) $from;
+        $to = $to === '' || $to === null ? null : (int) $to;
+
+        if ($from === null && $to === null && isset($data['expected_attendance']) && $data['expected_attendance'] !== '') {
+            $from = (int) $data['expected_attendance'];
+            $to = (int) $data['expected_attendance'];
+        }
+
+        if ($from !== null && $to === null) {
+            $to = $from;
+        }
+
+        if ($to !== null && $from === null) {
+            $from = $to;
+        }
+
+        $data['expected_attendance_from'] = $from;
+        $data['expected_attendance_to'] = $to;
+        $data['expected_attendance'] = $to ?? $from;
+    }
+
+    protected function expectedAttendanceRangeRules(): array
+    {
+        return [
+            'expected_attendance' => ['nullable', 'integer', 'min:0'],
+            'expected_attendance_from' => ['nullable', 'integer', 'min:0'],
+            'expected_attendance_to' => ['nullable', 'integer', 'min:0', 'gte:expected_attendance_from'],
+        ];
+    }
+
+    protected function needAvailabilityRules(): array
+    {
+        return [
+            'need_availability' => ['nullable', 'array'],
+            'need_availability.*' => ['nullable', 'in:available,not_available'],
+        ];
+    }
+
     protected function normalizeVolunteerAgeRange(array &$data): void
     {
         $from = isset($data['volunteer_age_from']) && $data['volunteer_age_from'] !== ''
@@ -793,6 +837,10 @@ class MonthlyActivitiesController extends Controller
                 $evaluationScore = $row['evaluation_score'] ?? null;
                 $evaluationScore = $evaluationScore === '' || $evaluationScore === null ? null : (float) $evaluationScore;
                 $evaluationReason = trim((string) ($row['evaluation_reason'] ?? ''));
+                $postStatus = in_array((string) ($row['post_status'] ?? ''), ['provided', 'not_provided'], true)
+                    ? (string) $row['post_status']
+                    : null;
+                $postFeedback = trim((string) ($row['post_feedback'] ?? ''));
                 $decisionByRole = trim((string) ($row['decision_by_role'] ?? ''));
                 $decisionByName = trim((string) ($row['decision_by_name'] ?? ''));
                 $allowedRoles = $monthlyActivity
@@ -809,7 +857,7 @@ class MonthlyActivitiesController extends Controller
                     $decisionByRole = null;
                 }
 
-                if (! $status && $reason === '' && $score === null && $evaluationScore === null && $evaluationReason === '' && $decisionByRole === '' && $decisionByName === '') {
+                if (! $status && $reason === '' && $score === null && $evaluationScore === null && $evaluationReason === '' && ! $postStatus && $postFeedback === '' && $decisionByRole === '' && $decisionByName === '') {
                     return null;
                 }
 
@@ -821,6 +869,8 @@ class MonthlyActivitiesController extends Controller
                     'effectiveness_score' => $score,
                     'evaluation_score' => $evaluationScore,
                     'evaluation_reason' => $evaluationReason !== '' ? $evaluationReason : null,
+                    'post_status' => $postStatus,
+                    'post_feedback' => $postFeedback !== '' ? $postFeedback : null,
                     'decision_by_role' => $decisionByRole !== '' ? $decisionByRole : null,
                     'decision_by_name' => $decisionByName !== '' ? $decisionByName : null,
                 ];
@@ -844,6 +894,90 @@ class MonthlyActivitiesController extends Controller
             ->filter(fn (array $row) => in_array((string) ($row['key'] ?? ''), $enabledKeys, true))
             ->values()
             ->all();
+    }
+
+    protected function mergeExecutionNeedsFollowupRows(MonthlyActivity $monthlyActivity, array $incomingRows): array
+    {
+        $incomingByKey = collect($incomingRows)
+            ->filter(fn (array $row) => filled($row['key'] ?? null))
+            ->keyBy(fn (array $row) => (string) $row['key']);
+
+        $existingByKey = collect($monthlyActivity->execution_needs_followup ?? [])
+            ->filter(fn ($row) => is_array($row) && filled($row['key'] ?? null))
+            ->keyBy(fn (array $row) => (string) $row['key']);
+
+        foreach ($incomingByKey as $key => $row) {
+            $existingByKey->put($key, array_merge($existingByKey->get($key, []), $row));
+        }
+
+        return $existingByKey->values()->all();
+    }
+
+    protected function normalizePostExecutionPayload(MonthlyActivity $monthlyActivity, array $rows): ?array
+    {
+        $teamRows = collect($rows['teams'] ?? [])
+            ->filter(fn ($row) => is_array($row))
+            ->map(function (array $row, $key): ?array {
+                $teamName = trim((string) ($row['team_name'] ?? $key));
+                $actualAttendance = $row['actual_attendance_count'] ?? null;
+                $actualAttendance = $actualAttendance === '' || $actualAttendance === null ? null : max(0, (int) $actualAttendance);
+                $allAttended = $row['all_members_attended'] ?? null;
+                $allAttended = in_array((string) $allAttended, ['1', '0'], true) ? (bool) $allAttended : null;
+                $plannedMembers = $row['planned_members_count'] ?? null;
+                $plannedMembers = $plannedMembers === '' || $plannedMembers === null ? null : max(0, (int) $plannedMembers);
+                $tasks = trim((string) ($row['accomplished_tasks'] ?? ''));
+
+                if ($teamName === '' && $actualAttendance === null && $allAttended === null && $tasks === '') {
+                    return null;
+                }
+
+                return [
+                    'team_name' => $teamName,
+                    'planned_members_count' => $plannedMembers,
+                    'all_members_attended' => $allAttended,
+                    'actual_attendance_count' => $actualAttendance,
+                    'accomplished_tasks' => $tasks !== '' ? $tasks : null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        $ceremonyItems = collect($rows['ceremony_items'] ?? [])
+            ->filter(fn ($row) => is_array($row))
+            ->map(function (array $row, $key): ?array {
+                $name = trim((string) ($row['name'] ?? ''));
+                $implemented = $row['was_implemented'] ?? null;
+                $implemented = in_array((string) $implemented, ['1', '0'], true) ? (bool) $implemented : null;
+                $feedback = trim((string) ($row['feedback'] ?? ''));
+                $order = $row['order'] ?? null;
+                $order = $order === '' || $order === null ? ((int) $key + 1) : (int) $order;
+
+                if ($name === '' && $implemented === null && $feedback === '') {
+                    return null;
+                }
+
+                return [
+                    'order' => $order,
+                    'name' => $name,
+                    'was_implemented' => $implemented,
+                    'feedback' => $feedback !== '' ? $feedback : null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($teamRows === [] && $ceremonyItems === []) {
+            return $monthlyActivity->post_execution_payload ?: null;
+        }
+
+        return [
+            'schema_version' => 1,
+            'completed_at' => now()->toDateTimeString(),
+            'teams' => $teamRows,
+            'ceremony_items' => $ceremonyItems,
+        ];
     }
 
     protected function mergeExecutionNeedsFollowupForDecisionUser(MonthlyActivity $monthlyActivity, array $incomingRows, User $user): array
@@ -994,9 +1128,15 @@ class MonthlyActivitiesController extends Controller
 
     protected function normalizeExecutionNeedsPayload(array &$data): void
     {
-        $sectionLink = static fn (string $needCode, bool $enabled): array => [
+        $availability = collect($data['need_availability'] ?? [])
+            ->filter(fn ($value): bool => in_array((string) $value, ['available', 'not_available'], true))
+            ->map(fn ($value): string => (string) $value)
+            ->all();
+
+        $sectionLink = fn (string $needCode, bool $enabled): array => [
             'need_code' => $needCode,
             'enabled' => $enabled,
+            'availability' => $availability[$needCode] ?? null,
             'future_cycle_id' => null,
         ];
 
@@ -1033,6 +1173,7 @@ class MonthlyActivitiesController extends Controller
                 'thanks_letters' => $sectionLink('thanks_letters', $needsCertificates),
                 'invitations' => $sectionLink('invitations', $needsInvitations),
             ],
+            'availability' => $availability,
             'needs_ceremony_agenda' => $needsCeremonyAgenda,
             'ceremony' => [
                 'need_code' => 'ceremony',
@@ -1821,7 +1962,7 @@ class MonthlyActivitiesController extends Controller
             'volunteer_age_range' => ['nullable', 'string', 'max:255'],
             'volunteer_gender' => ['nullable', 'in:male,female,both', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
-            'expected_attendance' => ['nullable', 'integer', 'min:0'],
+            ...$this->expectedAttendanceRangeRules(),
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'attendance_notes' => ['nullable', 'string'],
             'work_teams_count' => ['nullable', 'integer', 'min:1', 'max:20'],
@@ -1893,6 +2034,7 @@ class MonthlyActivitiesController extends Controller
             'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
             'execution_needs_followup.*.evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
             'execution_needs_followup.*.evaluation_reason' => ['nullable', 'string', 'max:1000'],
+            ...$this->needAvailabilityRules(),
             'needs_ceremony_agenda' => ['nullable', 'boolean'],
             'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
             'ceremony_time_from' => ['nullable', 'date_format:H:i'],
@@ -2018,6 +2160,8 @@ class MonthlyActivitiesController extends Controller
             'volunteer_gender' => $data['volunteer_gender'] ?? null,
             'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
+            'expected_attendance_from' => $data['expected_attendance_from'] ?? null,
+            'expected_attendance_to' => $data['expected_attendance_to'] ?? null,
             'actual_attendance' => $data['actual_attendance'] ?? null,
             'attendance_notes' => $data['attendance_notes'] ?? null,
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
@@ -2317,6 +2461,8 @@ class MonthlyActivitiesController extends Controller
                 'execution_needs_followup.*.effectiveness_score' => ['nullable', 'integer', 'min:0', 'max:10'],
                 'execution_needs_followup.*.evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
                 'execution_needs_followup.*.evaluation_reason' => ['nullable', 'string', 'max:1000'],
+                'execution_needs_followup.*.post_status' => ['nullable', 'in:provided,not_provided'],
+                'execution_needs_followup.*.post_feedback' => ['nullable', 'string', 'max:2000'],
                 'execution_needs_followup.*.decision_by_role' => ['nullable', 'string', 'max:255'],
                 'execution_needs_followup.*.decision_by_name' => ['nullable', 'string', 'max:255'],
             ]);
@@ -2324,15 +2470,19 @@ class MonthlyActivitiesController extends Controller
             $activityForNeeds = $monthlyActivity->fresh(['creator', 'supplies']);
             $this->normalizeExecutionNeedsFollowup($data, $activityForNeeds);
             $this->filterExecutionNeedsFollowupToEnabled($activityForNeeds, $data);
-            $mergedRows = $this->mergeExecutionNeedsFollowupForDecisionUser(
-                $activityForNeeds,
-                $data['execution_needs_followup'] ?? [],
-                $request->user()
-            );
+            $mergedRows = $this->canCompleteAfterExecution($activityForNeeds, $request->user())
+                ? $this->mergeExecutionNeedsFollowupRows($activityForNeeds, $data['execution_needs_followup'] ?? [])
+                : $this->mergeExecutionNeedsFollowupForDecisionUser(
+                    $activityForNeeds,
+                    $data['execution_needs_followup'] ?? [],
+                    $request->user()
+                );
             $monthlyActivity->update([
                 'execution_needs_followup' => $mergedRows === [] ? null : $mergedRows,
             ]);
-            $this->notifyExecutionNeedsDecisionSubmitted($monthlyActivity->fresh(), $data['execution_needs_followup'] ?? [], $request->user());
+            if (! $this->canCompleteAfterExecution($activityForNeeds, $request->user())) {
+                $this->notifyExecutionNeedsDecisionSubmitted($monthlyActivity->fresh(), $data['execution_needs_followup'] ?? [], $request->user());
+            }
             $this->logWorkflowAction('execution_needs_followup_updated', $monthlyActivity, $request, $monthlyActivity->status);
 
             $redirectParams = ['monthlyActivity' => $monthlyActivity, 'mode' => 'post'];
@@ -2395,7 +2545,7 @@ class MonthlyActivitiesController extends Controller
             'volunteer_age_range' => ['nullable', 'string', 'max:255'],
             'volunteer_gender' => ['nullable', 'in:male,female,both', 'required_if:needs_volunteers,1'],
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
-            'expected_attendance' => ['nullable', 'integer', 'min:0'],
+            ...$this->expectedAttendanceRangeRules(),
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'attendance_notes' => ['nullable', 'string'],
             'work_teams_count' => ['nullable', 'integer', 'min:1', 'max:20'],
@@ -2441,6 +2591,7 @@ class MonthlyActivitiesController extends Controller
                 'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
                 'evaluations.*.note' => ['nullable', 'string'],
                 'followup_remarks' => ['nullable', 'string'],
+                ...$this->needAvailabilityRules(),
                 'needs_ceremony_agenda' => ['nullable', 'boolean'],
                 'ceremony_items_count' => ['nullable', 'integer', 'min:1'],
                 'ceremony_time_from' => ['nullable', 'date_format:H:i'],
@@ -2571,6 +2722,8 @@ class MonthlyActivitiesController extends Controller
             'volunteer_gender',
             'volunteer_tasks_summary',
             'expected_attendance',
+            'expected_attendance_from',
+            'expected_attendance_to',
             'actual_attendance',
             'attendance_notes',
             'has_sponsor',
@@ -2671,6 +2824,8 @@ class MonthlyActivitiesController extends Controller
             'volunteer_gender' => $data['volunteer_gender'] ?? null,
             'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
+            'expected_attendance_from' => $data['expected_attendance_from'] ?? null,
+            'expected_attendance_to' => $data['expected_attendance_to'] ?? null,
             'actual_attendance' => $data['actual_attendance'] ?? null,
             'attendance_notes' => $data['attendance_notes'] ?? null,
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
@@ -2782,6 +2937,8 @@ class MonthlyActivitiesController extends Controller
                 'volunteer_gender' => $newValues['volunteer_gender'],
                 'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
                 'expected_attendance' => $newValues['expected_attendance'],
+                'expected_attendance_from' => $newValues['expected_attendance_from'],
+                'expected_attendance_to' => $newValues['expected_attendance_to'],
                 'actual_attendance' => $newValues['actual_attendance'],
                 'attendance_notes' => $newValues['attendance_notes'],
                 'has_sponsor' => $newValues['has_sponsor'],
@@ -2879,6 +3036,8 @@ class MonthlyActivitiesController extends Controller
             'volunteer_gender' => $newValues['volunteer_gender'],
             'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
             'expected_attendance' => $newValues['expected_attendance'],
+            'expected_attendance_from' => $newValues['expected_attendance_from'],
+            'expected_attendance_to' => $newValues['expected_attendance_to'],
             'actual_attendance' => $newValues['actual_attendance'],
             'attendance_notes' => $newValues['attendance_notes'],
             'has_sponsor' => $newValues['has_sponsor'],
@@ -2999,7 +3158,30 @@ class MonthlyActivitiesController extends Controller
             ...$this->evaluationSummaryRules(),
             'actual_date' => ['nullable', 'date'],
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
+            'execution_needs_followup' => ['nullable', 'array'],
+            'execution_needs_followup.*.post_status' => ['nullable', 'in:provided,not_provided'],
+            'execution_needs_followup.*.post_feedback' => ['nullable', 'string', 'max:2000'],
+            'post_execution' => ['nullable', 'array'],
+            'post_execution.teams' => ['nullable', 'array'],
+            'post_execution.teams.*.team_name' => ['nullable', 'string', 'max:255'],
+            'post_execution.teams.*.planned_members_count' => ['nullable', 'integer', 'min:0'],
+            'post_execution.teams.*.all_members_attended' => ['nullable', 'in:1,0'],
+            'post_execution.teams.*.actual_attendance_count' => ['nullable', 'integer', 'min:0'],
+            'post_execution.teams.*.accomplished_tasks' => ['nullable', 'string', 'max:2000'],
+            'post_execution.ceremony_items' => ['nullable', 'array'],
+            'post_execution.ceremony_items.*.order' => ['nullable', 'integer', 'min:1'],
+            'post_execution.ceremony_items.*.name' => ['nullable', 'string', 'max:255'],
+            'post_execution.ceremony_items.*.was_implemented' => ['nullable', 'in:1,0'],
+            'post_execution.ceremony_items.*.feedback' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $activityForPostExecution = $monthlyActivity->fresh(['creator', 'supplies', 'team']);
+        $this->normalizeExecutionNeedsFollowup($data, $activityForPostExecution);
+        $this->filterExecutionNeedsFollowupToEnabled($activityForPostExecution, $data);
+        $postExecutionPayload = $this->normalizePostExecutionPayload($activityForPostExecution, $data['post_execution'] ?? []);
+        $executionNeedsFollowup = array_key_exists('execution_needs_followup', $data)
+            ? $this->mergeExecutionNeedsFollowupRows($activityForPostExecution, $data['execution_needs_followup'] ?? [])
+            : ($monthlyActivity->execution_needs_followup ?? null);
 
                 $evaluationOfficer = User::query()
             ->role('evaluation_officer')
@@ -3017,6 +3199,8 @@ class MonthlyActivitiesController extends Controller
             'evaluation_reason' => $data['evaluation_reason'] ?? $monthlyActivity->evaluation_reason,
             'evaluation_assigned_user_id' => $evaluationOfficer?->id,
             'evaluation_assigned_at' => $evaluationOfficer ? now() : null,
+            'execution_needs_followup' => $executionNeedsFollowup === [] ? null : $executionNeedsFollowup,
+            'post_execution_payload' => $postExecutionPayload,
             'status' => 'closed',
             'execution_status' => 'executed',
             'is_official' => true,

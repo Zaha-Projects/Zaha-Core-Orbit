@@ -13,6 +13,15 @@
     $workflowSummary = $monthlyActivity->workflow_summary ?? [];
     $monthlyStatusLabels = $monthlyStatusLabels ?? [];
     $executionStatusLabels = $executionStatusLabels ?? [];
+    $needAvailabilityLabel = function (string $key) use ($monthlyActivity): string {
+        $value = data_get($monthlyActivity->execution_needs_payload ?? [], 'availability.'.$key);
+
+        return match ($value) {
+            'available' => 'متوفر داخل المركز',
+            'not_available' => 'غير متوفر داخل المركز',
+            default => '-',
+        };
+    };
     $isReadOnlyUnified = (bool) $monthlyActivity->is_from_agenda
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
@@ -236,7 +245,9 @@
                     <div class="col-12">
                         <ul class="mb-0 d-flex flex-column gap-2">
                             @forelse($enabledExecutionNeeds as $needKey => $need)
-                                @php($needDecision = $executionNeedsFollowupByKey->get($needKey, []))
+                                @php
+                                    $needDecision = $executionNeedsFollowupByKey->get($needKey, []);
+                                @endphp
                                 <li>
                                     <div class="d-flex gap-2 align-items-center flex-wrap">
                                         <span>{{ $need['label'] }}</span>
@@ -264,6 +275,56 @@
                         </ul>
                     </div>
 
+                    @php
+                        $needPostStatusLabels = ['provided' => 'تم توفيره', 'not_provided' => 'لم يتم توفيره'];
+                        $postExecutionPayload = $monthlyActivity->post_execution_payload ?? [];
+                    @endphp
+                    @if(collect($monthlyActivity->execution_needs_followup ?? [])->contains(fn ($row) => filled($row['post_status'] ?? null) || filled($row['post_feedback'] ?? null)))
+                        <div class="col-12"><strong>متابعة الاحتياجات بعد التنفيذ:</strong></div>
+                        <div class="col-12">
+                            <ul class="mb-0">
+                                @foreach($monthlyActivity->execution_needs_followup ?? [] as $row)
+                                    @continue(! filled($row['post_status'] ?? null) && ! filled($row['post_feedback'] ?? null))
+                                    @php
+                                        $needLabel = data_get($monthlyActivity->enabledExecutionNeeds(), ($row['key'] ?? '').'.label', $row['key'] ?? '-');
+                                    @endphp
+                                    <li>{{ $needLabel }} - {{ $needPostStatusLabels[$row['post_status'] ?? ''] ?? '-' }}{{ filled($row['post_feedback'] ?? null) ? ' / '.$row['post_feedback'] : '' }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if(! empty($postExecutionPayload['teams'] ?? []))
+                        <div class="col-12"><strong>متابعة الفرق بعد التنفيذ:</strong></div>
+                        <div class="col-12">
+                            <ul class="mb-0">
+                                @foreach($postExecutionPayload['teams'] as $teamRow)
+                                    <li>
+                                        {{ $teamRow['team_name'] ?? '-' }}
+                                        - الحضور الفعلي: {{ $teamRow['actual_attendance_count'] ?? '-' }} / {{ $teamRow['planned_members_count'] ?? '-' }}
+                                        - حضور الجميع: {{ ($teamRow['all_members_attended'] ?? null) === true ? 'نعم' : (($teamRow['all_members_attended'] ?? null) === false ? 'لا' : '-') }}
+                                        {{ filled($teamRow['accomplished_tasks'] ?? null) ? ' / '.$teamRow['accomplished_tasks'] : '' }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if(! empty($postExecutionPayload['ceremony_items'] ?? []))
+                        <div class="col-12"><strong>متابعة فقرات الفعالية:</strong></div>
+                        <div class="col-12">
+                            <ul class="mb-0">
+                                @foreach($postExecutionPayload['ceremony_items'] as $itemRow)
+                                    <li>
+                                        {{ $itemRow['order'] ?? '-' }}. {{ $itemRow['name'] ?? '-' }}
+                                        - {{ ($itemRow['was_implemented'] ?? null) === true ? 'تم تطبيقها' : (($itemRow['was_implemented'] ?? null) === false ? 'لم تطبق' : '-') }}
+                                        {{ filled($itemRow['feedback'] ?? null) ? ' / '.$itemRow['feedback'] : '' }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <div class="col-12"><hr></div>
                     <div class="col-12 col-md-4"><strong>نوع المكان:</strong> {{ $monthlyActivity->location_type === 'outside_center' ? 'خارج المركز' : 'داخل المركز' }}</div>
                     <div class="col-12 col-md-4"><strong>القاعة الداخلية:</strong> {{ $monthlyActivity->internal_location ?? '-' }}</div>
@@ -289,10 +350,11 @@
                     <div class="col-12 col-md-4"><strong>فئة أخرى:</strong> {{ $monthlyActivity->target_group_other ?? '-' }}</div>
 
                     <div class="col-12"><hr></div>
-                    <div class="col-12 col-md-4"><strong>عدد الحضور المتوقع:</strong> {{ $monthlyActivity->expected_attendance ?? '-' }}</div>
+                    <div class="col-12 col-md-4"><strong>عدد الحضور المتوقع:</strong> {{ $monthlyActivity->expected_attendance_range_label }}</div>
                     <div class="col-12 col-md-4"><strong>عدد الحضور الفعلي:</strong> {{ $monthlyActivity->actual_attendance ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>ملاحظات الحضور:</strong> {{ $monthlyActivity->attendance_notes ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>بحاجة لمتطوعين:</strong> <span class="badge {{ $monthlyActivity->needs_volunteers ? 'bg-success' : 'bg-secondary' }}">{{ $monthlyActivity->needs_volunteers ? '✅ نعم' : '❌ لا' }}</span></div>
+                    <div class="col-12 col-md-4"><strong>توفر المتطوعين داخل المركز:</strong> {{ $needAvailabilityLabel('volunteers') }}</div>
                     <div class="col-12 col-md-4"><strong>عدد المتطوعين المطلوب:</strong> {{ $monthlyActivity->required_volunteers ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>احتياج المتطوعين (نصي):</strong> {{ $monthlyActivity->volunteer_need ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>الفترة العمرية:</strong> {{ $monthlyActivity->volunteer_age_range ?? '-' }}</div>
@@ -307,11 +369,14 @@
                     <div class="col-12 col-md-4"><strong>بحاجة خطابات:</strong> <span class="badge {{ $monthlyActivity->needs_official_letters ? 'bg-success' : 'bg-secondary' }}">{{ $monthlyActivity->needs_official_letters ? '✅ نعم' : '❌ لا' }}</span></div>
                     <div class="col-12 col-md-4"><strong>سبب الخطابات:</strong> {{ $monthlyActivity->letter_purpose ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>تغطية إعلامية:</strong> <span class="badge {{ $monthlyActivity->needs_media_coverage ? 'bg-success' : 'bg-secondary' }}">{{ $monthlyActivity->needs_media_coverage ? '✅ نعم' : '❌ لا' }}</span></div>
+                    <div class="col-12 col-md-4"><strong>توفر التغطية داخل المركز:</strong> {{ $needAvailabilityLabel('media_coverage') }}</div>
                     <div class="col-12 col-md-8"><strong>ملاحظات التغطية الإعلامية:</strong> {{ $monthlyActivity->media_coverage_notes ?? '-' }}</div>
 
                     <div class="col-12"><hr></div>
                     <div class="col-12 col-md-4"><strong>يوجد راعي رسمي:</strong> {{ $monthlyActivity->has_sponsor ? 'نعم' : 'لا' }}</div>
                     <div class="col-12 col-md-4"><strong>يوجد شركاء:</strong> {{ $monthlyActivity->has_partners ? 'نعم' : 'لا' }}</div>
+                    <div class="col-12 col-md-4"><strong>توفر الرعاية داخل المركز:</strong> {{ $needAvailabilityLabel('official_sponsorship') }}</div>
+                    <div class="col-12 col-md-4"><strong>توفر الشركاء داخل المركز:</strong> {{ $needAvailabilityLabel('external_partners') }}</div>
                     <div class="col-12 col-md-4"><strong>كيان مسؤول:</strong> {{ $monthlyActivity->responsible_party ?? '-' }}</div>
 
                     <div class="col-12"><strong>الرعاة:</strong></div>
@@ -377,7 +442,9 @@
                             <div class="small text-muted mb-2">أي مرفق يتم تحميله من اعتماد علاقات خلدا يظهر هنا مباشرة لموظف العلاقات في الفرع.</div>
                             <div class="d-flex flex-column gap-2">
                                 @forelse($officialCorrespondenceAttachments as $attachment)
-                                    @php($isExternal = filter_var($attachment->file_path, FILTER_VALIDATE_URL))
+                                    @php
+                                        $isExternal = filter_var($attachment->file_path, FILTER_VALIDATE_URL);
+                                    @endphp
                                     <a class="btn btn-sm btn-outline-primary text-start" href="{{ $isExternal ? $attachment->file_path : route('role.programs.attachments.download', $attachment) }}" target="_blank" rel="noopener">
                                         {{ $attachment->title ?: 'عرض المخاطبة الرسمية' }}
                                     </a>
