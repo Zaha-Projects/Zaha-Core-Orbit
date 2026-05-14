@@ -100,6 +100,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-edit.css') }}">
 @endpush
 
 
@@ -113,7 +114,7 @@
             'subtitle' => $subtitle,
         ])
     @else
-    <div class="event-module">
+    <div class="event-module monthly-activity-edit-page {{ $isPostMode ? 'monthly-post-execution-page' : 'monthly-planning-edit-page' }}">
     <div class="card event-card mb-4">
         <div class="card-body">
             <h1 class="h4 mb-2">{{ $title }}</h1>
@@ -535,7 +536,7 @@
     @endif
 
     @if ($isPostMode)
-    <div class="card event-card mb-4" id="execution-needs-decisions">
+    <div class="card event-card mb-4 post-execution-section post-execution-section-needs" id="execution-needs-decisions">
         <div class="card-body">
             <h2 class="h6 mb-3">تأكيد تأمين احتياجات التنفيذ</h2>
             <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" class="row g-3 mb-0">
@@ -546,10 +547,10 @@
                     @php
                         $needData = $executionNeedsFollowup->get($needKey, []);
                     @endphp
-                    <div class="col-12 border rounded-3 p-3">
+                    <div class="col-12 border rounded-3 p-3 post-execution-item post-execution-item-needs">
                         <div class="fw-semibold mb-2">{{ $needLabel }}</div>
                         <div class="row g-3">
-                            @unless($isExecutionNeedDecisionOnly)
+                            @if(! $isExecutionNeedDecisionOnly && ! $canCompleteAfterExecution)
                             <div class="col-12 col-md-3">
                                 <label class="form-label">الدور الذي اتخذ القرار</label>
                                 @php
@@ -575,7 +576,7 @@
                                 @endphp
                                 <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_role]" value="{{ $autoDecisionRole }}">
                                 <input type="hidden" name="execution_needs_followup[{{ $needKey }}][decision_by_name]" value="{{ $autoDecisionName }}">
-                            @endunless
+                            @endif
                             @unless($canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
                             <div class="col-12 {{ $isExecutionNeedDecisionOnly ? 'col-md-4' : 'col-md-3' }}">
                                 <label class="form-label">حالة التأمين</label>
@@ -659,7 +660,7 @@
     </div>
 
     @if ($canManageEvaluation && ! $isExecutionNeedDecisionOnly)
-    <div class="card event-card mb-4" id="post-execution-evaluation">
+    <div class="card event-card mb-4 post-execution-section post-execution-section-evaluation" id="post-execution-evaluation">
         <div class="card-body">
             <h2 class="h6 mb-3">المتابعة والتقييم</h2>
             @if (! $evaluationEnabled)
@@ -671,7 +672,7 @@
                     <input type="hidden" name="evaluation_only" value="1">
                     @forelse($evaluationQuestions as $question)
                         @php $response = $evaluationByQuestion->get($question->id); @endphp
-                        <div class="col-12 border rounded-3 p-3">
+                        <div class="col-12 border rounded-3 p-3 post-execution-item post-execution-item-evaluation">
                             <div class="fw-semibold mb-2">{{ $question->question }}</div>
                             <input type="hidden" name="evaluations[{{ $question->id }}][answer_type]" value="{{ $question->answer_type }}">
                             @if($question->answer_type === 'score_5')
@@ -718,7 +719,7 @@
     @endif
 
     @if($canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
-    <div class="card event-card mb-4" id="post-execution-attachments">
+    <div class="card event-card mb-4 post-execution-section post-execution-section-attachments" id="post-execution-attachments">
         <div class="card-body">
             <div class="alert alert-light border mb-3">
                 <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
@@ -801,7 +802,7 @@
         </div>
     </div>
 
-    <div class="card event-card" id="post-execution-close">
+    <div class="card event-card post-execution-section post-execution-section-close" id="post-execution-close">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.close_title') }}</h2>
             <form method="POST" action="{{ route('role.relations.activities.close', $monthlyActivity) }}" class="row g-3">
@@ -831,7 +832,7 @@
                             data_get($teamRow, 'all_members_attended') === null ? '' : (data_get($teamRow, 'all_members_attended') ? '1' : '0')
                         );
                     @endphp
-                    <div class="col-12 border rounded-3 p-3">
+                    <div class="col-12 border rounded-3 p-3 post-execution-item post-execution-item-team">
                         <input type="hidden" name="post_execution[teams][{{ $teamIndex }}][team_name]" value="{{ $teamName }}">
                         <input type="hidden" name="post_execution[teams][{{ $teamIndex }}][planned_members_count]" value="{{ $members->count() }}">
                         <div class="fw-semibold mb-2">{{ $teamName }} <span class="text-muted small">({{ $members->count() }} أعضاء مخططين)</span></div>
@@ -876,7 +877,7 @@
                                 data_get($itemRow, 'was_implemented') === null ? '' : (data_get($itemRow, 'was_implemented') ? '1' : '0')
                             );
                         @endphp
-                        <div class="col-12 border rounded-3 p-3">
+                        <div class="col-12 border rounded-3 p-3 post-execution-item post-execution-item-ceremony">
                             <input type="hidden" name="post_execution[ceremony_items][{{ $itemIndex }}][order]" value="{{ $itemOrder }}">
                             <input type="hidden" name="post_execution[ceremony_items][{{ $itemIndex }}][name]" value="{{ $item['name'] }}">
                             <div class="fw-semibold mb-2">{{ $itemOrder }}. {{ $item['name'] }}</div>

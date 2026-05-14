@@ -41,6 +41,20 @@ use Illuminate\Support\Str;
 
 class MonthlyActivitiesController extends Controller
 {
+    protected const CENTER_AVAILABILITY_NEED_CODES = [
+        'volunteers',
+        'media_coverage',
+        'ceremony',
+        'transport',
+        'maintenance',
+        'gifts',
+        'official_sponsorship',
+        'external_partners',
+        'programs',
+        'certificates',
+        'invitations',
+    ];
+
     protected const MONTHLY_ACTIVITY_EDIT_ROLES = [
         'relations_manager',
         'relations_officer',
@@ -907,7 +921,12 @@ class MonthlyActivitiesController extends Controller
             ->keyBy(fn (array $row) => (string) $row['key']);
 
         foreach ($incomingByKey as $key => $row) {
-            $existingByKey->put($key, array_merge($existingByKey->get($key, []), $row));
+            $safeRow = collect($row)
+                ->reject(fn ($value, string $field): bool => in_array($field, ['decision_by_role', 'decision_by_name'], true)
+                    || ($value === null && ! in_array($field, ['post_status', 'post_feedback'], true)))
+                ->all();
+
+            $existingByKey->put($key, array_merge($existingByKey->get($key, []), $safeRow));
         }
 
         return $existingByKey->values()->all();
@@ -1129,7 +1148,8 @@ class MonthlyActivitiesController extends Controller
     protected function normalizeExecutionNeedsPayload(array &$data): void
     {
         $availability = collect($data['need_availability'] ?? [])
-            ->filter(fn ($value): bool => in_array((string) $value, ['available', 'not_available'], true))
+            ->filter(fn ($value, $key): bool => in_array((string) $key, self::CENTER_AVAILABILITY_NEED_CODES, true)
+                && in_array((string) $value, ['available', 'not_available'], true))
             ->map(fn ($value): string => (string) $value)
             ->all();
 
