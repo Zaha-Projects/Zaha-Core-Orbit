@@ -18,7 +18,7 @@
 
 .monthly-activity-edit-page {
     display: grid;
-    gap: .25rem;
+    gap: .65rem;
 }
 
 .monthly-activity-edit-page > .event-card:first-child {
@@ -55,9 +55,9 @@
 }
 
 .monthly-activity-edit-page .event-card {
-    border-color: rgba(15, 23, 42, .075);
-    border-radius: 18px;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, .055);
+    border: 1px solid rgba(15, 23, 42, .08);
+    border-radius: 8px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, .045);
     transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
@@ -68,6 +68,120 @@
 
 .monthly-activity-edit-page .event-card > .card-body {
     padding: 1.35rem;
+}
+
+.monthly-activity-edit-page .monthly-edit-section-toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(52, 84, 209, .11);
+    border-radius: 8px;
+    background:
+        linear-gradient(90deg, rgba(52, 84, 209, .065), rgba(0, 169, 196, .025)),
+        var(--edit-soft-bg);
+    color: var(--edit-text);
+    font: inherit;
+    font-weight: 800;
+    text-align: start;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
+    transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+
+.monthly-activity-edit-page .monthly-edit-section-toggle:hover,
+.monthly-activity-edit-page .monthly-edit-section-toggle:focus-visible {
+    border-color: rgba(52, 84, 209, .35);
+    box-shadow: 0 0 0 .22rem var(--edit-ring);
+    outline: 0;
+}
+
+.monthly-activity-edit-page .monthly-edit-section-title {
+    min-width: 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.monthly-activity-edit-page .monthly-edit-section-icon {
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 2rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .86);
+    border: 1px solid rgba(52, 84, 209, .14);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, .035);
+}
+
+.monthly-activity-edit-page .monthly-edit-section-icon::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    width: .58rem;
+    height: .58rem;
+    border-block-start: 2px solid var(--edit-primary);
+    border-inline-end: 2px solid var(--edit-primary);
+    transform: translate(-50%, -62%) rotate(135deg);
+    transition: transform .22s ease;
+}
+
+.monthly-activity-edit-page .monthly-edit-section-toggle:not(.is-collapsed) .monthly-edit-section-icon::before {
+    transform: translate(-50%, -38%) rotate(-45deg);
+}
+
+.monthly-activity-edit-page .monthly-edit-card-section-body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding-top: 0;
+    transition: max-height .24s ease, opacity .2s ease, padding-top .2s ease;
+}
+
+.monthly-activity-edit-page .monthly-edit-card-section-body.is-open {
+    opacity: 1;
+    padding-top: 1rem;
+}
+
+.monthly-activity-edit-page .monthly-edit-form-panel {
+    padding: 0;
+}
+
+.monthly-activity-edit-page .monthly-edit-form-panel + .monthly-edit-form-panel {
+    margin-top: .75rem;
+}
+
+.monthly-activity-edit-page .monthly-edit-post-panel {
+    margin-top: .75rem;
+}
+
+.monthly-activity-edit-page .monthly-edit-submit-row {
+    margin-top: 1rem;
+    padding-top: .25rem;
+}
+
+.monthly-activity-edit-page .monthly-edit-form-panel-body {
+    margin-inline: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding-block: 0;
+    padding-inline: 0;
+    transition: max-height .24s ease, opacity .2s ease, padding-block .2s ease;
+}
+
+.monthly-activity-edit-page .monthly-edit-form-panel-body.is-open {
+    opacity: 1;
+    padding-block: 1rem .35rem;
+}
+
+.monthly-activity-edit-page .monthly-edit-form-panel-body > [class*="col-"] {
+    min-width: 0;
+}
+
+.monthly-activity-edit-page [hidden] {
+    display: none !important;
 }
 
 .monthly-activity-edit-page h2.h6,
@@ -103,13 +217,17 @@
     opacity: 1;
 }
 
+.monthly-activity-edit-page form > hr {
+    display: none;
+}
+
 .monthly-activity-edit-page form > .col-12 > h2.h6,
 .monthly-activity-edit-page form > .col-12 > h3.h6 {
     position: relative;
     padding: .75rem 1rem;
     border: 1px solid rgba(52, 84, 209, .11);
     border-inline-start: 4px solid var(--edit-primary);
-    border-radius: 12px;
+    border-radius: 8px;
     background:
         linear-gradient(90deg, rgba(52, 84, 209, .075), rgba(0, 169, 196, .035)),
         var(--edit-soft-bg);
@@ -124,7 +242,7 @@
 .monthly-activity-edit-page .form-control,
 .monthly-activity-edit-page .form-select {
     border-color: rgba(15, 23, 42, .12);
-    border-radius: 10px;
+    border-radius: 8px;
     min-height: 42px;
     color: var(--edit-text);
     background-color: var(--edit-card-bg);
@@ -146,7 +264,7 @@
     padding: .72rem .95rem;
     padding-inline-start: 2.6rem;
     border: 1px solid rgba(15, 23, 42, .08);
-    border-radius: 12px;
+    border-radius: 8px;
     background: var(--edit-soft-bg);
 }
 
@@ -160,7 +278,7 @@
 }
 
 .monthly-activity-edit-page .alert {
-    border-radius: 14px;
+    border-radius: 8px;
 }
 
 .monthly-activity-edit-page .alert-light {
@@ -173,7 +291,7 @@
 
 .monthly-activity-edit-page .event-table-wrap {
     border: 1px solid rgba(15, 23, 42, .075);
-    border-radius: 14px;
+    border-radius: 8px;
     overflow: hidden;
     background: var(--edit-card-bg);
 }
@@ -195,7 +313,7 @@
 }
 
 .monthly-activity-edit-page .btn {
-    border-radius: 10px;
+    border-radius: 8px;
     font-weight: 700;
 }
 
@@ -317,7 +435,7 @@
 
 .monthly-post-execution-page .post-execution-item {
     border-color: rgba(15, 23, 42, .08) !important;
-    border-radius: 14px !important;
+    border-radius: 8px !important;
     background:
         linear-gradient(90deg, var(--item-soft, var(--section-soft)), transparent 48%),
         var(--post-card-bg);

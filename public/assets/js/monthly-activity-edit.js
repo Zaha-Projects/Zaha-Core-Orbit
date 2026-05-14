@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
+  const page = document.querySelector('.monthly-activity-edit-page');
   const locType = document.querySelector('.js-location-type');
   const inside = document.querySelectorAll('.js-inside-location');
   const outside = document.querySelectorAll('.js-outside-location');
@@ -38,6 +39,195 @@ document.addEventListener('DOMContentLoaded', function () {
     .replace(/>/g, '&gt;')
     .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#039;');
+
+  const setSectionState = (button, body, open, animate = true) => {
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    button.classList.toggle('is-collapsed', !open);
+    body.classList.toggle('is-open', open);
+
+    if (!animate) {
+      body.hidden = !open;
+      body.style.maxHeight = open ? 'none' : '0px';
+      return;
+    }
+
+    if (open) {
+      body.hidden = false;
+      body.style.maxHeight = '0px';
+      window.requestAnimationFrame(() => {
+        body.style.maxHeight = `${body.scrollHeight}px`;
+      });
+      window.setTimeout(() => {
+        if (button.getAttribute('aria-expanded') === 'true') {
+          body.style.maxHeight = 'none';
+        }
+      }, 240);
+      return;
+    }
+
+    body.style.maxHeight = `${body.scrollHeight}px`;
+    window.requestAnimationFrame(() => {
+      body.style.maxHeight = '0px';
+    });
+    window.setTimeout(() => {
+      if (button.getAttribute('aria-expanded') === 'false') {
+        body.hidden = true;
+      }
+    }, 240);
+  };
+
+  const isFieldGroupHeading = (element) => element?.matches('.col-12')
+    && !!element.querySelector(':scope > h2.h6, :scope > h3.h6');
+
+  const makeToggleButton = (title, targetId, extraClass = '') => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `monthly-edit-section-toggle ${extraClass}`.trim();
+    button.setAttribute('aria-controls', targetId);
+    button.innerHTML = `
+      <span class="monthly-edit-section-title">${esc(title)}</span>
+      <span class="monthly-edit-section-icon" aria-hidden="true"></span>
+    `;
+    return button;
+  };
+
+  const isSubmitRow = (element) => element?.matches('.col-12')
+    && (
+      element.classList.contains('justify-content-end')
+      || element.classList.contains('align-items-end')
+      || !!element.querySelector(':scope > button[type="submit"], :scope > .btn[type="submit"]')
+    );
+
+  const enhanceTopLevelCards = () => {
+    if (!page) return;
+
+    let hasOpenedInitialCard = false;
+
+    page.querySelectorAll(':scope > .event-card:not(:first-child) > .card-body').forEach((cardBody, index) => {
+      if (cardBody.dataset.monthlyAccordionReady === '1') return;
+      if (cardBody.closest('#post-execution-close')) return;
+
+      const heading = Array.from(cardBody.children).find((child) => child.matches('h2.h6'));
+      if (!heading) return;
+
+      const body = document.createElement('div');
+      body.className = 'monthly-edit-card-section-body';
+      body.id = `monthly-edit-card-section-${index + 1}`;
+
+      let cursor = heading.nextElementSibling;
+      while (cursor) {
+        const next = cursor.nextElementSibling;
+        body.appendChild(cursor);
+        cursor = next;
+      }
+
+      const button = makeToggleButton(heading.textContent.trim(), body.id, 'monthly-edit-card-toggle');
+      heading.replaceWith(button);
+      cardBody.appendChild(body);
+      const shouldOpen = !hasOpenedInitialCard;
+      setSectionState(button, body, shouldOpen, false);
+      hasOpenedInitialCard = true;
+      button.addEventListener('click', () => setSectionState(button, body, button.getAttribute('aria-expanded') !== 'true'));
+      cardBody.dataset.monthlyAccordionReady = '1';
+    });
+  };
+
+  const enhancePostExecutionCloseSections = () => {
+    const closeForm = document.querySelector('#post-execution-close form.row');
+    if (!closeForm || closeForm.dataset.monthlyPanelsReady === '1') return;
+
+    const createPanel = (title, panelIndex, beforeElement) => {
+      const panel = document.createElement('div');
+      const body = document.createElement('div');
+      const button = makeToggleButton(title, `monthly-post-close-panel-${panelIndex}`, 'monthly-edit-form-toggle');
+
+      panel.className = 'monthly-edit-form-panel monthly-edit-post-panel col-12';
+      body.className = 'monthly-edit-form-panel-body row g-3';
+      body.id = `monthly-post-close-panel-${panelIndex}`;
+
+      closeForm.insertBefore(panel, beforeElement);
+      panel.appendChild(button);
+      panel.appendChild(body);
+      setSectionState(button, body, panelIndex === 1, false);
+      button.addEventListener('click', () => setSectionState(button, body, button.getAttribute('aria-expanded') !== 'true'));
+
+      return body;
+    };
+
+    let panelIndex = 1;
+    let body = createPanel('بيانات الإغلاق بعد التنفيذ', panelIndex, Array.from(closeForm.children).find((child) => !child.matches('input[type="hidden"]')));
+    let cursor = body.parentElement.nextElementSibling;
+
+    while (cursor) {
+      const next = cursor.nextElementSibling;
+
+      if (isFieldGroupHeading(cursor)) {
+        const heading = cursor.querySelector(':scope > h2.h6, :scope > h3.h6');
+        panelIndex += 1;
+        body = createPanel(heading.textContent.trim(), panelIndex, cursor);
+        cursor.remove();
+      } else if (cursor.matches('.col-12') && cursor.querySelector(':scope > hr')) {
+        cursor.remove();
+      } else if (isSubmitRow(cursor)) {
+        cursor.classList.add('monthly-edit-submit-row');
+      } else if (!cursor.matches('input[type="hidden"]')) {
+        body.appendChild(cursor);
+      }
+
+      cursor = next;
+    }
+
+    closeForm.dataset.monthlyPanelsReady = '1';
+  };
+
+  const enhancePlanningFormSections = () => {
+    const planningForm = page?.classList.contains('monthly-planning-edit-page')
+      ? page.querySelector(':scope > .event-card:not(:first-child) form.row')
+      : null;
+    if (!planningForm || planningForm.dataset.monthlyPanelsReady === '1') return;
+
+    const children = Array.from(planningForm.children);
+    let panelIndex = 0;
+
+    children.forEach((child) => {
+      const heading = isFieldGroupHeading(child) ? child.querySelector(':scope > h2.h6, :scope > h3.h6') : null;
+      if (!heading) return;
+
+      const panel = document.createElement('div');
+      const body = document.createElement('div');
+      const button = makeToggleButton(heading.textContent.trim(), `monthly-edit-form-panel-${panelIndex + 1}`, 'monthly-edit-form-toggle');
+
+      panel.className = 'monthly-edit-form-panel col-12';
+      body.className = 'monthly-edit-form-panel-body row g-3';
+      body.id = `monthly-edit-form-panel-${panelIndex + 1}`;
+
+      child.replaceWith(panel);
+      panel.appendChild(button);
+      panel.appendChild(body);
+
+      let cursor = panel.nextElementSibling;
+      while (cursor) {
+        const next = cursor.nextElementSibling;
+        const cursorHeading = isFieldGroupHeading(cursor) ? cursor.querySelector(':scope > h2.h6, :scope > h3.h6') : null;
+
+        if (cursorHeading || isSubmitRow(cursor)) break;
+
+        if (cursor.matches('hr')) {
+          cursor.remove();
+        } else {
+          body.appendChild(cursor);
+        }
+
+        cursor = next;
+      }
+
+      setSectionState(button, body, panelIndex === 0, false);
+      button.addEventListener('click', () => setSectionState(button, body, button.getAttribute('aria-expanded') !== 'true'));
+      panelIndex += 1;
+    });
+
+    planningForm.dataset.monthlyPanelsReady = '1';
+  };
 
   function renderPartners() {
     if (!partnersContainer) return;
@@ -188,9 +378,13 @@ document.addEventListener('DOMContentLoaded', function () {
   renderTeamGroups();
   renderSupplies();
   toggle();
+  enhanceTopLevelCards();
+  enhancePostExecutionCloseSections();
+  enhancePlanningFormSections();
 
   const params = new URLSearchParams(window.location.search);
   if (params.get('mode') === 'post') {
-    document.getElementById('post-execution-close')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const closeSection = document.getElementById('post-execution-close');
+    closeSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 });
