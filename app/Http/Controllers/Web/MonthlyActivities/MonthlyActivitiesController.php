@@ -477,6 +477,8 @@ class MonthlyActivitiesController extends Controller
             ->values();
 
         $monthlyActivity->executionNeeds()->delete();
+        $monthlyActivity->executionNeedDetails()->delete();
+        $monthlyActivity->executionNeedFollowups()->delete();
 
         foreach ($keys as $key) {
             $needKey = (string) $key;
@@ -484,10 +486,25 @@ class MonthlyActivitiesController extends Controller
             $monthlyActivity->executionNeeds()->create([
                 'need_key' => $needKey,
                 'is_required' => (bool) ($requiredMap[$needKey] ?? false),
-                'payload' => data_get($payload, $needKey),
-                'followup' => $followupRows[$needKey] ?? null,
-                'post_execution' => data_get($postPayload, $needKey),
             ]);
+
+            $payloadRow = data_get($payload, $needKey);
+            if ($payloadRow !== null) {
+                $monthlyActivity->executionNeedDetails()->create([
+                    'need_key' => $needKey,
+                    'payload' => $payloadRow,
+                ]);
+            }
+
+            $followupRow = $followupRows[$needKey] ?? null;
+            $postExecutionRow = data_get($postPayload, $needKey);
+            if ($followupRow !== null || $postExecutionRow !== null) {
+                $monthlyActivity->executionNeedFollowups()->create([
+                    'need_key' => $needKey,
+                    'followup' => $followupRow,
+                    'post_execution' => $postExecutionRow,
+                ]);
+            }
         }
     }
 

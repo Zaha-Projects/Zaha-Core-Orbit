@@ -460,7 +460,17 @@ class MonthlyActivity extends Model
 
     public function executionNeeds()
     {
-        return $this->hasMany(MonthlyActivityExecutionNeed::class);
+        return $this->hasMany(MonthlyActivityNeed::class);
+    }
+
+    public function executionNeedDetails()
+    {
+        return $this->hasMany(MonthlyActivityNeedDetail::class);
+    }
+
+    public function executionNeedFollowups()
+    {
+        return $this->hasMany(MonthlyActivityNeedFollowup::class);
     }
 
     public function attendance()
