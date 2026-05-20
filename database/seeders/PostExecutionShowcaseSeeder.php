@@ -145,7 +145,7 @@ class PostExecutionShowcaseSeeder extends Seeder
 
     protected function executionNeedsFollowup(): array
     {
-        return collect(array_keys(MonthlyActivity::EXECUTION_NEED_DEFINITIONS))
+        return collect(array_keys(MonthlyActivity::executionNeedDefinitions()))
             ->map(fn (string $key): array => [
                 'key' => $key,
                 'status' => 'secured',
