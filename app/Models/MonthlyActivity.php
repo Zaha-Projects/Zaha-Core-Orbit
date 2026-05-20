@@ -10,61 +10,6 @@ class MonthlyActivity extends Model
 {
     use HasFactory;
 
-    public const EXECUTION_NEED_DEFINITIONS = [
-        'volunteers' => [
-            'label' => 'الحاجة للمتطوعين',
-            'owner_role' => 'volunteer_coordinator',
-        ],
-        'official_correspondence' => [
-            'label' => 'الحاجة للمخاطبة الرسمية',
-            'owner_role' => 'branch_coordinator',
-        ],
-        'media_coverage' => [
-            'label' => 'الحاجة لتغطية إعلامية',
-            'owner_role' => 'communication_head',
-        ],
-        'supplies' => [
-            'label' => 'الحاجة للمستلزمات',
-            'owner_role' => null,
-        ],
-        'official_sponsorship' => [
-            'label' => 'الحاجة لرعاية رسمية',
-            'owner_role' => null,
-        ],
-        'external_partners' => [
-            'label' => 'الحاجة لشركاء خارجيين',
-            'owner_role' => null,
-        ],
-        'ceremony_agenda' => [
-            'label' => 'الحاجة لوجود أجندة حفل',
-            'owner_role' => null,
-        ],
-        'transport' => [
-            'label' => 'الحاجة لتأمين مواصلات',
-            'owner_role' => null,
-        ],
-        'maintenance_workers' => [
-            'label' => 'الحاجة لعمال صيانة بالموقع',
-            'owner_role' => null,
-        ],
-        'gifts_shields' => [
-            'label' => 'الحاجة لهدايا ودروع',
-            'owner_role' => null,
-        ],
-        'programs_participation' => [
-            'label' => 'الحاجة لمشاركة البرامج',
-            'owner_role' => null,
-        ],
-        'certificates_thanks' => [
-            'label' => 'الحاجة لشهادات وكتب شكر',
-            'owner_role' => null,
-        ],
-        'invitations' => [
-            'label' => 'الحاجة إلى بطاقات دعوة',
-            'owner_role' => null,
-        ],
-    ];
-
     protected $fillable = [
         'month',
         'day',
@@ -259,14 +204,21 @@ class MonthlyActivity extends Model
 
     public static function executionNeedDefinitions(): array
     {
+        $definitions = (array) config('execution_needs.definitions', []);
         $matrix = self::executionNeedsDecisionMatrix();
 
-        return collect(self::EXECUTION_NEED_DEFINITIONS)
+        return collect($definitions)
             ->map(function (array $definition, string $key) use ($matrix): array {
                 $roles = (array) data_get($matrix, $key.'.roles', []);
+                $defaultRoles = (array) ($definition['default_roles'] ?? []);
+                $roles = $roles === [] ? $defaultRoles : $roles;
+
                 if ($roles !== []) {
                     $definition['owner_role'] = $roles[0];
                     $definition['decision_roles'] = $roles;
+                } else {
+                    $definition['owner_role'] = null;
+                    $definition['decision_roles'] = [];
                 }
 
                 return $definition;
