@@ -28,6 +28,7 @@ return new class extends Migration {
 
             $table->unique(['monthly_activity_id', 'need_key']);
             $table->index('monthly_activity_id');
+            $table->index('need_key');
         });
 
         Schema::create('monthly_activity_need_followups', function (Blueprint $table) {
@@ -40,6 +41,7 @@ return new class extends Migration {
 
             $table->unique(['monthly_activity_id', 'need_key']);
             $table->index('monthly_activity_id');
+            $table->index('need_key');
         });
     }
 

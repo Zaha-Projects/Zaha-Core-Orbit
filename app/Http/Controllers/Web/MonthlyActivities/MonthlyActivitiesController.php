@@ -470,9 +470,12 @@ class MonthlyActivitiesController extends Controller
         $postPayload = (array) ($data['post_execution_payload'] ?? []);
 
         $requiredMap = $monthlyActivity->executionNeedsMap();
+        $configuredNeedKeys = array_keys((array) config('execution_needs.definitions', []));
         $keys = collect(array_keys($requiredMap))
             ->merge(array_keys($followupRows))
             ->merge(array_keys($payload))
+            ->merge($configuredNeedKeys)
+            ->filter(fn ($key) => is_string($key) && $key !== '')
             ->unique()
             ->values();
 
