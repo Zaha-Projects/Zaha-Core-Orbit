@@ -231,11 +231,12 @@ class MonthlyActivity extends Model
         return config('execution_needs.decision_matrix', []);
     }
 
-    public function enabledExecutionNeeds(): array
+
+    public function executionNeedsMap(): array
     {
         $payload = $this->execution_needs_payload ?? [];
 
-        $enabled = [
+        return [
             'volunteers' => (bool) $this->needs_volunteers,
             'official_correspondence' => (bool) $this->needs_official_correspondence,
             'media_coverage' => (bool) $this->needs_media_coverage,
@@ -250,6 +251,11 @@ class MonthlyActivity extends Model
             'certificates_thanks' => (bool) data_get($payload, 'needs_certificates_and_thanks', false),
             'invitations' => (bool) data_get($payload, 'needs_invitations', false),
         ];
+    }
+
+    public function enabledExecutionNeeds(): array
+    {
+        $enabled = $this->executionNeedsMap();
 
         return collect(self::executionNeedDefinitions())
             ->filter(fn (array $definition, string $key) => (bool) ($enabled[$key] ?? false))
