@@ -12,7 +12,11 @@ return new class extends Migration {
             $table->string('unit_key')->unique();
             $table->string('name');
             $table->string('role_name')->nullable();
+            $table->string('color_hex', 7)->nullable();
+            $table->string('icon', 32)->nullable();
             $table->timestamps();
+
+            $table->index('name');
         });
     }
 
@@ -21,4 +25,3 @@ return new class extends Migration {
         Schema::dropIfExists('department_units');
     }
 };
-

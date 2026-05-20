@@ -11,7 +11,11 @@ return new class extends Migration {
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('color_hex', 7)->nullable();
+            $table->string('icon', 32)->nullable();
             $table->timestamps();
+
+            $table->index('name');
         });
     }
 

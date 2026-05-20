@@ -11,6 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->unsignedTinyInteger('month');
             $table->unsignedTinyInteger('day');
+            $table->date('activity_date')->nullable();
             $table->string('title');
             $table->date('proposed_date');
             $table->date('modified_proposed_date')->nullable();
@@ -76,8 +77,14 @@ return new class extends Migration {
             $table->boolean('needs_official_correspondence')->default(false);
             $table->unsignedBigInteger('correspondence_reason_id')->nullable();
             $table->string('official_correspondence_reason')->nullable();
+            $table->string('official_correspondence_target')->nullable();
+            $table->text('official_correspondence_brief')->nullable();
             $table->string('correspondence_status')->default('pending');
             $table->string('status')->default('draft');
+            $table->string('execution_status')->default('executed');
+            $table->unsignedInteger('plan_stage')->default(1);
+            $table->unsignedInteger('plan_version')->default(1);
+            $table->foreignId('previous_version_id')->nullable()->constrained('monthly_activities')->nullOnDelete();
             $table->string('participation_status')->nullable();
             $table->string('plan_type')->nullable();
             $table->string('branch_plan_file')->nullable();
@@ -89,17 +96,41 @@ return new class extends Migration {
             $table->string('liaison_approval_status')->default('pending');
             $table->string('hq_relations_manager_approval_status')->default('pending');
             $table->string('executive_approval_status')->default('pending');
+            $table->boolean('executive_review_required')->default(false);
             $table->timestamp('lock_at')->nullable();
             $table->boolean('is_official')->default(false);
             $table->boolean('is_archived')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->unsignedSmallInteger('archived_year')->nullable();
+            $table->text('cancellation_reason')->nullable();
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('center_id')->constrained()->cascadeOnDelete();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('evaluation_assigned_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('evaluation_assigned_at')->nullable();
+            $table->text('evaluation_reason')->nullable();
+            $table->unsignedInteger('expected_attendance_from')->nullable();
+            $table->unsignedInteger('expected_attendance_to')->nullable();
+            $table->string('outside_contact_number')->nullable();
+            $table->string('external_liaison_name')->nullable();
+            $table->string('external_liaison_phone')->nullable();
+            $table->string('volunteer_age_range')->nullable();
+            $table->string('volunteer_gender')->nullable();
+            $table->text('volunteer_tasks_summary')->nullable();
+            $table->json('execution_needs_followup')->nullable();
+            $table->json('execution_needs_payload')->nullable();
+            $table->json('post_execution_payload')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
             $table->index(['is_archived', 'archived_year']);
+            $table->index(['month', 'day']);
+            $table->index('activity_date');
+            $table->index('plan_version');
+            $table->index('previous_version_id');
+            $table->index('agenda_event_id');
+            $table->index('branch_id');
+            $table->index('status');
         });
     }
 

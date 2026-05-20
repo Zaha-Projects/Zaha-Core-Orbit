@@ -11,9 +11,15 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();
             $table->string('item_name');
+            $table->unsignedInteger('quantity')->default(1);
             $table->string('status')->default('available');
             $table->boolean('available')->default(false);
+            $table->string('provider_type')->nullable();
+            $table->string('provider_name')->nullable();
             $table->timestamps();
+
+            $table->index('monthly_activity_id');
+            $table->index('status');
         });
     }
 
