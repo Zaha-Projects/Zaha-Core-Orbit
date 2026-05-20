@@ -18,6 +18,11 @@ return new class extends Migration {
             $table->timestamp('paid_at');
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('paid_at');
+            $table->index('created_by');
+            $table->index(['payable_type', 'payable_id']);
         });
     }
 

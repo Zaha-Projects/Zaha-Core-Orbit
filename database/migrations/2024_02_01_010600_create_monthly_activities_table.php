@@ -104,7 +104,6 @@ return new class extends Migration {
             $table->unsignedSmallInteger('archived_year')->nullable();
             $table->text('cancellation_reason')->nullable();
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('center_id')->constrained()->cascadeOnDelete();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->foreignId('evaluation_assigned_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('evaluation_assigned_at')->nullable();
@@ -134,6 +133,7 @@ return new class extends Migration {
             $table->index('branch_id');
             $table->index('status');
             $table->index(['branch_id', 'proposed_date']);
+            $table->index('created_by');
         });
     }
 

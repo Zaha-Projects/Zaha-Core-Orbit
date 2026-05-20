@@ -24,12 +24,10 @@ return new class extends Migration {
             $table->text('discount_reason')->nullable();
             $table->string('status')->default('pending');
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('center_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
 
             $table->index('branch_id');
-            $table->index('center_id');
             $table->index('booking_date');
             $table->index('status');
         });

@@ -22,7 +22,7 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->string('status')->default('active');
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('center_id')->nullable()->constrained()->nullOnDelete();
+            $table->boolean('auto_approve_workflow_steps')->default(false);
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

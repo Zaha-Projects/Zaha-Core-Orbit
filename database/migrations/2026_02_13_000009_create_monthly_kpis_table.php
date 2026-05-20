@@ -12,7 +12,6 @@ return new class extends Migration {
             $table->unsignedSmallInteger('year');
             $table->unsignedTinyInteger('month');
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('center_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedInteger('planned_activities_count')->default(0);
             $table->unsignedInteger('unplanned_activities_count')->default(0);
             $table->unsignedTinyInteger('modification_rate_percent')->nullable();
@@ -24,7 +23,7 @@ return new class extends Migration {
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->unique(['year', 'month', 'branch_id', 'center_id'], 'monthly_kpis_unique_period_scope');
+            $table->unique(['year', 'month', 'branch_id'], 'monthly_kpis_unique_period_scope');
             $table->index(['year', 'month']);
             $table->index('branch_id');
             $table->index('created_by');

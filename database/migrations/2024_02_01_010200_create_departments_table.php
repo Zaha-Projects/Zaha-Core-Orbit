@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->string('color_hex', 7)->nullable();
             $table->string('icon', 32)->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('name');
         });
