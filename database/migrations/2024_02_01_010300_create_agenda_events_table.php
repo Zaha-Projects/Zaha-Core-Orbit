@@ -37,8 +37,10 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index('event_date');
+            $table->index(['month', 'day']);
             $table->index('event_type');
             $table->index('plan_type');
+            $table->index('status');
             $table->index('department_id');
             $table->index('owner_department_id');
             $table->index(['is_archived', 'archived_year']);

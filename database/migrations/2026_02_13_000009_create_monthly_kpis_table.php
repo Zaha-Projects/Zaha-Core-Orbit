@@ -25,6 +25,9 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->unique(['year', 'month', 'branch_id', 'center_id'], 'monthly_kpis_unique_period_scope');
+            $table->index(['year', 'month']);
+            $table->index('branch_id');
+            $table->index('created_by');
         });
     }
 

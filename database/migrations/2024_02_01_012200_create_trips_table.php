@@ -19,6 +19,12 @@ return new class extends Migration {
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('trip_date');
+            $table->index('status');
+            $table->index('driver_id');
+            $table->index('vehicle_id');
+            $table->index('created_by');
         });
     }
 

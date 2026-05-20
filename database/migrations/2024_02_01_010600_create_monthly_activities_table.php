@@ -126,11 +126,14 @@ return new class extends Migration {
             $table->index(['is_archived', 'archived_year']);
             $table->index(['month', 'day']);
             $table->index('activity_date');
+            $table->index('proposed_date');
+            $table->index('actual_date');
             $table->index('plan_version');
             $table->index('previous_version_id');
             $table->index('agenda_event_id');
             $table->index('branch_id');
             $table->index('status');
+            $table->index(['branch_id', 'proposed_date']);
         });
     }
 
