@@ -15,6 +15,9 @@ return new class extends Migration {
             $table->unsignedBigInteger('target_id');
             $table->boolean('is_participant')->default(false);
             $table->timestamps();
+
+            $table->index('agenda_event_id');
+            $table->index(['target_type', 'target_id']);
         });
     }
 

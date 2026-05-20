@@ -18,6 +18,8 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->unique(['monthly_activity_id', 'member_email']);
+            $table->index('monthly_activity_id');
+            $table->index('user_id');
         });
     }
 

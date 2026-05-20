@@ -22,6 +22,12 @@ return new class extends Migration {
             $table->timestamp('closed_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('branch_id');
+            $table->index('center_id');
+            $table->index('created_by');
+            $table->index('logged_at');
+            $table->index('status');
         });
     }
 

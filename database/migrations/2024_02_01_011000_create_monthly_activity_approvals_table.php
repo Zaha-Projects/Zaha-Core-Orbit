@@ -18,6 +18,10 @@ return new class extends Migration {
             $table->foreignId('approved_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
+
+            $table->index('monthly_activity_id');
+            $table->index('approved_by');
+            $table->index(['step', 'decision']);
         });
     }
 
