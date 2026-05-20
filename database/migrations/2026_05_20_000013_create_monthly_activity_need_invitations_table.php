@@ -17,9 +17,9 @@ return new class extends Migration {
             $table->json('post_execution')->nullable();
             $table->timestamps();
 
-            $table->unique('monthly_activity_id');
-            $table->index('monthly_activity_id');
-            $table->index('is_required');
+            $table->unique('monthly_activity_id', 'uq_man_000013_ma');
+            $table->index('monthly_activity_id', 'idx_man_000013_ma');
+            $table->index('is_required', 'idx_man_000013_req');
         });
     }
 
