@@ -468,46 +468,31 @@ class MonthlyActivitiesController extends Controller
             ->mapWithKeys(fn ($row, $key) => [(string) $key => (array) $row])
             ->all();
         $postPayload = (array) ($data['post_execution_payload'] ?? []);
-
         $requiredMap = $monthlyActivity->executionNeedsMap();
-        $configuredNeedKeys = array_keys((array) config('execution_needs.definitions', []));
-        $keys = collect(array_keys($requiredMap))
-            ->merge(array_keys($followupRows))
-            ->merge(array_keys($payload))
-            ->merge($configuredNeedKeys)
-            ->filter(fn ($key) => is_string($key) && $key !== '')
-            ->unique()
-            ->values();
 
-        $monthlyActivity->executionNeeds()->delete();
-        $monthlyActivity->executionNeedDetails()->delete();
-        $monthlyActivity->executionNeedFollowups()->delete();
+        $modelMap = [
+            'volunteers' => \App\Models\MonthlyActivityNeedVolunteers::class,
+            'official_correspondence' => \App\Models\MonthlyActivityNeedOfficialCorrespondence::class,
+            'media_coverage' => \App\Models\MonthlyActivityNeedMediaCoverage::class,
+            'supplies' => \App\Models\MonthlyActivityNeedSupplies::class,
+            'official_sponsorship' => \App\Models\MonthlyActivityNeedOfficialSponsorship::class,
+            'external_partners' => \App\Models\MonthlyActivityNeedExternalPartners::class,
+            'ceremony_agenda' => \App\Models\MonthlyActivityNeedCeremonyAgenda::class,
+            'transport' => \App\Models\MonthlyActivityNeedTransport::class,
+            'maintenance_workers' => \App\Models\MonthlyActivityNeedMaintenanceWorkers::class,
+            'gifts_shields' => \App\Models\MonthlyActivityNeedGiftsShields::class,
+            'programs_participation' => \App\Models\MonthlyActivityNeedProgramsParticipation::class,
+            'certificates_thanks' => \App\Models\MonthlyActivityNeedCertificatesThanks::class,
+            'invitations' => \App\Models\MonthlyActivityNeedInvitations::class,
+        ];
 
-        foreach ($keys as $key) {
-            $needKey = (string) $key;
-
-            $monthlyActivity->executionNeeds()->create([
-                'need_key' => $needKey,
-                'is_required' => (bool) ($requiredMap[$needKey] ?? false),
-            ]);
-
-            $payloadRow = data_get($payload, $needKey);
-            if ($payloadRow !== null) {
-                $monthlyActivity->executionNeedDetails()->create([
-                    'need_key' => $needKey,
-                    'payload' => $payloadRow,
-                ]);
-            }
-
-            $followupRow = $followupRows[$needKey] ?? null;
-            $postExecutionRow = data_get($postPayload, $needKey);
-            if ($followupRow !== null || $postExecutionRow !== null) {
-                $monthlyActivity->executionNeedFollowups()->create([
-                    'need_key' => $needKey,
-                    'followup' => $followupRow,
-                    'post_execution' => $postExecutionRow,
-                ]);
-            }
+        foreach ($modelMap as $needKey => $modelClass) {
+            $record = $modelClass::firstOrNew(['monthly_activity_id' => $monthlyActivity->id]);
+            $record->is_required = (bool) ($requiredMap[$needKey] ?? false);
+            $record->payload = data_get($payload, $needKey);
+            $record->followup = $followupRows[$needKey] ?? null;
+            $record->post_execution = data_get($postPayload, $needKey);
+            $record->save();
         }
     }
 

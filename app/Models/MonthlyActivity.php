@@ -409,20 +409,69 @@ class MonthlyActivity extends Model
     {
         return $this->hasMany(MonthlyActivityPartner::class)->orderBy('sort_order');
     }
-
-    public function executionNeeds()
+    public function executionNeedVolunteers()
     {
-        return $this->hasMany(MonthlyActivityNeed::class);
+        return $this->hasOne(MonthlyActivityNeedVolunteers::class, 'monthly_activity_id');
     }
 
-    public function executionNeedDetails()
+    public function executionNeedOfficialCorrespondence()
     {
-        return $this->hasMany(MonthlyActivityNeedDetail::class);
+        return $this->hasOne(MonthlyActivityNeedOfficialCorrespondence::class, 'monthly_activity_id');
     }
 
-    public function executionNeedFollowups()
+    public function executionNeedMediaCoverage()
     {
-        return $this->hasMany(MonthlyActivityNeedFollowup::class);
+        return $this->hasOne(MonthlyActivityNeedMediaCoverage::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedSupplies()
+    {
+        return $this->hasOne(MonthlyActivityNeedSupplies::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedOfficialSponsorship()
+    {
+        return $this->hasOne(MonthlyActivityNeedOfficialSponsorship::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedExternalPartners()
+    {
+        return $this->hasOne(MonthlyActivityNeedExternalPartners::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedCeremonyAgenda()
+    {
+        return $this->hasOne(MonthlyActivityNeedCeremonyAgenda::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedTransport()
+    {
+        return $this->hasOne(MonthlyActivityNeedTransport::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedMaintenanceWorkers()
+    {
+        return $this->hasOne(MonthlyActivityNeedMaintenanceWorkers::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedGiftsShields()
+    {
+        return $this->hasOne(MonthlyActivityNeedGiftsShields::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedProgramsParticipation()
+    {
+        return $this->hasOne(MonthlyActivityNeedProgramsParticipation::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedCertificatesThanks()
+    {
+        return $this->hasOne(MonthlyActivityNeedCertificatesThanks::class, 'monthly_activity_id');
+    }
+
+    public function executionNeedInvitations()
+    {
+        return $this->hasOne(MonthlyActivityNeedInvitations::class, 'monthly_activity_id');
     }
 
     public function attendance()
