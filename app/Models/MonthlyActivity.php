@@ -458,6 +458,11 @@ class MonthlyActivity extends Model
         return $this->hasMany(MonthlyActivityPartner::class)->orderBy('sort_order');
     }
 
+    public function executionNeeds()
+    {
+        return $this->hasMany(MonthlyActivityExecutionNeed::class);
+    }
+
     public function attendance()
     {
         return $this->hasOne(ActivityAttendance::class);

@@ -461,6 +461,36 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+    protected function syncExecutionNeedsTable(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        $payload = (array) ($data['execution_needs_payload'] ?? []);
+        $followupRows = collect($data['execution_needs_followup'] ?? [])
+            ->mapWithKeys(fn ($row, $key) => [(string) $key => (array) $row])
+            ->all();
+        $postPayload = (array) ($data['post_execution_payload'] ?? []);
+
+        $requiredMap = $monthlyActivity->executionNeedsMap();
+        $keys = collect(array_keys($requiredMap))
+            ->merge(array_keys($followupRows))
+            ->merge(array_keys($payload))
+            ->unique()
+            ->values();
+
+        $monthlyActivity->executionNeeds()->delete();
+
+        foreach ($keys as $key) {
+            $needKey = (string) $key;
+
+            $monthlyActivity->executionNeeds()->create([
+                'need_key' => $needKey,
+                'is_required' => (bool) ($requiredMap[$needKey] ?? false),
+                'payload' => data_get($payload, $needKey),
+                'followup' => $followupRows[$needKey] ?? null,
+                'post_execution' => data_get($postPayload, $needKey),
+            ]);
+        }
+    }
+
     protected function logWorkflowAction(string $actionType, MonthlyActivity $monthlyActivity, Request $request, ?string $status = null, ?array $meta = null): void
     {
         WorkflowActionLog::create([
@@ -2215,6 +2245,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
+        $this->syncExecutionNeedsTable($monthlyActivity, $data);
         foreach (($data['team_groups'] ?? []) as $groupIndex => $group) {
             $teamName = trim((string) ($group['team_name'] ?? '')) ?: 'فريق '.((int) $groupIndex + 1);
             foreach (($group['members'] ?? []) as $member) {
@@ -3088,6 +3119,7 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $this->syncSponsorsAndPartners($activityToSave, $data);
+        $this->syncExecutionNeedsTable($activityToSave, $data);
         $this->notifyExecutionNeedOwners($activityToSave);
         if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($activityToSave)) {
             $this->syncEvaluationData($activityToSave, $data, $request->user()->id);
@@ -3199,6 +3231,11 @@ class MonthlyActivitiesController extends Controller
             'status' => 'closed',
             'execution_status' => 'executed',
             'is_official' => true,
+        ]);
+        $this->syncExecutionNeedsTable($monthlyActivity->fresh(), [
+            'execution_needs_payload' => $monthlyActivity->execution_needs_payload,
+            'execution_needs_followup' => $executionNeedsFollowup,
+            'post_execution_payload' => $postExecutionPayload,
         ]);
 
         if ($evaluationOfficer) {
