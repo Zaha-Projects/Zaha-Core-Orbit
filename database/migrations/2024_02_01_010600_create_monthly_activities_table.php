@@ -127,6 +127,10 @@ return new class extends Migration {
             $table->index('status');
             $table->index(['branch_id', 'proposed_date']);
             $table->index('created_by');
+            $table->index('relations_officer_approval_status');
+            $table->index('relations_manager_approval_status');
+            $table->index('executive_approval_status');
+            $table->index('lifecycle_status');
         });
     }
 

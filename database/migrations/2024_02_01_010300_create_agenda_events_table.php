@@ -43,6 +43,8 @@ return new class extends Migration {
             $table->index('status');
             $table->index('department_id');
             $table->index('owner_department_id');
+            $table->index('relations_approval_status');
+            $table->index('executive_approval_status');
             $table->index(['is_archived', 'archived_year']);
         });
     }
