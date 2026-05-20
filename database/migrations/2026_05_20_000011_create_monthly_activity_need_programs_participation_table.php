@@ -9,7 +9,8 @@ return new class extends Migration {
     {
         Schema::create('monthly_activity_need_programs_participation', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('monthly_activity_id');
+            $table->foreign('monthly_activity_id', 'fk_man_000011_ma')->references('id')->on('monthly_activities')->cascadeOnDelete();
             $table->boolean('is_required')->default(false);
             $table->json('payload')->nullable();
             $table->json('followup')->nullable();
