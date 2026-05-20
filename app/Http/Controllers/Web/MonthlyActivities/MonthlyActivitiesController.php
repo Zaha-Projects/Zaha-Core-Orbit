@@ -461,6 +461,44 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+    protected function syncTeamMembers(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        $monthlyActivity->team()->delete();
+
+        foreach (($data['team_groups'] ?? []) as $groupIndex => $group) {
+            $teamName = trim((string) ($group['team_name'] ?? '')) ?: 'فريق '.((int) $groupIndex + 1);
+            foreach (($group['members'] ?? []) as $member) {
+                $memberName = trim((string) ($member['member_name'] ?? ''));
+                if ($memberName === '') {
+                    continue;
+                }
+
+                MonthlyActivityTeam::create([
+                    'monthly_activity_id' => $monthlyActivity->id,
+                    'team_name' => $teamName,
+                    'member_name' => $memberName,
+                    'member_email' => null,
+                    'role_desc' => $member['role_desc'] ?? null,
+                ]);
+            }
+        }
+
+        foreach (($data['team_members'] ?? []) as $member) {
+            $memberName = trim((string) ($member['member_name'] ?? ''));
+            if ($memberName === '') {
+                continue;
+            }
+
+            MonthlyActivityTeam::create([
+                'monthly_activity_id' => $monthlyActivity->id,
+                'team_name' => $member['team_name'] ?? null,
+                'member_name' => $memberName,
+                'member_email' => $member['member_email'] ?? null,
+                'role_desc' => $member['role_desc'] ?? null,
+            ]);
+        }
+    }
+
     protected function syncExecutionNeedsTable(MonthlyActivity $monthlyActivity, array $data): void
     {
         $payload = (array) ($data['execution_needs_payload'] ?? []);
@@ -2251,35 +2289,7 @@ class MonthlyActivitiesController extends Controller
 
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
         $this->syncExecutionNeedsTable($monthlyActivity, $data);
-        foreach (($data['team_groups'] ?? []) as $groupIndex => $group) {
-            $teamName = trim((string) ($group['team_name'] ?? '')) ?: 'فريق '.((int) $groupIndex + 1);
-            foreach (($group['members'] ?? []) as $member) {
-                $memberName = trim((string) ($member['member_name'] ?? ''));
-                if ($memberName === '') {
-                    continue;
-                }
-                MonthlyActivityTeam::create([
-                    'monthly_activity_id' => $monthlyActivity->id,
-                    'team_name' => $teamName,
-                    'member_name' => $memberName,
-                    'member_email' => null,
-                    'role_desc' => $member['role_desc'] ?? null,
-                ]);
-            }
-        }
-        foreach (($data['team_members'] ?? []) as $member) {
-            $memberName = trim((string) ($member['member_name'] ?? ''));
-            if ($memberName === '') {
-                continue;
-            }
-            MonthlyActivityTeam::create([
-                'monthly_activity_id' => $monthlyActivity->id,
-                'team_name' => $member['team_name'] ?? null,
-                'member_name' => $memberName,
-                'member_email' => $member['member_email'] ?? null,
-                'role_desc' => $member['role_desc'] ?? null,
-            ]);
-        }
+        $this->syncTeamMembers($monthlyActivity, $data);
         foreach (($data['supplies'] ?? []) as $supply) {
             $itemName = trim((string) ($supply['item_name'] ?? ''));
             if ($itemName === '') {
@@ -3125,6 +3135,7 @@ class MonthlyActivitiesController extends Controller
 
         $this->syncSponsorsAndPartners($activityToSave, $data);
         $this->syncExecutionNeedsTable($activityToSave, $data);
+        $this->syncTeamMembers($activityToSave, $data);
         $this->notifyExecutionNeedOwners($activityToSave);
         if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($activityToSave)) {
             $this->syncEvaluationData($activityToSave, $data, $request->user()->id);
