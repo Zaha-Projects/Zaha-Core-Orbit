@@ -532,6 +532,45 @@ class MonthlyActivitiesController extends Controller
             $record->post_execution = data_get($postPayload, $needKey);
             $record->save();
         }
+
+        // Keep monthly_activities snapshots synchronized from normalized need tables.
+        // The per-need tables are the source of truth to avoid drift/duplication.
+        $this->refreshExecutionNeedSnapshots($monthlyActivity, $modelMap);
+    }
+
+    protected function refreshExecutionNeedSnapshots(MonthlyActivity $monthlyActivity, array $modelMap): void
+    {
+        $payload = [];
+        $followup = [];
+        $postExecution = [];
+
+        foreach ($modelMap as $needKey => $modelClass) {
+            $record = $modelClass::query()
+                ->where('monthly_activity_id', $monthlyActivity->id)
+                ->first();
+
+            if (! $record) {
+                continue;
+            }
+
+            if ($record->payload !== null) {
+                $payload[$needKey] = $record->payload;
+            }
+
+            if ($record->followup !== null) {
+                $followup[$needKey] = $record->followup;
+            }
+
+            if ($record->post_execution !== null) {
+                $postExecution[$needKey] = $record->post_execution;
+            }
+        }
+
+        $monthlyActivity->forceFill([
+            'execution_needs_payload' => $payload === [] ? null : $payload,
+            'execution_needs_followup' => $followup === [] ? null : array_values($followup),
+            'post_execution_payload' => $postExecution === [] ? null : $postExecution,
+        ])->saveQuietly();
     }
 
     protected function logWorkflowAction(string $actionType, MonthlyActivity $monthlyActivity, Request $request, ?string $status = null, ?array $meta = null): void
