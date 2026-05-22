@@ -1303,6 +1303,15 @@ class MonthlyActivitiesController extends Controller
         ];
     }
 
+    protected function expectedAttendanceRangeRules(): array
+    {
+        return [
+            'expected_attendance' => ['nullable', 'integer', 'min:0'],
+            'expected_attendance_from' => ['nullable', 'integer', 'min:0', 'required_without:expected_attendance'],
+            'expected_attendance_to' => ['nullable', 'integer', 'min:0', 'required_with:expected_attendance_from', 'gte:expected_attendance_from'],
+        ];
+    }
+
     protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
     {
         $query = AgendaEvent::query()->orderByDesc('event_date')->orderByDesc('id');
