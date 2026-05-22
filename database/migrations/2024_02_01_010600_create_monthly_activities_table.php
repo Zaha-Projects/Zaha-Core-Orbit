@@ -103,12 +103,6 @@ return new class extends Migration {
             $table->text('evaluation_reason')->nullable();
             $table->unsignedInteger('expected_attendance_from')->nullable();
             $table->unsignedInteger('expected_attendance_to')->nullable();
-            $table->string('outside_contact_number')->nullable();
-            $table->string('external_liaison_name')->nullable();
-            $table->string('external_liaison_phone')->nullable();
-            $table->string('volunteer_age_range')->nullable();
-            $table->string('volunteer_gender')->nullable();
-            $table->text('volunteer_tasks_summary')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

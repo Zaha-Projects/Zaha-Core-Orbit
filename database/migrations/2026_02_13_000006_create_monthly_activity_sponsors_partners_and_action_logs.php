@@ -28,6 +28,17 @@ return new class extends Migration {
             $table->unique(['monthly_activity_id', 'name']);
         });
 
+        Schema::create('monthly_activity_external_locations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();
+            $table->string('outside_contact_number')->nullable();
+            $table->string('external_liaison_name')->nullable();
+            $table->string('external_liaison_phone')->nullable();
+            $table->timestamps();
+
+            $table->unique('monthly_activity_id');
+        });
+
         Schema::create('workflow_action_logs', function (Blueprint $table) {
             $table->id();
             $table->string('module');
@@ -48,6 +59,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::dropIfExists('workflow_action_logs');
+        Schema::dropIfExists('monthly_activity_external_locations');
         Schema::dropIfExists('monthly_activity_partners');
         Schema::dropIfExists('monthly_activity_sponsors');
     }
