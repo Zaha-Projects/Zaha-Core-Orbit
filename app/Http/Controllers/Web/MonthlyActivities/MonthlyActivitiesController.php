@@ -1022,14 +1022,44 @@ class MonthlyActivitiesController extends Controller
             ->all();
     }
 
+    protected function existingExecutionNeedsFollowupRows(MonthlyActivity $monthlyActivity): array
+    {
+        $rows = collect($monthlyActivity->enabledExecutionNeeds())
+            ->mapWithKeys(function (array $definition, string $needKey) use ($monthlyActivity): array {
+                $relationName = (string) ($definition['relation'] ?? '');
+                if ($relationName === '' || ! method_exists($monthlyActivity, $relationName)) {
+                    return [];
+                }
+
+                $record = $monthlyActivity->relationLoaded($relationName)
+                    ? $monthlyActivity->getRelation($relationName)
+                    : $monthlyActivity->{$relationName}()->first();
+
+                if (! $record || ! is_array($record->followup)) {
+                    return [];
+                }
+
+                return [$needKey => array_merge($record->followup, ['key' => $needKey])];
+            })
+            ->all();
+
+        if ($rows !== []) {
+            return array_values($rows);
+        }
+
+        return collect($monthlyActivity->execution_needs_followup ?? [])
+            ->filter(fn ($row) => is_array($row) && filled($row['key'] ?? null))
+            ->values()
+            ->all();
+    }
+
     protected function mergeExecutionNeedsFollowupRows(MonthlyActivity $monthlyActivity, array $incomingRows): array
     {
         $incomingByKey = collect($incomingRows)
             ->filter(fn (array $row) => filled($row['key'] ?? null))
             ->keyBy(fn (array $row) => (string) $row['key']);
 
-        $existingByKey = collect($monthlyActivity->execution_needs_followup ?? [])
-            ->filter(fn ($row) => is_array($row) && filled($row['key'] ?? null))
+        $existingByKey = collect($this->existingExecutionNeedsFollowupRows($monthlyActivity))
             ->keyBy(fn (array $row) => (string) $row['key']);
 
         foreach ($incomingByKey as $key => $row) {
@@ -1122,8 +1152,7 @@ class MonthlyActivitiesController extends Controller
 
         abort_unless($incomingByKey->isNotEmpty(), 403);
 
-        $existingByKey = collect($monthlyActivity->execution_needs_followup ?? [])
-            ->filter(fn ($row) => is_array($row) && filled($row['key'] ?? null))
+        $existingByKey = collect($this->existingExecutionNeedsFollowupRows($monthlyActivity))
             ->keyBy(fn (array $row) => (string) $row['key']);
 
         foreach ($incomingByKey as $key => $row) {
@@ -3263,7 +3292,7 @@ class MonthlyActivitiesController extends Controller
         $postExecutionPayload = $this->normalizePostExecutionPayload($activityForPostExecution, $data['post_execution'] ?? []);
         $executionNeedsFollowup = array_key_exists('execution_needs_followup', $data)
             ? $this->mergeExecutionNeedsFollowupRows($activityForPostExecution, $data['execution_needs_followup'] ?? [])
-            : ($monthlyActivity->execution_needs_followup ?? null);
+            : ($this->existingExecutionNeedsFollowupRows($monthlyActivity) ?: null);
 
                 $evaluationOfficer = User::query()
             ->role('evaluation_officer')
