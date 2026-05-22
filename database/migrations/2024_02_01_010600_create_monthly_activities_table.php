@@ -109,9 +109,6 @@ return new class extends Migration {
             $table->string('volunteer_age_range')->nullable();
             $table->string('volunteer_gender')->nullable();
             $table->text('volunteer_tasks_summary')->nullable();
-            $table->json('execution_needs_followup')->nullable();
-            $table->json('execution_needs_payload')->nullable();
-            $table->json('post_execution_payload')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
