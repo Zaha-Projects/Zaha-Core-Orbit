@@ -46,7 +46,6 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'actual_attendance' => 74,
                 'attendance_notes' => 'Attendance was strong with minor late arrivals.',
                 'has_sponsor' => true,
-                'sponsor_name_title' => 'Zarqa Community Sponsor',
                 'has_partners' => true,
                 'needs_official_correspondence' => true,
                 'needs_media_coverage' => true,
@@ -104,6 +103,13 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'brief' => 'Coordinate venue access and public attendance.',
             ]
         );
+
+        $activity->sponsors()->delete();
+        $activity->sponsors()->create([
+            'name' => 'Zarqa Community Sponsor',
+            'title' => 'Official Sponsor',
+            'is_official' => true,
+        ]);
 
         $activity->supplies()->delete();
         foreach (['Projector and screen', 'Sound system', 'Printed invitations'] as $item) {

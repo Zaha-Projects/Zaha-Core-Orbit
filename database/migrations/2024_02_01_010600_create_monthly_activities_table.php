@@ -26,7 +26,6 @@ return new class extends Migration {
             $table->string('responsible_party')->nullable();
             $table->text('description')->nullable();
             $table->boolean('has_sponsor')->default(false);
-            $table->string('sponsor_name_title')->nullable();
             $table->boolean('has_partners')->default(false);
             $table->boolean('has_official_attendance')->default(false);
             $table->text('official_attendance_details')->nullable();

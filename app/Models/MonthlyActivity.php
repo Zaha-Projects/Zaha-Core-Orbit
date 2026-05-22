@@ -83,7 +83,6 @@ class MonthlyActivity extends Model
         'agenda_event_id',
         'description',
         'has_sponsor',
-        'sponsor_name_title',
         'has_partners',
         'has_official_attendance',
         'official_attendance_details',
