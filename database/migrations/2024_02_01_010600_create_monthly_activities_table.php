@@ -28,8 +28,6 @@ return new class extends Migration {
             $table->boolean('has_partners')->default(false);
             $table->boolean('has_official_attendance')->default(false);
             $table->text('official_attendance_details')->nullable();
-            $table->boolean('needs_official_letters')->default(false);
-            $table->string('letter_purpose')->nullable();
             $table->string('location_type');
             $table->string('location_details')->nullable();
             $table->string('internal_location')->nullable();
@@ -65,7 +63,6 @@ return new class extends Migration {
             $table->boolean('is_program_related')->default(false);
             $table->boolean('needs_official_correspondence')->default(false);
             $table->unsignedBigInteger('correspondence_reason_id')->nullable();
-            $table->string('official_correspondence_reason')->nullable();
             $table->string('correspondence_status')->default('pending');
             $table->string('status')->default('draft');
             $table->string('participation_status')->nullable();

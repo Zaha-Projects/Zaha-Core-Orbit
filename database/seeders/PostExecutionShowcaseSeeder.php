@@ -49,9 +49,6 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'sponsor_name_title' => 'Zarqa Community Sponsor',
                 'has_partners' => true,
                 'needs_official_correspondence' => true,
-                'official_correspondence_reason' => 'Official coordination letter',
-                'official_correspondence_target' => 'Zarqa Municipality',
-                'official_correspondence_brief' => 'Coordinate venue access and public attendance.',
                 'needs_media_coverage' => true,
                 'media_coverage_notes' => 'Media team covered opening, activities, and closing remarks.',
                 'requires_programs' => true,
@@ -93,6 +90,18 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'volunteer_tasks_summary' => 'Registration, ushering, and activity support.',
                 'volunteers_required' => true,
                 'volunteers_count' => 8,
+            ]
+        );
+
+        $activity->officialCorrespondence()->updateOrCreate(
+            [
+                'correspondable_type' => \App\Models\MonthlyActivity::class,
+                'correspondable_id' => $activity->id,
+            ],
+            [
+                'reason' => 'Official coordination letter',
+                'target' => 'Zarqa Municipality',
+                'brief' => 'Coordinate venue access and public attendance.',
             ]
         );
 

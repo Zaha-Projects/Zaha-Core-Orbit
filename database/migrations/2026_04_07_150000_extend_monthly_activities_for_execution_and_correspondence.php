@@ -8,7 +8,6 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('monthly_activities', function (Blueprint $table) {
-            $table->string('official_correspondence_target')->nullable()->after('official_correspondence_reason');
             $table->string('outside_contact_number')->nullable()->after('outside_google_maps_url');
         });
 
@@ -25,7 +24,7 @@ return new class extends Migration {
         });
 
         Schema::table('monthly_activities', function (Blueprint $table) {
-            $table->dropColumn(['official_correspondence_target', 'outside_contact_number']);
+            $table->dropColumn(['outside_contact_number']);
         });
     }
 };

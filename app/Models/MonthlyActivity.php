@@ -87,14 +87,9 @@ class MonthlyActivity extends Model
         'has_partners',
         'has_official_attendance',
         'official_attendance_details',
-        'needs_official_letters',
         'needs_official_correspondence',
         'correspondence_reason_id',
         'correspondence_status',
-        'official_correspondence_reason',
-        'official_correspondence_target',
-        'official_correspondence_brief',
-        'letter_purpose',
         'location_type',
         'location_details',
 
@@ -170,7 +165,6 @@ class MonthlyActivity extends Model
         'is_in_agenda' => 'boolean',
         'is_from_agenda' => 'boolean',
         'has_official_attendance' => 'boolean',
-        'needs_official_letters' => 'boolean',
         'needs_official_correspondence' => 'boolean',
         'relations_approval_on_reschedule' => 'boolean',
         'has_sponsor' => 'boolean',
@@ -238,6 +232,21 @@ class MonthlyActivity extends Model
     public function getVolunteersCountAttribute(): ?int
     {
         return $this->getRelationValue('volunteerNeed')?->volunteers_count;
+    }
+
+    public function getOfficialCorrespondenceReasonAttribute(): ?string
+    {
+        return $this->getRelationValue('officialCorrespondence')?->reason;
+    }
+
+    public function getOfficialCorrespondenceTargetAttribute(): ?string
+    {
+        return $this->getRelationValue('officialCorrespondence')?->target;
+    }
+
+    public function getOfficialCorrespondenceBriefAttribute(): ?string
+    {
+        return $this->getRelationValue('officialCorrespondence')?->brief;
     }
 
 
@@ -446,6 +455,11 @@ class MonthlyActivity extends Model
     public function volunteerNeed()
     {
         return $this->hasOne(MonthlyActivityVolunteerNeed::class);
+    }
+
+    public function officialCorrespondence()
+    {
+        return $this->morphOne(OfficialCorrespondence::class, 'correspondable');
     }
 
     public function supplies()

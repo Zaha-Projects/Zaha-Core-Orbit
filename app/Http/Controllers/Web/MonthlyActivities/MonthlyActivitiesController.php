@@ -651,6 +651,26 @@ class MonthlyActivitiesController extends Controller
         );
     }
 
+    protected function syncOfficialCorrespondence(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
+            $monthlyActivity->officialCorrespondence()->delete();
+            return;
+        }
+
+        $monthlyActivity->officialCorrespondence()->updateOrCreate(
+            [
+                'correspondable_type' => MonthlyActivity::class,
+                'correspondable_id' => $monthlyActivity->id,
+            ],
+            [
+                'reason' => $data['official_correspondence_reason'] ?? null,
+                'target' => $data['official_correspondence_target'] ?? null,
+                'brief' => $data['official_correspondence_brief'] ?? null,
+            ]
+        );
+    }
+
     protected function flashCreatePrefill(Request $request): void
     {
         if ($request->session()->hasOldInput()) {
@@ -2184,12 +2204,7 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
-            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
-            'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
-            'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -2213,6 +2228,7 @@ class MonthlyActivitiesController extends Controller
 
         $workflowService->initializeDynamicStatuses($monthlyActivity);
         $this->syncVolunteerNeed($monthlyActivity, $data);
+        $this->syncOfficialCorrespondence($monthlyActivity, $data);
         $this->syncTargetGroups($monthlyActivity, $data);
         Log::info('monthly_activity.created', [
             'monthly_activity_id' => $monthlyActivity->id,
@@ -2832,12 +2848,7 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
             'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
-            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
-            'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
-            'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -2940,12 +2951,7 @@ class MonthlyActivitiesController extends Controller
                 'has_sponsor' => $newValues['has_sponsor'],
                 'sponsor_name_title' => $newValues['sponsor_name_title'],
                 'has_partners' => $newValues['has_partners'],
-                'needs_official_letters' => false,
                 'needs_official_correspondence' => $newValues['needs_official_correspondence'],
-                'official_correspondence_reason' => $newValues['official_correspondence_reason'],
-                'official_correspondence_target' => $newValues['official_correspondence_target'],
-                'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-                'letter_purpose' => null,
                 'rescheduled_date' => $newValues['rescheduled_date'],
                 'reschedule_reason' => $newValues['reschedule_reason'],
                 'cancellation_reason' => $newValues['cancellation_reason'],
@@ -3034,12 +3040,7 @@ class MonthlyActivitiesController extends Controller
             'has_sponsor' => $newValues['has_sponsor'],
             'sponsor_name_title' => $newValues['sponsor_name_title'],
             'has_partners' => $newValues['has_partners'],
-            'needs_official_letters' => false,
             'needs_official_correspondence' => $newValues['needs_official_correspondence'],
-            'official_correspondence_reason' => $newValues['official_correspondence_reason'],
-            'official_correspondence_target' => $newValues['official_correspondence_target'],
-            'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-            'letter_purpose' => null,
             'rescheduled_date' => $newValues['rescheduled_date'],
             'reschedule_reason' => $newValues['reschedule_reason'],
             'cancellation_reason' => $newValues['cancellation_reason'],
