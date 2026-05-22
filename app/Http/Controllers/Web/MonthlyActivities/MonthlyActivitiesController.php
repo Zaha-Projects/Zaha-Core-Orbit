@@ -2117,8 +2117,7 @@ class MonthlyActivitiesController extends Controller
                     $request->user()
                 );
             $monthlyActivity->update([
-                'execution_needs_followup' => $mergedRows === [] ? null : $mergedRows,
-            ]);
+                ]);
             if (! $this->canCompleteAfterExecution($activityForNeeds, $request->user())) {
                 $this->notifyExecutionNeedsDecisionSubmitted($monthlyActivity->fresh(), $data['execution_needs_followup'] ?? [], $request->user());
             }
