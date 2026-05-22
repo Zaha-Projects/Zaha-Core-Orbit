@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration {public function up(): void {Schema::create('transport_request_actions', function (Blueprint $table) {$table->id();$table->foreignId('transport_request_id')->constrained()->cascadeOnDelete();$table->string('action_type');$table->foreignId('action_by')->nullable()->constrained('users')->nullOnDelete();$table->timestamp('action_at')->nullable();$table->text('comment')->nullable();$table->timestamps();});} public function down(): void {Schema::dropIfExists('transport_request_actions');}};

@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration {public function up(): void {Schema::create('communications_requests', function (Blueprint $table) {$table->id();$table->foreignId('event_id')->constrained('monthly_activities')->cascadeOnDelete();$table->string('status')->default('pending');$table->text('notes')->nullable();$table->json('media_files')->nullable();$table->timestamps();$table->unique('event_id');});} public function down(): void {Schema::dropIfExists('communications_requests');}};
