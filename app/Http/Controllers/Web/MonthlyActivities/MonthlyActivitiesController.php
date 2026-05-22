@@ -33,6 +33,7 @@ use App\Services\DynamicWorkflowService;
 use App\Services\MonthlyWorkflowPresenter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
@@ -1267,10 +1268,10 @@ class MonthlyActivitiesController extends Controller
 
     protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
     {
-        $query = AgendaEvent::query()->orderByDesc('agenda_date')->orderByDesc('id');
+        $query = AgendaEvent::query()->orderByDesc('event_date')->orderByDesc('id');
 
         $scopedBranchIds = $this->scopedBranchIds($user);
-        if ($scopedBranchIds !== []) {
+        if ($scopedBranchIds !== [] && Schema::hasColumn('agenda_events', 'branch_id')) {
             $query->whereIn('branch_id', $scopedBranchIds);
         }
 
