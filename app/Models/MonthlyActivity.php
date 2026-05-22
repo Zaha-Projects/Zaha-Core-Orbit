@@ -234,22 +234,53 @@ class MonthlyActivity extends Model
 
     public function executionNeedsMap(): array
     {
-        $payload = $this->execution_needs_payload ?? [];
-
-        return [
+        $legacyPayload = $this->execution_needs_payload ?? [];
+        $legacy = [
             'volunteers' => (bool) $this->needs_volunteers,
             'official_correspondence' => (bool) $this->needs_official_correspondence,
             'media_coverage' => (bool) $this->needs_media_coverage,
             'supplies' => $this->relationLoaded('supplies') ? $this->supplies->isNotEmpty() : $this->supplies()->exists(),
             'official_sponsorship' => (bool) $this->has_sponsor,
             'external_partners' => (bool) $this->has_partners,
-            'ceremony_agenda' => (bool) data_get($payload, 'needs_ceremony_agenda', false),
-            'transport' => (bool) data_get($payload, 'needs_transport', false),
-            'maintenance_workers' => (bool) data_get($payload, 'needs_maintenance_workers', false),
-            'gifts_shields' => (bool) data_get($payload, 'needs_gifts', false),
-            'programs_participation' => (bool) data_get($payload, 'needs_programs_participation', false),
-            'certificates_thanks' => (bool) data_get($payload, 'needs_certificates_and_thanks', false),
-            'invitations' => (bool) data_get($payload, 'needs_invitations', false),
+            'ceremony_agenda' => (bool) data_get($legacyPayload, 'needs_ceremony_agenda', false),
+            'transport' => (bool) data_get($legacyPayload, 'needs_transport', false),
+            'maintenance_workers' => (bool) data_get($legacyPayload, 'needs_maintenance_workers', false),
+            'gifts_shields' => (bool) data_get($legacyPayload, 'needs_gifts', false),
+            'programs_participation' => (bool) data_get($legacyPayload, 'needs_programs_participation', false),
+            'certificates_thanks' => (bool) data_get($legacyPayload, 'needs_certificates_and_thanks', false),
+            'invitations' => (bool) data_get($legacyPayload, 'needs_invitations', false),
+        ];
+
+        $resolved = [];
+        foreach ($this->executionNeedRelationMap() as $needKey => $relationName) {
+            $record = $this->relationLoaded($relationName)
+                ? $this->getRelation($relationName)
+                : $this->{$relationName}()->first();
+
+            $resolved[$needKey] = $record !== null
+                ? (bool) ($record->is_required ?? false)
+                : (bool) ($legacy[$needKey] ?? false);
+        }
+
+        return $resolved;
+    }
+
+    protected function executionNeedRelationMap(): array
+    {
+        return [
+            'volunteers' => 'executionNeedVolunteers',
+            'official_correspondence' => 'executionNeedOfficialCorrespondence',
+            'media_coverage' => 'executionNeedMediaCoverage',
+            'supplies' => 'executionNeedSupplies',
+            'official_sponsorship' => 'executionNeedOfficialSponsorship',
+            'external_partners' => 'executionNeedExternalPartners',
+            'ceremony_agenda' => 'executionNeedCeremonyAgenda',
+            'transport' => 'executionNeedTransport',
+            'maintenance_workers' => 'executionNeedMaintenanceWorkers',
+            'gifts_shields' => 'executionNeedGiftsShields',
+            'programs_participation' => 'executionNeedProgramsParticipation',
+            'certificates_thanks' => 'executionNeedCertificatesThanks',
+            'invitations' => 'executionNeedInvitations',
         ];
     }
 
