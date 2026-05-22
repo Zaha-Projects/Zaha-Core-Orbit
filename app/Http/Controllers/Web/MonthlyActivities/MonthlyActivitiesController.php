@@ -549,7 +549,21 @@ class MonthlyActivitiesController extends Controller
             ->mapWithKeys(fn ($row, $key) => [(string) $key => (array) $row])
             ->all();
         $postPayload = (array) ($data['post_execution_payload'] ?? []);
-        $requiredMap = $monthlyActivity->executionNeedsMap();
+        $requiredMap = [
+            'volunteers' => (bool) ($data['needs_volunteers'] ?? $monthlyActivity->needs_volunteers),
+            'official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? $monthlyActivity->needs_official_correspondence),
+            'media_coverage' => (bool) ($data['needs_media_coverage'] ?? $monthlyActivity->needs_media_coverage),
+            'supplies' => !empty($data['supplies'] ?? []),
+            'official_sponsorship' => (bool) (($data['has_sponsor'] ?? $monthlyActivity->has_sponsor) || !empty($data['sponsors'] ?? [])),
+            'external_partners' => (bool) (($data['has_partners'] ?? $monthlyActivity->has_partners) || !empty($data['partners'] ?? [])),
+            'ceremony_agenda' => (bool) ($data['needs_ceremony_agenda'] ?? data_get($payload, 'needs_ceremony_agenda', false)),
+            'transport' => (bool) ($data['needs_transport'] ?? data_get($payload, 'needs_transport', false)),
+            'maintenance_workers' => (bool) ($data['needs_maintenance_workers'] ?? data_get($payload, 'needs_maintenance_workers', false)),
+            'gifts_shields' => (bool) ($data['needs_gifts'] ?? data_get($payload, 'needs_gifts', false)),
+            'programs_participation' => (bool) ($data['needs_programs_participation'] ?? data_get($payload, 'needs_programs_participation', false)),
+            'certificates_thanks' => (bool) ($data['needs_certificates_and_thanks'] ?? data_get($payload, 'needs_certificates_and_thanks', false)),
+            'invitations' => (bool) ($data['needs_invitations'] ?? data_get($payload, 'needs_invitations', false)),
+        ];
 
         $modelMap = [
             'volunteers' => \App\Models\MonthlyActivityNeedVolunteers::class,
