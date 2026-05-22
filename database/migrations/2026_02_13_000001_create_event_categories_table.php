@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->foreignId('department_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->boolean('active')->default(true);
+            $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
 
             $table->unique(['department_id', 'name']);

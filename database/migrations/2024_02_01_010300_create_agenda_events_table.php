@@ -23,6 +23,7 @@ return new class extends Migration {
             $table->string('relations_approval_status')->default('pending');
             $table->string('executive_approval_status')->default('pending');
             $table->boolean('is_archived')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->unsignedSmallInteger('archived_year')->nullable();
             $table->boolean('is_mandatory')->default(false);
             $table->boolean('is_unified')->default(true);
@@ -31,6 +32,7 @@ return new class extends Migration {
             $table->timestamp('approved_by_executive_at')->nullable();
             $table->text('notes')->nullable();
             $table->string('agenda_plan_file')->nullable();
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
 
             $table->index('event_date');

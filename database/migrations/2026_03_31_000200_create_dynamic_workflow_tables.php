@@ -32,6 +32,8 @@ class CreateDynamicWorkflowTables extends Migration
             $table->unsignedInteger('approval_level')->default(1);
             $table->foreignId('role_id')->nullable()->constrained('roles')->nullOnDelete();
             $table->foreignId('permission_id')->nullable()->constrained('permissions')->nullOnDelete();
+            $table->string('condition_field')->nullable();
+            $table->string('condition_value')->nullable();
             $table->boolean('is_editable')->default(true);
             $table->timestamps();
 

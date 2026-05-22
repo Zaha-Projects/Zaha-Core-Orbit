@@ -13,6 +13,8 @@ return new class extends Migration {
             $table->string('city')->nullable();
             $table->string('address')->nullable();
             $table->boolean('is_main')->default(false);
+            $table->string('color_hex', 7)->nullable();
+            $table->string('icon', 32)->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
