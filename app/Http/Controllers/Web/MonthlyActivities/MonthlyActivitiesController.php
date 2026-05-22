@@ -373,7 +373,14 @@ class MonthlyActivitiesController extends Controller
                     return;
                 }
 
-                $allowedHosts = ['google.com', 'drive.google.com'];
+                $allowedHosts = [
+                    'google.com',
+                    'drive.google.com',
+                    'maps.app.goo.gl',
+                    'goo.gl',
+                    '127.0.0.1',
+                    'localhost',
+                ];
                 $isAllowed = collect($allowedHosts)->contains(fn (string $allowed) => $host === $allowed || Str::endsWith($host, '.'.$allowed));
                 if (! $isAllowed) {
                     $fail('الرابط يجب أن يكون ضمن النطاقات الموثوقة.');
@@ -1664,6 +1671,22 @@ class MonthlyActivitiesController extends Controller
             $request->merge(['branch_id' => $branchId]);
         }
 
+        if (
+            (string) $request->input('location_type') === 'outside_center'
+            && ! filled($request->input('outside_contact_number'))
+            && filled($request->input('external_liaison_phone'))
+        ) {
+            $request->merge(['outside_contact_number' => $request->input('external_liaison_phone')]);
+        }
+
+        if (
+            (string) $request->input('location_type') === 'outside_center'
+            && ! filled($request->input('outside_contact_number'))
+            && filled($request->input('external_liaison_phone'))
+        ) {
+            $request->merge(['outside_contact_number' => $request->input('external_liaison_phone')]);
+        }
+
         $data = $request->validate([
             'branch_id' => ['required', 'exists:branches,id'],
             'month' => ['required', 'integer', 'between:1,12'],
@@ -1778,7 +1801,7 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
-            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'outside_contact_number' => ['nullable', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
             'external_liaison_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center'],
             'outside_address' => ['nullable', 'string'],
@@ -2332,7 +2355,7 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
-            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'outside_contact_number' => ['nullable', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
             'external_liaison_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center'],
             'outside_address' => ['nullable', 'string'],
