@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

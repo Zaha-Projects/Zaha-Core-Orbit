@@ -19,6 +19,8 @@ return new class extends Migration {
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
+            $table->index('trip_date', 'trips_trip_date_idx');
+            $table->index('status', 'trips_status_idx');
         });
     }
 

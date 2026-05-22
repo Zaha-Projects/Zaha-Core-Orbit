@@ -7,19 +7,19 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('branches', function (Blueprint $table) {
+        Schema::create('event_categories', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('department_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->string('city')->nullable();
-            $table->string('address')->nullable();
-            $table->boolean('is_main')->default(false);
+            $table->boolean('active')->default(true);
             $table->timestamps();
-            $table->softDeletes();
+
+            $table->unique(['department_id', 'name']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('branches');
+        Schema::dropIfExists('event_categories');
     }
 };

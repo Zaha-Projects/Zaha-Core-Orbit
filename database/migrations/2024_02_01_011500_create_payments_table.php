@@ -18,6 +18,8 @@ return new class extends Migration {
             $table->timestamp('paid_at');
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
+            $table->index('paid_at', 'payments_paid_at_idx');
         });
     }
 

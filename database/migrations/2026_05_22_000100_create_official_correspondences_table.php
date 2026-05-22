@@ -9,11 +9,13 @@ return new class extends Migration {
     {
         Schema::create('official_correspondences', function (Blueprint $table) {
             $table->id();
-            $table->morphs('correspondable');
+            $table->string('correspondable_type');
+            $table->unsignedBigInteger('correspondable_id');
             $table->string('reason')->nullable();
             $table->string('target')->nullable();
             $table->text('brief')->nullable();
             $table->timestamps();
+            $table->index(['correspondable_type', 'correspondable_id'], 'official_corr_correspondable_idx');
             $table->unique(['correspondable_type', 'correspondable_id'], 'official_corr_unique');
         });
     }
@@ -23,4 +25,3 @@ return new class extends Migration {
         Schema::dropIfExists('official_correspondences');
     }
 };
-

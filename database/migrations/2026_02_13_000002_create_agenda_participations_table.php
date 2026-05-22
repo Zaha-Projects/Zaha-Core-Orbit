@@ -7,16 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('event_categories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('department_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->boolean('active')->default(true);
-            $table->timestamps();
-
-            $table->unique(['department_id', 'name']);
-        });
-
         Schema::create('agenda_participations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('agenda_event_id')->constrained()->cascadeOnDelete();
@@ -29,7 +19,7 @@ return new class extends Migration {
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['entity_type', 'entity_id']);
+            $table->index(['entity_type', 'entity_id'], 'agenda_part_entity_idx');
             $table->unique(['agenda_event_id', 'entity_type', 'entity_id'], 'agenda_entity_unique');
         });
     }
@@ -37,6 +27,5 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::dropIfExists('agenda_participations');
-        Schema::dropIfExists('event_categories');
     }
 };
