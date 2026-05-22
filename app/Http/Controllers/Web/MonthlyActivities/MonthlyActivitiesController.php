@@ -1260,7 +1260,12 @@ class MonthlyActivitiesController extends Controller
 
     public function create(Request $request)
     {
-        $this->flashCreatePrefill($request);
+        if ($request->boolean('prefill') && $request->filled('source_activity_id')) {
+            $source = MonthlyActivity::query()->find((int) $request->input('source_activity_id'));
+            if ($source) {
+                $this->flashFormPrefill($source);
+            }
+        }
 
         $user = $request->user();
         $branches = Branch::query()->orderBy('name');
