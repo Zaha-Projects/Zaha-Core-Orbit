@@ -220,6 +220,42 @@ class MonthlyActivity extends Model
     }
 
 
+
+    public function externalLocation(): HasOne
+    {
+        return $this->hasOne(MonthlyActivityExternalLocation::class, 'monthly_activity_id');
+    }
+
+    public function getOutsideContactNumberAttribute(): ?string
+    {
+        return $this->externalLocation?->outside_contact_number;
+    }
+
+    public function getExternalLiaisonNameAttribute(): ?string
+    {
+        return $this->externalLocation?->external_liaison_name;
+    }
+
+    public function getExternalLiaisonPhoneAttribute(): ?string
+    {
+        return $this->externalLocation?->external_liaison_phone;
+    }
+
+    public function getVolunteerAgeRangeAttribute(): ?string
+    {
+        return data_get($this->execution_needs_payload ?? [], 'volunteers.volunteer_age_range');
+    }
+
+    public function getVolunteerGenderAttribute(): ?string
+    {
+        return data_get($this->execution_needs_payload ?? [], 'volunteers.volunteer_gender');
+    }
+
+    public function getVolunteerTasksSummaryAttribute(): ?string
+    {
+        return data_get($this->execution_needs_payload ?? [], 'volunteers.volunteer_tasks_summary');
+    }
+
     public function executionNeedsMap(): array
     {
         $legacyPayload = $this->execution_needs_payload ?? [];

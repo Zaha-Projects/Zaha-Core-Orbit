@@ -499,6 +499,23 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+
+    protected function syncExternalLocation(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        $values = [
+            'outside_contact_number' => $data['outside_contact_number'] ?? null,
+            'external_liaison_name' => $data['external_liaison_name'] ?? null,
+            'external_liaison_phone' => $data['external_liaison_phone'] ?? null,
+        ];
+
+        if (($data['location_type'] ?? $monthlyActivity->location_type) !== 'outside_center' || collect($values)->filter()->isEmpty()) {
+            $monthlyActivity->externalLocation()?->delete();
+            return;
+        }
+
+        $monthlyActivity->externalLocation()->updateOrCreate(['monthly_activity_id' => $monthlyActivity->id], $values);
+    }
+
     protected function syncExecutionNeedsTable(MonthlyActivity $monthlyActivity, array $data): void
     {
         $payload = (array) ($data['execution_needs_payload'] ?? []);
@@ -507,9 +524,9 @@ class MonthlyActivitiesController extends Controller
             [
                 'required_volunteers' => $data['required_volunteers'] ?? $monthlyActivity->required_volunteers,
                 'volunteer_need' => $data['volunteer_need'] ?? $monthlyActivity->volunteer_need,
-                'volunteer_age_range' => $data['volunteer_age_range'] ?? $monthlyActivity->volunteer_age_range,
-                'volunteer_gender' => $data['volunteer_gender'] ?? $monthlyActivity->volunteer_gender,
-                'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? $monthlyActivity->volunteer_tasks_summary,
+                'volunteer_age_range' => $data['volunteer_age_range'] ?? data_get($monthlyActivity->execution_needs_payload ?? [], 'volunteers.volunteer_age_range'),
+                'volunteer_gender' => $data['volunteer_gender'] ?? data_get($monthlyActivity->execution_needs_payload ?? [], 'volunteers.volunteer_gender'),
+                'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? data_get($monthlyActivity->execution_needs_payload ?? [], 'volunteers.volunteer_tasks_summary'),
             ]
         );
         $payload['external_partners'] = array_merge(
@@ -1822,9 +1839,6 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => $data['internal_location'] ?? null,
             'outside_place_name' => $data['outside_place_name'] ?? null,
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
-            'outside_contact_number' => $data['outside_contact_number'] ?? null,
-            'external_liaison_name' => $data['external_liaison_name'] ?? null,
-            'external_liaison_phone' => $data['external_liaison_phone'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
             'status' => 'draft',
             'execution_status' => $data['execution_status'],
@@ -1843,9 +1857,6 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need' => $data['volunteer_need'] ?? null,
             'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
             'required_volunteers' => $data['required_volunteers'] ?? null,
-            'volunteer_age_range' => $data['volunteer_age_range'] ?? null,
-            'volunteer_gender' => $data['volunteer_gender'] ?? null,
-            'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
             'expected_attendance_from' => $data['expected_attendance_from'] ?? null,
             'expected_attendance_to' => $data['expected_attendance_to'] ?? null,
@@ -1889,6 +1900,7 @@ class MonthlyActivitiesController extends Controller
         $this->syncSponsorsAndPartners($monthlyActivity, $data);
         $this->syncExecutionNeedsTable($monthlyActivity, $data);
         $this->syncTeamMembers($monthlyActivity, $data);
+        $this->syncExternalLocation($monthlyActivity, $data);
         foreach (($data['supplies'] ?? []) as $supply) {
             $itemName = trim((string) ($supply['item_name'] ?? ''));
             if ($itemName === '') {
@@ -2347,9 +2359,6 @@ class MonthlyActivitiesController extends Controller
             'internal_location',
             'outside_place_name',
             'outside_google_maps_url',
-            'outside_contact_number',
-            'external_liaison_name',
-            'external_liaison_phone',
             'outside_address',
             'status',
             'execution_status',
@@ -2367,9 +2376,6 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need',
             'needs_volunteers',
             'required_volunteers',
-            'volunteer_age_range',
-            'volunteer_gender',
-            'volunteer_tasks_summary',
             'expected_attendance',
             'expected_attendance_from',
             'expected_attendance_to',
@@ -2394,8 +2400,6 @@ class MonthlyActivitiesController extends Controller
             'requires_workshops',
             'requires_communications',
             'is_program_related',
-            'execution_needs_payload',
-            'execution_needs_followup',
             'participation_status',
             'plan_type',
             'branch_plan_file',
@@ -2441,9 +2445,6 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => $data['internal_location'] ?? null,
             'outside_place_name' => $data['outside_place_name'] ?? null,
             'outside_google_maps_url' => $data['outside_google_maps_url'] ?? null,
-            'outside_contact_number' => $data['outside_contact_number'] ?? null,
-            'external_liaison_name' => $data['external_liaison_name'] ?? null,
-            'external_liaison_phone' => $data['external_liaison_phone'] ?? null,
             'outside_address' => $data['outside_address'] ?? null,
             'status' => $newStatus,
             'execution_status' => $data['execution_status'],
@@ -2462,9 +2463,6 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need' => $data['volunteer_need'] ?? null,
             'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
             'required_volunteers' => $data['required_volunteers'] ?? null,
-            'volunteer_age_range' => $data['volunteer_age_range'] ?? null,
-            'volunteer_gender' => $data['volunteer_gender'] ?? null,
-            'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
             'expected_attendance_from' => $data['expected_attendance_from'] ?? null,
             'expected_attendance_to' => $data['expected_attendance_to'] ?? null,
@@ -2551,9 +2549,6 @@ class MonthlyActivitiesController extends Controller
                 'internal_location' => $newValues['internal_location'],
                 'outside_place_name' => $newValues['outside_place_name'],
                 'outside_google_maps_url' => $newValues['outside_google_maps_url'],
-                'outside_contact_number' => $newValues['outside_contact_number'],
-                'external_liaison_name' => $newValues['external_liaison_name'],
-                'external_liaison_phone' => $newValues['external_liaison_phone'],
                 'outside_address' => $newValues['outside_address'],
                 'status' => $newValues['status'],
                 'execution_status' => $newValues['execution_status'],
@@ -2572,9 +2567,6 @@ class MonthlyActivitiesController extends Controller
                 'volunteer_need' => $newValues['volunteer_need'],
                 'needs_volunteers' => $newValues['needs_volunteers'],
                 'required_volunteers' => $newValues['required_volunteers'],
-                'volunteer_age_range' => $newValues['volunteer_age_range'],
-                'volunteer_gender' => $newValues['volunteer_gender'],
-                'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
                 'expected_attendance' => $newValues['expected_attendance'],
                 'expected_attendance_from' => $newValues['expected_attendance_from'],
                 'expected_attendance_to' => $newValues['expected_attendance_to'],
@@ -2647,9 +2639,6 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => $newValues['internal_location'],
             'outside_place_name' => $newValues['outside_place_name'],
             'outside_google_maps_url' => $newValues['outside_google_maps_url'],
-            'outside_contact_number' => $newValues['outside_contact_number'],
-            'external_liaison_name' => $newValues['external_liaison_name'],
-            'external_liaison_phone' => $newValues['external_liaison_phone'],
             'outside_address' => $newValues['outside_address'],
             'status' => $newValues['status'],
             'execution_status' => $newValues['execution_status'],
@@ -2668,9 +2657,6 @@ class MonthlyActivitiesController extends Controller
             'volunteer_need' => $newValues['volunteer_need'],
             'needs_volunteers' => $newValues['needs_volunteers'],
             'required_volunteers' => $newValues['required_volunteers'],
-            'volunteer_age_range' => $newValues['volunteer_age_range'],
-            'volunteer_gender' => $newValues['volunteer_gender'],
-            'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
             'expected_attendance' => $newValues['expected_attendance'],
             'expected_attendance_from' => $newValues['expected_attendance_from'],
             'expected_attendance_to' => $newValues['expected_attendance_to'],
@@ -2728,6 +2714,7 @@ class MonthlyActivitiesController extends Controller
         $this->syncSponsorsAndPartners($activityToSave, $data);
         $this->syncExecutionNeedsTable($activityToSave, $data);
         $this->syncTeamMembers($activityToSave, $data);
+        $this->syncExternalLocation($activityToSave, $data);
         $this->notifyExecutionNeedOwners($activityToSave);
         if (($request->user()->hasRole('followup_officer') || $request->user()->hasRole('super_admin')) && $this->canSubmitPostEvaluation($activityToSave)) {
             $this->syncEvaluationData($activityToSave, $data, $request->user()->id);
