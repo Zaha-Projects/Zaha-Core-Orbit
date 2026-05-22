@@ -44,9 +44,6 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'needs_volunteers' => true,
                 'required_volunteers' => 8,
                 'volunteer_need' => 'Registration and crowd guidance volunteers.',
-                'volunteer_age_range' => '18-35',
-                'volunteer_gender' => 'both',
-                'volunteer_tasks_summary' => 'Registration, ushering, and activity support.',
                 'expected_attendance' => 80,
                 'actual_attendance' => 74,
                 'attendance_notes' => 'Attendance was strong with minor late arrivals.',
@@ -202,9 +199,6 @@ class PostExecutionShowcaseSeeder extends Seeder
             'volunteers' => [
                 'required_volunteers' => 8,
                 'volunteer_need' => 'Registration and crowd guidance volunteers.',
-                'volunteer_age_range' => '18-35',
-                'volunteer_gender' => 'both',
-                'volunteer_tasks_summary' => 'Registration, ushering, and activity support.',
             ],
             'official_correspondence' => [
                 'reason' => 'Official coordination letter',
