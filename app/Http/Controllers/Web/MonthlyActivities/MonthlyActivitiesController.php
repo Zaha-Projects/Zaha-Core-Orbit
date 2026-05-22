@@ -1252,9 +1252,15 @@ class MonthlyActivitiesController extends Controller
             $codes->push((string) $selectedCode);
         }
 
-        $query = EventStatusLookup::query()->where('entity_type', $entityType);
-        if ($codes->isNotEmpty()) {
-            $query->orWhereIn('code', $codes->unique()->all());
+        $query = EventStatusLookup::query();
+
+        if (Schema::hasColumn('event_status_lookups', 'entity_type')) {
+            $query->where('entity_type', $entityType);
+            if ($codes->isNotEmpty()) {
+                $query->orWhereIn('code', $codes->unique()->all());
+            }
+        } elseif ($codes->isNotEmpty()) {
+            $query->whereIn('code', $codes->unique()->all());
         }
 
         $lookups = $query->orderBy('sort_order')->orderBy('name')->get(['code', 'name']);
@@ -1264,6 +1270,25 @@ class MonthlyActivitiesController extends Controller
         }
 
         return $this->monthlyPageStatusOptions();
+    }
+
+    protected function monthlyCreationStatusOptions(string $selected = 'draft'): Collection
+    {
+        return $this->statusLookupOptions('monthly_activities', ['draft', 'submitted', 'approved'], $selected);
+    }
+
+    protected function monthlyPlanningStatusOptions(string $selected): Collection
+    {
+        return $this->statusLookupOptions(
+            'monthly_activities',
+            ['draft', 'submitted', 'pending', 'in_review', 'changes_requested', 'approved', 'rejected', 'postponed', 'cancelled', 'closed'],
+            $selected
+        );
+    }
+
+    protected function monthlyCloseStatusOptions(string $selected): Collection
+    {
+        return $this->statusLookupOptions('monthly_activities', ['closed', 'completed', 'executed'], $selected);
     }
 
     protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
