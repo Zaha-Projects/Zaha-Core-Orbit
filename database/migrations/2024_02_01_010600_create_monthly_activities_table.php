@@ -52,11 +52,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('event_type_id')->nullable();
             $table->string('target_group_other')->nullable();
             $table->text('short_description')->nullable();
-            $table->string('volunteer_need')->nullable();
             $table->boolean('needs_volunteers')->default(false);
-            $table->unsignedInteger('required_volunteers')->nullable();
-            $table->boolean('volunteers_required')->default(false);
-            $table->unsignedInteger('volunteers_count')->nullable();
             $table->unsignedTinyInteger('work_teams_count')->nullable();
             $table->unsignedInteger('expected_attendance')->nullable();
             $table->unsignedInteger('actual_attendance')->nullable();

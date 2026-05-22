@@ -122,14 +122,7 @@ class MonthlyActivity extends Model
         'target_group_other',
         'short_description',
         'work_teams_count',
-        'volunteer_need',
         'needs_volunteers',
-        'volunteers_required',
-        'volunteers_count',
-        'required_volunteers',
-        'volunteer_age_range',
-        'volunteer_gender',
-        'volunteer_tasks_summary',
         'expected_attendance',
         'expected_attendance_from',
         'expected_attendance_to',
@@ -189,7 +182,6 @@ class MonthlyActivity extends Model
         'has_sponsor' => 'boolean',
         'has_partners' => 'boolean',
         'needs_volunteers' => 'boolean',
-        'volunteers_required' => 'boolean',
         'needs_media_coverage' => 'boolean',
         'requires_programs' => 'boolean',
         'is_program_related' => 'boolean',
@@ -218,6 +210,42 @@ class MonthlyActivity extends Model
     {
         return $this->attributes['branch_plan_file'] ?? null;
     }
+
+    public function getVolunteerNeedAttribute(): ?string
+    {
+        return $this->volunteerNeed?->volunteer_need;
+    }
+
+    public function getRequiredVolunteersAttribute(): ?int
+    {
+        return $this->volunteerNeed?->required_volunteers;
+    }
+
+    public function getVolunteerAgeRangeAttribute(): ?string
+    {
+        return $this->volunteerNeed?->volunteer_age_range;
+    }
+
+    public function getVolunteerGenderAttribute(): ?string
+    {
+        return $this->volunteerNeed?->volunteer_gender;
+    }
+
+    public function getVolunteerTasksSummaryAttribute(): ?string
+    {
+        return $this->volunteerNeed?->volunteer_tasks_summary;
+    }
+
+    public function getVolunteersRequiredAttribute(): bool
+    {
+        return (bool) ($this->volunteerNeed?->volunteers_required);
+    }
+
+    public function getVolunteersCountAttribute(): ?int
+    {
+        return $this->volunteerNeed?->volunteers_count;
+    }
+
 
     public function getMonthlyCreatedByBranchRelationsAttribute(): bool
     {
@@ -418,6 +446,12 @@ class MonthlyActivity extends Model
     public function newerVersions()
     {
         return $this->hasMany(self::class, 'previous_version_id');
+    }
+
+
+    public function volunteerNeed()
+    {
+        return $this->hasOne(MonthlyActivityVolunteerNeed::class);
     }
 
     public function supplies()
