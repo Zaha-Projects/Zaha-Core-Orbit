@@ -11,11 +11,13 @@ return new class extends Migration {
             $table->id();
             $table->unsignedTinyInteger('month');
             $table->unsignedTinyInteger('day');
+            $table->date('activity_date')->nullable();
             $table->string('title');
             $table->date('proposed_date');
             $table->date('modified_proposed_date')->nullable();
             $table->date('rescheduled_date')->nullable();
             $table->text('reschedule_reason')->nullable();
+            $table->text('cancellation_reason')->nullable();
             $table->boolean('relations_approval_on_reschedule')->default(false);
             $table->date('actual_date')->nullable();
             $table->boolean('is_in_agenda')->default(false);
@@ -35,7 +37,10 @@ return new class extends Migration {
             $table->string('room')->nullable();
             $table->string('outside_place_name')->nullable();
             $table->string('outside_google_maps_url')->nullable();
+            $table->string('outside_contact_number')->nullable();
             $table->text('outside_address')->nullable();
+            $table->string('external_liaison_name')->nullable();
+            $table->string('external_liaison_phone')->nullable();
             $table->time('time_from')->nullable();
             $table->time('time_to')->nullable();
             $table->string('execution_time')->nullable();
@@ -47,6 +52,8 @@ return new class extends Migration {
             $table->boolean('needs_volunteers')->default(false);
             $table->unsignedTinyInteger('work_teams_count')->nullable();
             $table->unsignedInteger('expected_attendance')->nullable();
+            $table->unsignedInteger('expected_attendance_from')->nullable();
+            $table->unsignedInteger('expected_attendance_to')->nullable();
             $table->unsignedInteger('actual_attendance')->nullable();
             $table->text('attendance_notes')->nullable();
             $table->decimal('attendance_rate', 8, 4)->nullable();
@@ -57,6 +64,9 @@ return new class extends Migration {
             $table->string('media_coverage')->nullable();
             $table->boolean('needs_media_coverage')->default(false);
             $table->text('media_coverage_notes')->nullable();
+            $table->json('execution_needs_payload')->nullable();
+            $table->json('execution_needs_followup')->nullable();
+            $table->json('post_execution_payload')->nullable();
             $table->boolean('requires_programs')->default(false);
             $table->boolean('requires_workshops')->default(false);
             $table->boolean('requires_communications')->default(false);
@@ -65,6 +75,10 @@ return new class extends Migration {
             $table->unsignedBigInteger('correspondence_reason_id')->nullable();
             $table->string('correspondence_status')->default('pending');
             $table->string('status')->default('draft');
+            $table->string('execution_status')->default('executed');
+            $table->unsignedInteger('plan_stage')->default(1);
+            $table->unsignedInteger('plan_version')->default(1);
+            $table->foreignId('previous_version_id')->nullable()->constrained('monthly_activities')->nullOnDelete();
             $table->string('participation_status')->nullable();
             $table->string('plan_type')->nullable();
             $table->string('branch_plan_file')->nullable();
@@ -76,6 +90,10 @@ return new class extends Migration {
             $table->string('liaison_approval_status')->default('pending');
             $table->string('hq_relations_manager_approval_status')->default('pending');
             $table->string('executive_approval_status')->default('pending');
+            $table->boolean('executive_review_required')->default(false);
+            $table->text('evaluation_reason')->nullable();
+            $table->foreignId('evaluation_assigned_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('evaluation_assigned_at')->nullable();
             $table->timestamp('lock_at')->nullable();
             $table->boolean('is_official')->default(false);
             $table->boolean('is_archived')->default(false);
@@ -87,6 +105,9 @@ return new class extends Migration {
             $table->softDeletes();
 
             $table->index(['is_archived', 'archived_year']);
+            $table->index('activity_date');
+            $table->index('plan_version');
+            $table->index('previous_version_id');
         });
     }
 

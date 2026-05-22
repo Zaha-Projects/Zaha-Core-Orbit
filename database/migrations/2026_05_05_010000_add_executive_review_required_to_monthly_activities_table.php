@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -9,12 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('monthly_activities', function (Blueprint $table): void {
-            $table->boolean('executive_review_required')
-                ->default(false)
-                ->after('executive_approval_status');
-        });
-
         DB::table('roles')
             ->where('guard_name', 'web')
             ->where('name', 'supervisor')
@@ -28,9 +21,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('monthly_activities', function (Blueprint $table): void {
-            $table->dropColumn('executive_review_required');
-        });
+        // no-op: final schema already defines the column in base table migration.
     }
 
     private function alignMonthlyWorkflow(): void

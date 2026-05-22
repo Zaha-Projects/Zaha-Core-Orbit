@@ -7,13 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('settings', function (Blueprint $table) {
-            $table->id();
-            $table->string('key')->unique();
-            $table->text('value')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('monthly_activity_change_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();
@@ -29,6 +22,6 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::dropIfExists('monthly_activity_change_logs');
-        Schema::dropIfExists('settings');
     }
 };
+
