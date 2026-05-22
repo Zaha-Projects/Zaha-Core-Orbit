@@ -1240,6 +1240,60 @@ class MonthlyActivitiesController extends Controller
         ]);
     }
 
+    protected function statusLookupOptions(string $entityType, array $extraCodes = [], ?string $selectedCode = null): Collection
+    {
+        $codes = collect($extraCodes)
+            ->filter(fn ($code) => filled($code))
+            ->map(fn ($code) => (string) $code)
+            ->values();
+
+        if (filled($selectedCode)) {
+            $codes->push((string) $selectedCode);
+        }
+
+        $query = EventStatusLookup::query()->where('entity_type', $entityType);
+        if ($codes->isNotEmpty()) {
+            $query->orWhereIn('code', $codes->unique()->all());
+        }
+
+        $lookups = $query->orderBy('sort_order')->orderBy('name')->get(['code', 'name']);
+
+        if ($lookups->isNotEmpty()) {
+            return $lookups;
+        }
+
+        return $this->monthlyPageStatusOptions();
+    }
+
+    protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
+    {
+        $query = AgendaEvent::query()->orderByDesc('agenda_date')->orderByDesc('id');
+
+        $scopedBranchIds = $this->scopedBranchIds($user);
+        if ($scopedBranchIds !== []) {
+            $query->whereIn('branch_id', $scopedBranchIds);
+        }
+
+        if ($monthlyActivity?->agenda_event_id) {
+            $query->orWhere('id', $monthlyActivity->agenda_event_id);
+        }
+
+        return $query->get();
+    }
+
+    protected function extractVolunteerAgeBounds(?string $ageRange): array
+    {
+        if (! filled($ageRange)) {
+            return [null, null];
+        }
+
+        if (preg_match('/^(\d{1,2})\D+(\d{1,2})$/', trim((string) $ageRange), $m)) {
+            return [(int) $m[1], (int) $m[2]];
+        }
+
+        return [null, null];
+    }
+
     protected function applyMonthlyPageStatusFilter($query, ?string $status): void
     {
         $status = trim((string) $status);
