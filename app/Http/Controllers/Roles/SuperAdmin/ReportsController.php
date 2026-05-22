@@ -63,12 +63,31 @@ class ReportsController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        $activitiesWithNeedsPayload = MonthlyActivity::query()
-            ->whereNotNull('execution_needs_payload')
-            ->get(['id', 'execution_needs_payload']);
-        $activitiesWithNeedsFollowup = MonthlyActivity::query()
-            ->whereNotNull('execution_needs_followup')
-            ->get(['id', 'execution_needs_followup']);
+        $activitiesWithNeeds = MonthlyActivity::query()
+            ->with([
+                'executionNeedVolunteers',
+                'executionNeedOfficialCorrespondence',
+                'executionNeedMediaCoverage',
+                'executionNeedSupplies',
+                'executionNeedOfficialSponsorship',
+                'executionNeedExternalPartners',
+                'executionNeedCeremonyAgenda',
+                'executionNeedTransport',
+                'executionNeedMaintenanceWorkers',
+                'executionNeedGiftsShields',
+                'executionNeedProgramsParticipation',
+                'executionNeedCertificatesThanks',
+                'executionNeedInvitations',
+            ])
+            ->get(['id']);
+
+        $activitiesWithNeedsPayload = $activitiesWithNeeds
+            ->filter(fn (MonthlyActivity $activity) => ! empty((array) $activity->execution_needs_payload))
+            ->values();
+
+        $activitiesWithNeedsFollowup = $activitiesWithNeeds
+            ->filter(fn (MonthlyActivity $activity) => ! empty((array) $activity->execution_needs_followup))
+            ->values();
 
         $securedCount = 0;
         $notSecuredCount = 0;
