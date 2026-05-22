@@ -26,12 +26,6 @@ return new class extends Migration {
             $table->boolean('has_sponsor')->default(false);
             $table->string('sponsor_name_title')->nullable();
             $table->boolean('has_partners')->default(false);
-            $table->string('partner_1_name')->nullable();
-            $table->string('partner_1_role')->nullable();
-            $table->string('partner_2_name')->nullable();
-            $table->string('partner_2_role')->nullable();
-            $table->string('partner_3_name')->nullable();
-            $table->string('partner_3_role')->nullable();
             $table->boolean('has_official_attendance')->default(false);
             $table->text('official_attendance_details')->nullable();
             $table->boolean('needs_official_letters')->default(false);
@@ -52,11 +46,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('event_type_id')->nullable();
             $table->string('target_group_other')->nullable();
             $table->text('short_description')->nullable();
-            $table->string('volunteer_need')->nullable();
             $table->boolean('needs_volunteers')->default(false);
-            $table->unsignedInteger('required_volunteers')->nullable();
-            $table->boolean('volunteers_required')->default(false);
-            $table->unsignedInteger('volunteers_count')->nullable();
             $table->unsignedTinyInteger('work_teams_count')->nullable();
             $table->unsignedInteger('expected_attendance')->nullable();
             $table->unsignedInteger('actual_attendance')->nullable();
