@@ -284,6 +284,78 @@ class MonthlyActivity extends Model
         ];
     }
 
+    public function getExecutionNeedsFollowupAttribute($value): ?array
+    {
+        $rows = collect($this->executionNeedRelationMap())
+            ->mapWithKeys(function (string $relationName, string $needKey): array {
+                $record = $this->relationLoaded($relationName)
+                    ? $this->getRelation($relationName)
+                    : $this->{$relationName}()->first();
+
+                if (! $record || ! is_array($record->followup)) {
+                    return [];
+                }
+
+                return [$needKey => array_merge($record->followup, ['key' => $needKey])];
+            })
+            ->all();
+
+        if ($rows !== []) {
+            return array_values($rows);
+        }
+
+        $legacy = $value ?? $this->getAttributeFromArray('execution_needs_followup');
+        return is_array($legacy) ? $legacy : null;
+    }
+
+    public function getExecutionNeedsPayloadAttribute($value): ?array
+    {
+        $payload = collect($this->executionNeedRelationMap())
+            ->mapWithKeys(function (string $relationName, string $needKey): array {
+                $record = $this->relationLoaded($relationName)
+                    ? $this->getRelation($relationName)
+                    : $this->{$relationName}()->first();
+
+                if (! $record || ! is_array($record->payload)) {
+                    return [];
+                }
+
+                return [$needKey => $record->payload];
+            })
+            ->all();
+
+        if ($payload !== []) {
+            return $payload;
+        }
+
+        $legacy = $value ?? $this->getAttributeFromArray('execution_needs_payload');
+        return is_array($legacy) ? $legacy : null;
+    }
+
+    public function getPostExecutionPayloadAttribute($value): ?array
+    {
+        $payload = collect($this->executionNeedRelationMap())
+            ->mapWithKeys(function (string $relationName, string $needKey): array {
+                $record = $this->relationLoaded($relationName)
+                    ? $this->getRelation($relationName)
+                    : $this->{$relationName}()->first();
+
+                if (! is_array($record?->post_execution)) {
+                    return [];
+                }
+
+                return [$needKey => $record->post_execution];
+            })
+            ->all();
+
+        if ($payload !== []) {
+            return $payload;
+        }
+
+        $legacy = $value ?? $this->getAttributeFromArray('post_execution_payload');
+        return is_array($legacy) ? $legacy : null;
+    }
+
     public function enabledExecutionNeeds(): array
     {
         $enabled = $this->executionNeedsMap();
