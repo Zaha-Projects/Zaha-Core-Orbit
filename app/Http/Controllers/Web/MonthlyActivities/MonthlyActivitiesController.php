@@ -1940,7 +1940,7 @@ class MonthlyActivitiesController extends Controller
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
         if (! request()->boolean('form') && request('mode') !== 'post') {
-            $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
+            $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups', 'externalLocation', 'executionNeedVolunteers', 'executionNeedOfficialCorrespondence', 'executionNeedMediaCoverage', 'executionNeedSupplies', 'executionNeedOfficialSponsorship', 'executionNeedExternalPartners', 'executionNeedCeremonyAgenda', 'executionNeedTransport', 'executionNeedMaintenanceWorkers', 'executionNeedGiftsShields', 'executionNeedProgramsParticipation', 'executionNeedCertificatesThanks', 'executionNeedInvitations'])
                 ->loadCount('newerVersions');
 
             $monthlyStatusLabels = $this->statusLookupOptions('monthly_activities', [], (string) $monthlyActivity->status)
@@ -1963,7 +1963,7 @@ class MonthlyActivitiesController extends Controller
             ]);
         }
 
-        $monthlyActivity->load(['agendaEvent', 'creator', 'supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
+        $monthlyActivity->load(['agendaEvent', 'creator', 'supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups', 'externalLocation', 'executionNeedVolunteers', 'executionNeedOfficialCorrespondence', 'executionNeedMediaCoverage', 'executionNeedSupplies', 'executionNeedOfficialSponsorship', 'executionNeedExternalPartners', 'executionNeedCeremonyAgenda', 'executionNeedTransport', 'executionNeedMaintenanceWorkers', 'executionNeedGiftsShields', 'executionNeedProgramsParticipation', 'executionNeedCertificatesThanks', 'executionNeedInvitations']);
         if (request()->boolean('form') && ! $this->canUseMonthlyActivityPlanningEdit(request()->user())) {
             abort(403);
         }
@@ -2025,6 +2025,20 @@ class MonthlyActivitiesController extends Controller
             'supplies',
             'team',
             'targetGroups',
+            'externalLocation',
+            'executionNeedVolunteers',
+            'executionNeedOfficialCorrespondence',
+            'executionNeedMediaCoverage',
+            'executionNeedSupplies',
+            'executionNeedOfficialSponsorship',
+            'executionNeedExternalPartners',
+            'executionNeedCeremonyAgenda',
+            'executionNeedTransport',
+            'executionNeedMaintenanceWorkers',
+            'executionNeedGiftsShields',
+            'executionNeedProgramsParticipation',
+            'executionNeedCertificatesThanks',
+            'executionNeedInvitations',
             'attachments.uploader',
             'workflowInstance.workflow.steps.role',
             'workflowInstance.currentStep.role',
