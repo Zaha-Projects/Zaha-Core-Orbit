@@ -62,9 +62,6 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'requires_workshops' => true,
                 'requires_communications' => true,
                 'is_program_related' => true,
-                'execution_needs_payload' => $this->executionNeedsPayload(),
-                'execution_needs_followup' => $this->executionNeedsFollowup(),
-                'post_execution_payload' => $this->postExecutionPayload(),
                 'status' => 'closed',
                 'execution_status' => 'executed',
                 'plan_stage' => 1,
@@ -86,6 +83,7 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'created_by' => $creator->id,
             ]
         );
+        $this->syncExecutionNeedRecords($activity);
 
         $activity->supplies()->delete();
         foreach (['Projector and screen', 'Sound system', 'Printed invitations'] as $item) {
@@ -167,6 +165,77 @@ class PostExecutionShowcaseSeeder extends Seeder
                 ['order' => 2, 'name' => 'Interactive workshop', 'was_implemented' => true, 'feedback' => 'High engagement from families.'],
                 ['order' => 3, 'name' => 'Certificates and closing', 'was_implemented' => true, 'feedback' => 'Certificates were distributed successfully.'],
             ],
+        ];
+    }
+
+    protected function syncExecutionNeedRecords(MonthlyActivity $activity): void
+    {
+        $payload = $this->executionNeedsPayload();
+        $followup = collect($this->executionNeedsFollowup())
+            ->keyBy(fn (array $row) => (string) ($row['key'] ?? ''))
+            ->all();
+        $post = $this->postExecutionPayload();
+
+        foreach (MonthlyActivity::executionNeedDefinitions() as $needKey => $definition) {
+            $relationName = (string) ($definition['relation'] ?? '');
+            if ($relationName === '' || ! method_exists($activity, $relationName)) {
+                continue;
+            }
+
+            $relation = $activity->{$relationName}();
+            $model = $relation->make();
+            $model::query()->updateOrCreate(
+                ['monthly_activity_id' => $activity->id],
+                [
+                    'is_required' => (bool) ($activity->executionNeedsMap()[$needKey] ?? false),
+                    'payload' => $this->needPayloadByKey($needKey, $payload),
+                    'followup' => $followup[$needKey] ?? null,
+                    'post_execution' => $this->needPostExecutionByKey($needKey, $post),
+                ]
+            );
+        }
+    }
+
+    protected function needPayloadByKey(string $needKey, array $payload): ?array
+    {
+        return match ($needKey) {
+            'volunteers' => [
+                'required_volunteers' => 8,
+                'volunteer_need' => 'Registration and crowd guidance volunteers.',
+                'volunteer_age_range' => '18-35',
+                'volunteer_gender' => 'both',
+                'volunteer_tasks_summary' => 'Registration, ushering, and activity support.',
+            ],
+            'official_correspondence' => [
+                'reason' => 'Official coordination letter',
+                'target' => 'Zarqa Municipality',
+                'brief' => 'Coordinate venue access and public attendance.',
+            ],
+            'media_coverage' => ['notes' => 'Media team covered opening, activities, and closing remarks.'],
+            'supplies' => ['items' => ['Projector and screen', 'Sound system', 'Printed invitations']],
+            'official_sponsorship' => ['enabled' => true],
+            'external_partners' => ['enabled' => true],
+            'ceremony_agenda' => (array) data_get($payload, 'ceremony'),
+            'transport' => (array) data_get($payload, 'transport'),
+            'maintenance_workers' => (array) data_get($payload, 'maintenance'),
+            'gifts_shields' => (array) data_get($payload, 'gifts'),
+            'programs_participation' => (array) data_get($payload, 'programs'),
+            'certificates_thanks' => [
+                'certificates' => data_get($payload, 'certificates'),
+                'thanks_letters' => data_get($payload, 'thanks_letters'),
+            ],
+            'invitations' => (array) data_get($payload, 'invitations'),
+            default => null,
+        };
+    }
+
+    protected function needPostExecutionByKey(string $needKey, array $post): ?array
+    {
+        return [
+            'completed_at' => data_get($post, 'completed_at'),
+            'teams' => data_get($post, 'teams', []),
+            'ceremony_items' => data_get($post, 'ceremony_items', []),
+            'need_key' => $needKey,
         ];
     }
 
