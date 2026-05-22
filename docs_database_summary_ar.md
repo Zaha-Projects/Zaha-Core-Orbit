@@ -225,3 +225,72 @@
 - عند نشر حدث سنوي إلزامي، النظام ينشئ خطة شهرية لكل فرع مشارك ويملأ:
   month/day/activity_date/title/proposed_date + أعلام الربط بالأجندة + status/lifecycle_status.
 - بعض الحقول تُقفل عند التعديل للأنشطة المرتبطة بالأجندة، خاصة في الحالات الموحدة.
+
+
+## 6) حقول احتياجات التنفيذ في الأنشطة الشهرية (بشكل كامل)
+
+### أ) الحقول المباشرة داخل جدول `monthly_activities`
+- `requires_programs`
+- `requires_workshops`
+- `requires_communications`
+- `execution_needs_payload` (JSON)
+- `execution_needs_followup` (JSON)
+- `post_execution_payload` (JSON)
+
+### ب) الحقول المرتبطة باحتياجات التنفيذ (تشغيلية)
+- التطوع:
+  - `needs_volunteers`
+  - `required_volunteers`
+  - `volunteer_age_range`
+  - `volunteer_gender`
+  - `volunteer_tasks_summary`
+- المراسلات الرسمية:
+  - `needs_official_correspondence`
+  - `official_correspondence_reason`
+  - `official_correspondence_target`
+  - `official_correspondence_brief`
+  - `correspondence_status`
+- التغطية الإعلامية:
+  - `needs_media_coverage`
+  - `media_coverage`
+  - `media_coverage_notes`
+- المستلزمات:
+  - الحقل الرابط داخل الجدول الأساسي: `id` (يرتبط بجدول المستلزمات عبر `monthly_activity_id`)
+
+### ج) مفاتيح احتياجات التنفيذ المعتمدة في الموديل (Execution Need Definitions)
+القيم المعرفة في `MonthlyActivity::EXECUTION_NEED_DEFINITIONS`:
+- `volunteers`
+- `official_correspondence`
+- `media_coverage`
+- `supplies`
+- `official_sponsorship`
+- `external_partners`
+- `ceremony_agenda`
+- `transport`
+- `maintenance_workers`
+- `gifts_shields`
+- `programs_participation`
+- `certificates_thanks`
+- `invitations`
+
+## 7) الجداول المستقلة لاحتياجات التنفيذ
+
+### 1) `workshops_requests`
+- الغرض: متابعة طلبات الورش المرتبطة بالنشاط.
+- الحقول: `id`, `event_id`, `status`, `notes`, `assigned_to`, `timestamps`.
+
+### 2) `communications_requests`
+- الغرض: متابعة طلبات الإعلام/التواصل.
+- الحقول: `id`, `event_id`, `status`, `notes`, `media_files`, `timestamps`.
+
+### 3) `correspondence_logs`
+- الغرض: سجل إجراءات المراسلات الرسمية للنشاط.
+- الحقول: `id`, `monthly_activity_id`, `status`, `notes`, `created_by`, `timestamps`.
+
+### 4) `monthly_activity_supplies`
+- الغرض: إدارة مستلزمات التنفيذ لكل نشاط.
+- الحقول: `id`, `monthly_activity_id`, `item_name`, `quantity`, `status`, `available`, `provider_type`, `provider_name`, `timestamps`.
+
+### 5) `monthly_activity_team`
+- الغرض: فريق التنفيذ/التشغيل المرتبط بالنشاط.
+- الحقول: `id`, `monthly_activity_id`, `team_name`, `user_id`, `member_name`, `member_email`, `role_desc`, `timestamps`.
