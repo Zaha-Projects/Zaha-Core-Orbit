@@ -1312,6 +1312,26 @@ class MonthlyActivitiesController extends Controller
         ];
     }
 
+    protected function needAvailabilityRules(): array
+    {
+        return [
+            'availability' => ['nullable', 'array'],
+            'availability.volunteers' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.official_correspondence' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.media_coverage' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.supplies' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.official_sponsorship' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.external_partners' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.ceremony_agenda' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.transport' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.maintenance_workers' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.gifts_shields' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.programs_participation' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.certificates_thanks' => ['nullable', 'in:available,not_available,unknown'],
+            'availability.invitations' => ['nullable', 'in:available,not_available,unknown'],
+        ];
+    }
+
     protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
     {
         $query = AgendaEvent::query()->orderByDesc('event_date')->orderByDesc('id');
