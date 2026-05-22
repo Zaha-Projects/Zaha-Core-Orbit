@@ -971,6 +971,18 @@ class MonthlyActivitiesController extends Controller
         $data['execution_needs_payload'] = $payload;
     }
 
+    protected function normalizePlanningPayload(array &$data): void
+    {
+        $this->normalizeSuppliesPayload($data);
+        $this->normalizeExecutionNeedsPayload($data);
+
+        $ageFrom = $data['volunteer_age_from'] ?? null;
+        $ageTo = $data['volunteer_age_to'] ?? null;
+        if (filled($ageFrom) && filled($ageTo)) {
+            $data['volunteer_age_range'] = ((int) $ageFrom).'-'.((int) $ageTo);
+        }
+    }
+
     protected function shouldSubmitFromRequest(Request $request): bool
     {
         return $request->input('submit_action') === 'submit';
