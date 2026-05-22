@@ -213,37 +213,37 @@ class MonthlyActivity extends Model
 
     public function getVolunteerNeedAttribute(): ?string
     {
-        return $this->volunteerNeed?->volunteer_need;
+        return $this->getRelationValue('volunteerNeed')?->volunteer_need;
     }
 
     public function getRequiredVolunteersAttribute(): ?int
     {
-        return $this->volunteerNeed?->required_volunteers;
+        return $this->getRelationValue('volunteerNeed')?->required_volunteers;
     }
 
     public function getVolunteerAgeRangeAttribute(): ?string
     {
-        return $this->volunteerNeed?->volunteer_age_range;
+        return $this->getRelationValue('volunteerNeed')?->volunteer_age_range;
     }
 
     public function getVolunteerGenderAttribute(): ?string
     {
-        return $this->volunteerNeed?->volunteer_gender;
+        return $this->getRelationValue('volunteerNeed')?->volunteer_gender;
     }
 
     public function getVolunteerTasksSummaryAttribute(): ?string
     {
-        return $this->volunteerNeed?->volunteer_tasks_summary;
+        return $this->getRelationValue('volunteerNeed')?->volunteer_tasks_summary;
     }
 
     public function getVolunteersRequiredAttribute(): bool
     {
-        return (bool) ($this->volunteerNeed?->volunteers_required);
+        return (bool) ($this->getRelationValue('volunteerNeed')?->volunteers_required);
     }
 
     public function getVolunteersCountAttribute(): ?int
     {
-        return $this->volunteerNeed?->volunteers_count;
+        return $this->getRelationValue('volunteerNeed')?->volunteers_count;
     }
 
 

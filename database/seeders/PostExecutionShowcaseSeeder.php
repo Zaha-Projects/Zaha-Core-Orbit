@@ -42,11 +42,6 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'short_description' => 'Post execution showcase for Zarqa user.',
                 'work_teams_count' => 2,
                 'needs_volunteers' => true,
-                'required_volunteers' => 8,
-                'volunteer_need' => 'Registration and crowd guidance volunteers.',
-                'volunteer_age_range' => '18-35',
-                'volunteer_gender' => 'both',
-                'volunteer_tasks_summary' => 'Registration, ushering, and activity support.',
                 'expected_attendance' => 80,
                 'actual_attendance' => 74,
                 'attendance_notes' => 'Attendance was strong with minor late arrivals.',
@@ -87,6 +82,19 @@ class PostExecutionShowcaseSeeder extends Seeder
                 'is_official' => true,
                 'branch_id' => $zarqaBranch->id,
                 'created_by' => $creator->id,
+            ]
+        );
+
+        $activity->volunteerNeed()->updateOrCreate(
+            ['monthly_activity_id' => $activity->id],
+            [
+                'required_volunteers' => 8,
+                'volunteer_need' => 'Registration and crowd guidance volunteers.',
+                'volunteer_age_range' => '18-35',
+                'volunteer_gender' => 'both',
+                'volunteer_tasks_summary' => 'Registration, ushering, and activity support.',
+                'volunteers_required' => true,
+                'volunteers_count' => 8,
             ]
         );
 
