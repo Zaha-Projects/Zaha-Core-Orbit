@@ -502,6 +502,24 @@ class MonthlyActivitiesController extends Controller
     protected function syncExecutionNeedsTable(MonthlyActivity $monthlyActivity, array $data): void
     {
         $payload = (array) ($data['execution_needs_payload'] ?? []);
+        $payload['volunteers'] = array_merge(
+            (array) data_get($payload, 'volunteers', []),
+            [
+                'required_volunteers' => $data['required_volunteers'] ?? $monthlyActivity->required_volunteers,
+                'volunteer_need' => $data['volunteer_need'] ?? $monthlyActivity->volunteer_need,
+                'volunteer_age_range' => $data['volunteer_age_range'] ?? $monthlyActivity->volunteer_age_range,
+                'volunteer_gender' => $data['volunteer_gender'] ?? $monthlyActivity->volunteer_gender,
+                'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? $monthlyActivity->volunteer_tasks_summary,
+            ]
+        );
+        $payload['external_partners'] = array_merge(
+            (array) data_get($payload, 'external_partners', []),
+            [
+                'outside_contact_number' => $data['outside_contact_number'] ?? $monthlyActivity->outside_contact_number,
+                'external_liaison_name' => $data['external_liaison_name'] ?? $monthlyActivity->external_liaison_name,
+                'external_liaison_phone' => $data['external_liaison_phone'] ?? $monthlyActivity->external_liaison_phone,
+            ]
+        );
         $followupRows = collect($data['execution_needs_followup'] ?? [])
             ->mapWithKeys(fn ($row, $key) => [(string) $key => (array) $row])
             ->all();
