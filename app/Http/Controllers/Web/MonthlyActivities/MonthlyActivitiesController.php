@@ -983,6 +983,99 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+    protected function evaluationSummaryRules(): array
+    {
+        return [
+            'actual_attendance' => ['nullable', 'integer', 'min:0'],
+            'attendance_notes' => ['nullable', 'string', 'max:5000'],
+            'audience_satisfaction_percent' => ['nullable', 'numeric', 'between:0,100'],
+            'evaluation_score' => ['nullable', 'numeric', 'between:0,100'],
+            'evaluation_reason' => ['nullable', 'string', 'max:5000'],
+        ];
+    }
+
+    protected function canSubmitPostEvaluation(MonthlyActivity $monthlyActivity): bool
+    {
+        return in_array((string) $monthlyActivity->execution_status, ['executed', 'completed', 'closed'], true);
+    }
+
+    protected function normalizeExecutionNeedsFollowup(array &$data, MonthlyActivity $monthlyActivity): void
+    {
+        $rows = collect($data['execution_needs_followup'] ?? [])
+            ->mapWithKeys(fn ($row, $key) => [(string) $key => is_array($row) ? $row : []])
+            ->all();
+
+        if ($rows === []) {
+            $rows = $this->existingExecutionNeedsFollowupRows($monthlyActivity);
+        }
+
+        $data['execution_needs_followup'] = $rows;
+    }
+
+    protected function filterExecutionNeedsFollowupToEnabled(MonthlyActivity $monthlyActivity, array &$data): void
+    {
+        $enabledKeys = array_keys($monthlyActivity->enabledExecutionNeeds());
+        $data['execution_needs_followup'] = collect($data['execution_needs_followup'] ?? [])
+            ->filter(fn ($value, $key) => in_array((string) $key, $enabledKeys, true))
+            ->all();
+    }
+
+    protected function syncEvaluationData(MonthlyActivity $monthlyActivity, array $data, int $actorId): void
+    {
+        $monthlyActivity->update([
+            'actual_attendance' => $data['actual_attendance'] ?? $monthlyActivity->actual_attendance,
+            'attendance_notes' => $data['attendance_notes'] ?? $monthlyActivity->attendance_notes,
+            'audience_satisfaction_percent' => $data['audience_satisfaction_percent'] ?? $monthlyActivity->audience_satisfaction_percent,
+            'evaluation_score' => $data['evaluation_score'] ?? $monthlyActivity->evaluation_score,
+            'evaluation_reason' => $data['evaluation_reason'] ?? $monthlyActivity->evaluation_reason,
+            'evaluation_assigned_user_id' => $monthlyActivity->evaluation_assigned_user_id ?? $actorId,
+            'evaluation_assigned_at' => $monthlyActivity->evaluation_assigned_at ?? now(),
+        ]);
+
+        foreach ((array) ($data['evaluations'] ?? []) as $questionId => $payload) {
+            if (! is_array($payload)) {
+                continue;
+            }
+
+            MonthlyActivityEvaluationResponse::query()->updateOrCreate(
+                [
+                    'monthly_activity_id' => $monthlyActivity->id,
+                    'evaluation_question_id' => (int) $questionId,
+                ],
+                [
+                    'answer_value' => $payload['answer_value'] ?? null,
+                    'score' => $payload['score'] ?? null,
+                    'note' => $payload['note'] ?? null,
+                    'created_by' => $actorId,
+                ]
+            );
+        }
+    }
+
+    protected function closeLifecycle(MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle): void
+    {
+        try {
+            $lifecycle->transitionOrFail($monthlyActivity, 'Closed');
+        } catch (\Throwable $e) {
+            $monthlyActivity->update(['lifecycle_status' => 'Closed']);
+        }
+    }
+
+    protected function logWorkflowAction(string $actionType, MonthlyActivity $monthlyActivity, Request $request, string $status, array $meta = []): void
+    {
+        WorkflowActionLog::query()->create([
+            'module' => 'monthly_activities',
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $monthlyActivity->id,
+            'action_type' => $actionType,
+            'status' => $status,
+            'performed_by' => $request->user()?->id,
+            'notes' => $request->input('followup_remarks'),
+            'meta' => $meta,
+            'performed_at' => now(),
+        ]);
+    }
+
     protected function shouldSubmitFromRequest(Request $request): bool
     {
         return $request->input('submit_action') === 'submit';
