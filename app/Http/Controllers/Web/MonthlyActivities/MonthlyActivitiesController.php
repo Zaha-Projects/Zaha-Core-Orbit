@@ -1291,6 +1291,18 @@ class MonthlyActivitiesController extends Controller
         return $this->statusLookupOptions('monthly_activities', ['closed', 'completed', 'executed'], $selected);
     }
 
+    protected function executionStatusLabels(): array
+    {
+        return [
+            'executed' => __('app.roles.programs.monthly_activities.execution_status.executed'),
+            'postponed' => __('app.roles.programs.monthly_activities.execution_status.postponed'),
+            'cancelled' => __('app.roles.programs.monthly_activities.execution_status.cancelled'),
+            'completed' => __('app.roles.programs.monthly_activities.execution_status.completed'),
+            'closed' => __('app.roles.programs.monthly_activities.execution_status.closed'),
+            'pending' => __('app.roles.programs.monthly_activities.execution_status.pending'),
+        ];
+    }
+
     protected function agendaEventsForUser(?User $user, ?MonthlyActivity $monthlyActivity = null)
     {
         $query = AgendaEvent::query()->orderByDesc('event_date')->orderByDesc('id');
