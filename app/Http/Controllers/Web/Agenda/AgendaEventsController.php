@@ -245,7 +245,6 @@ class AgendaEventsController extends Controller
         $templateDescription = trim((string) ($template['description'] ?? ''));
         $templateExecutionTime = trim((string) ($template['execution_time'] ?? ''));
         $templateLocationDetails = trim((string) ($template['location_details'] ?? ''));
-        $templateRequiredVolunteers = $template['required_volunteers'] ?? null;
 
         $monthlyActivity = MonthlyActivity::firstOrNew([
             'agenda_event_id' => $agendaEvent->id,
@@ -265,7 +264,6 @@ class AgendaEventsController extends Controller
             'location_type' => $monthlyActivity->location_type ?? 'inside_center',
             'location_details' => $templateLocationDetails !== '' ? $templateLocationDetails : $monthlyActivity->location_details,
             'execution_time' => $templateExecutionTime !== '' ? $templateExecutionTime : $monthlyActivity->execution_time,
-            'required_volunteers' => is_numeric($templateRequiredVolunteers) ? (int) $templateRequiredVolunteers : $monthlyActivity->required_volunteers,
             'status' => $monthlyActivity->status ?? 'draft',
             'created_by' => $monthlyActivity->created_by ?: $branchActor->id,
         ]);

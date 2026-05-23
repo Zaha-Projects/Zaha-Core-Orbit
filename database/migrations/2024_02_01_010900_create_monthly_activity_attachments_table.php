@@ -12,9 +12,11 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();
             $table->string('file_type');
+            $table->string('title')->nullable();
             $table->string('file_path');
             $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
+            $table->index('file_type', 'ma_attach_file_type_idx');
         });
     }
 

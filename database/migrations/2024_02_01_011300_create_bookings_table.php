@@ -27,6 +27,8 @@ return new class extends Migration {
             $table->foreignId('center_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
+            $table->index('booking_date', 'bookings_booking_date_idx');
+            $table->index('status', 'bookings_status_idx');
         });
     }
 

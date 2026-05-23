@@ -21,6 +21,7 @@ class CreateUsersTable extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('status')->default('active');
+            $table->boolean('auto_approve_workflow_steps')->default(false);
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('center_id')->nullable()->constrained()->nullOnDelete();
             $table->rememberToken();

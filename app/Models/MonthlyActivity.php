@@ -83,24 +83,12 @@ class MonthlyActivity extends Model
         'agenda_event_id',
         'description',
         'has_sponsor',
-        'sponsor_name_title',
         'has_partners',
-        'partner_1_name',
-        'partner_1_role',
-        'partner_2_name',
-        'partner_2_role',
-        'partner_3_name',
-        'partner_3_role',
         'has_official_attendance',
         'official_attendance_details',
-        'needs_official_letters',
         'needs_official_correspondence',
         'correspondence_reason_id',
         'correspondence_status',
-        'official_correspondence_reason',
-        'official_correspondence_target',
-        'official_correspondence_brief',
-        'letter_purpose',
         'location_type',
         'location_details',
 
@@ -122,14 +110,7 @@ class MonthlyActivity extends Model
         'target_group_other',
         'short_description',
         'work_teams_count',
-        'volunteer_need',
         'needs_volunteers',
-        'volunteers_required',
-        'volunteers_count',
-        'required_volunteers',
-        'volunteer_age_range',
-        'volunteer_gender',
-        'volunteer_tasks_summary',
         'expected_attendance',
         'expected_attendance_from',
         'expected_attendance_to',
@@ -183,13 +164,11 @@ class MonthlyActivity extends Model
         'is_in_agenda' => 'boolean',
         'is_from_agenda' => 'boolean',
         'has_official_attendance' => 'boolean',
-        'needs_official_letters' => 'boolean',
         'needs_official_correspondence' => 'boolean',
         'relations_approval_on_reschedule' => 'boolean',
         'has_sponsor' => 'boolean',
         'has_partners' => 'boolean',
         'needs_volunteers' => 'boolean',
-        'volunteers_required' => 'boolean',
         'needs_media_coverage' => 'boolean',
         'requires_programs' => 'boolean',
         'is_program_related' => 'boolean',
@@ -218,6 +197,57 @@ class MonthlyActivity extends Model
     {
         return $this->attributes['branch_plan_file'] ?? null;
     }
+
+    public function getVolunteerNeedAttribute(): ?string
+    {
+        return $this->getRelationValue('volunteerNeed')?->volunteer_need;
+    }
+
+    public function getRequiredVolunteersAttribute(): ?int
+    {
+        return $this->getRelationValue('volunteerNeed')?->required_volunteers;
+    }
+
+    public function getVolunteerAgeRangeAttribute(): ?string
+    {
+        return $this->getRelationValue('volunteerNeed')?->volunteer_age_range;
+    }
+
+    public function getVolunteerGenderAttribute(): ?string
+    {
+        return $this->getRelationValue('volunteerNeed')?->volunteer_gender;
+    }
+
+    public function getVolunteerTasksSummaryAttribute(): ?string
+    {
+        return $this->getRelationValue('volunteerNeed')?->volunteer_tasks_summary;
+    }
+
+    public function getVolunteersRequiredAttribute(): bool
+    {
+        return (bool) ($this->getRelationValue('volunteerNeed')?->volunteers_required);
+    }
+
+    public function getVolunteersCountAttribute(): ?int
+    {
+        return $this->getRelationValue('volunteerNeed')?->volunteers_count;
+    }
+
+    public function getOfficialCorrespondenceReasonAttribute(): ?string
+    {
+        return $this->getRelationValue('officialCorrespondence')?->reason;
+    }
+
+    public function getOfficialCorrespondenceTargetAttribute(): ?string
+    {
+        return $this->getRelationValue('officialCorrespondence')?->target;
+    }
+
+    public function getOfficialCorrespondenceBriefAttribute(): ?string
+    {
+        return $this->getRelationValue('officialCorrespondence')?->brief;
+    }
+
 
     public function getMonthlyCreatedByBranchRelationsAttribute(): bool
     {
@@ -418,6 +448,17 @@ class MonthlyActivity extends Model
     public function newerVersions()
     {
         return $this->hasMany(self::class, 'previous_version_id');
+    }
+
+
+    public function volunteerNeed()
+    {
+        return $this->hasOne(MonthlyActivityVolunteerNeed::class);
+    }
+
+    public function officialCorrespondence()
+    {
+        return $this->morphOne(OfficialCorrespondence::class, 'correspondable');
     }
 
     public function supplies()

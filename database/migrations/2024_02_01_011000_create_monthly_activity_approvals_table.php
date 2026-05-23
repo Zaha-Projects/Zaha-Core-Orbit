@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->foreignId('approved_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
+            $table->index('approved_at', 'monthly_activity_approvals_approved_at_idx');
         });
     }
 

@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->time('return_time')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->index('segment_no', 'trip_segments_no_idx');
         });
     }
 

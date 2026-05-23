@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->time('end_time')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->index('round_no', 'trip_rounds_no_idx');
         });
     }
 

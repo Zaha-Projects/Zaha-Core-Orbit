@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration {public function up(): void {Schema::create('event_target_group', function (Blueprint $table) {$table->id();$table->foreignId('monthly_activity_id')->constrained('monthly_activities')->cascadeOnDelete();$table->foreignId('target_group_id')->constrained('target_groups')->cascadeOnDelete();$table->string('custom_text')->nullable();$table->timestamps();$table->unique(['monthly_activity_id','target_group_id']);});} public function down(): void {Schema::dropIfExists('event_target_group');}};

@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->text('notes')->nullable();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+            $table->index('resources_type', 'maint_work_resources_type_idx');
         });
     }
 

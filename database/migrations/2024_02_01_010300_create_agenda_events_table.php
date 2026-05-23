@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->unsignedTinyInteger('day');
             $table->string('event_name');
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('owner_department_id')->nullable()->constrained('departments')->nullOnDelete();
             $table->unsignedBigInteger('event_category_id')->nullable();
             $table->string('plan_type')->nullable();
             $table->string('event_type')->nullable();
@@ -23,6 +24,7 @@ return new class extends Migration {
             $table->string('relations_approval_status')->default('pending');
             $table->string('executive_approval_status')->default('pending');
             $table->boolean('is_archived')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->unsignedSmallInteger('archived_year')->nullable();
             $table->boolean('is_mandatory')->default(false);
             $table->boolean('is_unified')->default(true);
@@ -31,11 +33,13 @@ return new class extends Migration {
             $table->timestamp('approved_by_executive_at')->nullable();
             $table->text('notes')->nullable();
             $table->string('agenda_plan_file')->nullable();
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
 
             $table->index('event_date');
             $table->index('event_type');
             $table->index('plan_type');
+            $table->index('owner_department_id');
             $table->index(['is_archived', 'archived_year']);
         });
     }

@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->integer('actual_count')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->index('monthly_activity_id', 'activity_attendance_act_idx');
         });
     }
 

@@ -12,6 +12,10 @@ return new class extends Migration {
             $table->string('unit_key')->unique();
             $table->string('name');
             $table->string('role_name')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->unsignedInteger('sort_order')->default(0);
+            $table->string('color_hex', 7)->nullable();
+            $table->string('icon', 32)->nullable();
             $table->timestamps();
         });
     }
@@ -21,4 +25,3 @@ return new class extends Migration {
         Schema::dropIfExists('department_units');
     }
 };
-

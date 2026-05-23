@@ -11,6 +11,7 @@ use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivitySupply;
 use App\Models\MonthlyActivityTeam;
+use App\Models\MonthlyActivityVolunteerNeed;
 use App\Models\WorkflowLog;
 use App\Models\WorkflowInstance;
 use App\Models\EvaluationQuestion;
@@ -207,13 +208,7 @@ class MonthlyActivitiesController extends Controller
             return $query;
         }
 
-        return $query->where(function ($volunteerQuery) {
-            $volunteerQuery
-                ->where('needs_volunteers', true)
-                ->orWhere('required_volunteers', '>', 0)
-                ->orWhere('volunteers_count', '>', 0)
-                ->orWhere('volunteers_required', true);
-        });
+        return $query->where('needs_volunteers', true);
     }
 
     protected function canCompleteAfterExecution(MonthlyActivity $monthlyActivity, ?User $user): bool
@@ -321,10 +316,7 @@ class MonthlyActivitiesController extends Controller
 
     protected function activityNeedsVolunteers(MonthlyActivity $monthlyActivity): bool
     {
-        return (bool) $monthlyActivity->needs_volunteers
-            || (int) ($monthlyActivity->required_volunteers ?? 0) > 0
-            || (int) ($monthlyActivity->volunteers_count ?? 0) > 0
-            || (bool) $monthlyActivity->volunteers_required;
+        return (bool) $monthlyActivity->needs_volunteers;
     }
 
     protected function monthlyLockDays(): int
@@ -636,6 +628,47 @@ class MonthlyActivitiesController extends Controller
         return $this->agendaEventsQueryForUser($user, $agendaEventId)
             ->whereKey($agendaEventId)
             ->first();
+    }
+
+    protected function syncVolunteerNeed(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        if (! (bool) ($data['needs_volunteers'] ?? false)) {
+            $monthlyActivity->volunteerNeed()->delete();
+            return;
+        }
+
+        $monthlyActivity->volunteerNeed()->updateOrCreate(
+            ['monthly_activity_id' => $monthlyActivity->id],
+            [
+                'volunteer_need' => $data['volunteer_need'] ?? null,
+                'required_volunteers' => $data['required_volunteers'] ?? null,
+                'volunteer_age_range' => $data['volunteer_age_range'] ?? null,
+                'volunteer_gender' => $data['volunteer_gender'] ?? null,
+                'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
+                'volunteers_required' => (bool) (($data['required_volunteers'] ?? 0) > 0),
+                'volunteers_count' => $data['required_volunteers'] ?? null,
+            ]
+        );
+    }
+
+    protected function syncOfficialCorrespondence(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
+            $monthlyActivity->officialCorrespondence()->delete();
+            return;
+        }
+
+        $monthlyActivity->officialCorrespondence()->updateOrCreate(
+            [
+                'correspondable_type' => MonthlyActivity::class,
+                'correspondable_id' => $monthlyActivity->id,
+            ],
+            [
+                'reason' => $data['official_correspondence_reason'] ?? null,
+                'target' => $data['official_correspondence_target'] ?? null,
+                'brief' => $data['official_correspondence_brief'] ?? null,
+            ]
+        );
     }
 
     protected function flashCreatePrefill(Request $request): void
@@ -1632,13 +1665,8 @@ class MonthlyActivitiesController extends Controller
             'short_description' => $monthlyActivity->short_description,
             'description' => $monthlyActivity->description,
             'needs_volunteers' => (int) $needsVolunteers,
-            'required_volunteers' => $needsVolunteers ? $monthlyActivity->required_volunteers : null,
-            'volunteer_need' => $needsVolunteers ? $monthlyActivity->volunteer_need : null,
-            'volunteer_age_range' => $needsVolunteers ? $monthlyActivity->volunteer_age_range : null,
             'volunteer_age_from' => $needsVolunteers ? $volunteerAgeFrom : null,
             'volunteer_age_to' => $needsVolunteers ? $volunteerAgeTo : null,
-            'volunteer_gender' => $needsVolunteers ? $monthlyActivity->volunteer_gender : null,
-            'volunteer_tasks_summary' => $needsVolunteers ? $monthlyActivity->volunteer_tasks_summary : null,
             'needs_official_correspondence' => (int) $needsOfficialCorrespondence,
             'official_correspondence_reason' => $needsOfficialCorrespondence ? $monthlyActivity->official_correspondence_reason : null,
             'official_correspondence_target' => $needsOfficialCorrespondence ? $monthlyActivity->official_correspondence_target : null,
@@ -2002,14 +2030,7 @@ class MonthlyActivitiesController extends Controller
             'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'official_correspondence_brief' => ['nullable', 'string', 'max:1500', 'required_if:needs_official_correspondence,1'],
             'has_sponsor' => ['nullable', 'boolean'],
-            'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
-            'partner_1_name' => ['nullable', 'string', 'max:255'],
-            'partner_1_role' => ['nullable', 'string', 'max:255'],
-            'partner_2_name' => ['nullable', 'string', 'max:255'],
-            'partner_2_role' => ['nullable', 'string', 'max:255'],
-            'partner_3_name' => ['nullable', 'string', 'max:255'],
-            'partner_3_role' => ['nullable', 'string', 'max:255'],
             'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
             'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
             'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
@@ -2173,26 +2194,15 @@ class MonthlyActivitiesController extends Controller
             'target_group_other' => $data['target_group_other'] ?? null,
             'short_description' => $data['short_description'] ?? null,
             'work_teams_count' => $data['work_teams_count'] ?? null,
-            'volunteer_need' => $data['volunteer_need'] ?? null,
             'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
-            'required_volunteers' => $data['required_volunteers'] ?? null,
-            'volunteer_age_range' => $data['volunteer_age_range'] ?? null,
-            'volunteer_gender' => $data['volunteer_gender'] ?? null,
-            'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
             'expected_attendance_from' => $data['expected_attendance_from'] ?? null,
             'expected_attendance_to' => $data['expected_attendance_to'] ?? null,
             'actual_attendance' => $data['actual_attendance'] ?? null,
             'attendance_notes' => $data['attendance_notes'] ?? null,
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
-            'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
-            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
-            'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
-            'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -2215,6 +2225,8 @@ class MonthlyActivitiesController extends Controller
         ]);
 
         $workflowService->initializeDynamicStatuses($monthlyActivity);
+        $this->syncVolunteerNeed($monthlyActivity, $data);
+        $this->syncOfficialCorrespondence($monthlyActivity, $data);
         $this->syncTargetGroups($monthlyActivity, $data);
         Log::info('monthly_activity.created', [
             'monthly_activity_id' => $monthlyActivity->id,
@@ -2583,14 +2595,7 @@ class MonthlyActivitiesController extends Controller
             'official_correspondence_target' => ['nullable', 'string', 'max:255', 'required_if:needs_official_correspondence,1'],
             'official_correspondence_brief' => ['nullable', 'string', 'max:1500', 'required_if:needs_official_correspondence,1'],
             'has_sponsor' => ['nullable', 'boolean'],
-            'sponsor_name_title' => ['nullable', 'string', 'max:255'],
             'has_partners' => ['nullable', 'boolean'],
-            'partner_1_name' => ['nullable', 'string', 'max:255'],
-            'partner_1_role' => ['nullable', 'string', 'max:255'],
-            'partner_2_name' => ['nullable', 'string', 'max:255'],
-            'partner_2_role' => ['nullable', 'string', 'max:255'],
-            'partner_3_name' => ['nullable', 'string', 'max:255'],
-            'partner_3_role' => ['nullable', 'string', 'max:255'],
             'rescheduled_date' => ['nullable', 'date', 'required_if:execution_status,postponed'],
             'reschedule_reason' => ['nullable', 'string', 'required_if:execution_status,postponed'],
             'cancellation_reason' => ['nullable', 'string', 'required_if:execution_status,cancelled'],
@@ -2747,14 +2752,7 @@ class MonthlyActivitiesController extends Controller
             'actual_attendance',
             'attendance_notes',
             'has_sponsor',
-            'sponsor_name_title',
             'has_partners',
-            'partner_1_name',
-            'partner_1_role',
-            'partner_2_name',
-            'partner_2_role',
-            'partner_3_name',
-            'partner_3_role',
             'needs_official_letters',
             'needs_official_correspondence',
             'official_correspondence_reason',
@@ -2837,26 +2835,15 @@ class MonthlyActivitiesController extends Controller
             'target_group_other' => $data['target_group_other'] ?? null,
             'short_description' => $data['short_description'] ?? null,
             'work_teams_count' => $data['work_teams_count'] ?? null,
-            'volunteer_need' => $data['volunteer_need'] ?? null,
             'needs_volunteers' => (bool) ($data['needs_volunteers'] ?? false),
-            'required_volunteers' => $data['required_volunteers'] ?? null,
-            'volunteer_age_range' => $data['volunteer_age_range'] ?? null,
-            'volunteer_gender' => $data['volunteer_gender'] ?? null,
-            'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
             'expected_attendance' => $data['expected_attendance'] ?? null,
             'expected_attendance_from' => $data['expected_attendance_from'] ?? null,
             'expected_attendance_to' => $data['expected_attendance_to'] ?? null,
             'actual_attendance' => $data['actual_attendance'] ?? null,
             'attendance_notes' => $data['attendance_notes'] ?? null,
             'has_sponsor' => (bool) (($data['has_sponsor'] ?? false) || !empty($data['sponsors'] ?? [])),
-            'sponsor_name_title' => $data['sponsor_name_title'] ?? null,
             'has_partners' => (bool) (($data['has_partners'] ?? false) || !empty($data['partners'] ?? [])),
-            'needs_official_letters' => false,
             'needs_official_correspondence' => (bool) ($data['needs_official_correspondence'] ?? false),
-            'official_correspondence_reason' => $data['official_correspondence_reason'] ?? null,
-            'official_correspondence_target' => $data['official_correspondence_target'] ?? null,
-            'official_correspondence_brief' => $data['official_correspondence_brief'] ?? null,
-            'letter_purpose' => null,
             'rescheduled_date' => $data['rescheduled_date'] ?? null,
             'reschedule_reason' => $data['reschedule_reason'] ?? null,
             'cancellation_reason' => $data['cancellation_reason'] ?? null,
@@ -2950,26 +2937,15 @@ class MonthlyActivitiesController extends Controller
                 'target_group_other' => $newValues['target_group_other'],
                 'short_description' => $newValues['short_description'],
                 'work_teams_count' => $newValues['work_teams_count'],
-                'volunteer_need' => $newValues['volunteer_need'],
                 'needs_volunteers' => $newValues['needs_volunteers'],
-                'required_volunteers' => $newValues['required_volunteers'],
-                'volunteer_age_range' => $newValues['volunteer_age_range'],
-                'volunteer_gender' => $newValues['volunteer_gender'],
-                'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
                 'expected_attendance' => $newValues['expected_attendance'],
                 'expected_attendance_from' => $newValues['expected_attendance_from'],
                 'expected_attendance_to' => $newValues['expected_attendance_to'],
                 'actual_attendance' => $newValues['actual_attendance'],
                 'attendance_notes' => $newValues['attendance_notes'],
                 'has_sponsor' => $newValues['has_sponsor'],
-                'sponsor_name_title' => $newValues['sponsor_name_title'],
                 'has_partners' => $newValues['has_partners'],
-                'needs_official_letters' => false,
                 'needs_official_correspondence' => $newValues['needs_official_correspondence'],
-                'official_correspondence_reason' => $newValues['official_correspondence_reason'],
-                'official_correspondence_target' => $newValues['official_correspondence_target'],
-                'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-                'letter_purpose' => null,
                 'rescheduled_date' => $newValues['rescheduled_date'],
                 'reschedule_reason' => $newValues['reschedule_reason'],
                 'cancellation_reason' => $newValues['cancellation_reason'],
@@ -3049,26 +3025,15 @@ class MonthlyActivitiesController extends Controller
             'target_group_other' => $newValues['target_group_other'],
             'short_description' => $newValues['short_description'],
             'work_teams_count' => $newValues['work_teams_count'],
-            'volunteer_need' => $newValues['volunteer_need'],
             'needs_volunteers' => $newValues['needs_volunteers'],
-            'required_volunteers' => $newValues['required_volunteers'],
-            'volunteer_age_range' => $newValues['volunteer_age_range'],
-            'volunteer_gender' => $newValues['volunteer_gender'],
-            'volunteer_tasks_summary' => $newValues['volunteer_tasks_summary'],
             'expected_attendance' => $newValues['expected_attendance'],
             'expected_attendance_from' => $newValues['expected_attendance_from'],
             'expected_attendance_to' => $newValues['expected_attendance_to'],
             'actual_attendance' => $newValues['actual_attendance'],
             'attendance_notes' => $newValues['attendance_notes'],
             'has_sponsor' => $newValues['has_sponsor'],
-            'sponsor_name_title' => $newValues['sponsor_name_title'],
             'has_partners' => $newValues['has_partners'],
-            'needs_official_letters' => false,
             'needs_official_correspondence' => $newValues['needs_official_correspondence'],
-            'official_correspondence_reason' => $newValues['official_correspondence_reason'],
-            'official_correspondence_target' => $newValues['official_correspondence_target'],
-            'official_correspondence_brief' => $newValues['official_correspondence_brief'],
-            'letter_purpose' => null,
             'rescheduled_date' => $newValues['rescheduled_date'],
             'reschedule_reason' => $newValues['reschedule_reason'],
             'cancellation_reason' => $newValues['cancellation_reason'],

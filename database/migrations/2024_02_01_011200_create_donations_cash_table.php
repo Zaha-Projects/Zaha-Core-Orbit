@@ -25,6 +25,8 @@ return new class extends Migration {
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
+            $table->index('date', 'donations_cash_date_idx');
+            $table->index('finance_status', 'donations_cash_finance_status_idx');
         });
     }
 

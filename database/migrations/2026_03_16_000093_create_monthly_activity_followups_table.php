@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration {public function up(): void {Schema::create('monthly_activity_followups', function (Blueprint $table) {$table->id();$table->foreignId('monthly_activity_id')->constrained()->cascadeOnDelete();$table->text('remarks')->nullable();$table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();$table->timestamps();$table->index('monthly_activity_id','ma_followups_act_idx');});} public function down(): void {Schema::dropIfExists('monthly_activity_followups');}};
