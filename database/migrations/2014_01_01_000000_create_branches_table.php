@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('icon', 32)->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->index('name', 'branches_name_idx');
         });
     }
 

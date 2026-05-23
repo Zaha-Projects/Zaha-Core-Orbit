@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('file_path');
             $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
+            $table->index('file_type', 'ma_attach_file_type_idx');
         });
     }
 

@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->string('name');
             $table->string('title')->nullable();
             $table->boolean('is_official')->default(true);
-            $table->timestamps();
+            $table->timestamps();$table->index('is_official','ma_sponsors_official_idx');
         });
     }
 

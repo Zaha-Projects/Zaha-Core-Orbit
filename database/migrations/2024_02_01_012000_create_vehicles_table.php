@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
+            $table->index('status', 'vehicles_status_idx');
         });
     }
 

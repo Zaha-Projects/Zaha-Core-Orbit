@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->string('name');
             $table->timestamps();
             $table->softDeletes();
+            $table->index('name', 'centers_name_idx');
         });
     }
 

@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['attachable_type', 'attachable_id'], 'attachments_attachable_idx');
         });
     }
 

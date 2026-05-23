@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->text('old_value')->nullable();
             $table->text('new_value')->nullable();
             $table->timestamp('changed_at')->nullable();
-            $table->timestamps();
+            $table->timestamps();$table->index('monthly_activity_id','ma_change_logs_act_idx');
         });
     }
 

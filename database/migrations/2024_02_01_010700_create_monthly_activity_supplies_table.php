@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('provider_type')->nullable();
             $table->string('provider_name')->nullable();
             $table->timestamps();
+            $table->index('status', 'ma_supplies_status_idx');
         });
     }
 
