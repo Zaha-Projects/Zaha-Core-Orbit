@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->unsignedTinyInteger('day');
             $table->string('event_name');
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('owner_department_id')->nullable()->constrained('departments')->nullOnDelete();
             $table->unsignedBigInteger('event_category_id')->nullable();
             $table->string('plan_type')->nullable();
             $table->string('event_type')->nullable();
@@ -38,6 +39,7 @@ return new class extends Migration {
             $table->index('event_date');
             $table->index('event_type');
             $table->index('plan_type');
+            $table->index('owner_department_id');
             $table->index(['is_archived', 'archived_year']);
         });
     }
