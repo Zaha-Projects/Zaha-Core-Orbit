@@ -84,7 +84,6 @@ class RolesSeeder extends Seeder
             ['key' => 'movement_viewer', 'name_ar' => 'مستعرض الحركة', 'name_en' => 'Movement Viewer'],
         ];
     }
-
     /**
      * @return array<string, array<int, string>>
      */

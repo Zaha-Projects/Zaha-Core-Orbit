@@ -14,7 +14,6 @@ class DatabaseSeeder extends Seeder
         $this->call(SettingSeeder::class);
         $this->call(BranchSeeder::class);
         $this->call(DepartmentSeeder::class);
-        $this->call(CenterSeeder::class);
         $this->call(DepartmentUnitSeeder::class);
         $this->call(VisualIdentitySeeder::class);
         $this->call(EventCategorySeeder::class);
@@ -29,7 +28,7 @@ class DatabaseSeeder extends Seeder
         $this->call(UsersSeeder::class);
         $this->call(BranchStaffUsersSeeder::class);
         $this->call(WorkflowSeeder::class);
-        $this->call(WorkflowShowcaseSeeder::class);
+        // $this->call(WorkflowShowcaseSeeder::class);
         // $this->call(PostExecutionShowcaseSeeder::class);
 
         $this->call(MovementSeeder::class);
