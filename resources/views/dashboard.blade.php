@@ -40,8 +40,7 @@
         @endforelse
     </section>
 
-    @if(($calendarEvents ?? collect())->isNotEmpty())
-        <section class="row g-3">
+    <section class="row g-3">
             <div class="col-12">
                 <div class="card dashboard-calendar-card p-3 p-lg-4" id="calendarSection">
                     <div class="dashboard-calendar-header mb-3 mb-lg-4">
@@ -90,8 +89,7 @@
                 </div>
             </div>
         </section>
-        <script type="application/json" id="dashboard-calendar-events-json">@json($calendarEvents)</script>
-    @endif
+    <script type="application/json" id="dashboard-calendar-events-json">@json($calendarEvents ?? [])</script>
 @endsection
 
 @push('styles')
