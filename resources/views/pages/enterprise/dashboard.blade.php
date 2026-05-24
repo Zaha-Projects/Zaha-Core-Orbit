@@ -63,7 +63,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/enterprise-dashboard.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/enterprise-dashboard.css') }}">
 @endpush
 
 @include('pages.enterprise.partials.charts-scripts')

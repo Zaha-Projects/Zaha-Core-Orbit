@@ -2,9 +2,9 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-show.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-show.css') }}">
 @endpush
 
 @php

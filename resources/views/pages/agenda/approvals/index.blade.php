@@ -1,9 +1,9 @@
 ﻿@extends('layouts.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/workflow-ui.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/agenda-approvals.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/agenda-approvals.css') }}">
 @endpush
 
 

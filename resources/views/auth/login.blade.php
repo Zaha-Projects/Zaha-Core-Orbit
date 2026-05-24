@@ -55,8 +55,8 @@
                     <div class="col-lg-6 order-1 order-lg-2 d-none d-lg-flex auth-flow-cover">
                         <div class="auth-flow-cover-content w-100">
                             <div class="auth-flow-cover-logos">
-                                <img src="{{ asset('assets/images/zaha-core-orbit-logo.svg') }}" alt="Zaha - Core Orbit" class="auth-flow-logo-main">
-                                <img src="{{ asset('assets/theme/logos/logo2.svg') }}" alt="Zaha Original Logo" class="auth-flow-logo-original">
+                                <img src="{{ \App\Support\AssetVersion::url('assets/images/zaha-core-orbit-logo.svg') }}" alt="Zaha - Core Orbit" class="auth-flow-logo-main">
+                                <img src="{{ \App\Support\AssetVersion::url('assets/theme/logos/logo2.svg') }}" alt="Zaha Original Logo" class="auth-flow-logo-original">
                             </div>
                             <h2 class="h2 mb-3">Zaha - Core Orbit</h2>
                                 <p class="mb-0">بوابتك لإدارة عمليات مركز زها.</p>

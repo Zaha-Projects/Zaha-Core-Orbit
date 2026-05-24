@@ -199,7 +199,7 @@
                 <div class="col-12">
                     <div class="monthly-form-section-head monthly-form-section-head--location">
                         <h2 class="h6 mb-1 d-flex align-items-center gap-2">
-                            <img src="{{ asset('assets/images/zaha-core-orbit-mark.svg') }}" alt="Zaha" class="monthly-location-logo">
+                            <img src="{{ \App\Support\AssetVersion::url('assets/images/zaha-core-orbit-mark.svg') }}" alt="Zaha" class="monthly-location-logo">
                             <span>المكان</span>
                         </h2>
                     </div>
@@ -825,8 +825,8 @@
 
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/event-ui-shared.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/monthly-activity-form.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-form.css') }}">
 @endpush
 
 @push('scripts')
@@ -835,5 +835,5 @@
     <script type="application/json" id="monthly-form-old-partners-json">@json($oldPartners)</script>
     <script type="application/json" id="monthly-form-old-supplies-json">@json($oldSupplies)</script>
     <script type="application/json" id="monthly-form-old-team-groups-json">@json($oldTeamGroups)</script>
-    <script src="{{ asset('assets/js/monthly-activity-form.js') }}"></script>
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/monthly-activity-form.js') }}"></script>
 @endpush

@@ -94,5 +94,5 @@
 </div>
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/relations-dashboard.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/relations-dashboard.css') }}">
 @endpush

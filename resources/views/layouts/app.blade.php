@@ -206,7 +206,7 @@
 <div class="layout-shell">
     <aside id="appSidebar" class="sidebar-original">
         <div class="sidebar-brand">
-            <img class="brand-logo" src="{{ asset('assets/theme/logos/logo2.svg') }}" alt="{{ __('app.common.app_name') }}">
+            <img class="brand-logo" src="{{ \App\Support\AssetVersion::url('assets/theme/logos/logo2.svg') }}" alt="{{ __('app.common.app_name') }}">
         </div>
 
         <p class="side-comment" data-i18n="quick_menu">{{ __('app.common.dashboard') }}</p>

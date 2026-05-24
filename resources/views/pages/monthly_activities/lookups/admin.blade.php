@@ -9,7 +9,7 @@
 @endphp
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/lookups-admin.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/lookups-admin.css') }}">
 @endpush
 
 @section('content')
