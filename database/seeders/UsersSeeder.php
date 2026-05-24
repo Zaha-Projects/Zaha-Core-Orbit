@@ -59,7 +59,7 @@ class UsersSeeder extends Seeder
     private function userDefinitions(): array
     {
         return [
-            ['name' => 'مدير النظام - مروان الخطيب', 'email' => 'super-admin@zaha.test', 'role' => 'super_admin', 'branch' => 'amman', 'phone' => '0790001001'],
+            ['name' => 'مدير النظام - مروان الخطيب', 'email' => 'admin@zaha-center.org', 'role' => 'super_admin', 'branch' => 'amman', 'phone' => '0790001001'],
             ['name' => 'المدير التنفيذي - رنا المجالي', 'email' => 'executive-manager@zaha.test', 'role' => 'executive_manager', 'branch' => 'amman', 'phone' => '0790001002'],
             ['name' => 'مدير البرامج - ليث الحمود', 'email' => 'programs-manager@zaha.test', 'role' => 'programs_manager', 'branch' => 'amman', 'phone' => '0790001003'],
             ['name' => 'مدير علاقات رئيسي - ديمة السالم', 'email' => 'relations-manager@zaha.test', 'role' => 'relations_manager', 'branch' => 'amman', 'phone' => '0790001004'],
