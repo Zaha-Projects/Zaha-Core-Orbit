@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-
+use Illuminate\Support\Facades\URL;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -23,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        if (!app()->runningInConsole() && app()->environment('production')) {
+            URL::forceScheme('https');
+        }
         $spatieAliases = [
             'Spatie\\Permission\\Middlewares\\RoleMiddleware' => 'Spatie\\Permission\\Middleware\\RoleMiddleware',
             'Spatie\\Permission\\Middlewares\\PermissionMiddleware' => 'Spatie\\Permission\\Middleware\\PermissionMiddleware',
