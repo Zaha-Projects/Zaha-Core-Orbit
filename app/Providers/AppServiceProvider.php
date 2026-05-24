@@ -23,7 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        if (!app()->runningInConsole() && app()->environment('production')) {
+        $appUrl = (string) config('app.url', '');
+
+        if (!app()->runningInConsole() && app()->environment('production') && str_starts_with($appUrl, 'https://')) {
             URL::forceScheme('https');
         }
         $spatieAliases = [
