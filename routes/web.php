@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserDirectoryController;
 use App\Http\Controllers\Roles\FinanceOfficer\DashboardController as FinanceOfficerDashboardController;
 use App\Http\Controllers\Roles\MaintenanceOfficer\DashboardController as MaintenanceOfficerDashboardController;
 use App\Http\Controllers\Roles\ProgramsManager\DashboardController as ProgramsManagerDashboardController;
@@ -106,6 +108,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/workflow-auto-approval-preference', [WorkflowAutoApprovalPreferenceController::class, 'update'])->name('workflow_auto_approval.update');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/directory/users', [UserDirectoryController::class, 'index'])->name('directory.users.index');
     Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');
     Route::get('/dashboard/admin/evaluation-assignments', [SuperAdminEvaluationAssignmentsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.evaluation_assignments.index');

@@ -215,6 +215,12 @@
             <li class="side-item {{ $currentRoute === 'dashboard' ? 'selected' : '' }}">
                 <a href="{{ route('dashboard') }}"><i class="fas fa-gauge-high"></i><span data-i18n="menu_dashboard">{{ __('app.common.dashboard') }}</span></a>
             </li>
+            <li class="side-item {{ request()->routeIs('profile.*') ? 'selected' : '' }}">
+                <a href="{{ route('profile.show') }}"><i class="fas fa-user"></i><span>الملف الشخصي</span></a>
+            </li>
+            <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}">
+                <a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>دليل المستخدمين</span></a>
+            </li>
 
             @if ($canAccessAdminSidebar)
                 <li class="side-item {{ request()->routeIs('role.super_admin.users*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.users') }}"><i class="fas fa-users"></i><span>{{ __('app.roles.super_admin.sidebar.users') }}</span></a></li>
@@ -301,6 +307,9 @@
                     <li class="nav-item dropdown">
                         <button class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown" type="button">{{ $displayName }}</button>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user me-2"></i>الملف الشخصي</a></li>
+                            <li><a class="dropdown-item" href="{{ route('directory.users.index') }}"><i class="fas fa-address-book me-2"></i>دليل المستخدمين</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <button id="themeToggle" class="dropdown-item" type="button">
                                     {{ $theme === 'dark' ? __('nav.light_mode') : __('nav.dark_mode') }}
