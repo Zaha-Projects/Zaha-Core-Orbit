@@ -28,6 +28,8 @@ class BranchSeeder extends Seeder
                     'city' => $branch['city'],
                     'address' => $branch['address'],
                     'is_main' => $branch['is_main'],
+                    'color_hex' => $branch['color_hex'],
+                    'icon' => $branch['icon'],
                 ]
             );
         }
