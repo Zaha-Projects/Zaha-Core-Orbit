@@ -6,6 +6,7 @@ use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivityEvaluationResponse;
 use App\Models\WorkflowLog;
 use App\Models\User;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -19,10 +20,16 @@ class ProfileController extends Controller
     {
         $user = $request->user()->load(['branch', 'assignedBranches', 'roles']);
 
+        $emailEditingEnabled = $this->profileEmailEditingEnabled();
+        $canManageEmailEditing = $this->canManageProfileEmailEditing($request->user());
+
         return view('profile.show', [
             'user' => $user,
             'stats' => Cache::remember($this->statsCacheKey($user->id), now()->addMinutes(15), fn (): array => $this->buildStats($user->id)),
             'evaluations' => Cache::remember($this->evaluationsCacheKey($user->id), now()->addMinutes(15), fn (): array => $this->buildEvaluations($user->id)),
+            'emailEditingEnabled' => $emailEditingEnabled,
+            'canEditProfileEmail' => $emailEditingEnabled || $canManageEmailEditing,
+            'canManageEmailEditing' => $canManageEmailEditing,
         ]);
     }
 
@@ -30,18 +37,28 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        $data = $request->validate([
+        $canEditEmail = $this->profileEmailEditingEnabled() || $this->canManageProfileEmailEditing($user);
+
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:32'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'confirmed', 'min:8'],
-        ]);
+        ];
+
+        if ($canEditEmail) {
+            $rules['email'] = ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)];
+        }
+
+        $data = $request->validate($rules);
 
         $user->fill([
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
-            'email' => $data['email'],
         ]);
+
+        if ($canEditEmail) {
+            $user->email = $data['email'];
+        }
 
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
@@ -53,6 +70,34 @@ class ProfileController extends Controller
         Cache::forget($this->evaluationsCacheKey($user->id));
 
         return back()->with('success', 'تم تحديث الملف الشخصي بنجاح.');
+    }
+
+    public function updateEmailEditing(Request $request): RedirectResponse
+    {
+        abort_unless($this->canManageProfileEmailEditing($request->user()), 403);
+
+        $data = $request->validate([
+            'allow_profile_email_edit' => ['nullable', 'boolean'],
+        ]);
+
+        Setting::query()->updateOrCreate(
+            ['key' => 'allow_profile_email_edit'],
+            ['value' => (string) (int) ($data['allow_profile_email_edit'] ?? false)]
+        );
+
+        return back()->with('success', ($data['allow_profile_email_edit'] ?? false)
+            ? 'تم السماح للمستخدمين بتعديل البريد الإلكتروني من الملف الشخصي.'
+            : 'تم قفل تعديل البريد الإلكتروني من الملف الشخصي.');
+    }
+
+    private function profileEmailEditingEnabled(): bool
+    {
+        return Setting::valueOf('allow_profile_email_edit', '0') === '1';
+    }
+
+    private function canManageProfileEmailEditing(?User $user): bool
+    {
+        return (bool) ($user?->hasRole('super_admin') || $user?->can('users.manage'));
     }
 
     private function buildStats(int $userId): array

@@ -45,6 +45,35 @@ class ProductionReadinessMonthlyActivitiesTest extends TestCase
             ->assertSessionHasErrors('outside_contact_number');
     }
 
+
+    public function test_unavailable_supply_accepts_insurance_mechanism_without_provider_name(): void
+    {
+        [$user, $branch, $center] = $this->actingRelationsOfficer();
+
+        $this->actingAs($user)
+            ->post(route('role.relations.activities.store'), $this->validPayload($branch, [
+                'center_id' => $center->id,
+                'requires_supplies' => 1,
+                'supplies' => [
+                    [
+                        'item_name' => 'مكبر صوت',
+                        'quantity' => 1,
+                        'available' => '0',
+                        'insurance_mechanism' => 'purchase',
+                    ],
+                ],
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('monthly_activity_supplies', [
+            'item_name' => 'مكبر صوت',
+            'available' => false,
+            'status' => 'needed',
+            'provider_type' => 'purchase',
+        ]);
+    }
+
     public function test_approved_activity_edit_creates_new_version_and_cancels_previous(): void
     {
         [$user, $branch, $center] = $this->actingRelationsOfficer();

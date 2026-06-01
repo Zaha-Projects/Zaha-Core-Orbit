@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('[name="outside_place_name"]'),
     document.querySelector('[name="outside_google_maps_url"]'),
     document.querySelector('[name="outside_contact_number"]'),
+    document.querySelector('[name="external_liaison_name"]'),
+    document.querySelector('[name="external_liaison_phone"]'),
     document.querySelector('[name="outside_address"]')
   ].filter(Boolean);
   const oldPartners = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-edit-old-partners-json', []) : JSON.parse(document.getElementById('monthly-edit-old-partners-json')?.textContent ?? '[]');
@@ -287,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const count = Math.max(1, Math.min(20, parseInt(suppliesCount?.value || '1', 10)));
     suppliesContainer.innerHTML = '';
     for (let i = 0; i < count; i++) {
-      const available = !!oldSupplies?.[i]?.available;
+      const available = String(oldSupplies?.[i]?.available ?? '1') === '1';
       suppliesContainer.insertAdjacentHTML('beforeend', `
         <div class="col-12 col-md-6"><input class="form-control" name="supplies[${i}][item_name]" placeholder="اسم المستلزم ${i + 1}" value="${esc(oldSupplies?.[i]?.item_name)}"></div>
         <div class="col-12 col-md-3">
