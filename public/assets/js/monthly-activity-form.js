@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setRequiredState([
             '[name="outside_place_name"]',
             '[name="outside_google_maps_url"]',
+            '[name="outside_contact_number"]',
             '[name="external_liaison_name"]',
             '[name="external_liaison_phone"]',
             '[name="outside_address"]'
@@ -394,6 +395,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         for (let i = 0; i < count; i += 1) {
             const available = String(oldSupplies?.[i]?.available ?? '1') === '1';
+            const insuranceMechanism = oldSupplies?.[i]?.insurance_mechanism ?? oldSupplies?.[i]?.provider_type ?? '';
+            const insuranceOtherDetails = oldSupplies?.[i]?.insurance_other_details ?? oldSupplies?.[i]?.provider_name ?? '';
             suppliesContainer.insertAdjacentHTML('beforeend', `
                 <div class="col-12">
                     <div class="border rounded-3 p-3 mb-2">
@@ -417,14 +420,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <label class="form-label">آلية التأمين</label>
                                 <select class="form-select js-supply-insurance" data-index="${i}" name="supplies[${i}][insurance_mechanism]">
                                     <option value="">اختر</option>
-                                    <option value="purchase" ${(oldSupplies?.[i]?.insurance_mechanism === 'purchase') ? 'selected' : ''}>شراء</option>
-                                    <option value="support" ${(oldSupplies?.[i]?.insurance_mechanism === 'support') ? 'selected' : ''}>دعم</option>
-                                    <option value="other" ${(oldSupplies?.[i]?.insurance_mechanism === 'other') ? 'selected' : ''}>أخرى</option>
+                                    <option value="purchase" ${(insuranceMechanism === 'purchase') ? 'selected' : ''}>شراء</option>
+                                    <option value="support" ${(insuranceMechanism === 'support') ? 'selected' : ''}>دعم</option>
+                                    <option value="other" ${(insuranceMechanism === 'other') ? 'selected' : ''}>أخرى</option>
                                 </select>
                             </div>
-                            <div class="col-12 js-supply-provider js-supply-other-details" data-index="${i}" style="${available || oldSupplies?.[i]?.insurance_mechanism !== 'other' ? 'display:none' : ''}">
+                            <div class="col-12 js-supply-provider js-supply-other-details" data-index="${i}" style="${available || insuranceMechanism !== 'other' ? 'display:none' : ''}">
                                 <label class="form-label">تفاصيل أخرى</label>
-                                <input class="form-control" name="supplies[${i}][insurance_other_details]" value="${esc(oldSupplies?.[i]?.insurance_other_details)}">
+                                <input class="form-control" name="supplies[${i}][insurance_other_details]" value="${esc(insuranceOtherDetails)}">
                             </div>
                         </div>
                     </div>
@@ -435,8 +438,10 @@ document.addEventListener('DOMContentLoaded', function () {
         suppliesContainer.querySelectorAll('.js-supply-available').forEach((select) => {
             select.addEventListener('change', function () {
                 const providers = suppliesContainer.querySelectorAll(`.js-supply-provider[data-index="${this.dataset.index}"]`);
+                const insurance = suppliesContainer.querySelector(`.js-supply-insurance[data-index="${this.dataset.index}"]`);
                 providers.forEach((provider) => {
-                    provider.style.display = this.value === '1' ? 'none' : '';
+                    const isOtherDetails = provider.classList.contains('js-supply-other-details');
+                    provider.style.display = this.value === '1' || (isOtherDetails && insurance?.value !== 'other') ? 'none' : '';
                 });
             });
         });

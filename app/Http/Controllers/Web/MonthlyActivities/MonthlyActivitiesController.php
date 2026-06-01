@@ -56,6 +56,10 @@ class MonthlyActivitiesController extends Controller
         'invitations',
     ];
 
+    protected const JORDAN_CONTACT_PHONE_REGEX = '/^(?:\+962|0)(?:7[789]\d{7}|[2356]\d{7})$/';
+
+    protected const JORDAN_MOBILE_PHONE_REGEX = '/^(?:\+962|0)7[789]\d{7}$/';
+
     protected const MONTHLY_ACTIVITY_EDIT_ROLES = [
         'relations_manager',
         'relations_officer',
@@ -719,6 +723,55 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
+
+    protected function normalizeMonthlyActivityContactPhones(Request $request): void
+    {
+        $normalized = [];
+
+        foreach (['outside_contact_number', 'external_liaison_phone'] as $field) {
+            if (! $request->has($field)) {
+                continue;
+            }
+
+            $value = trim((string) $request->input($field));
+
+            if ($value === '') {
+                $normalized[$field] = null;
+
+                continue;
+            }
+
+            $value = strtr($value, [
+                '٠' => '0',
+                '١' => '1',
+                '٢' => '2',
+                '٣' => '3',
+                '٤' => '4',
+                '٥' => '5',
+                '٦' => '6',
+                '٧' => '7',
+                '٨' => '8',
+                '٩' => '9',
+                '۰' => '0',
+                '۱' => '1',
+                '۲' => '2',
+                '۳' => '3',
+                '۴' => '4',
+                '۵' => '5',
+                '۶' => '6',
+                '۷' => '7',
+                '۸' => '8',
+                '۹' => '9',
+            ]);
+
+            $normalized[$field] = preg_replace('/(?!^)\D+/', '', $value);
+        }
+
+        if ($normalized !== []) {
+            $request->merge($normalized);
+        }
+    }
+
     protected function normalizePlanningPayload(array &$data): void
     {
         $this->normalizeVolunteerAgeRange($data);
@@ -1153,6 +1206,74 @@ class MonthlyActivitiesController extends Controller
         }
 
         return $users;
+    }
+
+    protected function normalizeSuppliesRequestPayload(Request $request): void
+    {
+        $supplies = $request->input('supplies');
+
+        if (! is_array($supplies)) {
+            return;
+        }
+
+        $normalized = collect($supplies)->map(function ($supply) {
+            if (! is_array($supply)) {
+                return $supply;
+            }
+
+            if (! array_key_exists('provider_type', $supply) && array_key_exists('insurance_mechanism', $supply)) {
+                $supply['provider_type'] = $supply['insurance_mechanism'];
+            }
+
+            if (! array_key_exists('provider_name', $supply) && array_key_exists('insurance_other_details', $supply)) {
+                $supply['provider_name'] = $supply['insurance_other_details'];
+            }
+
+            return $supply;
+        })->all();
+
+        $request->merge(['supplies' => $normalized]);
+    }
+
+    protected function supplyValidationRules(Request $request): array
+    {
+        $rules = [
+            'requires_supplies' => ['nullable', 'boolean'],
+            'supplies' => ['nullable', 'array'],
+            'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
+            'supplies.*.available' => ['nullable', 'boolean'],
+            'supplies.*.quantity' => ['nullable', 'integer', 'min:1'],
+            'supplies.*.provider_type' => ['nullable', 'string', 'max:255'],
+            'supplies.*.provider_name' => ['nullable', 'string', 'max:255'],
+            'supplies.*.insurance_mechanism' => ['nullable', 'string', 'max:255'],
+            'supplies.*.insurance_other_details' => ['nullable', 'string', 'max:255'],
+        ];
+
+        $supplies = $request->input('supplies');
+        if (! $request->boolean('requires_supplies') || ! is_array($supplies)) {
+            return $rules;
+        }
+
+        foreach ($supplies as $index => $supply) {
+            if (! is_array($supply)) {
+                continue;
+            }
+
+            $itemName = trim((string) ($supply['item_name'] ?? ''));
+            $available = in_array((string) ($supply['available'] ?? '1'), ['1', 'true', 'on', 'yes'], true);
+
+            if ($itemName === '' || $available) {
+                continue;
+            }
+
+            $rules["supplies.$index.provider_type"] = ['required', 'string', 'max:255'];
+
+            if ((string) ($supply['provider_type'] ?? '') === 'other') {
+                $rules["supplies.$index.provider_name"] = ['required', 'string', 'max:255'];
+            }
+        }
+
+        return $rules;
     }
 
     protected function normalizeSuppliesPayload(array &$data): void
@@ -1972,6 +2093,9 @@ class MonthlyActivitiesController extends Controller
             $request->merge(['branch_id' => $branchId]);
         }
 
+        $this->normalizeMonthlyActivityContactPhones($request);
+        $this->normalizeSuppliesRequestPayload($request);
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'activity_date' => ['required', 'date'],
@@ -1989,9 +2113,9 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
-            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:'.self::JORDAN_CONTACT_PHONE_REGEX],
             'external_liaison_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
-            'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center'],
+            'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center', 'regex:'.self::JORDAN_MOBILE_PHONE_REGEX],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
@@ -2056,13 +2180,7 @@ class MonthlyActivitiesController extends Controller
             'team_groups.*.members' => ['nullable', 'array'],
             'team_groups.*.members.*.member_name' => ['nullable', 'string', 'max:255'],
             'team_groups.*.members.*.role_desc' => ['nullable', 'string', 'max:255'],
-            'requires_supplies' => ['nullable', 'boolean'],
-            'supplies' => ['nullable', 'array'],
-            'supplies.*.item_name' => ['nullable', 'string', 'max:255'],
-            'supplies.*.available' => ['nullable', 'boolean'],
-            'supplies.*.quantity' => ['nullable', 'integer', 'min:1'],
-            'supplies.*.provider_type' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
-            'supplies.*.provider_name' => ['nullable', 'string', 'max:255', 'required_if:supplies.*.available,0'],
+            ...$this->supplyValidationRules($request),
             'evaluations' => ['nullable', 'array'],
             'evaluations.*.score' => ['nullable', 'numeric', 'between:0,5'],
             'evaluations.*.answer_value' => ['nullable', 'string', 'max:255'],
@@ -2438,6 +2556,9 @@ class MonthlyActivitiesController extends Controller
             $request->merge(['branch_id' => $branchId]);
         }
 
+        $this->normalizeMonthlyActivityContactPhones($request);
+        $this->normalizeSuppliesRequestPayload($request);
+
         if ($request->boolean('evaluation_only')) {
             abort_unless(
                 $request->user()->hasAnyRole(['followup_officer', 'evaluation_officer', 'super_admin', 'relations_manager', 'executive_manager']),
@@ -2556,9 +2677,9 @@ class MonthlyActivitiesController extends Controller
             'internal_location' => ['nullable', 'string', 'max:255', 'required_if:location_type,inside_center'],
             'outside_place_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
             'outside_google_maps_url' => array_merge($this->safeExternalUrlRules(), ['required_if:location_type,outside_center']),
-            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:/^(\\+962|0)7[789]\\d{7}$/'],
+            'outside_contact_number' => ['nullable', 'required_if:location_type,outside_center', 'regex:'.self::JORDAN_CONTACT_PHONE_REGEX],
             'external_liaison_name' => ['nullable', 'string', 'max:255', 'required_if:location_type,outside_center'],
-            'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center'],
+            'external_liaison_phone' => ['nullable', 'string', 'max:50', 'required_if:location_type,outside_center', 'regex:'.self::JORDAN_MOBILE_PHONE_REGEX],
             'outside_address' => ['nullable', 'string'],
             'execution_time' => ['nullable', 'string', 'max:255'],
             'time_from' => ['nullable', 'date_format:H:i'],
@@ -2581,6 +2702,7 @@ class MonthlyActivitiesController extends Controller
             'actual_attendance' => ['nullable', 'integer', 'min:0'],
             'attendance_notes' => ['nullable', 'string'],
             'work_teams_count' => ['nullable', 'integer', 'min:1', 'max:20'],
+            ...$this->supplyValidationRules($request),
             'needs_media_coverage' => ['nullable', 'boolean'],
             'media_coverage_notes' => ['nullable', 'string'],
             'requires_programs' => ['nullable', 'boolean'],

@@ -110,6 +110,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/email-editing', [ProfileController::class, 'updateEmailEditing'])->middleware('role_or_permission:super_admin|users.manage')->name('profile.email_editing.update');
     Route::get('/directory/users', [UserDirectoryController::class, 'index'])->name('directory.users.index');
     Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');

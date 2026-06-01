@@ -143,9 +143,11 @@ return [
 
     'custom' => [
         'supplies.*.provider_name' => [
+            'required' => 'Please fill in the supply sourcing details when the sourcing method is other.',
             'required_if' => 'Please fill in the provider name when the supply is marked as unavailable.',
         ],
         'supplies.*.provider_type' => [
+            'required' => 'Please select the sourcing method when the supply is marked as unavailable.',
             'required_if' => 'Please select the provider type when the supply is marked as unavailable.',
         ],
     ],
@@ -162,6 +164,12 @@ return [
     */
 
     'attributes' => [
+        'outside_place_name' => 'external location name',
+        'outside_google_maps_url' => 'location link',
+        'outside_contact_number' => 'external location contact number',
+        'external_liaison_name' => 'liaison officer name',
+        'external_liaison_phone' => 'liaison officer phone number',
+        'outside_address' => 'detailed address',
         'supplies.*.item_name' => 'supply name',
         'supplies.*.available' => 'availability status',
         'supplies.*.provider_type' => 'provider type',

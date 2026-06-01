@@ -233,8 +233,23 @@
                 </div>
                 <div class="col-12 col-md-4 js-outside-location">
                     <label class="form-label">رابط الموقع من Google Maps</label>
-                    <input class="form-control @error('outside_google_maps_url') is-invalid @enderror" name="outside_google_maps_url" value="{{ old('outside_google_maps_url', $monthlyActivity->outside_google_maps_url) }}">
+                    <input class="form-control @error('outside_google_maps_url') is-invalid @enderror" name="outside_google_maps_url" value="{{ old('outside_google_maps_url', $monthlyActivity->outside_google_maps_url) }}" placeholder="https://maps.google.com/…">
                     @error('outside_google_maps_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">رقم تواصل المكان الخارجي</label>
+                    <input class="form-control @error('outside_contact_number') is-invalid @enderror" name="outside_contact_number" dir="ltr" inputmode="tel" value="{{ old('outside_contact_number', $monthlyActivity->outside_contact_number) }}" placeholder="مثال: 0791234567 أو 065001234">
+                    @error('outside_contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">اسم ضابط الارتباط</label>
+                    <input class="form-control @error('external_liaison_name') is-invalid @enderror" name="external_liaison_name" value="{{ old('external_liaison_name', $monthlyActivity->external_liaison_name) }}">
+                    @error('external_liaison_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-4 js-outside-location">
+                    <label class="form-label">رقم ضابط الارتباط</label>
+                    <input class="form-control @error('external_liaison_phone') is-invalid @enderror" name="external_liaison_phone" dir="ltr" inputmode="tel" value="{{ old('external_liaison_phone', $monthlyActivity->external_liaison_phone) }}" placeholder="مثال: 0791234567">
+                    @error('external_liaison_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <hr class="my-2">
                 <div class="col-12"><h2 class="h6 mb-1">بيانات التنفيذ الأساسية</h2></div>
@@ -246,11 +261,6 @@
                     <label class="form-label">وقت التنفيذ</label>
                     <input class="form-control" name="execution_time" value="{{ $monthlyActivity->execution_time }}">
                 </div>
-                <div class="col-12 col-md-4 js-outside-location">
-                    <label class="form-label">رقم تواصل المكان الخارجي</label>
-                    <input class="form-control" name="outside_contact_number" value="{{ old('outside_contact_number', $monthlyActivity->outside_contact_number) }}">
-                </div>
-
                 <div class="col-12 col-md-4">
                     <label class="form-label">الفئة المستهدفة</label>
                     <select class="form-select js-target-group" name="target_group_id">
