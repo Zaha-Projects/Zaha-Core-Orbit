@@ -412,3 +412,77 @@ body.mobile-sidebar-open .layout-shell::after {
   color: var(--muted-color);
   font-size: .82rem;
 }
+
+/* Mobile viewport guard: keep the content at the viewport origin when the fixed
+   sidebar becomes an off-canvas drawer. This intentionally has higher
+   specificity than the desktop RTL/LTR sidebar offsets above. */
+@media (max-width: 991.98px) {
+  html[dir="rtl"] .content-shell,
+  html[dir="ltr"] .content-shell,
+  html[dir="rtl"] body.sidebar-collapsed .content-shell,
+  html[dir="ltr"] body.sidebar-collapsed .content-shell,
+  body.dir-rtl .content-shell,
+  body.dir-ltr .content-shell,
+  body.dir-rtl.sidebar-collapsed .content-shell,
+  body.dir-ltr.sidebar-collapsed .content-shell {
+    margin-inline: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  .layout-shell,
+  .content-shell,
+  .content-main {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .topbar-original {
+    margin: .75rem .5rem;
+    max-width: calc(100vw - 1rem);
+  }
+
+  .content-main {
+    padding-inline: .5rem;
+  }
+
+  .content-main > .container,
+  .content-main > .container-fluid {
+    max-width: 100%;
+    overflow-x: clip;
+    padding-inline: .5rem;
+  }
+
+  .topbar-actions {
+    min-width: 0;
+  }
+
+  .btn-profile {
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .topbar-original {
+    border-radius: 1.25rem;
+    padding-inline: .55rem;
+  }
+
+  .topbar-actions {
+    gap: .35rem !important;
+  }
+
+  .top-avatar,
+  .btn-locale-toggle {
+    display: none !important;
+  }
+
+  .content-main {
+    padding-inline: .35rem;
+  }
+}
