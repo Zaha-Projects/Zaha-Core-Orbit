@@ -32,6 +32,8 @@ use Illuminate\Support\Collection;
 
 class AgendaEventsController extends Controller
 {
+    private const AGENDA_SUBMITTABLE_STATUSES = ['draft', 'changes_requested'];
+
     protected function clearPartnerDepartments(AgendaEvent $event): void
     {
         $event->partnerDepartments()->sync([]);
@@ -108,7 +110,7 @@ class AgendaEventsController extends Controller
             return true;
         }
 
-        return in_array((string) $agendaEvent->status, ['draft', 'changes_requested'], true);
+        return in_array((string) $agendaEvent->status, self::AGENDA_SUBMITTABLE_STATUSES, true);
     }
 
     protected function assertKhaldaHqAgendaAuthority(Request $request): void
