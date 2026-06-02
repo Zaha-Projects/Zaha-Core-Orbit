@@ -11,6 +11,7 @@
     $normalizeMonthlyPageStatus = function (?string $status): ?string {
         return match ((string) $status) {
             'approved' => 'approved',
+            'post_execution_submitted' => 'post_execution_submitted',
             'draft' => 'draft',
             default => filled($status) ? 'submitted' : null,
         };
@@ -44,6 +45,7 @@
     $calendarStatusLabels = [
         'draft' => $workflowStatusLabel('draft'),
         'submitted' => $workflowStatusLabel('submitted'),
+        'post_execution_submitted' => $workflowStatusLabel('post_execution_submitted'),
         'approved' => $workflowStatusLabel('approved'),
     ];
     $perPageFilterOptions = collect([10, 20, 30, 50, 100])
@@ -214,9 +216,24 @@
                                     && ! $viewer->hasRole('super_admin');
                                 $canCompleteAfterExecution = $viewer
                                     && $viewer->hasAnyRole($monthlyActivityEditRoles)
-                                    && (int) $activity->created_by === (int) $viewer->id;
+                                    && (int) $activity->created_by === (int) $viewer->id
+                                    && ! in_array((string) $activity->status, ['post_execution_submitted', 'closed'], true);
+                                $canReviewPostExecution = $viewer
+                                    && (string) $activity->status === 'post_execution_submitted'
+                                    && (
+                                        $viewer->hasRole('super_admin')
+                                        || (
+                                            $viewer->hasRole('supervisor')
+                                            && (
+                                                (int) ($viewer->branch_id ?? 0) === (int) $activity->branch_id
+                                                || $viewer->assignedBranches()->whereKey((int) $activity->branch_id)->exists()
+                                            )
+                                        )
+                                    );
                                 $canEditMonthlyActivity = $viewer
                                     && $viewer->hasAnyRole($monthlyActivityEditRoles);
+                                $canSubmitMonthlyActivity = $canEditMonthlyActivity
+                                    && in_array((string) $activity->status, ['draft', 'changes_requested'], true);
                             @endphp
                             <article class="monthly-activity-card">
                                 <div class="module-card-header">
@@ -250,7 +267,10 @@
                                         @if($canCompleteAfterExecution)
                                             <a class="btn btn-sm btn-outline-success" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">إكمال بعد التنفيذ</a>
                                         @endif
-                                        @if ($canEditMonthlyActivity && ! $isSubmittedOrBeyond && ! $isReadOnlyUnified)
+                                        @if($canReviewPostExecution)
+                                            <a class="btn btn-sm btn-warning" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">اعتماد ما بعد التنفيذ</a>
+                                        @endif
+                                        @if ($canSubmitMonthlyActivity && ! $isSubmittedOrBeyond && ! $isReadOnlyUnified)
                                             <form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">
                                                 @csrf
                                                 @method('PATCH')

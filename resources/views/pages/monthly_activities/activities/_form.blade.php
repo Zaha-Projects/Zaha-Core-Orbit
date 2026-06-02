@@ -31,6 +31,8 @@
         && $formUser->hasBranchScopedMonthlyVisibility()
         && ! empty($formUser->branch_id);
     $selectedBranch = $branches->firstWhere('id', old('branch_id', $existingMonthlyActivity?->branch_id ?? $formUser?->branch_id));
+    $canSubmitPlanningForm = ! $existingMonthlyActivity
+        || in_array((string) $existingMonthlyActivity->status, ['draft', 'changes_requested'], true);
     $linkedAgendaEventId = old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
@@ -837,8 +839,13 @@
 
                 <div class="col-12">
                     <div class="monthly-form-actions">
-                        <button class="btn btn-outline-secondary" type="submit" name="submit_action" value="draft">مسودة</button>
-                        <button class="btn btn-primary" type="submit" name="submit_action" value="submit">إرسال للاعتماد</button>
+                        @if($canSubmitPlanningForm)
+                            <button class="btn btn-outline-secondary" type="submit" name="submit_action" value="draft">مسودة</button>
+                            <button class="btn btn-primary" type="submit" name="submit_action" value="submit">إرسال للاعتماد</button>
+                        @else
+                            <button class="btn btn-outline-secondary" type="submit">حفظ التعديلات</button>
+                            <span class="badge bg-info-subtle text-info align-self-center">تم إرسال هذا النشاط للاعتماد ولا يمكن إرساله مرة أخرى.</span>
+                        @endif
                     </div>
                 </div>
             </form>

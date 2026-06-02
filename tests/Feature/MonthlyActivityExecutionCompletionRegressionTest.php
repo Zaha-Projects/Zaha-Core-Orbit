@@ -43,7 +43,7 @@ class MonthlyActivityExecutionCompletionRegressionTest extends TestCase
         $this->assertSame(3, $supply->quantity);
     }
 
-    public function test_creator_can_complete_post_execution_payload_and_close_activity(): void
+    public function test_creator_submits_post_execution_payload_for_branch_head_approval_then_supervisor_closes_activity(): void
     {
         $user = $this->relationsOfficer();
         $branch = Branch::factory()->create();
@@ -75,8 +75,7 @@ class MonthlyActivityExecutionCompletionRegressionTest extends TestCase
             'role_desc' => 'Setup',
         ]);
 
-        $this->actingAs($user)
-            ->patch(route('role.relations.activities.close', $activity), [
+        $postExecutionPayload = [
                 'actual_date' => '2026-04-16',
                 'actual_attendance' => 58,
                 'execution_needs_followup' => [
@@ -104,17 +103,35 @@ class MonthlyActivityExecutionCompletionRegressionTest extends TestCase
                         ],
                     ],
                 ],
-            ])
+            ];
+
+        $this->actingAs($user)
+            ->patch(route('role.relations.activities.close', $activity), $postExecutionPayload)
             ->assertRedirect(route('role.relations.activities.index'));
 
         $activity->refresh();
 
-        $this->assertSame('closed', $activity->status);
+        $this->assertSame('post_execution_submitted', $activity->status);
         $this->assertSame(58, $activity->actual_attendance);
         $this->assertSame('provided', data_get($activity->execution_needs_followup, '0.post_status'));
         $this->assertSame('Operations', data_get($activity->post_execution_payload, 'teams.0.team_name'));
         $this->assertSame(1, data_get($activity->post_execution_payload, 'teams.0.actual_attendance_count'));
         $this->assertTrue(data_get($activity->post_execution_payload, 'ceremony_items.0.was_implemented'));
+
+        $supervisor = User::factory()->create(['branch_id' => $branch->id]);
+        $supervisor->assignRole('supervisor');
+
+        $evaluationOfficer = User::factory()->create(['branch_id' => $branch->id, 'status' => 'active']);
+        $evaluationOfficer->assignRole('evaluation_officer');
+
+        $this->actingAs($supervisor)
+            ->patch(route('role.relations.activities.close', $activity), $postExecutionPayload)
+            ->assertRedirect(route('role.relations.activities.index'));
+
+        $activity->refresh();
+
+        $this->assertSame('closed', $activity->status);
+        $this->assertSame($evaluationOfficer->id, $activity->evaluation_assigned_user_id);
     }
 
     private function relationsOfficer(): User
@@ -125,6 +142,7 @@ class MonthlyActivityExecutionCompletionRegressionTest extends TestCase
             'branch_coordinator',
             'supervisor',
             'evaluation_officer',
+            'followup_officer',
         ] as $role) {
             Role::findOrCreate($role, 'web');
         }
