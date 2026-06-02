@@ -18,7 +18,9 @@ class UserDirectoryController extends Controller
         ]);
 
         $users = User::query()
+            ->select('users.*')
             ->with(['branch', 'assignedBranches', 'roles'])
+            ->leftJoin('branches', 'users.branch_id', '=', 'branches.id')
             ->when($filters['branch_id'] ?? null, function ($query, int $branchId): void {
                 $query->where(function ($branchQuery) use ($branchId): void {
                     $branchQuery->where('branch_id', $branchId)
@@ -26,13 +28,15 @@ class UserDirectoryController extends Controller
                 });
             })
             ->when($filters['role'] ?? null, fn ($query, string $role): mixed => $query->role($role))
-            ->orderBy('name')
+            ->orderByRaw('branches.id IS NULL')
+            ->orderBy('branches.id')
+            ->orderBy('users.name')
             ->paginate(25)
             ->withQueryString();
 
         return view('directory.users', [
             'users' => $users,
-            'branches' => Branch::query()->orderBy('id')->get(),
+            'branches' => Branch::query()->orderByRaw('is_main DESC')->orderBy('id')->get(),
             'roles' => Role::query()->where('guard_name', 'web')->orderBy('name_ar')->orderBy('name')->get(),
             'filters' => $filters,
         ]);

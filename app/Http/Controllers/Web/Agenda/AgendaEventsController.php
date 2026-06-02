@@ -32,6 +32,8 @@ use Illuminate\Support\Collection;
 
 class AgendaEventsController extends Controller
 {
+    private const AGENDA_SUBMITTABLE_STATUSES = ['draft', 'changes_requested'];
+
     protected function clearPartnerDepartments(AgendaEvent $event): void
     {
         $event->partnerDepartments()->sync([]);
@@ -74,20 +76,46 @@ class AgendaEventsController extends Controller
         return $value;
     }
 
-    protected function assertKhaldaHqAgendaAuthority(Request $request): void
+    protected function canCreateAnnualAgenda(?User $user): bool
     {
-        $user = $request->user();
+        if (! $user) {
+            return false;
+        }
 
         if ($user->hasRole('super_admin')) {
-            return;
+            return true;
         }
 
-        if ($user->hasRole('relations_officer')
+        if (! $user->can('agenda.create')) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['relations_officer', 'volunteer_coordinator'])
             && config('roles.features.main_branch_relations_can_manage_annual_agenda', true)) {
-            abort_unless((bool) optional($user->branch)->is_main, 403);
+            return (bool) optional($user->branch)->is_main;
         }
 
-        abort_unless($user->can('agenda.create'), 403);
+        return true;
+    }
+
+    protected function canSubmitAgendaForApproval(AgendaEvent $agendaEvent, ?User $user = null): bool
+    {
+        if ($user !== null && ! $this->canCreateAnnualAgenda($user)) {
+            return false;
+        }
+
+        $workflowStatus = (string) optional($agendaEvent->workflowInstance)->status;
+
+        if ($workflowStatus === DynamicWorkflowService::DECISION_CHANGES_REQUESTED) {
+            return true;
+        }
+
+        return in_array((string) $agendaEvent->status, self::AGENDA_SUBMITTABLE_STATUSES, true);
+    }
+
+    protected function assertKhaldaHqAgendaAuthority(Request $request): void
+    {
+        abort_unless($this->canCreateAnnualAgenda($request->user()), 403);
     }
 
     protected function assertEventManageAccess(Request $request, AgendaEvent $agendaEvent): void
@@ -542,8 +570,9 @@ class AgendaEventsController extends Controller
         ]);
 
         $agendaStatusOptions = $this->agendaPageStatusOptions();
+        $canManageAgenda = $this->canCreateAnnualAgenda($request->user());
 
-        return view('pages.agenda.events.index', compact('events', 'calendarEvents', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
+        return view('pages.agenda.events.index', compact('events', 'calendarEvents', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions', 'canManageAgenda'));
     }
 
     protected function agendaPageStatusOptions(): Collection
@@ -599,6 +628,11 @@ class AgendaEventsController extends Controller
     ): AgendaEvent {
         $instance = $dynamicWorkflowService->forModel('agenda', $agendaEvent);
         abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
+        abort_unless(
+            $this->canSubmitAgendaForApproval($agendaEvent, $request->user()),
+            422,
+            'تم إرسال هذه الفعالية للاعتماد مسبقًا أو أن حالتها الحالية لا تسمح بإعادة الإرسال.'
+        );
 
         $currentStep = $dynamicWorkflowService->currentStep($instance);
 
@@ -1065,6 +1099,10 @@ class AgendaEventsController extends Controller
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
+
+        if (! $this->canSubmitAgendaForApproval($agendaEvent, $request->user())) {
+            return back()->with('warning', 'تم إرسال هذه الفعالية للاعتماد مسبقًا أو أن حالتها الحالية لا تسمح بإعادة الإرسال.');
+        }
 
         $agendaEvent = $this->submitAgendaEventForApproval(
             $agendaEvent,

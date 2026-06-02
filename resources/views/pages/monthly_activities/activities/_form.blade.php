@@ -2,14 +2,24 @@
     $existingMonthlyActivity = $monthlyActivity ?? null;
     $executionNeedsPayload = $existingMonthlyActivity?->execution_needs_payload ?? [];
     $payloadValue = fn (string $key, mixed $default = null) => data_get($executionNeedsPayload, $key, $default);
-    $needAvailability = fn (string $key) => old('need_availability.'.$key, data_get($executionNeedsPayload, 'availability.'.$key));
-    $availabilityField = function (string $key) use ($needAvailability) {
+    $centerAvailabilityConfig = config('execution_needs.center_availability', []);
+    $showCenterAvailabilityField = (bool) data_get($centerAvailabilityConfig, 'show_field', true);
+    $defaultCenterAvailability = in_array((string) data_get($centerAvailabilityConfig, 'default'), ['available', 'not_available'], true)
+        ? (string) data_get($centerAvailabilityConfig, 'default')
+        : 'not_available';
+    $forcedUnavailableNeedCodes = (array) data_get($centerAvailabilityConfig, 'forced_not_available', []);
+    $needAvailability = fn (string $key) => old('need_availability.'.$key, data_get($executionNeedsPayload, 'availability.'.$key, $defaultCenterAvailability));
+    $availabilityField = function (string $key) use ($needAvailability, $showCenterAvailabilityField, $forcedUnavailableNeedCodes) {
+        if (! $showCenterAvailabilityField || in_array($key, $forcedUnavailableNeedCodes, true)) {
+            return '<input type="hidden" name="need_availability['.$key.']" value="not_available">';
+        }
+
         $selected = $needAvailability($key);
+        $selected = in_array($selected, ['available', 'not_available'], true) ? $selected : 'not_available';
 
         return '<div class="col-12 col-md-4">'
             .'<label class="form-label">التوفر داخل المركز</label>'
             .'<select class="form-select" name="need_availability['.$key.']">'
-            .'<option value="">اختر</option>'
             .'<option value="available" '.($selected === 'available' ? 'selected' : '').'>متوفر داخل المركز</option>'
             .'<option value="not_available" '.($selected === 'not_available' ? 'selected' : '').'>غير متوفر داخل المركز</option>'
             .'</select>'
@@ -21,6 +31,8 @@
         && $formUser->hasBranchScopedMonthlyVisibility()
         && ! empty($formUser->branch_id);
     $selectedBranch = $branches->firstWhere('id', old('branch_id', $existingMonthlyActivity?->branch_id ?? $formUser?->branch_id));
+    $canSubmitPlanningForm = ! $existingMonthlyActivity
+        || in_array((string) $existingMonthlyActivity->status, ['draft', 'changes_requested'], true);
     $linkedAgendaEventId = old('agenda_event_id', $existingMonthlyActivity?->agenda_event_id);
     $needsVolunteersChecked = (bool) old('needs_volunteers', $existingMonthlyActivity?->needs_volunteers ?? false);
     $needsOfficialCorrespondenceChecked = (bool) old('needs_official_correspondence', $existingMonthlyActivity?->needs_official_correspondence ?? false);
@@ -497,6 +509,7 @@
                     <div class="monthly-subsection-card monthly-subsection-card--correspondence">
                         <h3 class="h6 mb-3">المخاطبة الرسمية</h3>
                         <div class="row g-3">
+                            {!! $availabilityField('official_correspondence') !!}
                             <div class="col-12 col-md-6">
                                 <label class="form-label">سبب المخاطبة</label>
                                 <input class="form-control @error('official_correspondence_reason') is-invalid @enderror" name="official_correspondence_reason" value="{{ old('official_correspondence_reason', $existingMonthlyActivity?->official_correspondence_reason) }}">
@@ -804,6 +817,9 @@
                                 <input class="form-control form-control-sm js-supplies-count" type="number" min="1" max="20" value="{{ old('supplies_count', $suppliesCount) }}" style="width: 90px;">
                             </div>
                         </div>
+                        <div class="row g-3 mb-1">
+                            {!! $availabilityField('supplies') !!}
+                        </div>
                         <div class="row g-3 js-supplies-container"></div>
                     </div>
                 </div>
@@ -823,8 +839,13 @@
 
                 <div class="col-12">
                     <div class="monthly-form-actions">
-                        <button class="btn btn-outline-secondary" type="submit" name="submit_action" value="draft">مسودة</button>
-                        <button class="btn btn-primary" type="submit" name="submit_action" value="submit">إرسال للاعتماد</button>
+                        @if($canSubmitPlanningForm)
+                            <button class="btn btn-outline-secondary" type="submit" name="submit_action" value="draft">مسودة</button>
+                            <button class="btn btn-primary" type="submit" name="submit_action" value="submit">إرسال للاعتماد</button>
+                        @else
+                            <button class="btn btn-outline-secondary" type="submit">حفظ التعديلات</button>
+                            <span class="badge bg-info-subtle text-info align-self-center">تم إرسال هذا النشاط للاعتماد ولا يمكن إرساله مرة أخرى.</span>
+                        @endif
                     </div>
                 </div>
             </form>

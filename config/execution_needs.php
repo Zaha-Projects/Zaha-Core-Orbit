@@ -1,6 +1,16 @@
 <?php
 
 return [
+    'center_availability' => [
+        'show_field' => true,
+        'default' => 'not_available',
+        'forced_not_available' => [
+            'official_correspondence',
+            'certificates',
+            'thanks_letters',
+        ],
+    ],
+
     'decision_matrix' => [
         'volunteers' => ['roles' => ['volunteer_coordinator']],
         'official_correspondence' => ['roles' => ['branch_coordinator']],

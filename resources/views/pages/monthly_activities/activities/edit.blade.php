@@ -7,6 +7,7 @@
     $isPostMode = request('mode') === 'post';
     $canManageEvaluation = auth()->user()?->hasAnyRole(['followup_officer', 'evaluation_officer', 'super_admin', 'relations_manager', 'executive_manager']);
     $canCompleteAfterExecution = $canCompleteAfterExecution ?? false;
+    $canReviewPostExecution = $canReviewPostExecution ?? false;
     $isExecutionNeedDecisionOnly = $isPostMode && (bool) ($isExecutionNeedDecisionRequest ?? request()->boolean('need_decision'));
     $evaluationEnabled = $isPostMode && $canManageEvaluation && (
         in_array($monthlyActivity->status, ['executed', 'completed', 'closed'], true)
@@ -137,7 +138,10 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
     @if (request('mode') === 'post' && $canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
-        <div class="alert alert-info">أنت الآن في وضع <strong>إكمال التعبئة بعد التنفيذ</strong>. أكمل الحقول التنفيذية في أسفل الصفحة.</div>
+        <div class="alert alert-info">أنت الآن في وضع <strong>إكمال التعبئة بعد التنفيذ</strong>. بعد الإرسال ستنتقل لرئيس الفرع للاعتماد.</div>
+    @endif
+    @if (request('mode') === 'post' && $canReviewPostExecution && ! $isExecutionNeedDecisionOnly)
+        <div class="alert alert-warning">أنت الآن في وضع <strong>اعتماد ما بعد التنفيذ كرئيس فرع</strong>. بعد الاعتماد سيتم تحويلها للمتابعة والتقييم.</div>
     @endif
 
     @if (! $isPostMode)
@@ -728,7 +732,8 @@
     </div>
     @endif
 
-    @if($canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
+    @if(($canCompleteAfterExecution || $canReviewPostExecution) && ! $isExecutionNeedDecisionOnly)
+    @if($canCompleteAfterExecution)
     <div class="card event-card mb-4 post-execution-section post-execution-section-attachments" id="post-execution-attachments">
         <div class="card-body">
             <div class="alert alert-light border mb-3">
@@ -811,6 +816,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="card event-card post-execution-section post-execution-section-close" id="post-execution-close">
         <div class="card-body">
@@ -911,7 +917,7 @@
 
                 <div class="col-12 d-flex justify-content-end align-items-end">
                     <button class="btn btn-outline-primary" type="submit">
-                        {{ __('app.roles.programs.monthly_activities.actions.close') }}
+                        {{ $canReviewPostExecution ? 'اعتماد ما بعد التنفيذ وتحويلها للمتابعة والتقييم' : 'إرسال ما بعد التنفيذ لرئيس الفرع' }}
                     </button>
                 </div>
             </form>

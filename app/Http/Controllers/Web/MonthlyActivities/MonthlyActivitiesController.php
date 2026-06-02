@@ -44,15 +44,18 @@ class MonthlyActivitiesController extends Controller
 {
     protected const CENTER_AVAILABILITY_NEED_CODES = [
         'volunteers',
+        'official_correspondence',
         'media_coverage',
+        'supplies',
+        'official_sponsorship',
+        'external_partners',
         'ceremony',
         'transport',
         'maintenance',
         'gifts',
-        'official_sponsorship',
-        'external_partners',
         'programs',
         'certificates',
+        'thanks_letters',
         'invitations',
     ];
 
@@ -219,7 +222,52 @@ class MonthlyActivitiesController extends Controller
     {
         return $user !== null
             && $this->canUseMonthlyActivityEditRoute($user)
-            && (int) $monthlyActivity->created_by === (int) $user->id;
+            && (int) $monthlyActivity->created_by === (int) $user->id
+            && ! in_array((string) $monthlyActivity->status, ['post_execution_submitted', 'closed'], true);
+    }
+
+    protected function canReviewPostExecution(MonthlyActivity $monthlyActivity, ?User $user): bool
+    {
+        if ($user === null || (string) $monthlyActivity->status !== 'post_execution_submitted') {
+            return false;
+        }
+
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        if (! $user->hasRole('supervisor')) {
+            return false;
+        }
+
+        $branchId = (int) $monthlyActivity->branch_id;
+
+        return (int) ($user->branch_id ?? 0) === $branchId
+            || $user->assignedBranches()->whereKey($branchId)->exists();
+    }
+
+    protected function canSubmitActivityForApproval(MonthlyActivity $monthlyActivity, ?User $user): bool
+    {
+        return $user !== null
+            && $this->canUseMonthlyActivityEditRoute($user)
+            && ! $this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)
+            && ! $this->isSupersededVersion($monthlyActivity)
+            && in_array((string) $monthlyActivity->status, ['draft', 'changes_requested'], true);
+    }
+
+    protected function branchScopedRoleUsers(string $role, ?int $branchId): Collection
+    {
+        if (! $branchId) {
+            return collect();
+        }
+
+        return User::role($role)
+            ->where('status', 'active')
+            ->where(function ($query) use ($branchId): void {
+                $query->where('branch_id', $branchId)
+                    ->orWhereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($branchId));
+            })
+            ->get();
     }
 
     protected function canUseMonthlyActivityEditRoute(?User $user): bool
@@ -1301,10 +1349,29 @@ class MonthlyActivitiesController extends Controller
 
     protected function normalizeExecutionNeedsPayload(array &$data): void
     {
-        $availability = collect($data['need_availability'] ?? [])
+        $availabilityConfig = config('execution_needs.center_availability', []);
+        $defaultAvailability = in_array((string) data_get($availabilityConfig, 'default'), ['available', 'not_available'], true)
+            ? (string) data_get($availabilityConfig, 'default')
+            : 'not_available';
+        $showAvailabilityField = (bool) data_get($availabilityConfig, 'show_field', true);
+        $forcedUnavailableNeedCodes = (array) data_get($availabilityConfig, 'forced_not_available', []);
+
+        $submittedAvailability = collect($data['need_availability'] ?? [])
             ->filter(fn ($value, $key): bool => in_array((string) $key, self::CENTER_AVAILABILITY_NEED_CODES, true)
                 && in_array((string) $value, ['available', 'not_available'], true))
             ->map(fn ($value): string => (string) $value)
+            ->all();
+
+        $availability = collect(self::CENTER_AVAILABILITY_NEED_CODES)
+            ->mapWithKeys(function (string $needCode) use ($submittedAvailability, $defaultAvailability, $showAvailabilityField, $forcedUnavailableNeedCodes): array {
+                $value = $submittedAvailability[$needCode] ?? $defaultAvailability;
+
+                if (! $showAvailabilityField || in_array($needCode, $forcedUnavailableNeedCodes, true)) {
+                    $value = 'not_available';
+                }
+
+                return [$needCode => $value];
+            })
             ->all();
 
         $sectionLink = fn (string $needCode, bool $enabled): array => [
@@ -1441,6 +1508,7 @@ class MonthlyActivitiesController extends Controller
     ): void {
         $instance = $dynamicWorkflowService->forModel('monthly_activities', $monthlyActivity);
         abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
+        abort_unless($this->canSubmitActivityForApproval($monthlyActivity, $actor), 422, 'تم إرسال هذا النشاط للاعتماد مسبقًا أو أن حالته الحالية لا تسمح بإعادة الإرسال.');
 
         $currentStep = $dynamicWorkflowService->currentStep($instance);
 
@@ -1699,6 +1767,7 @@ class MonthlyActivitiesController extends Controller
         return collect([
             (object) ['code' => 'draft', 'name' => __('app.roles.programs.monthly_activities.statuses.draft')],
             (object) ['code' => 'submitted', 'name' => __('app.roles.programs.monthly_activities.statuses.submitted')],
+            (object) ['code' => 'post_execution_submitted', 'name' => 'بانتظار اعتماد رئيس الفرع لما بعد التنفيذ'],
             (object) ['code' => 'approved', 'name' => __('app.roles.programs.monthly_activities.statuses.approved')],
         ]);
     }
@@ -2466,6 +2535,8 @@ class MonthlyActivitiesController extends Controller
         $monthlyCloseStatusOptions = $this->monthlyCloseStatusOptions((string) $monthlyActivity->status);
         $executionStatusLabels = $this->executionStatusLabels();
         $canCompleteAfterExecution = $this->canCompleteAfterExecution($monthlyActivity, request()->user());
+        $canReviewPostExecution = $this->canReviewPostExecution($monthlyActivity, request()->user());
+        $canSubmitForApproval = $this->canSubmitActivityForApproval($monthlyActivity, request()->user());
         $executionNeedDecisionKeys = $this->executionNeedDecisionKeysForUser($monthlyActivity, request()->user());
         $executionNeedDecisionRoles = collect(array_keys($monthlyActivity->enabledExecutionNeeds()))
             ->mapWithKeys(fn (string $needKey): array => [$needKey => $this->executionNeedDecisionRoles($monthlyActivity, $needKey)])
@@ -2487,6 +2558,8 @@ class MonthlyActivitiesController extends Controller
             'monthlyCloseStatusOptions',
             'executionStatusLabels',
             'canCompleteAfterExecution',
+            'canReviewPostExecution',
+            'canSubmitForApproval',
             'executionNeedDecisionKeys',
             'executionNeedDecisionRoles',
             'isExecutionNeedDecisionRequest',
@@ -2917,7 +2990,9 @@ class MonthlyActivitiesController extends Controller
             );
         $nextStage = (int) ($monthlyActivity->plan_stage ?: 1);
         $nextVersion = (int) ($monthlyActivity->plan_version ?: 1);
-        $newStatus = $this->shouldSubmitFromRequest($request) ? $monthlyActivity->status : 'draft';
+        $newStatus = $this->shouldSubmitFromRequest($request)
+            ? $monthlyActivity->status
+            : ($this->canSubmitActivityForApproval($monthlyActivity, $request->user()) ? 'draft' : $monthlyActivity->status);
         $newLifecycleStatus = $monthlyActivity->lifecycle_status ?: 'Draft';
         $startsNewVersion = false;
 
@@ -3237,6 +3312,10 @@ class MonthlyActivitiesController extends Controller
             ]);
         }
 
+        if (! $this->canSubmitActivityForApproval($monthlyActivity, $actor)) {
+            return back()->with('warning', 'تم إرسال هذا النشاط للاعتماد مسبقًا أو أن حالته الحالية لا تسمح بإعادة الإرسال.');
+        }
+
         $this->submitActivityForApproval($monthlyActivity, $actor, $workflowNotifications, $lifecycle, $dynamicWorkflowService, request());
 
         return redirect()
@@ -3247,7 +3326,10 @@ class MonthlyActivitiesController extends Controller
     public function close(Request $request, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycle)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
-        abort_unless($this->canCompleteAfterExecution($monthlyActivity, $request->user()), 403);
+        $canCompleteAfterExecution = $this->canCompleteAfterExecution($monthlyActivity, $request->user());
+        $canReviewPostExecution = $this->canReviewPostExecution($monthlyActivity, $request->user());
+
+        abort_unless($canCompleteAfterExecution || $canReviewPostExecution, 403);
 
         if ($this->isReadOnlyUnifiedAgendaActivity($monthlyActivity)) {
             return redirect()
@@ -3290,14 +3372,38 @@ class MonthlyActivitiesController extends Controller
             ? $this->mergeExecutionNeedsFollowupRows($activityForPostExecution, $data['execution_needs_followup'] ?? [])
             : ($monthlyActivity->execution_needs_followup ?? null);
 
-                $evaluationOfficer = User::query()
-            ->role('evaluation_officer')
-            ->where('status', 'active')
-            ->where(function ($query) use ($monthlyActivity) {
-                $query->whereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($monthlyActivity->branch_id))
-                    ->orWhere('branch_id', $monthlyActivity->branch_id);
-            })
-            ->first();
+        $notificationService = app(NotificationService::class);
+
+        if (! $canReviewPostExecution) {
+            $monthlyActivity->update([
+                'actual_date' => $data['actual_date'] ?? $monthlyActivity->actual_date,
+                'actual_attendance' => $data['actual_attendance'] ?? $monthlyActivity->actual_attendance,
+                'execution_needs_followup' => $executionNeedsFollowup === [] ? null : $executionNeedsFollowup,
+                'post_execution_payload' => $postExecutionPayload,
+                'status' => 'post_execution_submitted',
+                'execution_status' => 'executed',
+                'is_official' => true,
+            ]);
+
+            $supervisors = $this->branchScopedRoleUsers('supervisor', (int) $monthlyActivity->branch_id);
+            $notificationService->notifyUsers(
+                $supervisors,
+                'monthly_post_execution_submitted',
+                'تم إرسال ما بعد التنفيذ لاعتماد رئيس الفرع',
+                "تم إرسال إكمال ما بعد التنفيذ للنشاط ({$monthlyActivity->title}) بانتظار اعتماد رئيس الفرع.",
+                route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity->id, 'mode' => 'post']),
+                ['monthly_activity_id' => $monthlyActivity->id]
+            );
+
+            $this->logWorkflowAction('post_execution_submitted', $monthlyActivity, $request, 'post_execution_submitted');
+
+            return redirect()
+                ->route('role.relations.activities.index')
+                ->with('status', 'تم إرسال ما بعد التنفيذ لاعتماد رئيس الفرع.');
+        }
+
+        $evaluationOfficer = $this->branchScopedRoleUsers('evaluation_officer', (int) $monthlyActivity->branch_id)->first();
+        $followupUsers = $this->branchScopedRoleUsers('followup_officer', (int) $monthlyActivity->branch_id);
 
         $monthlyActivity->update([
             'actual_date' => $data['actual_date'] ?? $monthlyActivity->actual_date,
@@ -3313,12 +3419,23 @@ class MonthlyActivitiesController extends Controller
             'is_official' => true,
         ]);
 
+        $notificationService->notifyUsers(
+            $followupUsers,
+            'monthly_post_execution_approved_followup',
+            'تم اعتماد ما بعد التنفيذ للمتابعة',
+            "تم اعتماد ما بعد التنفيذ للنشاط ({$monthlyActivity->title}) من رئيس الفرع وأصبح جاهزًا للمتابعة.",
+            route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity->id, 'mode' => 'post']),
+            ['monthly_activity_id' => $monthlyActivity->id]
+        );
+
         if ($evaluationOfficer) {
-            app(NotificationService::class)->sendToUser(
-                $evaluationOfficer,
-                'تم تحويل نشاط مغلق للتقييم',
-                "تم تحويل النشاط ({$monthlyActivity->title}) إليك للتقييم.",
-                route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity->id, 'mode' => 'post'])
+            $notificationService->notifyUsers(
+                collect([$evaluationOfficer]),
+                'monthly_post_execution_approved_evaluation',
+                'تم تحويل نشاط للتقييم',
+                "تم اعتماد ما بعد التنفيذ للنشاط ({$monthlyActivity->title}) وتحويله إليك للتقييم.",
+                route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity->id, 'mode' => 'post']),
+                ['monthly_activity_id' => $monthlyActivity->id]
             );
         }
 
@@ -3326,6 +3443,7 @@ class MonthlyActivitiesController extends Controller
 
         $this->logWorkflowAction('closed', $monthlyActivity, $request, 'closed', [
             'evaluation_score' => $monthlyActivity->evaluation_score,
+            'post_execution_approved_by' => $request->user()->id,
         ]);
 
         return redirect()

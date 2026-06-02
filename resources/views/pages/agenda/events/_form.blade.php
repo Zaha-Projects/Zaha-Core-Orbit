@@ -2,6 +2,7 @@
     $isEditMode = isset($agendaEvent);
     $existingAgendaEvent = $agendaEvent ?? null;
     $minimumEventDate = now()->toDateString();
+    $canSubmitAgendaForm = ! $existingAgendaEvent || in_array((string) $existingAgendaEvent->status, ['draft', 'changes_requested'], true);
     $templatePayload = (array) ($existingAgendaEvent?->monthly_template_payload ?? []);
     $templateExecutionTime = (string) old('monthly_template_execution_time', data_get($templatePayload, 'execution_time', ''));
     $templateTimeFrom = (string) old('monthly_template_time_from', data_get($templatePayload, 'time_from', ''));
@@ -206,7 +207,11 @@
                             <a class="btn btn-outline-secondary" href="{{ route('role.relations.agenda.index') }}">رجوع للقائمة</a>
                         @endif
                         <button class="btn btn-outline-primary" type="submit" name="submit_action" value="draft">{{ __('app.roles.relations.agenda.actions.save_draft') }}</button>
-                        <button class="btn btn-primary" type="submit" name="submit_action" value="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
+                        @if($canSubmitAgendaForm)
+                            <button class="btn btn-primary" type="submit" name="submit_action" value="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
+                        @else
+                            <span class="badge bg-info-subtle text-info border align-self-center px-3 py-2">تم إرسال هذه الفعالية للاعتماد</span>
+                        @endif
                     </div>
                 </div>
             </form>

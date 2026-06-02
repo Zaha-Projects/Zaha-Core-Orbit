@@ -737,4 +737,82 @@ class AgendaBranchInteractionTest extends TestCase
             'event_name' => 'Old Event',
         ]);
     }
+
+
+    public function test_branch_volunteer_coordinator_with_create_permission_does_not_see_annual_agenda_create_button(): void
+    {
+        $branch = Branch::factory()->create(['name' => 'Irbid Branch', 'city' => 'Irbid', 'is_main' => false]);
+        $role = Role::findOrCreate('volunteer_coordinator', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.view', 'web'),
+            Permission::findOrCreate('agenda.create', 'web'),
+            Permission::findOrCreate('branches.view.own', 'web'),
+        ]);
+
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->assignRole($role);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.index'))
+            ->assertOk()
+            ->assertDontSee(route('role.relations.agenda.create'));
+    }
+
+    public function test_main_branch_volunteer_coordinator_with_create_permission_sees_annual_agenda_create_button(): void
+    {
+        $branch = Branch::factory()->create(['name' => 'Zaha Khalda', 'city' => 'Khalda', 'is_main' => true]);
+        $role = Role::findOrCreate('volunteer_coordinator', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.view', 'web'),
+            Permission::findOrCreate('agenda.create', 'web'),
+            Permission::findOrCreate('branches.view.own', 'web'),
+        ]);
+
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->assignRole($role);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.index'))
+            ->assertOk()
+            ->assertSee(route('role.relations.agenda.create'));
+    }
+
+    public function test_branch_relations_officer_with_create_permission_does_not_see_annual_agenda_create_button(): void
+    {
+        $branch = Branch::factory()->create(['name' => 'Zarqa Branch', 'city' => 'Zarqa', 'is_main' => false]);
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.view', 'web'),
+            Permission::findOrCreate('agenda.create', 'web'),
+            Permission::findOrCreate('branches.view.own', 'web'),
+        ]);
+
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->assignRole($role);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.index'))
+            ->assertOk()
+            ->assertDontSee(route('role.relations.agenda.create'));
+    }
+
+    public function test_main_branch_relations_officer_with_create_permission_sees_annual_agenda_create_button(): void
+    {
+        $branch = Branch::factory()->create(['name' => 'Zaha Khalda', 'city' => 'Khalda', 'is_main' => true]);
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $role->givePermissionTo([
+            Permission::findOrCreate('agenda.view', 'web'),
+            Permission::findOrCreate('agenda.create', 'web'),
+            Permission::findOrCreate('branches.view.own', 'web'),
+        ]);
+
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->assignRole($role);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.agenda.index'))
+            ->assertOk()
+            ->assertSee(route('role.relations.agenda.create'));
+    }
+
 }
