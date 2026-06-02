@@ -31,7 +31,9 @@ class MonthlyActivityExecutionCompletionRegressionTest extends TestCase
         $this->assertSame(65, $activity->expected_attendance);
         $this->assertSame('available', data_get($activity->execution_needs_payload, 'availability.volunteers'));
         $this->assertSame('not_available', data_get($activity->execution_needs_payload, 'availability.official_sponsorship'));
-        $this->assertNull(data_get($activity->execution_needs_payload, 'availability.official_correspondence'));
+        $this->assertSame('not_available', data_get($activity->execution_needs_payload, 'availability.official_correspondence'));
+        $this->assertSame('not_available', data_get($activity->execution_needs_payload, 'availability.supplies'));
+        $this->assertSame('not_available', data_get($activity->execution_needs_payload, 'availability.certificates'));
 
         $this->assertSame(['Sponsor One', 'Sponsor Two'], $activity->sponsors()->orderBy('id')->pluck('name')->all());
 
@@ -172,6 +174,7 @@ class MonthlyActivityExecutionCompletionRegressionTest extends TestCase
                 'volunteers' => 'available',
                 'official_sponsorship' => 'not_available',
                 'official_correspondence' => 'available',
+                'certificates' => 'available',
             ],
         ];
     }

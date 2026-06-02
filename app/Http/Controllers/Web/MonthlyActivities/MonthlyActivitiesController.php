@@ -44,15 +44,18 @@ class MonthlyActivitiesController extends Controller
 {
     protected const CENTER_AVAILABILITY_NEED_CODES = [
         'volunteers',
+        'official_correspondence',
         'media_coverage',
+        'supplies',
+        'official_sponsorship',
+        'external_partners',
         'ceremony',
         'transport',
         'maintenance',
         'gifts',
-        'official_sponsorship',
-        'external_partners',
         'programs',
         'certificates',
+        'thanks_letters',
         'invitations',
     ];
 
@@ -1301,10 +1304,29 @@ class MonthlyActivitiesController extends Controller
 
     protected function normalizeExecutionNeedsPayload(array &$data): void
     {
-        $availability = collect($data['need_availability'] ?? [])
+        $availabilityConfig = config('execution_needs.center_availability', []);
+        $defaultAvailability = in_array((string) data_get($availabilityConfig, 'default'), ['available', 'not_available'], true)
+            ? (string) data_get($availabilityConfig, 'default')
+            : 'not_available';
+        $showAvailabilityField = (bool) data_get($availabilityConfig, 'show_field', true);
+        $forcedUnavailableNeedCodes = (array) data_get($availabilityConfig, 'forced_not_available', []);
+
+        $submittedAvailability = collect($data['need_availability'] ?? [])
             ->filter(fn ($value, $key): bool => in_array((string) $key, self::CENTER_AVAILABILITY_NEED_CODES, true)
                 && in_array((string) $value, ['available', 'not_available'], true))
             ->map(fn ($value): string => (string) $value)
+            ->all();
+
+        $availability = collect(self::CENTER_AVAILABILITY_NEED_CODES)
+            ->mapWithKeys(function (string $needCode) use ($submittedAvailability, $defaultAvailability, $showAvailabilityField, $forcedUnavailableNeedCodes): array {
+                $value = $submittedAvailability[$needCode] ?? $defaultAvailability;
+
+                if (! $showAvailabilityField || in_array($needCode, $forcedUnavailableNeedCodes, true)) {
+                    $value = 'not_available';
+                }
+
+                return [$needCode => $value];
+            })
             ->all();
 
         $sectionLink = fn (string $needCode, bool $enabled): array => [
