@@ -7,7 +7,7 @@
     $authUser = auth()->user();
     $branchText = mb_strtolower(trim((string) optional($authUser?->branch)->name . ' ' . (string) optional($authUser?->branch)->city));
     $isKhaldaHq = str_contains($branchText, 'khalda') || str_contains($branchText, 'خلدا') || str_contains($branchText, 'عمان') || str_contains($branchText, 'عمّان') || str_contains($branchText, 'amman');
-    $canManageAgenda = $authUser?->can('agenda.create') ?? false;
+    $canManageAgenda = (bool) ($canManageAgenda ?? false);
     $canDeleteAgenda = ($authUser?->can('agenda.delete') ?? false) || ($authUser?->hasRole('super_admin') ?? false);
     $canBranchInteract = ($authUser?->can('agenda.participation.update') ?? false) && ! $isKhaldaHq;
     $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;

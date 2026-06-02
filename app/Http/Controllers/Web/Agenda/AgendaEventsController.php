@@ -74,20 +74,31 @@ class AgendaEventsController extends Controller
         return $value;
     }
 
-    protected function assertKhaldaHqAgendaAuthority(Request $request): void
+    protected function canCreateAnnualAgenda(?User $user): bool
     {
-        $user = $request->user();
+        if (! $user) {
+            return false;
+        }
 
         if ($user->hasRole('super_admin')) {
-            return;
+            return true;
         }
 
-        if ($user->hasRole('relations_officer')
+        if (! $user->can('agenda.create')) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['relations_officer', 'volunteer_coordinator'])
             && config('roles.features.main_branch_relations_can_manage_annual_agenda', true)) {
-            abort_unless((bool) optional($user->branch)->is_main, 403);
+            return (bool) optional($user->branch)->is_main;
         }
 
-        abort_unless($user->can('agenda.create'), 403);
+        return true;
+    }
+
+    protected function assertKhaldaHqAgendaAuthority(Request $request): void
+    {
+        abort_unless($this->canCreateAnnualAgenda($request->user()), 403);
     }
 
     protected function assertEventManageAccess(Request $request, AgendaEvent $agendaEvent): void
@@ -542,8 +553,9 @@ class AgendaEventsController extends Controller
         ]);
 
         $agendaStatusOptions = $this->agendaPageStatusOptions();
+        $canManageAgenda = $this->canCreateAnnualAgenda($request->user());
 
-        return view('pages.agenda.events.index', compact('events', 'calendarEvents', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions'));
+        return view('pages.agenda.events.index', compact('events', 'calendarEvents', 'filters', 'branchActor', 'branches', 'canFilterBranches', 'agendaStatusOptions', 'canManageAgenda'));
     }
 
     protected function agendaPageStatusOptions(): Collection

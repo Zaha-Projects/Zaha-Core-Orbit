@@ -42,7 +42,7 @@ class ProfileController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:32'],
-            'password' => ['nullable', 'confirmed', 'min:8'],
+            'password' => ['nullable', 'string', 'confirmed', 'min:8'],
         ];
 
         if ($canEditEmail) {
@@ -51,7 +51,7 @@ class ProfileController extends Controller
 
         $data = $request->validate($rules);
 
-        $user->fill([
+        $user->forceFill([
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
         ]);
@@ -64,7 +64,7 @@ class ProfileController extends Controller
             $user->password = Hash::make($data['password']);
         }
 
-        $user->save();
+        $user->saveOrFail();
 
         Cache::forget($this->statsCacheKey($user->id));
         Cache::forget($this->evaluationsCacheKey($user->id));
