@@ -96,6 +96,21 @@ class AgendaEventsController extends Controller
         return true;
     }
 
+    protected function canSubmitAgendaForApproval(AgendaEvent $agendaEvent, ?User $user = null): bool
+    {
+        if ($user !== null && ! $this->canCreateAnnualAgenda($user)) {
+            return false;
+        }
+
+        $workflowStatus = (string) optional($agendaEvent->workflowInstance)->status;
+
+        if ($workflowStatus === DynamicWorkflowService::DECISION_CHANGES_REQUESTED) {
+            return true;
+        }
+
+        return in_array((string) $agendaEvent->status, ['draft', 'changes_requested'], true);
+    }
+
     protected function assertKhaldaHqAgendaAuthority(Request $request): void
     {
         abort_unless($this->canCreateAnnualAgenda($request->user()), 403);
@@ -611,6 +626,11 @@ class AgendaEventsController extends Controller
     ): AgendaEvent {
         $instance = $dynamicWorkflowService->forModel('agenda', $agendaEvent);
         abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
+        abort_unless(
+            $this->canSubmitAgendaForApproval($agendaEvent, $request->user()),
+            422,
+            'تم إرسال هذه الفعالية للاعتماد مسبقًا أو أن حالتها الحالية لا تسمح بإعادة الإرسال.'
+        );
 
         $currentStep = $dynamicWorkflowService->currentStep($instance);
 
@@ -1077,6 +1097,10 @@ class AgendaEventsController extends Controller
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventManageAccess($request, $agendaEvent);
+
+        if (! $this->canSubmitAgendaForApproval($agendaEvent, $request->user())) {
+            return back()->with('warning', 'تم إرسال هذه الفعالية للاعتماد مسبقًا أو أن حالتها الحالية لا تسمح بإعادة الإرسال.');
+        }
 
         $agendaEvent = $this->submitAgendaEventForApproval(
             $agendaEvent,

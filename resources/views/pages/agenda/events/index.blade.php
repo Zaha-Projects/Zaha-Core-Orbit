@@ -101,6 +101,8 @@
             })
             ->values()
             ->all();
+        $submissionStatus = (string) ($workflowSummary['status_key'] ?? $event->status);
+        $canSubmitThisEvent = $canManageAgenda && in_array($submissionStatus, ['draft', 'changes_requested'], true);
 
         return [
             'id' => $event->id,
@@ -122,7 +124,8 @@
             'latest_approval_at' => $workflowSummary['latest_approval_at'] ?? null,
             'edit_url' => $canManageAgenda ? route('role.relations.agenda.edit', $event) : null,
             'view_url' => route('role.relations.agenda.show', $event),
-            'submit_url' => $canManageAgenda ? route('role.relations.agenda.submit', $event) : null,
+            'submit_url' => $canSubmitThisEvent ? route('role.relations.agenda.submit', $event) : null,
+            'can_submit' => $canSubmitThisEvent,
             'delete_url' => $canDeleteThisEvent ? route('role.relations.agenda.destroy', $event) : null,
             'participant_count' => $event->participations->where('entity_type', 'branch')->where('participation_status', 'participant')->count(),
             'participant_branches' => $participantBranches,
@@ -340,6 +343,8 @@
                             @php($workflowSummary = $event->workflow_summary ?? [])
                             @php($resolvedEventDate = optional($event->event_date)->format('Y-m-d') ?? sprintf('%04d-%02d-%02d', now()->year, $event->month, $event->day))
                             @php($canDeleteThisEvent = $canDeleteAgenda && \Carbon\Carbon::parse($resolvedEventDate)->isAfter(today()))
+                            @php($submissionStatus = (string) ($workflowSummary['status_key'] ?? $event->status))
+                            @php($canSubmitThisEvent = $canManageAgenda && in_array($submissionStatus, ['draft', 'changes_requested'], true))
                             <article class="agenda-event-card">
                                 <div class="module-card-header">
                                     <div class="d-flex justify-content-between align-items-start gap-2 mb-0">
@@ -383,11 +388,13 @@
                                         <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.agenda.show', $event) }}">{{ __('app.roles.relations.agenda.actions.view') }}</a>
                                         @if($canManageAgenda)
                                             <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.agenda.edit', $event) }}">{{ __('app.roles.relations.agenda.actions.edit') }}</a>
-                                            <form method="POST" action="{{ route('role.relations.agenda.submit', $event) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
-                                            </form>
+                                            @if($canSubmitThisEvent)
+                                                <form method="POST" action="{{ route('role.relations.agenda.submit', $event) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('app.roles.relations.agenda.actions.submit') }}</button>
+                                                </form>
+                                            @endif
                                         @endif
                                         @if($canDeleteThisEvent)
                                             <form method="POST" action="{{ route('role.relations.agenda.destroy', $event) }}" onsubmit="return confirm('{{ __('app.roles.relations.agenda.confirm_delete') }}')">
