@@ -26,7 +26,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             $dynamicWorkflowService->userMayParticipateInWorkflow('monthly_activities', $viewer) || $viewer->can('monthly_activities.approve'),
             403
         );
-        $branchCoordinatorScope = $this->branchCoordinatorApprovalScope($viewer);
+        $branchApprovalScope = $this->branchApprovalScope($viewer);
         $filters = $request->validate([
             'approval_status' => ['nullable', 'string'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
@@ -36,7 +36,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'my_pending' => ['nullable', 'boolean'],
         ]);
 
-        if (($filters['branch_id'] ?? null) && $branchCoordinatorScope !== null && ! in_array((int) $filters['branch_id'], $branchCoordinatorScope, true)) {
+        if (($filters['branch_id'] ?? null) && $branchApprovalScope !== null && ! in_array((int) $filters['branch_id'], $branchApprovalScope, true)) {
             abort(403);
         }
 
@@ -48,14 +48,14 @@ class MonthlyActivitiesApprovalsController extends Controller
                     ->orWhereNull('agenda_event_id')
                     ->orWhereHas('agendaEvent', fn ($agendaQuery) => $agendaQuery->where('event_type', '!=', 'mandatory'));
             })
-            ->when($branchCoordinatorScope !== null, function ($query) use ($branchCoordinatorScope) {
-                if ($branchCoordinatorScope === []) {
+            ->when($branchApprovalScope !== null, function ($query) use ($branchApprovalScope) {
+                if ($branchApprovalScope === []) {
                     $query->whereRaw('1 = 0');
 
                     return;
                 }
 
-                $query->whereIn('branch_id', $branchCoordinatorScope);
+                $query->whereIn('branch_id', $branchApprovalScope);
             })
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
             ->when($filters['date_from'] ?? null, fn ($q, $dateFrom) => $q->whereDate('proposed_date', '>=', $dateFrom))
@@ -124,14 +124,14 @@ class MonthlyActivitiesApprovalsController extends Controller
         $activities->setCollection($collection);
 
         $branches = Branch::query()
-            ->when($branchCoordinatorScope !== null, function ($query) use ($branchCoordinatorScope) {
-                if ($branchCoordinatorScope === []) {
+            ->when($branchApprovalScope !== null, function ($query) use ($branchApprovalScope) {
+                if ($branchApprovalScope === []) {
                     $query->whereRaw('1 = 0');
 
                     return;
                 }
 
-                $query->whereIn('id', $branchCoordinatorScope);
+                $query->whereIn('id', $branchApprovalScope);
             })
             ->orderBy('name')
             ->get();
@@ -161,8 +161,8 @@ class MonthlyActivitiesApprovalsController extends Controller
             403
         );
 
-        $branchCoordinatorScope = $this->branchCoordinatorApprovalScope($viewer);
-        if ($branchCoordinatorScope !== null && ! in_array((int) $monthlyActivity->branch_id, $branchCoordinatorScope, true)) {
+        $branchApprovalScope = $this->branchApprovalScope($viewer);
+        if ($branchApprovalScope !== null && ! in_array((int) $monthlyActivity->branch_id, $branchApprovalScope, true)) {
             abort(403);
         }
 
@@ -216,6 +216,11 @@ class MonthlyActivitiesApprovalsController extends Controller
         ]);
 
         $user = $request->user();
+
+        $branchApprovalScope = $this->branchApprovalScope($user);
+        if ($branchApprovalScope !== null && ! in_array((int) $monthlyActivity->branch_id, $branchApprovalScope, true)) {
+            abort(403);
+        }
 
         $instance = $dynamicWorkflowService->forModel('monthly_activities', $monthlyActivity);
         abort_unless($instance !== null, 422, __('app.roles.programs.monthly_activities.approvals.errors.no_active_workflow'));
@@ -413,9 +418,13 @@ class MonthlyActivitiesApprovalsController extends Controller
     /**
      * @return array<int, int>|null
      */
-    protected function branchCoordinatorApprovalScope($user): ?array
+    protected function branchApprovalScope($user): ?array
     {
-        if (! $user || ! $user->hasRole('branch_coordinator') || $user->can('branches.view.all')) {
+        if (! $user || $user->hasRole('super_admin') || $user->can('branches.view.all')) {
+            return null;
+        }
+
+        if (! $user->hasAnyRole(['relations_officer', 'supervisor', 'branch_coordinator'])) {
             return null;
         }
 

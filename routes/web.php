@@ -285,6 +285,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/reports/enterprise/monthly-export', [EnterpriseReportsController::class, 'exportMonthlyActivities'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.monthly_export');
     Route::get('/dashboard/reports/enterprise/approval-export', [EnterpriseReportsController::class, 'exportApprovalReport'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.approval_export');
     Route::get('/dashboard/reports/enterprise/printable', [EnterpriseReportsController::class, 'printable'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.printable');
+    Route::get('/dashboard/notifications/{notification}/open', [NotificationsController::class, 'open'])->name('role.notifications.open');
     Route::patch('/dashboard/notifications/{notification}/read', [NotificationsController::class, 'markRead'])->name('role.notifications.read');
     Route::post('/dashboard/archive/year', [ArchiveController::class, 'archiveYear'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.archive.year');
     Route::post('/dashboard/archive/year/restore', [ArchiveController::class, 'restoreYear'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.archive.year.restore');

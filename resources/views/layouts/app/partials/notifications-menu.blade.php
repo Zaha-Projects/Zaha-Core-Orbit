@@ -1,10 +1,13 @@
 @php
-    $notificationItems = auth()->check()
-        ? auth()->user()->inAppNotifications()->latest()->take(8)->get()
+    $notificationMenuLimit = (int) config('notifications.menu_limit', 25);
+    $notificationMenuLimit = $notificationMenuLimit > 0 ? $notificationMenuLimit : 25;
+    $unreadNotificationItems = auth()->check()
+        ? auth()->user()->inAppNotifications()->whereNull('read_at')->latest()->take($notificationMenuLimit)->get()
         : collect();
-    $notificationCount = auth()->check()
-        ? auth()->user()->inAppNotifications()->whereNull('read_at')->count()
-        : 0;
+    $readNotificationItems = auth()->check()
+        ? auth()->user()->inAppNotifications()->whereNotNull('read_at')->latest()->take($notificationMenuLimit)->get()
+        : collect();
+    $notificationCount = $unreadNotificationItems->count();
     $notificationVariant = $variant ?? 'nxl';
 @endphp
 
@@ -31,59 +34,80 @@
                 <div class="fw-semibold">{{ __('app.layout.notifications') }}</div>
                 <div class="small text-muted">{{ __('app.layout.new_notifications_count', ['count' => $notificationCount]) }}</div>
             </div>
-            <div class="notification-chat-list">
-                @forelse($notificationItems as $notification)
-                    @php
-                        $notificationMeta = $notification->meta ?? [];
-                        $translationMeta = data_get($notificationMeta, 'i18n', []);
-                        $translationReplace = data_get($translationMeta, 'replace', []);
+            <ul class="nav nav-tabs notification-chat-tabs px-3 pt-2" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#notifications-unread-{{ $notificationVariant }}" type="button" role="tab">
+                        {{ __('app.common.unread') }}
+                        @if($notificationCount > 0)
+                            <span class="badge bg-danger ms-1">{{ $notificationCount }}</span>
+                        @endif
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notifications-read-{{ $notificationVariant }}" type="button" role="tab">
+                        {{ __('app.common.read') }}
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content notification-chat-tab-content">
+                @foreach(['unread' => $unreadNotificationItems, 'read' => $readNotificationItems] as $notificationTab => $notificationItems)
+                    <div class="tab-pane fade {{ $notificationTab === 'unread' ? 'show active' : '' }}" id="notifications-{{ $notificationTab }}-{{ $notificationVariant }}" role="tabpanel">
+                        <div class="notification-chat-list notification-chat-list-scroll">
+                            @forelse($notificationItems as $notification)
+                                @php
+                                    $notificationMeta = $notification->meta ?? [];
+                                    $translationMeta = data_get($notificationMeta, 'i18n', []);
+                                    $translationReplace = data_get($translationMeta, 'replace', []);
 
-                        foreach (data_get($translationMeta, 'translated_replace_keys', []) as $replaceKey) {
-                            if (isset($translationReplace[$replaceKey])) {
-                                $translationReplace[$replaceKey] = __($translationReplace[$replaceKey]);
-                            }
-                        }
+                                    foreach (data_get($translationMeta, 'translated_replace_keys', []) as $replaceKey) {
+                                        if (isset($translationReplace[$replaceKey])) {
+                                            $translationReplace[$replaceKey] = __($translationReplace[$replaceKey]);
+                                        }
+                                    }
 
-                        $notificationTitle = data_get($translationMeta, 'title_key')
-                            ? __(data_get($translationMeta, 'title_key'), $translationReplace)
-                            : match ($notification->title) {
-                                'Created' => __('app.workflow_notifications.created_draft.title'),
-                                'Approved' => __('app.workflow_notifications.decision.approved_title'),
-                                'Changes requested' => __('app.workflow_notifications.decision.changes_requested_title'),
-                                'Rejected' => __('app.workflow_notifications.decision.rejected_title'),
-                                'Published' => __('app.workflow_notifications.published.title'),
-                                'Deleted', 'Item deleted' => __('app.workflow_notifications.deleted.title'),
-                                'Approval needed' => __('app.workflow_notifications.approval_requested.title'),
-                                'Automatically approved' => __('app.workflow_notifications.auto_approved.title'),
-                                default => $notification->title,
-                            };
-                        $notificationMessage = data_get($translationMeta, 'message_key')
-                            ? __(data_get($translationMeta, 'message_key'), $translationReplace)
-                            : $notification->message;
-                    @endphp
-                    <div class="notification-chat-item">
-                        <div class="notification-chat-bubble {{ $notification->read_at ? 'is-read' : 'is-unread' }}">
-                            <div class="fw-semibold mb-1">{{ $notificationTitle }}</div>
-                            @if($notificationMessage)
-                                <div class="text-muted small">{{ $notificationMessage }}</div>
-                            @endif
-                            <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
-                                @if($notification->action_url)
-                                    <a class="small text-decoration-none" href="{{ $notification->action_url }}">{{ __('app.layout.open_notification') }}</a>
-                                @endif
-                                @unless($notification->read_at)
-                                    <form method="POST" action="{{ route('role.notifications.read', $notification) }}">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button class="btn btn-link p-0 small text-decoration-none" type="submit">{{ __('app.common.mark_as_read') }}</button>
-                                    </form>
-                                @endunless
-                            </div>
+                                    $notificationTitle = data_get($translationMeta, 'title_key')
+                                        ? __(data_get($translationMeta, 'title_key'), $translationReplace)
+                                        : match ($notification->title) {
+                                            'Created' => __('app.workflow_notifications.created_draft.title'),
+                                            'Approved' => __('app.workflow_notifications.decision.approved_title'),
+                                            'Changes requested' => __('app.workflow_notifications.decision.changes_requested_title'),
+                                            'Rejected' => __('app.workflow_notifications.decision.rejected_title'),
+                                            'Published' => __('app.workflow_notifications.published.title'),
+                                            'Deleted', 'Item deleted' => __('app.workflow_notifications.deleted.title'),
+                                            'Approval needed' => __('app.workflow_notifications.approval_requested.title'),
+                                            'Automatically approved' => __('app.workflow_notifications.auto_approved.title'),
+                                            default => $notification->title,
+                                        };
+                                    $notificationMessage = data_get($translationMeta, 'message_key')
+                                        ? __(data_get($translationMeta, 'message_key'), $translationReplace)
+                                        : $notification->message;
+                                @endphp
+                                <div class="notification-chat-item">
+                                    <div class="notification-chat-bubble {{ $notification->read_at ? 'is-read' : 'is-unread' }}">
+                                        <div class="fw-semibold mb-1">{{ $notificationTitle }}</div>
+                                        @if($notificationMessage)
+                                            <div class="text-muted small">{{ $notificationMessage }}</div>
+                                        @endif
+                                        <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
+                                            @if($notification->action_url)
+                                                <a class="small text-decoration-none" href="{{ route('role.notifications.open', $notification) }}">{{ __('app.layout.open_notification') }}</a>
+                                            @endif
+                                            @unless($notification->read_at)
+                                                <form method="POST" action="{{ route('role.notifications.read', $notification) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button class="btn btn-link p-0 small text-decoration-none" type="submit">{{ __('app.common.mark_as_read') }}</button>
+                                                </form>
+                                            @endunless
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="notification-chat-empty">{{ $notificationTab === 'unread' ? __('app.common.no_new_notifications') : __('app.common.no_read_notifications') }}</div>
+                            @endforelse
                         </div>
                     </div>
-                @empty
-                    <div class="notification-chat-empty">{{ __('app.common.no_new_notifications') }}</div>
-                @endforelse
+                @endforeach
             </div>
         </div>
 @if($notificationVariant === 'topbar')

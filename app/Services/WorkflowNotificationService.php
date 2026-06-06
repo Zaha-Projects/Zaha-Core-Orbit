@@ -138,7 +138,7 @@ class WorkflowNotificationService
         $url = $this->publishedUrl($entity, $url);
 
         $this->notifications->notifyUsers(
-            $this->activeUsers(),
+            $this->publishedRecipients($entity),
             'workflow_published',
             __('app.workflow_notifications.published.title'),
             __('app.workflow_notifications.published.message', [
@@ -287,6 +287,37 @@ class WorkflowNotificationService
         return User::query()
             ->where('status', 'active')
             ->get();
+    }
+
+    protected function publishedRecipients(Model $entity): Collection
+    {
+        if (! $entity instanceof MonthlyActivity) {
+            return $this->activeUsers();
+        }
+
+        $branchId = (int) $entity->branch_id;
+        $creator = $this->creatorFor($entity);
+
+        if ($branchId <= 0) {
+            return collect([$creator])->filter()->unique('id')->values();
+        }
+
+        return User::query()
+            ->where('status', 'active')
+            ->role(['relations_officer', 'supervisor', 'branch_coordinator', 'volunteer_coordinator', 'communication_head'])
+            ->where(function ($query) use ($branchId): void {
+                $query->whereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($branchId))
+                    ->orWhere(function ($fallbackQuery) use ($branchId): void {
+                        $fallbackQuery
+                            ->whereDoesntHave('assignedBranches')
+                            ->where('branch_id', $branchId);
+                    });
+            })
+            ->get()
+            ->push($creator)
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 
     protected function creatorFor(Model $entity): ?User

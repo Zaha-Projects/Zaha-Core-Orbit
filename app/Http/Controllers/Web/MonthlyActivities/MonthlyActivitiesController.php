@@ -264,8 +264,12 @@ class MonthlyActivitiesController extends Controller
         return User::role($role)
             ->where('status', 'active')
             ->where(function ($query) use ($branchId): void {
-                $query->where('branch_id', $branchId)
-                    ->orWhereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($branchId));
+                $query->whereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($branchId))
+                    ->orWhere(function ($fallbackQuery) use ($branchId): void {
+                        $fallbackQuery
+                            ->whereDoesntHave('assignedBranches')
+                            ->where('branch_id', $branchId);
+                    });
             })
             ->get();
     }
@@ -1237,23 +1241,31 @@ class MonthlyActivitiesController extends Controller
 
     protected function executionNeedOwnerUsers(string $role, MonthlyActivity $monthlyActivity): Collection
     {
-        $query = User::role($role)
+        return User::role($role)
             ->where('status', 'active')
-            ->when(in_array($role, ['branch_coordinator', 'supervisor'], true), function ($query) use ($monthlyActivity) {
+            ->when($this->isBranchScopedExecutionNeedRole($role), function ($query) use ($monthlyActivity) {
                 $query->where(function ($branchQuery) use ($monthlyActivity) {
                     $branchQuery
                         ->whereHas('assignedBranches', fn ($assignedQuery) => $assignedQuery->whereKey($monthlyActivity->branch_id))
-                        ->orWhere('branch_id', $monthlyActivity->branch_id);
+                        ->orWhere(function ($fallbackQuery) use ($monthlyActivity): void {
+                            $fallbackQuery
+                                ->whereDoesntHave('assignedBranches')
+                                ->where('branch_id', $monthlyActivity->branch_id);
+                        });
                 });
-            });
+            })
+            ->get();
+    }
 
-        $users = $query->get();
-
-        if ($users->isEmpty() && in_array($role, ['branch_coordinator', 'supervisor'], true)) {
-            return User::role($role)->where('status', 'active')->get();
-        }
-
-        return $users;
+    protected function isBranchScopedExecutionNeedRole(string $role): bool
+    {
+        return in_array($role, [
+            'branch_coordinator',
+            'supervisor',
+            'volunteer_coordinator',
+            'communication_head',
+            'relations_officer',
+        ], true);
     }
 
     protected function normalizeSuppliesRequestPayload(Request $request): void

@@ -87,11 +87,35 @@
         border-bottom: 1px solid #e8eef5;
         background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
     }
+    .notification-chat-tabs {
+        background: #fff;
+        border-bottom: 1px solid #e8eef5;
+    }
+    .notification-chat-tabs .nav-link {
+        color: #64748b;
+        font-size: .85rem;
+        font-weight: 600;
+    }
+    .notification-chat-tabs .nav-link.active {
+        color: #1d4ed8;
+    }
     .notification-chat-list {
-        max-height: 420px;
+        max-height: min(60vh, 520px);
         overflow-y: auto;
         padding: .85rem;
         background: #f7fafc;
+        scrollbar-color: #cbd5e1 #f7fafc;
+        scrollbar-width: thin;
+    }
+    .notification-chat-list::-webkit-scrollbar {
+        width: 8px;
+    }
+    .notification-chat-list::-webkit-scrollbar-track {
+        background: #f7fafc;
+    }
+    .notification-chat-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
     }
     .notification-chat-item + .notification-chat-item {
         margin-top: .75rem;
