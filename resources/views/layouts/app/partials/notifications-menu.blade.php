@@ -13,7 +13,7 @@
 
 @if($notificationVariant === 'topbar')
     <li class="nav-item dropdown">
-        <button class="btn topbar-notification-btn position-relative" data-bs-toggle="dropdown" type="button" aria-label="{{ __('app.layout.notifications') }}">
+        <button class="btn topbar-notification-btn position-relative" data-bs-toggle="dropdown" data-bs-auto-close="outside" type="button" aria-label="{{ __('app.layout.notifications') }}">
             <i class="fas fa-bell"></i>
             @if($notificationCount > 0)
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ $notificationCount }}</span>
@@ -22,7 +22,7 @@
         <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown notification-chat-menu">
 @else
     <div class="dropdown nxl-h-item">
-        <a class="nxl-head-link me-0" data-bs-toggle="dropdown" href="#" aria-label="{{ __('app.layout.notifications') }}">
+        <a class="nxl-head-link me-0" data-bs-toggle="dropdown" data-bs-auto-close="outside" href="#" aria-label="{{ __('app.layout.notifications') }}">
             <i class="feather-bell"></i>
             @if($notificationCount > 0)
                 <span class="badge bg-danger nxl-h-badge">{{ $notificationCount }}</span>
