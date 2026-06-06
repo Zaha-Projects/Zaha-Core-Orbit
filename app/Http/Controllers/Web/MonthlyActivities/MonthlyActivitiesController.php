@@ -1600,6 +1600,12 @@ class MonthlyActivitiesController extends Controller
         $summaryCards = $this->buildMonthlyIndexSummaryCards($activitiesBaseQuery);
         $this->applyMonthlyIndexSummaryFilter($activitiesBaseQuery, $selectedSummaryFilter);
 
+        $allowedPerPage = [8, 16, 24, 50, 100];
+        $perPage = (int) $request->input('per_page', 8);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 8;
+        }
+
         $activities = (clone $activitiesBaseQuery)
             ->with([
                 'branch',
@@ -1608,7 +1614,8 @@ class MonthlyActivitiesController extends Controller
             ])
             ->orderBy('month')
             ->orderBy('day')
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
         $scopedBranchIds = $this->scopedBranchIds($user);
@@ -1627,6 +1634,7 @@ class MonthlyActivitiesController extends Controller
             'status' => $selectedStatus,
             'branch_id' => $selectedBranchId,
             'summary_filter' => $selectedSummaryFilter,
+            'per_page' => $perPage,
         ];
         $selectedMonthDate = Carbon::create($selectedYear, $selectedMonth, 1)->startOfMonth();
         $previousMonthQuery = collect($request->except(['page', 'year', 'month', 'per_page']))

@@ -193,7 +193,7 @@
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.index', $nextMonthQuery) }}">التالي</a>
                             </div>
                         </div>
-                        <span class="text-muted small">عرض {{ $activities->count() }} نشاط لهذا الشهر</span>
+                        <span class="text-muted small">عرض {{ $activities->total() }} نشاط لهذا الشهر</span>
                     </div>
                     <div class="monthly-cards-grid">
                         @forelse ($activities as $activity)
