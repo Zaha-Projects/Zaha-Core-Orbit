@@ -380,15 +380,6 @@ class MonthlyActivitiesController extends Controller
         return max(0, (int) Setting::valueOf('monthly_plan_lock_days', '5'));
     }
 
-    protected function monthlyIndexPerPage(?int $requestedPerPage = null): int
-    {
-        if ($requestedPerPage !== null) {
-            return max(5, min(100, $requestedPerPage));
-        }
-
-        return max(5, min(100, (int) Setting::valueOf('monthly_activities_index_per_page', '10')));
-    }
-
     protected function buildLockAt(string $proposedDate): ?Carbon
     {
         return Carbon::parse($proposedDate)->subDays($this->monthlyLockDays())->endOfDay();
@@ -1565,10 +1556,12 @@ class MonthlyActivitiesController extends Controller
         $user = $request->user();
         $viewScope = $request->input('scope', 'default');
         $selectedStatus = trim((string) $request->input('status', ''));
-        $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
-        $requestedPerPage = filter_var($request->input('per_page'), FILTER_VALIDATE_INT, [
+        $selectedBranchId = filter_var($request->input('branch_id'), FILTER_VALIDATE_INT, [
             'options' => ['min_range' => 1],
         ]) ?: null;
+        $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
+        $selectedYear = $this->normalizeMonthlyIndexYear($request->input('year'));
+        $selectedMonth = $this->normalizeMonthlyIndexMonth($request->input('month'));
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);
@@ -1577,8 +1570,13 @@ class MonthlyActivitiesController extends Controller
         $activitiesBaseQuery = MonthlyActivity::query()
             ->withCount('newerVersions')
             ->whereDoesntHave('newerVersions')
-            ->enterpriseFilter($request->except('status'))
+            ->enterpriseFilter($request->except(['status', 'year', 'month', 'per_page', 'branch_id']))
             ->notArchived();
+
+        $this->applyMonthlyPageMonthFilter($activitiesBaseQuery, $selectedYear, $selectedMonth);
+        if ($selectedBranchId) {
+            $activitiesBaseQuery->where('branch_id', $selectedBranchId);
+        }
 
         if ($viewScope !== 'all_branches') {
             $this->applyBranchVisibilityScope($activitiesBaseQuery, $user);
@@ -1610,8 +1608,7 @@ class MonthlyActivitiesController extends Controller
             ])
             ->orderBy('month')
             ->orderBy('day')
-            ->paginate($this->monthlyIndexPerPage($requestedPerPage))
-            ->withQueryString();
+            ->get();
 
         $branches = Branch::query()->orderBy('name');
         $scopedBranchIds = $this->scopedBranchIds($user);
@@ -1625,13 +1622,21 @@ class MonthlyActivitiesController extends Controller
         $branches = $branches->get();
         $agendaEvents = AgendaEvent::orderBy('month')->orderBy('day')->get();
         $filters = [
-            'year' => $request->input('year'),
-            'month' => $request->input('month'),
+            'year' => $selectedYear,
+            'month' => $selectedMonth,
             'status' => $selectedStatus,
-            'branch_id' => $request->input('branch_id'),
+            'branch_id' => $selectedBranchId,
             'summary_filter' => $selectedSummaryFilter,
-            'per_page' => $this->monthlyIndexPerPage($requestedPerPage),
         ];
+        $selectedMonthDate = Carbon::create($selectedYear, $selectedMonth, 1)->startOfMonth();
+        $previousMonthQuery = collect($request->except(['page', 'year', 'month', 'per_page']))
+            ->put('year', $selectedMonthDate->copy()->subMonthNoOverflow()->year)
+            ->put('month', $selectedMonthDate->copy()->subMonthNoOverflow()->month)
+            ->all();
+        $nextMonthQuery = collect($request->except(['page', 'year', 'month', 'per_page']))
+            ->put('year', $selectedMonthDate->copy()->addMonthNoOverflow()->year)
+            ->put('month', $selectedMonthDate->copy()->addMonthNoOverflow()->month)
+            ->all();
         $canFilterBranches = $viewScope === 'all_branches'
             ? $this->canViewOtherBranches($user)
             : ($scopedBranchIds === []);
@@ -1649,7 +1654,47 @@ class MonthlyActivitiesController extends Controller
             'monthlyStatusOptions',
             'summaryCards',
             'monthlyActivityEditRoles',
+            'selectedMonthDate',
+            'previousMonthQuery',
+            'nextMonthQuery',
         ));
+    }
+
+
+    protected function normalizeMonthlyIndexYear(mixed $year): int
+    {
+        $normalizedYear = filter_var($year, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 2000, 'max_range' => 2100],
+        ]);
+
+        return $normalizedYear ?: now()->year;
+    }
+
+    protected function normalizeMonthlyIndexMonth(mixed $month): int
+    {
+        $normalizedMonth = filter_var($month, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => 12],
+        ]);
+
+        return $normalizedMonth ?: now()->month;
+    }
+
+    protected function applyMonthlyPageMonthFilter(Builder $query, int $year, int $month): void
+    {
+        $query->where(function (Builder $dateQuery) use ($year, $month): void {
+            $dateQuery
+                ->where(function (Builder $proposedDateQuery) use ($year, $month): void {
+                    $proposedDateQuery
+                        ->whereNotNull('proposed_date')
+                        ->whereYear('proposed_date', $year)
+                        ->whereMonth('proposed_date', $month);
+                })
+                ->orWhere(function (Builder $fallbackMonthQuery) use ($month): void {
+                    $fallbackMonthQuery
+                        ->whereNull('proposed_date')
+                        ->where('month', $month);
+                });
+        });
     }
 
     protected function buildMonthlyIndexSummaryCards(Builder $baseQuery): Collection
@@ -3465,9 +3510,13 @@ class MonthlyActivitiesController extends Controller
 
     public function calendar(Request $request)
     {
-        $year = (int) $request->input('year', now()->year);
-        $month = (int) $request->input('month', now()->month);
+        $year = $this->normalizeMonthlyIndexYear($request->input('year'));
+        $month = $this->normalizeMonthlyIndexMonth($request->input('month'));
         $viewScope = $request->input('scope', 'default');
+        $selectedStatus = trim((string) $request->input('status', ''));
+        $selectedBranchId = filter_var($request->input('branch_id'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]) ?: null;
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($request->user())) {
             abort(403);
@@ -3493,11 +3542,16 @@ class MonthlyActivitiesController extends Controller
                 });
         });
 
+        if ($selectedBranchId) {
+            $query->where('branch_id', $selectedBranchId);
+        }
+
         if ($viewScope !== 'all_branches') {
             $this->applyBranchVisibilityScope($query, $request->user());
         }
         $this->applyDraftVisibilityScope($query, $request->user());
         $this->applyVolunteerCoordinatorVisibilityScope($query, $request->user());
+        $this->applyMonthlyPageStatusFilter($query, $selectedStatus);
 
         if ($viewScope === 'all_branches') {
             $this->applyOtherBranchesScope($query, $request->user());
