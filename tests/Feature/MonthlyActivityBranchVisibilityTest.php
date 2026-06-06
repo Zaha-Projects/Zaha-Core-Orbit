@@ -68,7 +68,7 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('role.relations.activities.index'))
+            ->get(route('role.relations.activities.index', ['year' => 2026, 'month' => 3]))
             ->assertOk()
             ->assertSee('Primary branch activity')
             ->assertDontSee('Secondary branch activity')
@@ -110,7 +110,7 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('role.relations.activities.index', ['scope' => 'all_branches']))
+            ->get(route('role.relations.activities.index', ['scope' => 'all_branches', 'year' => 2026, 'month' => 3]))
             ->assertOk()
             ->assertSee('Other approved plan')
             ->assertDontSee('Own approved plan')
@@ -137,10 +137,76 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('role.relations.activities.index'))
+            ->get(route('role.relations.activities.index', ['year' => 2026, 'month' => 3]))
             ->assertOk()
             ->assertSee('Needs volunteers')
             ->assertDontSee('No volunteers needed');
+    }
+
+    public function test_monthly_activities_index_filters_by_grouped_status(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        MonthlyActivity::factory()->create([
+            'title' => 'In review filtered activity',
+            'status' => 'in_review',
+            'proposed_date' => '2026-03-08',
+            'month' => 3,
+            'day' => 8,
+        ]);
+        MonthlyActivity::factory()->create([
+            'title' => 'Draft excluded by submitted filter',
+            'status' => 'draft',
+            'created_by' => $user->id,
+            'proposed_date' => '2026-03-09',
+            'month' => 3,
+            'day' => 9,
+        ]);
+        MonthlyActivity::factory()->create([
+            'title' => 'Different month activity',
+            'status' => 'in_review',
+            'proposed_date' => '2026-04-09',
+            'month' => 4,
+            'day' => 9,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.activities.index', ['year' => 2026, 'month' => 3, 'status' => 'submitted']))
+            ->assertOk()
+            ->assertSee('In review filtered activity')
+            ->assertDontSee('Draft excluded by submitted filter')
+            ->assertDontSee('Different month activity');
+    }
+
+    public function test_monthly_activities_calendar_filters_by_status(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        $inReviewActivity = MonthlyActivity::factory()->create([
+            'title' => 'Calendar in review activity',
+            'status' => 'in_review',
+            'proposed_date' => '2026-03-10',
+            'month' => 3,
+            'day' => 10,
+        ]);
+        $draftActivity = MonthlyActivity::factory()->create([
+            'title' => 'Calendar draft activity',
+            'status' => 'draft',
+            'created_by' => $user->id,
+            'proposed_date' => '2026-03-11',
+            'month' => 3,
+            'day' => 11,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson(route('role.relations.activities.calendar', ['year' => 2026, 'month' => 3, 'status' => 'submitted']))
+            ->assertOk()
+            ->assertJsonFragment(['id' => $inReviewActivity->id])
+            ->assertJsonMissing(['id' => $draftActivity->id]);
     }
 
     public function test_volunteer_coordinator_cannot_open_activity_that_does_not_need_volunteers(): void

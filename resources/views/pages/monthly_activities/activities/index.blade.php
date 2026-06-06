@@ -48,11 +48,6 @@
         'post_execution_submitted' => $workflowStatusLabel('post_execution_submitted'),
         'approved' => $workflowStatusLabel('approved'),
     ];
-    $perPageFilterOptions = collect([10, 20, 30, 50, 100])
-        ->map(fn (int $size): array => [
-            'value' => (string) $size,
-            'label' => __('app.roles.relations.agenda.filters.show_count', ['count' => $size]),
-        ]);
     $branchFilterSelected = $filters['branch_id'] ?? '';
     $authUser = auth()->user();
     $monthlyActivityEditRoles = $monthlyActivityEditRoles ?? [];
@@ -164,13 +159,6 @@
                         'options' => $monthlyStatusOptions,
                         'selectedValue' => $filters['status'] ?? '',
                     ])
-                    @include('pages.shared.filters.select-field', [
-                        'columnClass' => 'col-6 col-xl-2',
-                        'fieldName' => 'per_page',
-                        'label' => __('app.pagination'),
-                        'options' => $perPageFilterOptions,
-                        'selectedValue' => $filters['per_page'] ?? 10,
-                    ])
                     <div class="col-12 col-xl-2 event-actions"><button class="btn btn-outline-primary" type="submit">{{ __('app.common.filter') }}</button></div>
                 </form>
             </div>
@@ -197,8 +185,15 @@
             <div class="card event-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                        <h2 class="event-section-title mb-0">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
-                        <span class="text-muted small">عرض {{ $activities->count() }} من أصل {{ method_exists($activities, 'total') ? $activities->total() : $activities->count() }} نشاط</span>
+                        <div>
+                            <h2 class="event-section-title mb-1">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.index', $previousMonthQuery) }}">السابق</a>
+                                <span class="badge bg-light text-dark border">{{ optional($selectedMonthDate ?? null)->translatedFormat('F Y') }}</span>
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.index', $nextMonthQuery) }}">التالي</a>
+                            </div>
+                        </div>
+                        <span class="text-muted small">عرض {{ $activities->count() }} نشاط لهذا الشهر</span>
                     </div>
                     <div class="monthly-cards-grid">
                         @forelse ($activities as $activity)
