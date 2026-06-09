@@ -40,6 +40,7 @@ return [
         'main_branch_label' => 'Main Branch',
         'new_notifications_count' => ':count new',
         'open_notification' => 'Open notification',
+        'notification_timestamp' => 'Notification date and time',
         'close_sidebar' => 'Close sidebar',
         'toggle_page_actions' => 'Toggle page actions',
         'close_page_actions' => 'Close page actions',

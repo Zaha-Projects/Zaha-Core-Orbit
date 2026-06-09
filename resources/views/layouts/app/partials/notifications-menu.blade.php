@@ -81,12 +81,22 @@
                                     $notificationMessage = data_get($translationMeta, 'message_key')
                                         ? __(data_get($translationMeta, 'message_key'), $translationReplace)
                                         : $notification->message;
+                                    $notificationCreatedAt = $notification->created_at?->timezone(config('app.timezone'));
                                 @endphp
                                 <div class="notification-chat-item">
                                     <div class="notification-chat-bubble {{ $notification->read_at ? 'is-read' : 'is-unread' }}">
                                         <div class="fw-semibold mb-1">{{ $notificationTitle }}</div>
                                         @if($notificationMessage)
                                             <div class="text-muted small">{{ $notificationMessage }}</div>
+                                        @endif
+                                        @if($notificationCreatedAt)
+                                            <div class="notification-chat-timestamp small text-muted mt-2" title="{{ $notificationCreatedAt->toDateTimeString() }}">
+                                                <i class="fas fa-clock me-1" aria-hidden="true"></i>
+                                                <span class="visually-hidden">{{ __('app.layout.notification_timestamp') }}:</span>
+                                                <span>{{ $notificationCreatedAt->format('Y-m-d') }}</span>
+                                                <span class="mx-1">•</span>
+                                                <span>{{ $notificationCreatedAt->format('H:i') }}</span>
+                                            </div>
                                         @endif
                                         <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
                                             @if($notification->action_url)

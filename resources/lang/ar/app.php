@@ -40,6 +40,7 @@ return [
         'main_branch_label' => 'فرع رئيسي',
         'new_notifications_count' => ':count جديدة',
         'open_notification' => 'فتح الإشعار',
+        'notification_timestamp' => 'تاريخ ووقت الإشعار',
         'close_sidebar' => 'إغلاق القائمة الجانبية',
         'toggle_page_actions' => 'إظهار إجراءات الصفحة',
         'close_page_actions' => 'إغلاق إجراءات الصفحة',

@@ -134,6 +134,11 @@
     .notification-chat-bubble.is-unread {
         border-inline-start: 4px solid #dc3545;
     }
+    .notification-chat-timestamp {
+        align-items: center;
+        display: flex;
+        line-height: 1.4;
+    }
     .notification-chat-bubble::after {
         content: '';
         position: absolute;

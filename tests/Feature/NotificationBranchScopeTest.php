@@ -9,6 +9,7 @@ use App\Models\MonthlyActivity;
 use App\Models\User;
 use App\Services\WorkflowNotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -104,6 +105,27 @@ class NotificationBranchScopeTest extends TestCase
         $this->assertFalse($volunteerRecipients->contains('id', $otherBranchVolunteer->id));
         $this->assertTrue($communicationRecipients->contains('id', $sameBranchCommunicationHead->id));
         $this->assertFalse($communicationRecipients->contains('id', $otherBranchCommunicationHead->id));
+    }
+
+    public function test_notifications_menu_shows_notification_date_and_time(): void
+    {
+        $user = User::factory()->create();
+        InAppNotification::create([
+            'user_id' => $user->id,
+            'type' => 'test',
+            'title' => 'Timed notification',
+            'message' => 'Notification body',
+            'created_at' => Carbon::parse('2026-06-09 15:45:00'),
+            'updated_at' => Carbon::parse('2026-06-09 15:45:00'),
+        ]);
+
+        $this->actingAs($user);
+
+        $html = view('layouts.app.partials.notifications-menu')->render();
+
+        $this->assertStringContainsString('2026-06-09', $html);
+        $this->assertStringContainsString('15:45', $html);
+        $this->assertStringContainsString(__('app.layout.notification_timestamp'), $html);
     }
 
     public function test_opening_notification_marks_it_as_read_and_redirects_to_action_url(): void
