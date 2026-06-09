@@ -20,6 +20,7 @@ class MonthlyActivityFactory extends Factory
             'proposed_date' => '2026-03-19',
             'location_type' => 'inside_center',
             'status' => 'draft',
+            'execution_status' => 'planned',
             'lifecycle_status' => 'Draft',
             'branch_id' => Branch::factory(),
             'created_by' => User::factory(),

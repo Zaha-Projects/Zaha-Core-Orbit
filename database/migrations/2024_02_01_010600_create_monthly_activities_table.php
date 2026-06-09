@@ -74,7 +74,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('correspondence_reason_id')->nullable();
             $table->string('correspondence_status')->default('pending');
             $table->string('status')->default('draft');
-            $table->string('execution_status')->default('executed');
+            $table->string('execution_status')->default('planned');
             $table->unsignedInteger('plan_stage')->default(1);
             $table->unsignedInteger('plan_version')->default(1);
             $table->foreignId('previous_version_id')->nullable()->constrained('monthly_activities')->nullOnDelete();

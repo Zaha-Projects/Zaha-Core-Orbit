@@ -56,6 +56,7 @@
         return $executionStatusLabels[$status] ?? $status;
     };
     $officialCorrespondenceAttachments = $monthlyActivity->attachments->where('file_type', 'official_correspondence');
+    $displayExecutionStatus = $monthlyActivity->executionStatusForDisplay();
     $outsideMapNavigationUrl = \App\Support\GoogleMaps::navigationUrl(
         $monthlyActivity->outside_google_maps_url,
         $monthlyActivity->outside_place_name,
@@ -204,7 +205,7 @@
             <div class="card-body">
                 <div class="monthly-summary-grid mb-4">
                     <div class="monthly-summary-item"><span>الحالة</span><strong>{{ $statusLabel($monthlyActivity->status) }}</strong></div>
-                    <div class="monthly-summary-item"><span>حالة التنفيذ</span><strong>{{ $executionLabel($monthlyActivity->execution_status) }}</strong></div>
+                    <div class="monthly-summary-item"><span>حالة التنفيذ</span><strong>{{ $executionLabel($displayExecutionStatus) }}</strong></div>
                     <div class="monthly-summary-item"><span>التاريخ</span><strong>{{ sprintf('%02d/%02d', $monthlyActivity->day, $monthlyActivity->month) }}</strong></div>
                     <div class="monthly-summary-item"><span>الفرع</span><strong>{{ $monthlyActivity->branch?->name ?? '-' }}</strong></div>
                 </div>
@@ -216,7 +217,7 @@
                     <div class="col-12 col-md-4"><strong>تاريخ النشاط:</strong> {{ sprintf('%02d/%02d', $monthlyActivity->day, $monthlyActivity->month) }}</div>
                     <div class="col-12 col-md-4"><strong>التاريخ المقترح:</strong> {{ optional($monthlyActivity->proposed_date)->format('d/m/Y') ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>الحالة:</strong> {{ $statusLabel($monthlyActivity->status) }}</div>
-                    <div class="col-12 col-md-4"><strong>حالة التنفيذ:</strong> {{ $executionLabel($monthlyActivity->execution_status) }}</div>
+                    <div class="col-12 col-md-4"><strong>حالة التنفيذ:</strong> {{ $executionLabel($displayExecutionStatus) }}</div>
                     <div class="col-12 col-md-4"><strong>الفرع:</strong> {{ $monthlyActivity->branch?->name ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>مرتبط بفعالية أجندة:</strong> {{ $monthlyActivity->agendaEvent?->event_name ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>ضمن الأجندة السنوية:</strong> {{ $monthlyActivity->is_in_agenda ? 'نعم' : 'لا' }}</div>

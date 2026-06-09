@@ -647,6 +647,7 @@ class MonthlyActivitiesController extends Controller
     protected function executionStatusLabels(): array
     {
         return [
+            'planned' => 'بانتظار التنفيذ',
             'executed' => 'منفذة',
             'postponed' => 'مؤجلة',
             'cancelled' => 'ملغية',
@@ -826,8 +827,16 @@ class MonthlyActivitiesController extends Controller
         $this->normalizeExecutionNeedsPayload($data);
         $this->normalizeSuppliesPayload($data);
 
-        $data['execution_status'] = $data['execution_status'] ?? 'executed';
+        $data['execution_status'] = $data['execution_status'] ?? 'planned';
         $data['status'] = $data['status'] ?? 'draft';
+
+        if (
+            ! in_array((string) $data['execution_status'], ['postponed', 'cancelled'], true)
+            && empty($data['actual_date'])
+            && ! in_array((string) $data['status'], ['executed', 'completed', 'closed', 'post_execution_submitted'], true)
+        ) {
+            $data['execution_status'] = 'planned';
+        }
 
         if (($data['location_type'] ?? null) === 'inside_center') {
             $data['outside_place_name'] = null;
@@ -865,12 +874,12 @@ class MonthlyActivitiesController extends Controller
             $data['volunteer_tasks_summary'] = null;
         }
 
-        if (($data['execution_status'] ?? 'executed') !== 'postponed') {
+        if (($data['execution_status'] ?? 'planned') !== 'postponed') {
             $data['rescheduled_date'] = null;
             $data['reschedule_reason'] = null;
         }
 
-        if (($data['execution_status'] ?? 'executed') !== 'cancelled') {
+        if (($data['execution_status'] ?? 'planned') !== 'cancelled') {
             $data['cancellation_reason'] = null;
         }
 
@@ -1909,7 +1918,7 @@ class MonthlyActivitiesController extends Controller
             'agenda_event_id' => $monthlyActivity->agenda_event_id,
             'is_in_agenda' => (int) $monthlyActivity->is_in_agenda,
             'status' => $monthlyActivity->status,
-            'execution_status' => $monthlyActivity->execution_status ?: 'executed',
+            'execution_status' => $monthlyActivity->execution_status ?: 'planned',
             'location_type' => $monthlyActivity->location_type,
             'internal_location' => $outsideCenter ? null : $monthlyActivity->internal_location,
             'outside_place_name' => $outsideCenter ? $monthlyActivity->outside_place_name : null,
@@ -2194,7 +2203,7 @@ class MonthlyActivitiesController extends Controller
                 'location_type' => 'inside_center',
                 'location_details' => null,
                 'status' => $isReadOnlyUnified ? 'approved' : 'draft',
-                'execution_status' => 'executed',
+                'execution_status' => 'planned',
                 'relations_manager_approval_status' => $isReadOnlyUnified ? 'approved' : null,
                 'executive_approval_status' => $isReadOnlyUnified ? 'approved' : null,
                 'executive_review_required' => false,
@@ -2242,7 +2251,7 @@ class MonthlyActivitiesController extends Controller
             'is_in_agenda' => ['nullable', 'boolean'],
             'status' => ['nullable', 'string', 'max:50'],
             'submit_action' => ['nullable', 'in:draft,submit'],
-            'execution_status' => ['required', 'in:executed,postponed,cancelled'],
+            'execution_status' => ['required', 'in:planned,executed,postponed,cancelled'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
 
             'location_type' => ['required', 'in:inside_center,outside_center'],
@@ -2810,7 +2819,7 @@ class MonthlyActivitiesController extends Controller
             'is_in_agenda' => ['nullable', 'boolean'],
             'status' => ['nullable', 'string', 'max:50'],
             'submit_action' => ['nullable', 'in:draft,submit'],
-            'execution_status' => ['required', 'in:executed,postponed,cancelled'],
+            'execution_status' => ['required', 'in:planned,executed,postponed,cancelled'],
             'responsible_party' => ['nullable', 'string', 'max:255'],
 
             'location_type' => ['required', 'in:inside_center,outside_center'],

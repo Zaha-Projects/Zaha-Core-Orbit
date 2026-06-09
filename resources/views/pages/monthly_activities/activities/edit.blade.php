@@ -159,6 +159,7 @@
             <form method="POST" action="{{ route('role.relations.activities.update', $monthlyActivity) }}" enctype="multipart/form-data" class="row g-3">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="execution_status" value="{{ old('execution_status', $monthlyActivity->execution_status ?: 'planned') }}">
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ __('app.roles.programs.monthly_activities.fields.title') }}</label>
                     <input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ old('title', $monthlyActivity->title) }}" >

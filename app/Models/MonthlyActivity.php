@@ -193,6 +193,28 @@ class MonthlyActivity extends Model
         'plan_version' => 'integer',
     ];
 
+    public function executionStatusForDisplay(): string
+    {
+        $executionStatus = (string) ($this->execution_status ?: 'planned');
+
+        if (in_array($executionStatus, ['cancelled', 'postponed'], true)) {
+            return $executionStatus;
+        }
+
+        if (
+            $executionStatus === 'executed'
+            && (
+                filled($this->actual_date)
+                || in_array((string) $this->status, ['executed', 'completed', 'closed', 'post_execution_submitted'], true)
+                || in_array((string) $this->lifecycle_status, ['Executed', 'Evaluated', 'Closed'], true)
+            )
+        ) {
+            return 'executed';
+        }
+
+        return 'planned';
+    }
+
     public function getPlanningAttachmentAttribute(): ?string
     {
         return $this->attributes['branch_plan_file'] ?? null;

@@ -40,7 +40,7 @@
     $requiresSuppliesChecked = (bool) old('requires_supplies', $existingMonthlyActivity?->supplies?->isNotEmpty() ?? false);
     $hasSponsorChecked = (bool) old('has_sponsor', $existingMonthlyActivity?->has_sponsor ?? false);
     $hasPartnersChecked = (bool) old('has_partners', $existingMonthlyActivity?->has_partners ?? false);
-    $selectedExecutionStatus = old('execution_status', $existingMonthlyActivity?->execution_status ?? 'executed');
+    $selectedExecutionStatus = old('execution_status', $existingMonthlyActivity?->execution_status ?? 'planned');
     $selectedTargetGroupIds = array_map('intval', old('target_group_ids', $existingMonthlyActivity?->targetGroups?->pluck('id')->all() ?? []));
     $selectedTargetGroupNames = $targetGroups
         ->whereIn('id', $selectedTargetGroupIds)
@@ -150,7 +150,7 @@
                     @method($formMethod)
                 @endif
                 <input type="hidden" name="status" value="draft">
-                <input type="hidden" name="execution_status" value="{{ old('execution_status', $existingMonthlyActivity?->execution_status ?? 'executed') }}">
+                <input type="hidden" name="execution_status" value="{{ old('execution_status', $existingMonthlyActivity?->execution_status ?? 'planned') }}">
                 <input type="hidden" class="js-activity-date" name="activity_date" value="{{ old('activity_date', optional($existingMonthlyActivity?->activity_date)->format('Y-m-d') ?: optional($existingMonthlyActivity?->proposed_date)->format('Y-m-d')) }}">
                 @if (filled($linkedAgendaEventId))
                     <input type="hidden" name="agenda_event_id" value="{{ $linkedAgendaEventId }}">
