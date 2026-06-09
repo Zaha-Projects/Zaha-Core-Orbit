@@ -129,6 +129,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/dashboard/admin/workflow-steps/{step}', [SuperAdminWorkflowsController::class, 'destroyStep'])->middleware('role_or_permission:super_admin|workflows.manage')->name('role.super_admin.workflow_steps.destroy');
     Route::get('/dashboard/admin/users', [SuperAdminUsersManagementController::class, 'index'])->middleware('role_or_permission:super_admin|users.view')->name('role.super_admin.users');
     Route::post('/dashboard/admin/users', [SuperAdminUsersManagementController::class, 'store'])->middleware('role_or_permission:super_admin|users.manage')->name('role.super_admin.users.store');
+    Route::get('/dashboard/admin/users/{user}', [SuperAdminUsersManagementController::class, 'show'])->middleware('role_or_permission:super_admin|users.view')->name('role.super_admin.users.show');
     Route::put('/dashboard/admin/users/{user}', [SuperAdminUsersManagementController::class, 'update'])->middleware('role_or_permission:super_admin|users.manage')->name('role.super_admin.users.update');
     Route::delete('/dashboard/admin/users/{user}', [SuperAdminUsersManagementController::class, 'destroy'])->middleware('role_or_permission:super_admin|users.manage')->name('role.super_admin.users.destroy');
     Route::get('/dashboard/admin/branches', [SuperAdminBranchesManagementController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.branches');
