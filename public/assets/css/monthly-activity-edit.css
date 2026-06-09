@@ -495,3 +495,82 @@
         width: 4px;
     }
 }
+
+.monthly-activity-edit-page .monthly-map-preview {
+    border: 1px solid #bfdbfe;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+    box-shadow: 0 18px 38px rgba(37, 99, 235, .1);
+    overflow: hidden;
+}
+
+.monthly-activity-edit-page .monthly-map-preview__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.15rem;
+    border-bottom: 1px solid rgba(59, 130, 246, .18);
+}
+
+.monthly-activity-edit-page .monthly-map-preview__eyebrow {
+    color: #2563eb;
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    margin-bottom: .2rem;
+}
+
+.monthly-activity-edit-page .monthly-map-preview__title {
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.monthly-activity-edit-page .monthly-map-preview__frame {
+    background: #dbeafe;
+    min-height: 280px;
+    position: relative;
+}
+
+.monthly-activity-edit-page .monthly-map-preview__frame iframe {
+    border: 0;
+    display: block;
+    height: 320px;
+    width: 100%;
+}
+
+.monthly-activity-edit-page .monthly-map-preview__empty {
+    align-items: center;
+    color: #475569;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    justify-content: center;
+    min-height: 280px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.monthly-activity-edit-page .monthly-map-preview__empty i {
+    color: #2563eb;
+    font-size: 2.35rem;
+    margin-bottom: .35rem;
+}
+
+.monthly-activity-edit-page .monthly-map-preview__empty strong {
+    color: #0f172a;
+    font-size: 1rem;
+}
+
+@media (max-width: 575.98px) {
+    .monthly-activity-edit-page .monthly-map-preview__header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .monthly-activity-edit-page .monthly-map-preview__header .btn {
+        width: 100%;
+    }
+}

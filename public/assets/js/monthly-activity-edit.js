@@ -42,6 +42,73 @@ document.addEventListener('DOMContentLoaded', function () {
     .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+  const monthlyMapPreview = document.querySelector('.js-monthly-map-preview');
+  const monthlyMapInput = document.querySelector('[name="outside_google_maps_url"]');
+  const monthlyMapPlaceInput = document.querySelector('[name="outside_place_name"]');
+  const monthlyMapAddressInput = document.querySelector('[name="outside_address"]');
+
+  const filledMapValue = (value) => String(value ?? '').trim();
+  const extractMapQuery = (rawUrl) => {
+    const value = filledMapValue(rawUrl);
+    if (!value) return '';
+
+    const placeCoordinates = value.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+    if (placeCoordinates) return `${placeCoordinates[1]},${placeCoordinates[2]}`;
+
+    const atCoordinates = value.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+    if (atCoordinates) return `${atCoordinates[1]},${atCoordinates[2]}`;
+
+    try {
+      const url = new URL(value);
+      for (const key of ['q', 'query', 'destination', 'daddr', 'll']) {
+        const paramValue = filledMapValue(url.searchParams.get(key));
+        if (paramValue) return paramValue;
+      }
+
+      const placeMatch = url.pathname.match(/\/maps\/place\/([^/?]+)/);
+      if (placeMatch) return decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    } catch (error) {
+      return '';
+    }
+
+    return '';
+  };
+  const fallbackMapQuery = () => [monthlyMapPlaceInput, monthlyMapAddressInput]
+    .map((input) => filledMapValue(input?.value))
+    .filter(Boolean)
+    .join('، ');
+  const updateMonthlyMapPreview = () => {
+    if (!monthlyMapPreview) return;
+
+    const rawUrl = filledMapValue(monthlyMapInput?.value);
+    const query = extractMapQuery(rawUrl) || fallbackMapQuery();
+    const openUrl = query
+      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`
+      : rawUrl;
+    const frame = monthlyMapPreview.querySelector('.js-monthly-map-frame');
+    const openLink = monthlyMapPreview.querySelector('.js-monthly-map-open');
+
+    if (openLink) {
+      openLink.classList.toggle('d-none', !openUrl);
+      if (openUrl) openLink.href = openUrl;
+    }
+
+    if (!frame) return;
+
+    if (!query) {
+      frame.innerHTML = `
+        <div class="monthly-map-preview__empty js-monthly-map-empty">
+          <i class="fas fa-map-marked-alt" aria-hidden="true"></i>
+          <strong>${esc(monthlyMapPreview.dataset.emptyTitle || 'أدخل رابط Google Maps لعرض الموقع هنا')}</strong>
+          <span>${esc(monthlyMapPreview.dataset.emptyMessage || 'سيظهر الموقع على الخريطة تلقائياً، ويمكن فتح الاتجاهات عبر Google Maps.')}</span>
+        </div>
+      `;
+      return;
+    }
+
+    frame.innerHTML = `<iframe class="js-monthly-map-iframe" src="https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed" title="${esc(monthlyMapPreview.dataset.previewLabel || 'معاينة موقع النشاط')}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+  };
+
   const setSectionState = (button, body, open, animate = true) => {
     button.setAttribute('aria-expanded', open ? 'true' : 'false');
     button.classList.toggle('is-collapsed', !open);
@@ -327,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function () {
       input.disabled = !outsideSelected;
       if (!outsideSelected) input.value = '';
     });
+    updateMonthlyMapPreview();
     const selected = tg?.selectedOptions?.[0];
     const isOther = selected && selected.dataset.isOther === '1';
     tgOther.forEach(el => el.style.display = isOther ? 'block' : 'none');
@@ -365,6 +433,10 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!needsVolunteers?.checked) requiredVolunteersInput.value = '';
     }
   };
+  [monthlyMapInput, monthlyMapPlaceInput, monthlyMapAddressInput].forEach((input) => {
+    input?.addEventListener('input', updateMonthlyMapPreview);
+    input?.addEventListener('change', updateMonthlyMapPreview);
+  });
   locType?.addEventListener('change', toggle);
   tg?.addEventListener('change', toggle);
   hasSponsor?.addEventListener('change', toggle);

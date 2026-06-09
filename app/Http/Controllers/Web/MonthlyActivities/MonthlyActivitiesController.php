@@ -411,10 +411,13 @@ class MonthlyActivitiesController extends Controller
                     return;
                 }
 
-                $allowedHosts = ['google.com', 'drive.google.com'];
-                $isAllowed = collect($allowedHosts)->contains(fn (string $allowed) => $host === $allowed || Str::endsWith($host, '.'.$allowed));
-                if (! $isAllowed) {
-                    $fail('الرابط يجب أن يكون ضمن النطاقات الموثوقة.');
+                $googleMapsHosts = ['maps.app.goo.gl', 'goo.gl'];
+                $isGoogleHost = $host === 'google.com' || Str::endsWith($host, '.google.com');
+                $isGoogleMapsPath = Str::startsWith((string) ($parts['path'] ?? ''), '/maps');
+                $isGoogleMapsShortLink = in_array($host, $googleMapsHosts, true);
+
+                if (! (($isGoogleHost && $isGoogleMapsPath) || $isGoogleMapsShortLink)) {
+                    $fail('الرابط يجب أن يكون رابط Google Maps صالحاً.');
                 }
             },
         ];

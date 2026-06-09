@@ -56,6 +56,11 @@
         return $executionStatusLabels[$status] ?? $status;
     };
     $officialCorrespondenceAttachments = $monthlyActivity->attachments->where('file_type', 'official_correspondence');
+    $outsideMapNavigationUrl = \App\Support\GoogleMaps::navigationUrl(
+        $monthlyActivity->outside_google_maps_url,
+        $monthlyActivity->outside_place_name,
+        $monthlyActivity->outside_address
+    );
 @endphp
 
 @section('content')
@@ -329,12 +334,26 @@
                     <div class="col-12 col-md-4"><strong>نوع المكان:</strong> {{ $monthlyActivity->location_type === 'outside_center' ? 'خارج المركز' : 'داخل المركز' }}</div>
                     <div class="col-12 col-md-4"><strong>القاعة الداخلية:</strong> {{ $monthlyActivity->internal_location ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>اسم المكان الخارجي:</strong> {{ $monthlyActivity->outside_place_name ?? '-' }}</div>
-                    <div class="col-12 col-md-4"><strong>رابط الموقع:</strong> {{ $monthlyActivity->outside_google_maps_url ?? '-' }}</div>
+                    <div class="col-12 col-md-4">
+                        <strong>رابط الموقع:</strong>
+                        @if($outsideMapNavigationUrl)
+                            <a href="{{ $outsideMapNavigationUrl }}" target="_blank" rel="noopener noreferrer">التنقل عبر Google Maps</a>
+                        @else
+                            -
+                        @endif
+                    </div>
                     <div class="col-12 col-md-4"><strong>رقم تواصل المكان:</strong> {{ $monthlyActivity->outside_contact_number ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>اسم ضابط الارتباط:</strong> {{ $monthlyActivity->external_liaison_name ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>رقم ضابط الارتباط:</strong> {{ $monthlyActivity->external_liaison_phone ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>العنوان التفصيلي:</strong> {{ $monthlyActivity->outside_address ?? '-' }}</div>
                     <div class="col-12 col-md-4"><strong>من - إلى:</strong> {{ $monthlyActivity->time_from ?? '-' }} / {{ $monthlyActivity->time_to ?? '-' }}</div>
+                    @if($monthlyActivity->location_type === 'outside_center')
+                        @include('pages.monthly_activities.activities.partials.google-map-preview', [
+                            'mapUrl' => $monthlyActivity->outside_google_maps_url,
+                            'mapPlaceName' => $monthlyActivity->outside_place_name,
+                            'mapAddress' => $monthlyActivity->outside_address,
+                        ])
+                    @endif
 
                     <div class="col-12"><hr></div>
                     <div class="col-12 col-md-4"><strong>الوصف المختصر:</strong> {{ $monthlyActivity->short_description ?? '-' }}</div>

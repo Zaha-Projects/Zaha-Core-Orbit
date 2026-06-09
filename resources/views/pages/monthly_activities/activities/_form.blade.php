@@ -242,6 +242,12 @@
                     @error('outside_google_maps_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
+                @include('pages.monthly_activities.activities.partials.google-map-preview', [
+                    'mapUrl' => old('outside_google_maps_url', $existingMonthlyActivity?->outside_google_maps_url),
+                    'mapPlaceName' => old('outside_place_name', $existingMonthlyActivity?->outside_place_name),
+                    'mapAddress' => old('outside_address', $existingMonthlyActivity?->outside_address),
+                ])
+
                 <div class="col-12 col-md-4 js-outside-location">
                     <label class="form-label">رقم تواصل المكان الخارجي</label>
                     <input class="form-control @error('outside_contact_number') is-invalid @enderror" name="outside_contact_number" dir="ltr" inputmode="tel" value="{{ old('outside_contact_number', $existingMonthlyActivity?->outside_contact_number) }}" placeholder="مثال: 0791234567 أو 065001234">

@@ -72,6 +72,89 @@ document.addEventListener('DOMContentLoaded', function () {
     const oldSponsors = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-sponsors-json', []) : JSON.parse(document.getElementById('monthly-form-old-sponsors-json')?.textContent ?? '[]');
     const oldSupplies = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-supplies-json', []) : JSON.parse(document.getElementById('monthly-form-old-supplies-json')?.textContent ?? '[]');
     const oldTeamGroups = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-team-groups-json', []) : JSON.parse(document.getElementById('monthly-form-old-team-groups-json')?.textContent ?? '[]');
+
+    const monthlyMapPreview = form.querySelector('.js-monthly-map-preview');
+    const monthlyMapInput = form.querySelector('[name="outside_google_maps_url"]');
+    const monthlyMapPlaceInput = form.querySelector('[name="outside_place_name"]');
+    const monthlyMapAddressInput = form.querySelector('[name="outside_address"]');
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function filledMapValue(value) {
+        return String(value ?? '').trim();
+    }
+
+    function extractMapQuery(rawUrl) {
+        const value = filledMapValue(rawUrl);
+        if (!value) return '';
+
+        const placeCoordinates = value.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+        if (placeCoordinates) return `${placeCoordinates[1]},${placeCoordinates[2]}`;
+
+        const atCoordinates = value.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+        if (atCoordinates) return `${atCoordinates[1]},${atCoordinates[2]}`;
+
+        try {
+            const url = new URL(value);
+            for (const key of ['q', 'query', 'destination', 'daddr', 'll']) {
+                const paramValue = filledMapValue(url.searchParams.get(key));
+                if (paramValue) return paramValue;
+            }
+
+            const placeMatch = url.pathname.match(/\/maps\/place\/([^/?]+)/);
+            if (placeMatch) return decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+        } catch (error) {
+            return '';
+        }
+
+        return '';
+    }
+
+    function fallbackMapQuery() {
+        return [monthlyMapPlaceInput, monthlyMapAddressInput]
+            .map((input) => filledMapValue(input?.value))
+            .filter(Boolean)
+            .join('، ');
+    }
+
+    function updateMonthlyMapPreview() {
+        if (!monthlyMapPreview) return;
+
+        const rawUrl = filledMapValue(monthlyMapInput?.value);
+        const query = extractMapQuery(rawUrl) || fallbackMapQuery();
+        const openUrl = query
+            ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`
+            : rawUrl;
+        const frame = monthlyMapPreview.querySelector('.js-monthly-map-frame');
+        const openLink = monthlyMapPreview.querySelector('.js-monthly-map-open');
+
+        if (openLink) {
+            openLink.classList.toggle('d-none', !openUrl);
+            if (openUrl) openLink.href = openUrl;
+        }
+
+        if (!frame) return;
+
+        if (!query) {
+            frame.innerHTML = `
+                <div class="monthly-map-preview__empty js-monthly-map-empty">
+                    <i class="fas fa-map-marked-alt" aria-hidden="true"></i>
+                    <strong>${escapeHtml(monthlyMapPreview.dataset.emptyTitle || 'أدخل رابط Google Maps لعرض الموقع هنا')}</strong>
+                    <span>${escapeHtml(monthlyMapPreview.dataset.emptyMessage || 'سيظهر الموقع على الخريطة تلقائياً، ويمكن فتح الاتجاهات عبر Google Maps.')}</span>
+                </div>
+            `;
+            return;
+        }
+
+        frame.innerHTML = `<iframe class="js-monthly-map-iframe" src="https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed" title="${escapeHtml(monthlyMapPreview.dataset.previewLabel || 'معاينة موقع النشاط')}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+    }
     const oldCeremonyItems = window.ZahaUi?.readJsonScript ? window.ZahaUi.readJsonScript('monthly-form-old-ceremony-items-json', []) : JSON.parse(document.getElementById('monthly-form-old-ceremony-items-json')?.textContent ?? '[]');
 
     const esc = (value) => String(value ?? '')
@@ -143,6 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
             '[name="external_liaison_phone"]',
             '[name="outside_address"]'
         ], isOutside);
+        updateMonthlyMapPreview();
     }
 
     function toggleTargetGroupOther() {
@@ -508,6 +592,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     proposedDateInput?.addEventListener('change', syncActivityDate);
+    [monthlyMapInput, monthlyMapPlaceInput, monthlyMapAddressInput].forEach((input) => {
+        input?.addEventListener('input', updateMonthlyMapPreview);
+        input?.addEventListener('change', updateMonthlyMapPreview);
+    });
     locationType?.addEventListener('change', toggleLocationFields);
     targetGroupCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', toggleTargetGroupOther));
     needsVolunteers?.addEventListener('change', toggleVolunteers);
