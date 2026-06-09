@@ -9,6 +9,7 @@
     MonthlyApprovalsPage.prototype.init = function () {
         this.bindDecisionForms();
         this.bindDetailsLazyLoading();
+        this.bindActivitySummaryModal();
     };
 
     MonthlyApprovalsPage.prototype.bindDecisionForms = function () {
@@ -65,6 +66,54 @@
         }
 
         form.submit();
+    };
+
+    MonthlyApprovalsPage.prototype.bindActivitySummaryModal = function () {
+        var modalElement = document.getElementById('approvalActivitySummaryModal');
+        var modalTitle = document.getElementById('approvalActivitySummaryTitle');
+        var modalBody = document.getElementById('approvalActivitySummaryBody');
+
+        if (!modalElement || !modalBody) {
+            return;
+        }
+
+        var modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+        document.querySelectorAll('.approval-activity-summary-trigger').forEach(function (trigger) {
+            trigger.addEventListener('click', function () {
+                var detailsUrl = trigger.dataset.detailsUrl;
+                if (!detailsUrl) {
+                    return;
+                }
+
+                if (modalTitle) {
+                    modalTitle.textContent = trigger.dataset.activityTitle || 'تفاصيل النشاط';
+                }
+
+                modalBody.innerHTML = '<div class="border rounded-3 p-3 wf-panel-soft">جاري تحميل تفاصيل النشاط...</div>';
+                modal.show();
+
+                fetch(detailsUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Failed to load activity details');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (payload) {
+                        modalBody.innerHTML = payload.html || '<div class="alert alert-warning mb-0">تعذر تحميل تفاصيل النشاط.</div>';
+                    })
+                    .catch(function () {
+                        modalBody.innerHTML = '<div class="alert alert-warning mb-0">تعذر تحميل تفاصيل النشاط. يرجى تحديث الصفحة والمحاولة مرة أخرى.</div>';
+                    });
+            });
+        });
     };
 
     MonthlyApprovalsPage.prototype.bindDetailsLazyLoading = function () {

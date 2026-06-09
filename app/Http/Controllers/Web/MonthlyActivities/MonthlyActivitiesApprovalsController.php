@@ -181,6 +181,11 @@ class MonthlyActivitiesApprovalsController extends Controller
             'agendaEvent',
             'notes.user',
             'attachments.uploader',
+            'targetGroups',
+            'sponsors',
+            'partners',
+            'supplies',
+            'team',
             'workflowInstance.currentStep.role',
             'workflowInstance.currentStep.permission',
             'workflowInstance.logs.step',
@@ -196,6 +201,14 @@ class MonthlyActivitiesApprovalsController extends Controller
             || ($viewer->hasRole('communication_head') && (bool) $monthlyActivity->requires_communications);
 
         $monthlyWorkflowPresenter->attach($monthlyActivity, $viewer);
+
+        if ($request->query('view') === 'activity') {
+            $statusLabel = $this->monthlyActivityStatusLabel((string) $monthlyActivity->status);
+            $executionStatusLabel = $this->executionStatusLabel($monthlyActivity->executionStatusForDisplay());
+            $html = view('pages.monthly_activities.approvals.partials.activity-summary-modal', compact('monthlyActivity', 'statusLabel', 'executionStatusLabel'))->render();
+
+            return response()->json(['html' => $html]);
+        }
 
         $card = $this->buildActivityCard($monthlyActivity, $viewer);
         $html = view('pages.monthly_activities.approvals.partials.activity-details', compact('card'))->render();
@@ -579,7 +592,28 @@ class MonthlyActivitiesApprovalsController extends Controller
             'can_current_user_decide' => (bool) ($workflowSummary['can_current_user_decide'] ?? $activity->can_current_user_decide ?? false),
             'update_url' => route('role.programs.approvals.update', $activity),
             'details_url' => route('role.programs.approvals.details', $activity),
+            'activity_details_url' => route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']),
         ];
+    }
+
+    protected function monthlyActivityStatusLabel(string $status): string
+    {
+        $translated = __('app.roles.programs.monthly_activities.statuses.' . $status);
+
+        return $translated !== 'app.roles.programs.monthly_activities.statuses.' . $status
+            ? $translated
+            : ($status ?: '-');
+    }
+
+    protected function executionStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'planned' => 'بانتظار التنفيذ',
+            'executed' => 'منفذة',
+            'postponed' => 'مؤجلة',
+            'cancelled' => 'ملغية',
+            default => $status ?: '-',
+        };
     }
 
     protected function decisionOptionsForStep(string $stepKey): array

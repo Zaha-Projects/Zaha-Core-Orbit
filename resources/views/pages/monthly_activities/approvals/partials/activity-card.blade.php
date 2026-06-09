@@ -53,6 +53,17 @@
     </div>
 
     <div class="card-footer approvals-card-footer">
+        <div class="d-flex justify-content-end mb-3">
+            <button
+                class="btn btn-sm btn-outline-primary approval-activity-summary-trigger"
+                type="button"
+                data-activity-title="{{ e($card['title']) }}"
+                data-details-url="{{ $card['activity_details_url'] }}"
+            >
+                <i class="fas fa-eye me-1" aria-hidden="true"></i>
+                تفاصيل النشاط
+            </button>
+        </div>
         <div class="accordion" id="approval-accordion-{{ $card['id'] }}">
             <div class="accordion-item border-0">
                 <h2 class="accordion-header" id="heading-{{ $card['id'] }}">

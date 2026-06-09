@@ -112,6 +112,23 @@
     </div>
 
     <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
+
+    <div class="modal fade" id="approvalActivitySummaryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content approvals-activity-summary-modal">
+                <div class="modal-header">
+                    <div>
+                        <div class="small text-muted">تفاصيل النشاط</div>
+                        <h2 class="modal-title h5" id="approvalActivitySummaryTitle">تفاصيل النشاط</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="approvalActivitySummaryBody">
+                    <div class="border rounded-3 p-3 wf-panel-soft">جاري تحميل تفاصيل النشاط...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @endsection
