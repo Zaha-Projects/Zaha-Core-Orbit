@@ -2565,9 +2565,13 @@ class MonthlyActivitiesController extends Controller
             ->with('warning', $conflictWarning);
     }
 
-    public function edit(MonthlyActivity $monthlyActivity)
+    public function edit(MonthlyActivity $monthlyActivity, PlanChangeRequestWorkflowService $changeRequests)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
+        $activeChangeRequestData = $this->activeMonthlyChangeRequestViewData($monthlyActivity, $changeRequests);
+        $activeDeleteRequest = $activeChangeRequestData['activeDeleteRequest'];
+        $activeEditRequest = $activeChangeRequestData['activeEditRequest'];
+        $hasActiveChangeRequest = $activeChangeRequestData['hasActiveChangeRequest'];
 
         if (! request()->boolean('form') && request('mode') !== 'post') {
             $monthlyActivity->load(['branch', 'creator', 'agendaEvent', 'sponsors', 'partners', 'supplies', 'team', 'targetGroups'])
@@ -2590,6 +2594,9 @@ class MonthlyActivitiesController extends Controller
                 'monthlyStatusLabels' => $monthlyStatusLabels,
                 'executionStatusLabels' => $executionStatusLabels,
                 'archivedVersions' => $archivedVersions,
+                'activeDeleteRequest' => $activeDeleteRequest,
+                'activeEditRequest' => $activeEditRequest,
+                'hasActiveChangeRequest' => $hasActiveChangeRequest,
             ]);
         }
 
@@ -2643,6 +2650,9 @@ class MonthlyActivitiesController extends Controller
             'executionNeedDecisionKeys',
             'executionNeedDecisionRoles',
             'isExecutionNeedDecisionRequest',
+            'activeDeleteRequest',
+            'activeEditRequest',
+            'hasActiveChangeRequest',
         ));
     }
 
@@ -2680,21 +2690,38 @@ class MonthlyActivitiesController extends Controller
             $cursor = $cursor->previousVersion;
         }
 
-        $activeRequestStatuses = $changeRequests->activeRequestStatuses();
-        $activeDeleteRequest = MonthlyPlanDeleteRequest::query()
-            ->with(['requester', 'currentApprover'])
-            ->where('entity_id', $monthlyActivity->id)
-            ->whereIn('status', $activeRequestStatuses)
-            ->latest()
-            ->first();
-        $activeEditRequest = MonthlyPlanEditRequest::query()
-            ->with(['requester', 'currentApprover'])
-            ->where('entity_id', $monthlyActivity->id)
-            ->whereIn('status', $activeRequestStatuses)
-            ->latest()
-            ->first();
+        $activeChangeRequestData = $this->activeMonthlyChangeRequestViewData($monthlyActivity, $changeRequests);
 
-        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels', 'archivedVersions', 'activeDeleteRequest', 'activeEditRequest'));
+        return view('pages.monthly_activities.activities.show', array_merge(
+            compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels', 'archivedVersions'),
+            $activeChangeRequestData
+        ));
+    }
+
+    /**
+     * @return array{activeDeleteRequest: ?MonthlyPlanDeleteRequest, activeEditRequest: ?MonthlyPlanEditRequest, hasActiveChangeRequest: bool}
+     */
+    protected function activeMonthlyChangeRequestViewData(MonthlyActivity $monthlyActivity, PlanChangeRequestWorkflowService $changeRequests): array
+    {
+        $active = $changeRequests->activeMonthlyChangeRequests($monthlyActivity);
+
+        foreach (['delete', 'edit'] as $key) {
+            $request = $active[$key] ?? null;
+            if (! $request) {
+                continue;
+            }
+
+            $instance = $changeRequests->normalizeRequesterSubmission($request, 'monthly_activities');
+            $request->setRelation('workflowInstance', $instance);
+            $request->load('requester', 'currentApprover');
+            $request->workflow_timeline = $changeRequests->workflowTimelineForRequest($request, $instance);
+        }
+
+        return [
+            'activeDeleteRequest' => $active['delete'] ?? null,
+            'activeEditRequest' => $active['edit'] ?? null,
+            'hasActiveChangeRequest' => (bool) (($active['delete'] ?? null) || ($active['edit'] ?? null)),
+        ];
     }
 
     public function update(
@@ -2713,6 +2740,10 @@ class MonthlyActivitiesController extends Controller
         }
 
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
+        if ($changeRequests->hasActiveMonthlyChangeRequest($monthlyActivity)) {
+            return back()->withErrors(['status' => 'يوجد طلب حذف أو تعديل نشط لهذه الخطة الشهرية. لا يمكن حفظ تغييرات جديدة حتى يتم اعتماد الطلب أو رفضه.']);
+        }
 
         if ($this->isSupersededVersion($monthlyActivity)) {
             return back()->withErrors([
@@ -3431,6 +3462,10 @@ class MonthlyActivitiesController extends Controller
             return back()->withErrors(['status' => 'لا يمكن حذف نسخة قديمة من الخطة.']);
         }
 
+        if ($changeRequests->hasActiveMonthlyChangeRequest($monthlyActivity)) {
+            return back()->withErrors(['status' => 'يوجد طلب حذف أو تعديل نشط لهذه الخطة الشهرية. لا يمكن حذف النشاط حتى يتم اعتماد الطلب أو رفضه.']);
+        }
+
         if ($this->hasManagerOrLaterApproval($monthlyActivity)) {
             $data = $request->validate([
                 'delete_reason' => ['required', 'string', 'max:2000'],
@@ -3443,6 +3478,10 @@ class MonthlyActivitiesController extends Controller
                 ->with('status', 'تم إنشاء طلب حذف للخطة الشهرية وإرساله للاعتماد.');
         }
 
+        $monthlyActivity->forceFill([
+            'status' => 'cancelled',
+            'execution_status' => 'cancelled',
+        ])->save();
         $monthlyActivity->delete();
 
         $this->logWorkflowAction('deleted', $monthlyActivity, $request, 'deleted');

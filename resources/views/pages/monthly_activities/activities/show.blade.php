@@ -26,8 +26,10 @@
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
     $viewer = auth()->user();
-    $activeChangeRequest = $activeDeleteRequest ?? $activeEditRequest ?? null;
-    $hasActiveChangeRequest = (bool) $activeChangeRequest;
+    $activeDeleteRequest = $activeDeleteRequest ?? null;
+    $activeEditRequest = $activeEditRequest ?? null;
+    $activeChangeRequest = $activeDeleteRequest ?? $activeEditRequest;
+    $hasActiveChangeRequest = (bool) ($hasActiveChangeRequest ?? $activeChangeRequest);
     $canOpenPlanningForm = $viewer?->hasAnyRole([
         'relations_manager',
         'relations_officer',
@@ -105,7 +107,7 @@
             </div>
         </section>
 
-        @if($activeDeleteRequest)
+        @if($activeDeleteRequest ?? false)
             <div class="alert alert-danger border-0 shadow-sm mb-4">
                 <div class="d-flex align-items-start gap-3 flex-wrap">
                     <i class="fas fa-trash-alt fs-4 mt-1" aria-hidden="true"></i>
@@ -118,10 +120,24 @@
                             <div class="col-md-3"><strong>تاريخ الطلب:</strong> {{ optional($activeDeleteRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</div>
                             <div class="col-12"><strong>سبب الحذف:</strong><div class="mt-2 p-3 bg-white rounded border text-danger">{{ $activeDeleteRequest->reason }}</div></div>
                         </div>
+                        @if(!empty($activeDeleteRequest->workflow_timeline))
+                            <div class="mt-3 bg-white rounded border p-3">
+                                <h3 class="h6 fw-bold mb-2">مسار الاعتماد</h3>
+                                <div class="d-grid gap-2">
+                                    @foreach($activeDeleteRequest->workflow_timeline as $step)
+                                        <div class="d-flex justify-content-between gap-2 flex-wrap border-bottom pb-2">
+                                            <span><strong>{{ $step['step_name'] ?? '-' }}</strong> — {{ $step['role_name'] ?? '-' }}</span>
+                                            <span>{{ $step['approver_name'] ?? '-' }} | {{ $step['status'] ?? '-' }} | {{ $step['decided_at'] ?? '-' }}</span>
+                                            @if(!empty($step['comment']))<small class="text-muted w-100">{{ $step['comment'] }}</small>@endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-        @elseif($activeEditRequest)
+        @elseif($activeEditRequest ?? false)
             <div class="alert alert-warning border-0 shadow-sm mb-4">
                 <div class="d-flex align-items-start gap-3 flex-wrap">
                     <i class="fas fa-edit fs-4 mt-1" aria-hidden="true"></i>
@@ -133,6 +149,20 @@
                             <div class="col-md-3"><strong>المعتمد الحالي:</strong> {{ $activeEditRequest->currentApprover?->name ?? '-' }}</div>
                             <div class="col-md-3"><strong>تاريخ الطلب:</strong> {{ optional($activeEditRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</div>
                         </div>
+                        @if(!empty($activeEditRequest->workflow_timeline))
+                            <div class="mb-3 bg-white rounded border p-3">
+                                <h3 class="h6 fw-bold mb-2">مسار الاعتماد</h3>
+                                <div class="d-grid gap-2">
+                                    @foreach($activeEditRequest->workflow_timeline as $step)
+                                        <div class="d-flex justify-content-between gap-2 flex-wrap border-bottom pb-2">
+                                            <span><strong>{{ $step['step_name'] ?? '-' }}</strong> — {{ $step['role_name'] ?? '-' }}</span>
+                                            <span>{{ $step['approver_name'] ?? '-' }} | {{ $step['status'] ?? '-' }} | {{ $step['decided_at'] ?? '-' }}</span>
+                                            @if(!empty($step['comment']))<small class="text-muted w-100">{{ $step['comment'] }}</small>@endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                         @if(!empty($activeEditRequest->changed_values))
                             <div class="table-responsive">
                                 <table class="table table-sm bg-white rounded overflow-hidden mb-0">

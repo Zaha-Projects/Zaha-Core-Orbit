@@ -134,6 +134,121 @@ class PlanChangeRequestWorkflowService
         return ['pending', 'pending_approval', 'in_progress', 'waiting_approval', 'waiting', 'changes_requested'];
     }
 
+
+    /**
+     * @return array{delete: ?MonthlyPlanDeleteRequest, edit: ?MonthlyPlanEditRequest}
+     */
+    public function activeMonthlyChangeRequests(MonthlyActivity $activity): array
+    {
+        $statuses = $this->activeRequestStatuses();
+
+        return [
+            'delete' => MonthlyPlanDeleteRequest::query()
+                ->with(['requester', 'currentApprover', 'workflowInstance.currentStep.role', 'workflowInstance.logs.step.role', 'workflowInstance.logs.actor'])
+                ->where('entity_id', $activity->id)
+                ->whereIn('status', $statuses)
+                ->latest()
+                ->first(),
+            'edit' => MonthlyPlanEditRequest::query()
+                ->with(['requester', 'currentApprover', 'workflowInstance.currentStep.role', 'workflowInstance.logs.step.role', 'workflowInstance.logs.actor'])
+                ->where('entity_id', $activity->id)
+                ->whereIn('status', $statuses)
+                ->latest()
+                ->first(),
+        ];
+    }
+
+    public function hasActiveMonthlyChangeRequest(MonthlyActivity $activity): bool
+    {
+        $active = $this->activeMonthlyChangeRequests($activity);
+
+        return $active['delete'] !== null || $active['edit'] !== null;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function workflowTimelineForRequest(Model $request, ?WorkflowInstance $instance = null): array
+    {
+        $instance = $instance ?: $request->workflowInstance;
+        if (! $instance) {
+            return [];
+        }
+
+        $instance->loadMissing('workflow.steps.role', 'logs.step.role', 'logs.actor', 'currentStep.role');
+        $logsByStep = $instance->logs->keyBy('workflow_step_id');
+        $applicableStepKeys = $this->applicableMonthlyRequestStepKeys($request);
+
+        return $instance->workflow->steps
+            ->filter(fn ($step): bool => $applicableStepKeys === [] || in_array((string) $step->step_key, $applicableStepKeys, true))
+            ->map(function ($step) use ($logsByStep, $instance): array {
+                $log = $logsByStep->get($step->id);
+                $isCurrent = (int) $instance->current_step_id === (int) $step->id;
+
+                return [
+                    'step_name' => $step->name_ar ?: ($step->name_en ?: $step->step_key),
+                    'role_name' => $step->role?->display_name ?? $step->role?->name ?? '-',
+                    'approver_name' => $log?->actor?->name,
+                    'status' => $log?->action ?: ($isCurrent ? 'pending' : 'waiting'),
+                    'decided_at' => optional($log?->acted_at)->format('Y-m-d H:i'),
+                    'comment' => $log?->comment,
+                    'is_current' => $isCurrent,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function applicableMonthlyRequestStepKeys(Model $request): array
+    {
+        if (! $request instanceof MonthlyPlanDeleteRequest && ! $request instanceof MonthlyPlanEditRequest) {
+            return [];
+        }
+
+        $activity = MonthlyActivity::query()->find($request->entity_id);
+        if (! $activity) {
+            return [];
+        }
+
+        $activityWorkflowInstance = WorkflowInstance::query()
+            ->where('entity_type', MonthlyActivity::class)
+            ->where('entity_id', $activity->id)
+            ->latest('id')
+            ->first();
+        $keys = $activityWorkflowInstance
+            ? $activityWorkflowInstance->logs()
+                ->where('action', DynamicWorkflowService::DECISION_APPROVED)
+                ->whereHas('step')
+                ->with('step')
+                ->get()
+                ->map(fn ($log): string => (string) $log->step?->step_key)
+                ->filter()
+                ->values()
+                ->all()
+            : [];
+
+        if ((string) $activity->relations_officer_approval_status === DynamicWorkflowService::DECISION_APPROVED) {
+            $keys[] = 'monthly_relations_officer_submit';
+        }
+        if ((string) $activity->relations_manager_approval_status === DynamicWorkflowService::DECISION_APPROVED) {
+            $keys[] = 'monthly_supervisor_review';
+        }
+        if ((string) $activity->liaison_approval_status === DynamicWorkflowService::DECISION_APPROVED) {
+            $keys[] = 'monthly_branch_coordinator_review';
+        }
+        if ((string) $activity->hq_relations_manager_approval_status === DynamicWorkflowService::DECISION_APPROVED) {
+            $keys[] = 'monthly_relations_manager_review';
+        }
+        if ((string) $activity->executive_approval_status === DynamicWorkflowService::DECISION_APPROVED) {
+            $keys[] = 'monthly_executive_manager_final_approval';
+        }
+
+        return array_values(array_unique($keys));
+    }
+
     protected function assertNoActiveMonthlyChangeRequest(MonthlyActivity $activity, string $requestType): void
     {
         $activeStatuses = $this->activeRequestStatuses();
@@ -198,7 +313,7 @@ class PlanChangeRequestWorkflowService
         $instance = $instance->fresh();
         $this->syncCurrentApprover($request, $instance);
 
-        return $instance;
+        return $instance->fresh(['currentStep.role', 'currentStep.permission', 'workflow.steps.role', 'workflow.steps.permission', 'logs.step.role', 'logs.actor']);
     }
 
     public function decide(Model $request, string $module, User $actor, string $decision, ?string $comment = null): void
@@ -208,6 +323,9 @@ class PlanChangeRequestWorkflowService
             abort_unless($instance !== null, 422);
             abort_if(! $this->workflows->canDecide($instance), 422);
             $step = $this->workflows->currentStepForUser($instance, $actor);
+            if (! $step && (int) ($request->current_approver_id ?? 0) === (int) $actor->id) {
+                $step = $this->workflows->currentStep($instance);
+            }
             abort_unless($step, 403);
             $this->workflows->assertPrerequisites($instance, $step);
 

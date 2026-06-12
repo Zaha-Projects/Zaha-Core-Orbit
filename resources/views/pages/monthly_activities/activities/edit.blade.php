@@ -106,7 +106,31 @@
 
 
 @section('content')
-    @if(request()->boolean('form'))
+    @if(($hasActiveChangeRequest ?? false) && request()->boolean('form'))
+        <div class="container py-4">
+            <div class="alert alert-warning border-0 shadow-sm">
+                <h1 class="h5 fw-bold mb-2">لا يمكن فتح نموذج التعديل حالياً</h1>
+                <p class="mb-3">يوجد طلب {{ ($activeDeleteRequest ?? false) ? 'حذف' : 'تعديل' }} نشط لهذا النشاط. لا يمكن تعديل أو حذف النشاط حتى يتم اعتماد الطلب أو رفضه.</p>
+                <div class="row g-2 small">
+                    <div class="col-md-3"><strong>الحالة:</strong> {{ ($activeDeleteRequest ?? $activeEditRequest ?? null)?->status ?? '-' }}</div>
+                    <div class="col-md-3"><strong>المعتمد الحالي:</strong> {{ ($activeDeleteRequest ?? $activeEditRequest ?? null)?->currentApprover?->name ?? '-' }}</div>
+                    <div class="col-md-3"><strong>تاريخ الطلب:</strong> {{ optional(($activeDeleteRequest ?? $activeEditRequest ?? null)?->requested_at)->format('Y-m-d H:i') ?? '-' }}</div>
+                </div>
+                @if(!empty(($activeDeleteRequest ?? $activeEditRequest ?? null)?->workflow_timeline))
+                    <div class="mt-3 bg-white rounded border p-3">
+                        <h2 class="h6 fw-bold mb-2">مسار الاعتماد</h2>
+                        @foreach(($activeDeleteRequest ?? $activeEditRequest)->workflow_timeline as $step)
+                            <div class="d-flex justify-content-between gap-2 flex-wrap border-bottom py-2">
+                                <span>{{ $step['step_name'] ?? '-' }} — {{ $step['role_name'] ?? '-' }}</span>
+                                <span>{{ $step['approver_name'] ?? '-' }} | {{ $step['status'] ?? '-' }} | {{ $step['decided_at'] ?? '-' }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+                <a class="btn btn-outline-primary mt-3" href="{{ route('role.relations.activities.show', $monthlyActivity) }}">عرض تفاصيل النشاط</a>
+            </div>
+        </div>
+    @elseif(request()->boolean('form'))
         @include('pages.monthly_activities.activities._form', [
             'formAction' => route('role.relations.activities.update', $monthlyActivity),
             'formMethod' => 'PUT',

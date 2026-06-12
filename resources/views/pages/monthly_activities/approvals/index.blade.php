@@ -135,9 +135,24 @@
                         <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
                     </section>
 
+                    @if(!empty($deleteRequest->workflow_timeline))
+                        <section class="approval-request-workflow approval-request-workflow--timeline">
+                            <h3><i class="fas fa-route" aria-hidden="true"></i> تتبع مسار الاعتماد</h3>
+                            <div class="approval-workflow-timeline">
+                                @foreach($deleteRequest->workflow_timeline as $step)
+                                    <div class="approval-workflow-timeline__item {{ !empty($step['is_current']) ? 'is-current' : '' }}">
+                                        <div><strong>{{ $step['step_name'] ?? '-' }}</strong><span>{{ $step['role_name'] ?? '-' }}</span></div>
+                                        <div><span>{{ $step['approver_name'] ?? '-' }}</span><strong>{{ $step['status'] ?? '-' }}</strong><small>{{ $step['decided_at'] ?? '-' }}</small></div>
+                                        @if(!empty($step['comment']))<p>{{ $step['comment'] }}</p>@endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+
                     <footer class="approval-request-card__footer">
                         <button class="btn btn-sm btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity?->title ?? 'تفاصيل النشاط') }}" data-details-url="{{ $activity ? route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) : '' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</button>
-                        @if(($deleteRequest->can_current_user_decide ?? false) && in_array($deleteRequest->status, ['pending','in_progress','changes_requested'], true))
+                        @if($deleteRequest->can_current_user_decide ?? false)
                             <div class="approval-decision-form">
                                 <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approve-delete-request-{{ $deleteRequest->id }}"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد طلب الحذف</button>
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reject-delete-request-{{ $deleteRequest->id }}"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض طلب الحذف</button>
@@ -204,6 +219,13 @@
                                     </form>
                                 </div>
                             </div>
+                        @else
+                            <div class="approval-pending-box">
+                                <strong>القرار بانتظار: {{ $deleteRequest->currentApprover?->name ?? ($currentStep?->role?->display_name ?? $currentStep?->role?->name ?? '-') }}</strong>
+                                <span>الخطوة الحالية: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
+                                <span>حالة الطلب: {{ $deleteRequest->status }}</span>
+                                <span>طالب الحذف: {{ $deleteRequest->requester?->name ?? '-' }} — {{ optional($deleteRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</span>
+                            </div>
                         @endif
                     </footer>
                 </article>
@@ -253,6 +275,21 @@
                         <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
                     </section>
 
+                    @if(!empty($editRequest->workflow_timeline))
+                        <section class="approval-request-workflow approval-request-workflow--timeline">
+                            <h3><i class="fas fa-route" aria-hidden="true"></i> تتبع مسار الاعتماد</h3>
+                            <div class="approval-workflow-timeline">
+                                @foreach($editRequest->workflow_timeline as $step)
+                                    <div class="approval-workflow-timeline__item {{ !empty($step['is_current']) ? 'is-current' : '' }}">
+                                        <div><strong>{{ $step['step_name'] ?? '-' }}</strong><span>{{ $step['role_name'] ?? '-' }}</span></div>
+                                        <div><span>{{ $step['approver_name'] ?? '-' }}</span><strong>{{ $step['status'] ?? '-' }}</strong><small>{{ $step['decided_at'] ?? '-' }}</small></div>
+                                        @if(!empty($step['comment']))<p>{{ $step['comment'] }}</p>@endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+
                     <section class="approval-changes-summary">
                         <h3><i class="fas fa-exchange-alt" aria-hidden="true"></i> ملخص التغييرات</h3>
                         <div class="approval-changes-grid">
@@ -270,13 +307,20 @@
 
                     <footer class="approval-request-card__footer">
                         <button class="btn btn-sm btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity?->title ?? 'تفاصيل النشاط') }}" data-details-url="{{ $activity ? route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) : '' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</button>
-                        @if(($editRequest->can_current_user_decide ?? false) && in_array($editRequest->status, ['pending','in_progress','changes_requested'], true))
+                        @if($editRequest->can_current_user_decide ?? false)
                             <form method="POST" action="{{ route('role.programs.approvals.edit_requests.update', $editRequest) }}" class="approval-decision-form">
                                 @csrf @method('PUT')
                                 <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
                                 <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد طلب التعديل</button>
                                 <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض طلب التعديل</button>
                             </form>
+                        @else
+                            <div class="approval-pending-box">
+                                <strong>القرار بانتظار: {{ $editRequest->currentApprover?->name ?? ($currentStep?->role?->display_name ?? $currentStep?->role?->name ?? '-') }}</strong>
+                                <span>الخطوة الحالية: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
+                                <span>حالة الطلب: {{ $editRequest->status }}</span>
+                                <span>طالب التعديل: {{ $editRequest->requester?->name ?? '-' }} — {{ optional($editRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</span>
+                            </div>
                         @endif
                     </footer>
                 </article>

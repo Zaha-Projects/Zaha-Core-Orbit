@@ -164,19 +164,25 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         $deleteRequests->getCollection()->transform(function (MonthlyPlanDeleteRequest $deleteRequest) use ($dynamicWorkflowService, $viewer, $changeRequests) {
             $instance = $changeRequests->normalizeRequesterSubmission($deleteRequest, 'monthly_activities');
+            $deleteRequest->load('requester', 'currentApprover');
             $deleteRequest->setRelation('workflowInstance', $instance);
+            $stepForViewer = $instance ? $dynamicWorkflowService->currentStepForUser($instance, $viewer) : null;
+            $deleteRequest->workflow_timeline = $changeRequests->workflowTimelineForRequest($deleteRequest, $instance);
             $deleteRequest->can_current_user_decide = $instance
                 && $dynamicWorkflowService->canDecide($instance)
-                && $dynamicWorkflowService->currentStepForUser($instance, $viewer) !== null;
+                && ($stepForViewer !== null || (int) ($deleteRequest->current_approver_id ?? 0) === (int) $viewer->id);
 
             return $deleteRequest;
         });
         $editRequests->getCollection()->transform(function (MonthlyPlanEditRequest $editRequest) use ($dynamicWorkflowService, $viewer, $changeRequests) {
             $instance = $changeRequests->normalizeRequesterSubmission($editRequest, 'monthly_activities');
+            $editRequest->load('requester', 'currentApprover');
             $editRequest->setRelation('workflowInstance', $instance);
+            $stepForViewer = $instance ? $dynamicWorkflowService->currentStepForUser($instance, $viewer) : null;
+            $editRequest->workflow_timeline = $changeRequests->workflowTimelineForRequest($editRequest, $instance);
             $editRequest->can_current_user_decide = $instance
                 && $dynamicWorkflowService->canDecide($instance)
-                && $dynamicWorkflowService->currentStepForUser($instance, $viewer) !== null;
+                && ($stepForViewer !== null || (int) ($editRequest->current_approver_id ?? 0) === (int) $viewer->id);
 
             return $editRequest;
         });
