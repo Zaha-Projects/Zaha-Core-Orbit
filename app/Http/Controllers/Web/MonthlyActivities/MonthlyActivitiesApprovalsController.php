@@ -150,13 +150,13 @@ class MonthlyActivitiesApprovalsController extends Controller
         ];
 
         $deleteRequests = MonthlyPlanDeleteRequest::query()
-            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
+            ->with(['requester', 'currentApprover', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
             ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
             ->latest()
             ->paginate(10, ['*'], 'delete_page')
             ->withQueryString();
         $editRequests = MonthlyPlanEditRequest::query()
-            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
+            ->with(['requester', 'currentApprover', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
             ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
             ->latest()
             ->paginate(10, ['*'], 'edit_page')
@@ -180,6 +180,11 @@ class MonthlyActivitiesApprovalsController extends Controller
 
             return $editRequest;
         });
+
+        if (! empty($filters['my_pending'])) {
+            $deleteRequests->setCollection($deleteRequests->getCollection()->filter(fn (MonthlyPlanDeleteRequest $request) => (bool) ($request->can_current_user_decide ?? false))->values());
+            $editRequests->setCollection($editRequests->getCollection()->filter(fn (MonthlyPlanEditRequest $request) => (bool) ($request->can_current_user_decide ?? false))->values());
+        }
 
         return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests'));
     }

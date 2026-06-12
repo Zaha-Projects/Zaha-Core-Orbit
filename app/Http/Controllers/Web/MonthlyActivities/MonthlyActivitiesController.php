@@ -9,6 +9,8 @@ use App\Models\MonthlyActivityChangeLog;
 use App\Models\MonthlyActivityPartner;
 use App\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
+use App\Models\MonthlyPlanDeleteRequest;
+use App\Models\MonthlyPlanEditRequest;
 use App\Models\MonthlyActivitySupply;
 use App\Models\MonthlyActivityTeam;
 use App\Models\MonthlyActivityVolunteerNeed;
@@ -2644,7 +2646,7 @@ class MonthlyActivitiesController extends Controller
         ));
     }
 
-    public function show(MonthlyActivity $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter)
+    public function show(MonthlyActivity $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
@@ -2678,7 +2680,21 @@ class MonthlyActivitiesController extends Controller
             $cursor = $cursor->previousVersion;
         }
 
-        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels', 'archivedVersions'));
+        $activeRequestStatuses = $changeRequests->activeRequestStatuses();
+        $activeDeleteRequest = MonthlyPlanDeleteRequest::query()
+            ->with(['requester', 'currentApprover'])
+            ->where('entity_id', $monthlyActivity->id)
+            ->whereIn('status', $activeRequestStatuses)
+            ->latest()
+            ->first();
+        $activeEditRequest = MonthlyPlanEditRequest::query()
+            ->with(['requester', 'currentApprover'])
+            ->where('entity_id', $monthlyActivity->id)
+            ->whereIn('status', $activeRequestStatuses)
+            ->latest()
+            ->first();
+
+        return view('pages.monthly_activities.activities.show', compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels', 'archivedVersions', 'activeDeleteRequest', 'activeEditRequest'));
     }
 
     public function update(

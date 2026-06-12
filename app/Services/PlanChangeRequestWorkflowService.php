@@ -125,9 +125,18 @@ class PlanChangeRequestWorkflowService
 
 
 
+
+    /**
+     * @return array<int, string>
+     */
+    public function activeRequestStatuses(): array
+    {
+        return ['pending', 'pending_approval', 'in_progress', 'waiting_approval', 'waiting', 'changes_requested'];
+    }
+
     protected function assertNoActiveMonthlyChangeRequest(MonthlyActivity $activity, string $requestType): void
     {
-        $activeStatuses = ['pending', 'in_progress', 'changes_requested'];
+        $activeStatuses = $this->activeRequestStatuses();
         $activeDelete = MonthlyPlanDeleteRequest::query()
             ->where('entity_id', $activity->id)
             ->whereIn('status', $activeStatuses)
@@ -153,7 +162,7 @@ class PlanChangeRequestWorkflowService
 
     protected function assertNoActiveAgendaChangeRequest(AgendaEvent $event, string $requestType): void
     {
-        $activeStatuses = ['pending', 'in_progress', 'changes_requested'];
+        $activeStatuses = $this->activeRequestStatuses();
         $activeDelete = AnnualAgendaDeleteRequest::query()
             ->where('entity_id', $event->id)
             ->whereIn('status', $activeStatuses)

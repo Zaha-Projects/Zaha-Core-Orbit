@@ -26,6 +26,8 @@
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
     $viewer = auth()->user();
+    $activeChangeRequest = $activeDeleteRequest ?? $activeEditRequest ?? null;
+    $hasActiveChangeRequest = (bool) $activeChangeRequest;
     $canOpenPlanningForm = $viewer?->hasAnyRole([
         'relations_manager',
         'relations_officer',
@@ -80,7 +82,9 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.activities.index') }}">رجوع</a>
-                    @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
+                    @if($hasActiveChangeRequest)
+                        <span class="btn btn-outline-warning disabled">يوجد طلب تغيير نشط</span>
+                    @elseif($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                         <span class="btn btn-outline-success disabled">عرض فقط (موحد معتمد)</span>
                     @elseif($editMirrorMode && $canOpenPlanningForm)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">فتح نموذج التعديل</a>
@@ -89,7 +93,7 @@
                     @else
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post', 'need_decision' => 1]) }}#execution-needs-decisions">تحديث قرار الاحتياج</a>
                     @endif
-                    @if(auth()->user()?->hasAnyRole(['relations_manager','relations_officer','supervisor','branch_coordinator','super_admin']))
+                    @if(! $hasActiveChangeRequest && auth()->user()?->hasAnyRole(['relations_manager','relations_officer','supervisor','branch_coordinator','super_admin']))
                         <form method="POST" action="{{ route('role.relations.activities.destroy', $monthlyActivity) }}" data-delete-reason-form="monthly-activity">
                             @csrf
                             @method('DELETE')
@@ -100,6 +104,55 @@
                 </div>
             </div>
         </section>
+
+        @if($activeDeleteRequest)
+            <div class="alert alert-danger border-0 shadow-sm mb-4">
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                    <i class="fas fa-trash-alt fs-4 mt-1" aria-hidden="true"></i>
+                    <div class="flex-grow-1">
+                        <h2 class="h6 fw-bold mb-2">يوجد طلب حذف نشط لهذا النشاط</h2>
+                        <p class="mb-3">لا يمكنك تعديل أو حذف هذا النشاط حتى يتم اعتماد طلب الحذف أو رفضه.</p>
+                        <div class="row g-2">
+                            <div class="col-md-3"><strong>حالة الطلب:</strong> {{ $activeDeleteRequest->status }}</div>
+                            <div class="col-md-3"><strong>المعتمد الحالي:</strong> {{ $activeDeleteRequest->currentApprover?->name ?? '-' }}</div>
+                            <div class="col-md-3"><strong>تاريخ الطلب:</strong> {{ optional($activeDeleteRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</div>
+                            <div class="col-12"><strong>سبب الحذف:</strong><div class="mt-2 p-3 bg-white rounded border text-danger">{{ $activeDeleteRequest->reason }}</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @elseif($activeEditRequest)
+            <div class="alert alert-warning border-0 shadow-sm mb-4">
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                    <i class="fas fa-edit fs-4 mt-1" aria-hidden="true"></i>
+                    <div class="flex-grow-1">
+                        <h2 class="h6 fw-bold mb-2">يوجد طلب تعديل نشط لهذا النشاط</h2>
+                        <p class="mb-3">لا يمكنك تعديل أو حذف هذا النشاط حتى يتم اعتماد طلب التعديل أو رفضه.</p>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-3"><strong>حالة الطلب:</strong> {{ $activeEditRequest->status }}</div>
+                            <div class="col-md-3"><strong>المعتمد الحالي:</strong> {{ $activeEditRequest->currentApprover?->name ?? '-' }}</div>
+                            <div class="col-md-3"><strong>تاريخ الطلب:</strong> {{ optional($activeEditRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</div>
+                        </div>
+                        @if(!empty($activeEditRequest->changed_values))
+                            <div class="table-responsive">
+                                <table class="table table-sm bg-white rounded overflow-hidden mb-0">
+                                    <thead><tr><th>الحقل</th><th>القيمة القديمة</th><th>القيمة الجديدة</th></tr></thead>
+                                    <tbody>
+                                        @foreach($activeEditRequest->changed_values as $field => $change)
+                                            <tr>
+                                                <td>{{ $field }}</td>
+                                                <td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td>
+                                                <td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
 
         @if(($archivedVersions ?? collect())->isNotEmpty())
             <div class="card event-card mb-4">

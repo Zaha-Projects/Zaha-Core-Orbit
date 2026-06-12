@@ -138,12 +138,72 @@
                     <footer class="approval-request-card__footer">
                         <button class="btn btn-sm btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity?->title ?? 'تفاصيل النشاط') }}" data-details-url="{{ $activity ? route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) : '' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</button>
                         @if(($deleteRequest->can_current_user_decide ?? false) && in_array($deleteRequest->status, ['pending','in_progress','changes_requested'], true))
-                            <form method="POST" action="{{ route('role.programs.approvals.delete_requests.update', $deleteRequest) }}" class="approval-decision-form">
-                                @csrf @method('PUT')
-                                <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
-                                <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد طلب الحذف</button>
-                                <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض طلب الحذف</button>
-                            </form>
+                            <div class="approval-decision-form">
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approve-delete-request-{{ $deleteRequest->id }}"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد طلب الحذف</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reject-delete-request-{{ $deleteRequest->id }}"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض طلب الحذف</button>
+                            </div>
+
+                            <div class="modal fade" id="approve-delete-request-{{ $deleteRequest->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <form method="POST" action="{{ route('role.programs.approvals.delete_requests.update', $deleteRequest) }}" class="modal-content monthly-delete-modal">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="decision" value="approved">
+                                        <div class="modal-header border-0 pb-0">
+                                            <div>
+                                                <span class="monthly-delete-modal__icon"><i class="fas fa-check" aria-hidden="true"></i></span>
+                                                <h2 class="modal-title h5 mt-3">اعتماد طلب الحذف</h2>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <dl class="row g-2 mb-3">
+                                                <dt class="col-4">النشاط</dt><dd class="col-8">{{ $activity?->title ?? '-' }}</dd>
+                                                <dt class="col-4">طالب الحذف</dt><dd class="col-8">{{ $deleteRequest->requester?->name ?? '-' }}</dd>
+                                                <dt class="col-4">الخطوة الحالية</dt><dd class="col-8">{{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</dd>
+                                            </dl>
+                                            <div class="approval-request-section approval-request-section--danger">
+                                                <h3 class="h6">سبب الحذف</h3>
+                                                <p>{{ $deleteRequest->reason }}</p>
+                                            </div>
+                                            <label class="form-label mt-3">ملاحظة اختيارية</label>
+                                            <textarea name="comment" class="form-control" rows="3"></textarea>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                            <button type="submit" class="btn btn-success">تأكيد الاعتماد</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="reject-delete-request-{{ $deleteRequest->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <form method="POST" action="{{ route('role.programs.approvals.delete_requests.update', $deleteRequest) }}" class="modal-content monthly-delete-modal">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="decision" value="rejected">
+                                        <div class="modal-header border-0 pb-0">
+                                            <div>
+                                                <span class="monthly-delete-modal__icon"><i class="fas fa-times" aria-hidden="true"></i></span>
+                                                <h2 class="modal-title h5 mt-3">رفض طلب الحذف</h2>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <dl class="row g-2 mb-3">
+                                                <dt class="col-4">النشاط</dt><dd class="col-8">{{ $activity?->title ?? '-' }}</dd>
+                                                <dt class="col-4">طالب الحذف</dt><dd class="col-8">{{ $deleteRequest->requester?->name ?? '-' }}</dd>
+                                                <dt class="col-4">الخطوة الحالية</dt><dd class="col-8">{{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</dd>
+                                            </dl>
+                                            <label class="form-label fw-semibold">سبب الرفض <span class="text-danger">*</span></label>
+                                            <textarea name="comment" class="form-control" rows="4" required></textarea>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                            <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         @endif
                     </footer>
                 </article>
