@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Web\Agenda;
 use App\Http\Controllers\Controller;
 use App\Models\AgendaApproval;
 use App\Models\AgendaEvent;
+use App\Models\AnnualAgendaDeleteRequest;
+use App\Models\AnnualAgendaEditRequest;
 use App\Models\WorkflowActionLog;
 use App\Services\AgendaWorkflowPresenter;
 use App\Services\AgendaWorkflowBridgeService;
 use App\Services\DynamicWorkflowService;
 use App\Services\WorkflowNotificationService;
+use App\Services\PlanChangeRequestWorkflowService;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 
@@ -93,7 +96,18 @@ class AgendaApprovalsController extends Controller
                 ->values();
         }
 
-        return view('pages.agenda.approvals.index', compact('events', 'filters', 'statusOptions', 'currentStepOptions'));
+        $deleteRequests = AnnualAgendaDeleteRequest::query()
+            ->with(['requester', 'agendaEvent', 'workflowInstance.currentStep.role'])
+            ->latest()
+            ->paginate(10, ['*'], 'delete_page')
+            ->withQueryString();
+        $editRequests = AnnualAgendaEditRequest::query()
+            ->with(['requester', 'agendaEvent', 'workflowInstance.currentStep.role'])
+            ->latest()
+            ->paginate(10, ['*'], 'edit_page')
+            ->withQueryString();
+
+        return view('pages.agenda.approvals.index', compact('events', 'filters', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests'));
     }
 
     public function update(
@@ -164,6 +178,30 @@ class AgendaApprovalsController extends Controller
         return redirect()
             ->route('role.relations.approvals.index')
             ->with('status', __('app.roles.relations.approvals.updated', ['event' => $agendaEvent->event_name]));
+    }
+
+    public function decideDeleteRequest(Request $request, AnnualAgendaDeleteRequest $deleteRequest, PlanChangeRequestWorkflowService $changeRequests)
+    {
+        $data = $request->validate([
+            'decision' => ['required', 'string', 'in:approved,rejected'],
+            'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
+        ]);
+
+        $changeRequests->decide($deleteRequest, 'agenda', $request->user(), $data['decision'], $data['comment'] ?? null);
+
+        return redirect()->route('role.relations.approvals.index', ['tab' => 'delete'])->with('status', 'تم تحديث قرار طلب حذف الأجندة.');
+    }
+
+    public function decideEditRequest(Request $request, AnnualAgendaEditRequest $editRequest, PlanChangeRequestWorkflowService $changeRequests)
+    {
+        $data = $request->validate([
+            'decision' => ['required', 'string', 'in:approved,rejected'],
+            'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
+        ]);
+
+        $changeRequests->decide($editRequest, 'agenda', $request->user(), $data['decision'], $data['comment'] ?? null);
+
+        return redirect()->route('role.relations.approvals.index', ['tab' => 'edit'])->with('status', 'تم تحديث قرار طلب تعديل الأجندة.');
     }
 
     protected function buildStatusFilterOptions(): Collection

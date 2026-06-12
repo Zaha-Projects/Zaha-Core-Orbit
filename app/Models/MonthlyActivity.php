@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\WorkflowInstance;
 
 class MonthlyActivity extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const EXECUTION_NEED_DEFINITIONS = [
         'volunteers' => [
@@ -138,7 +139,9 @@ class MonthlyActivity extends Model
         'execution_status',
         'plan_stage',
         'plan_version',
+        'version_number',
         'previous_version_id',
+        'parent_version_id',
         'lifecycle_status',
         'participation_status',
         'plan_type',
@@ -191,6 +194,7 @@ class MonthlyActivity extends Model
         'is_archived' => 'boolean',
         'plan_stage' => 'integer',
         'plan_version' => 'integer',
+        'version_number' => 'integer',
     ];
 
     public function executionStatusForDisplay(): string
@@ -470,6 +474,26 @@ class MonthlyActivity extends Model
     public function newerVersions()
     {
         return $this->hasMany(self::class, 'previous_version_id');
+    }
+
+    public function parentVersion()
+    {
+        return $this->belongsTo(self::class, 'parent_version_id');
+    }
+
+    public function childVersions()
+    {
+        return $this->hasMany(self::class, 'parent_version_id');
+    }
+
+    public function deleteRequests()
+    {
+        return $this->hasMany(MonthlyPlanDeleteRequest::class, 'entity_id');
+    }
+
+    public function editRequests()
+    {
+        return $this->hasMany(MonthlyPlanEditRequest::class, 'entity_id');
     }
 
 

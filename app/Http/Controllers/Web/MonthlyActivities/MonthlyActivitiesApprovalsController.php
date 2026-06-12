@@ -8,12 +8,15 @@ use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivityApproval;
 use App\Models\MonthlyActivityAttachment;
+use App\Models\MonthlyPlanDeleteRequest;
+use App\Models\MonthlyPlanEditRequest;
 use App\Models\WorkflowActionLog;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
 use App\Services\MonthlyWorkflowPresenter;
 use App\Services\WorkflowNotificationService;
 use App\Services\MonthlyActivityLifecycleService;
+use App\Services\PlanChangeRequestWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 
@@ -146,7 +149,20 @@ class MonthlyActivitiesApprovalsController extends Controller
             'my_pending' => $activityCards->where('can_current_user_decide', true)->count(),
         ];
 
-        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions'));
+        $deleteRequests = MonthlyPlanDeleteRequest::query()
+            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role'])
+            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
+            ->latest()
+            ->paginate(10, ['*'], 'delete_page')
+            ->withQueryString();
+        $editRequests = MonthlyPlanEditRequest::query()
+            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role'])
+            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
+            ->latest()
+            ->paginate(10, ['*'], 'edit_page')
+            ->withQueryString();
+
+        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests'));
     }
 
     public function details(
@@ -345,6 +361,30 @@ class MonthlyActivitiesApprovalsController extends Controller
         ]);
 
         return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.updated', ['activity' => $monthlyActivity->title]));
+    }
+
+    public function decideDeleteRequest(Request $request, MonthlyPlanDeleteRequest $deleteRequest, PlanChangeRequestWorkflowService $changeRequests)
+    {
+        $data = $request->validate([
+            'decision' => ['required', 'string', 'in:approved,rejected'],
+            'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
+        ]);
+
+        $changeRequests->decide($deleteRequest, 'monthly_activities', $request->user(), $data['decision'], $data['comment'] ?? null);
+
+        return redirect()->route('role.programs.approvals.index', ['tab' => 'delete'])->with('status', 'تم تحديث قرار طلب الحذف.');
+    }
+
+    public function decideEditRequest(Request $request, MonthlyPlanEditRequest $editRequest, PlanChangeRequestWorkflowService $changeRequests)
+    {
+        $data = $request->validate([
+            'decision' => ['required', 'string', 'in:approved,rejected'],
+            'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
+        ]);
+
+        $changeRequests->decide($editRequest, 'monthly_activities', $request->user(), $data['decision'], $data['comment'] ?? null);
+
+        return redirect()->route('role.programs.approvals.index', ['tab' => 'edit'])->with('status', 'تم تحديث قرار طلب التعديل.');
     }
 
     protected function isMonthlyRelationsManagerFinalStep(string $stepKey): bool

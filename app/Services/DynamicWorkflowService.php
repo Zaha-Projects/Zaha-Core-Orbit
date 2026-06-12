@@ -549,11 +549,11 @@ class DynamicWorkflowService
     {
         $entity = $this->resolveEntity($instance);
 
-        if (! $entity instanceof MonthlyActivity || empty($entity->branch_id)) {
+        if (! $entity || empty(data_get($entity, 'branch_id'))) {
             return null;
         }
 
-        return (int) $entity->branch_id;
+        return (int) data_get($entity, 'branch_id');
     }
 
     private function resolveEntity(WorkflowInstance $instance): ?Model

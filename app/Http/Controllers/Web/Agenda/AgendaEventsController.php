@@ -23,6 +23,7 @@ use App\Services\AgendaWorkflowBridgeService;
 use App\Services\ConflictDetectionService;
 use App\Services\DynamicWorkflowService;
 use App\Services\NotificationService;
+use App\Services\PlanChangeRequestWorkflowService;
 use App\Services\WorkflowNotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -913,7 +914,8 @@ class AgendaEventsController extends Controller
         ConflictDetectionService $conflicts,
         AgendaWorkflowBridgeService $agendaWorkflowBridgeService,
         WorkflowNotificationService $workflowNotifications,
-        DynamicWorkflowService $dynamicWorkflowService
+        DynamicWorkflowService $dynamicWorkflowService,
+        PlanChangeRequestWorkflowService $changeRequests
     )
     {
         $this->assertKhaldaHqAgendaAuthority($request);
@@ -975,6 +977,41 @@ class AgendaEventsController extends Controller
             Storage::disk('public')->delete($agendaPlanFile);
         }
         $agendaPlanFile = null;
+
+        $newValues = [
+            'month' => (int) $date->format('m'),
+            'day' => (int) $date->format('d'),
+            'event_date' => $date->toDateString(),
+            'event_day' => $date->translatedFormat('l'),
+            'event_name' => $data['event_name'],
+            'department_id' => (int) $data['owner_department_id'],
+            'owner_department_id' => (int) $data['owner_department_id'],
+            'event_category_id' => $data['event_category_id'] ?? null,
+            'event_type' => $data['event_type'],
+            'is_mandatory' => $data['event_type'] === 'mandatory',
+            'plan_type' => $data['plan_type'],
+            'is_unified' => $data['plan_type'] === 'unified',
+            'is_active' => (bool) ($data['is_active'] ?? true),
+            'event_category' => optional(EventCategory::find($data['event_category_id'] ?? null))->name,
+            'notes' => $data['notes'] ?? null,
+            'agenda_plan_file' => $agendaPlanFile,
+            'version' => (int) ($agendaEvent->version ?? 1),
+            'version_number' => (int) ($agendaEvent->version_number ?? $agendaEvent->version ?? 1),
+        ];
+        $oldValues = $agendaEvent->only(array_keys($newValues));
+        $changedValues = collect($newValues)
+            ->filter(fn ($newValue, string $field): bool => (string) ($oldValues[$field] ?? '') !== (string) ($newValue ?? ''))
+            ->mapWithKeys(fn ($newValue, string $field): array => [$field => ['old' => $oldValues[$field] ?? null, 'new' => $newValue]])
+            ->all();
+
+        if ($changedValues !== [] && $this->isApprovedAgendaEvent($agendaEvent)) {
+            $changeRequests->startAgendaEditRequest($agendaEvent, $request->user(), $oldValues, $newValues, $changedValues, $request->input('edit_reason'));
+
+            return redirect()
+                ->route('role.relations.agenda.index')
+                ->with('status', 'تم إنشاء طلب تعديل للأجندة السنوية وإرساله للاعتماد دون تغيير النسخة المعتمدة الحالية.')
+                ->with('warning', $conflictWarning);
+        }
 
         DB::transaction(function () use ($agendaEvent, $date, $data, $request, $agendaWorkflowBridgeService) {
             $agendaEvent->update([
@@ -1041,12 +1078,38 @@ class AgendaEventsController extends Controller
             ->with('warning', $conflictWarning);
     }
 
-    public function destroy(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications, WorkflowNotificationService $workflowNotifications)
+    protected function isApprovedAgendaEvent(AgendaEvent $agendaEvent): bool
+    {
+        $workflowInstance = \App\Models\WorkflowInstance::query()
+            ->where('entity_type', AgendaEvent::class)
+            ->where('entity_id', $agendaEvent->id)
+            ->latest('id')
+            ->first();
+
+        return $workflowInstance?->status === 'approved'
+            || in_array((string) $agendaEvent->status, ['approved', 'published'], true)
+            || $agendaEvent->relations_approval_status === 'approved'
+            || $agendaEvent->executive_approval_status === 'approved';
+    }
+
+    public function destroy(Request $request, AgendaEvent $agendaEvent, NotificationService $notifications, WorkflowNotificationService $workflowNotifications, PlanChangeRequestWorkflowService $changeRequests)
     {
         $this->assertKhaldaHqAgendaAuthority($request);
         $this->assertEventDeleteAccess($request, $agendaEvent);
 
         abort_unless($this->canDeleteAgendaEvent($agendaEvent), 422, __('app.roles.relations.agenda.errors.delete_future_only'));
+
+        if ($this->isApprovedAgendaEvent($agendaEvent)) {
+            $data = $request->validate([
+                'delete_reason' => ['required', 'string', 'max:2000'],
+            ]);
+
+            $changeRequests->startAgendaDeleteRequest($agendaEvent, $request->user(), $data['delete_reason']);
+
+            return redirect()
+                ->route('role.relations.agenda.index')
+                ->with('status', 'تم إنشاء طلب حذف للأجندة السنوية وإرساله للاعتماد.');
+        }
 
         $agendaEvent->load(['monthlyActivities.creator', 'workflowInstance']);
         $monthlyActivities = $agendaEvent->monthlyActivities;

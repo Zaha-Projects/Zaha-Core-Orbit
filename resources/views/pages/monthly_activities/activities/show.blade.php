@@ -89,6 +89,14 @@
                     @else
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post', 'need_decision' => 1]) }}#execution-needs-decisions">تحديث قرار الاحتياج</a>
                     @endif
+                    @if(auth()->user()?->hasAnyRole(['relations_manager','relations_officer','supervisor','branch_coordinator','super_admin']))
+                        <form method="POST" action="{{ route('role.relations.activities.destroy', $monthlyActivity) }}" onsubmit="const reason = prompt('يرجى إدخال سبب الحذف (إجباري بعد الاعتماد):'); if (reason === null) return false; this.querySelector('[name=delete_reason]').value = reason; return true;">
+                            @csrf
+                            @method('DELETE')
+                            <input type="hidden" name="delete_reason">
+                            <button class="btn btn-outline-danger" type="submit">حذف</button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </section>

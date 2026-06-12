@@ -397,9 +397,10 @@
                                             @endif
                                         @endif
                                         @if($canDeleteThisEvent)
-                                            <form method="POST" action="{{ route('role.relations.agenda.destroy', $event) }}" onsubmit="return confirm('{{ __('app.roles.relations.agenda.confirm_delete') }}')">
+                                            <form method="POST" action="{{ route('role.relations.agenda.destroy', $event) }}" onsubmit="const reason = prompt('يرجى إدخال سبب الحذف (إجباري بعد الاعتماد):'); if (reason === null) return false; this.querySelector('[name=delete_reason]').value = reason; return true;">
                                                 @csrf
                                                 @method('DELETE')
+                                                <input type="hidden" name="delete_reason">
                                                 <button class="btn btn-sm btn-outline-danger" type="submit">{{ __('app.roles.relations.agenda.actions.delete') }}</button>
                                             </form>
                                         @endif

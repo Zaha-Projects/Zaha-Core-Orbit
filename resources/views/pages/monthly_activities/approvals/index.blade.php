@@ -53,6 +53,66 @@
         الفعاليات الإلزامية المرتبطة بالأجندة السنوية لا تُعرض في شاشة اعتماد الخطط الشهرية لأنها لا تحتاج اعتماد الفرع.
     </div>
 
+
+    @php($activeApprovalTab = request('tab', 'approval'))
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item"><a class="nav-link {{ $activeApprovalTab === 'approval' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['tab' => 'approval'])) }}">طلبات الاعتماد</a></li>
+        <li class="nav-item"><a class="nav-link {{ $activeApprovalTab === 'delete' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['tab' => 'delete'])) }}">طلبات الحذف</a></li>
+        <li class="nav-item"><a class="nav-link {{ $activeApprovalTab === 'edit' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['tab' => 'edit'])) }}">طلبات التعديل</a></li>
+    </ul>
+
+    @if($activeApprovalTab === 'delete')
+        <div class="card mb-4"><div class="card-body">
+            <h2 class="h5 mb-3">طلبات حذف الخطط الشهرية</h2>
+            <div class="table-responsive"><table class="table table-sm align-middle">
+                <thead><tr><th>الخطة</th><th>الفرع</th><th>طالب الحذف</th><th>سبب الحذف</th><th>الحالة</th><th>الإجراء</th></tr></thead>
+                <tbody>
+                @forelse($deleteRequests ?? [] as $deleteRequest)
+                    <tr>
+                        <td>{{ $deleteRequest->monthlyActivity?->title ?? '#' . $deleteRequest->entity_id }}</td>
+                        <td>{{ $deleteRequest->monthlyActivity?->branch?->name ?? '-' }}</td>
+                        <td>{{ $deleteRequest->requester?->name ?? '-' }}<br><small>{{ optional($deleteRequest->requested_at)->format('Y-m-d H:i') }}</small></td>
+                        <td>{{ $deleteRequest->reason }}</td>
+                        <td><span class="badge bg-secondary">{{ $deleteRequest->status }}</span><br><small>{{ $deleteRequest->workflowInstance?->currentStep?->name_ar }}</small></td>
+                        <td>@if(in_array($deleteRequest->status, ['pending','in_progress','changes_requested'], true))
+                            <form method="POST" action="{{ route('role.programs.approvals.delete_requests.update', $deleteRequest) }}" class="d-flex gap-1 flex-wrap">@csrf @method('PUT')
+                                <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
+                                <button name="decision" value="approved" class="btn btn-sm btn-success">اعتماد</button>
+                                <button name="decision" value="rejected" class="btn btn-sm btn-danger">رفض</button>
+                            </form>
+                        @endif</td>
+                    </tr>
+                @empty<tr><td colspan="6" class="text-center text-muted">لا توجد طلبات حذف.</td></tr>@endforelse
+                </tbody>
+            </table></div>{{ ($deleteRequests ?? null)?->links() }}</div></div>
+    @endif
+
+    @if($activeApprovalTab === 'edit')
+        <div class="card mb-4"><div class="card-body">
+            <h2 class="h5 mb-3">طلبات تعديل الخطط الشهرية</h2>
+            <div class="table-responsive"><table class="table table-sm align-middle">
+                <thead><tr><th>الخطة</th><th>طالب التعديل</th><th>التغييرات</th><th>الحالة</th><th>الإجراء</th></tr></thead>
+                <tbody>
+                @forelse($editRequests ?? [] as $editRequest)
+                    <tr>
+                        <td>{{ $editRequest->monthlyActivity?->title ?? '#' . $editRequest->entity_id }}</td>
+                        <td>{{ $editRequest->requester?->name ?? '-' }}<br><small>{{ optional($editRequest->requested_at)->format('Y-m-d H:i') }}</small></td>
+                        <td><div class="table-responsive"><table class="table table-bordered table-xs mb-0"><thead><tr><th>الحقل</th><th>القيمة القديمة</th><th>القيمة الجديدة</th></tr></thead><tbody>@foreach(($editRequest->changed_values ?? []) as $field => $change)<tr><td>{{ $field }}</td><td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td><td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td></tr>@endforeach</tbody></table></div></td>
+                        <td><span class="badge bg-secondary">{{ $editRequest->status }}</span><br><small>{{ $editRequest->workflowInstance?->currentStep?->name_ar }}</small></td>
+                        <td>@if(in_array($editRequest->status, ['pending','in_progress','changes_requested'], true))
+                            <form method="POST" action="{{ route('role.programs.approvals.edit_requests.update', $editRequest) }}" class="d-flex gap-1 flex-wrap">@csrf @method('PUT')
+                                <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
+                                <button name="decision" value="approved" class="btn btn-sm btn-success">اعتماد</button>
+                                <button name="decision" value="rejected" class="btn btn-sm btn-danger">رفض</button>
+                            </form>
+                        @endif</td>
+                    </tr>
+                @empty<tr><td colspan="5" class="text-center text-muted">لا توجد طلبات تعديل.</td></tr>@endforelse
+                </tbody>
+            </table></div>{{ ($editRequests ?? null)?->links() }}</div></div>
+    @endif
+
+    @if($activeApprovalTab === 'approval')
     <div class="wf-card card mb-3">
         <div class="card-header approvals-card-header">
             <h2 class="h6 mb-0">التصفية وعرض الاعتمادات</h2>
@@ -130,6 +190,8 @@
         </div>
     </div>
 </div>
+
+    @endif
 
 @endsection
 

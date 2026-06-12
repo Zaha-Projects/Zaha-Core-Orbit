@@ -265,6 +265,14 @@
                                         @if($canReviewPostExecution)
                                             <a class="btn btn-sm btn-warning" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">اعتماد ما بعد التنفيذ</a>
                                         @endif
+                                        @if(auth()->user()?->hasAnyRole(['relations_manager','relations_officer','supervisor','branch_coordinator','super_admin']))
+                                            <form method="POST" action="{{ route('role.relations.activities.destroy', $activity) }}" onsubmit="const reason = prompt('يرجى إدخال سبب الحذف (إجباري بعد الاعتماد):'); if (reason === null) return false; this.querySelector('[name=delete_reason]').value = reason; return true;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="delete_reason">
+                                                <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                                            </form>
+                                        @endif
                                         @if ($canSubmitMonthlyActivity && ! $isSubmittedOrBeyond && ! $isReadOnlyUnified)
                                             <form method="POST" action="{{ route('role.relations.activities.submit', $activity) }}">
                                                 @csrf

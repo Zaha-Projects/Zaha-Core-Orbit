@@ -32,6 +32,7 @@ use App\Services\MonthlyActivityWorkflowService;
 use App\Services\MonthlyActivityLifecycleService;
 use App\Services\DynamicWorkflowService;
 use App\Services\MonthlyWorkflowPresenter;
+use App\Services\PlanChangeRequestWorkflowService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -2687,7 +2688,8 @@ class MonthlyActivitiesController extends Controller
         MonthlyActivityWorkflowService $workflowService,
         WorkflowNotificationService $workflowNotifications,
         MonthlyActivityLifecycleService $lifecycle,
-        DynamicWorkflowService $dynamicWorkflowService
+        DynamicWorkflowService $dynamicWorkflowService,
+        PlanChangeRequestWorkflowService $changeRequests
     )
     {
         if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
@@ -3003,6 +3005,8 @@ class MonthlyActivitiesController extends Controller
             'execution_status',
             'plan_stage',
             'plan_version',
+            'version_number',
+            'parent_version_id',
             'responsible_party',
             'execution_time',
             'time_from',
@@ -3099,7 +3103,9 @@ class MonthlyActivitiesController extends Controller
             'execution_status' => $data['execution_status'],
             'plan_stage' => $nextStage,
             'plan_version' => $nextVersion,
+            'version_number' => (int) ($monthlyActivity->version_number ?: $monthlyActivity->plan_version ?: 1),
             'previous_version_id' => $startsNewVersion ? $monthlyActivity->id : $monthlyActivity->previous_version_id,
+            'parent_version_id' => $startsNewVersion ? $monthlyActivity->id : $monthlyActivity->parent_version_id,
             'responsible_party' => $data['responsible_party'] ?? null,
             'execution_time' => $data['execution_time'] ?? null,
             'time_from' => $data['time_from'] ?? null,
@@ -3145,6 +3151,29 @@ class MonthlyActivitiesController extends Controller
         ];
 
         $changedFields = $this->meaningfulChangedFields($oldValues, $newValues);
+
+        if ($changedFields !== [] && $this->isApprovedVersion($monthlyActivity)) {
+            $changedValues = collect($changedFields)
+                ->mapWithKeys(fn (string $field): array => [$field => [
+                    'old' => $oldValues[$field] ?? null,
+                    'new' => $newValues[$field] ?? null,
+                ]])
+                ->all();
+
+            $changeRequests->startMonthlyEditRequest(
+                $monthlyActivity,
+                $request->user(),
+                $oldValues,
+                $newValues,
+                $changedValues,
+                $request->input('edit_reason')
+            );
+
+            return redirect()
+                ->route('role.relations.activities.index')
+                ->with('status', 'تم إنشاء طلب تعديل للخطة الشهرية وإرساله للاعتماد دون تغيير النسخة المعتمدة الحالية.');
+        }
+
         $startsNewVersion = $this->shouldStartNewVersion($monthlyActivity, $changedFields, $isRescheduled);
 
         if ($startsNewVersion) {
@@ -3156,7 +3185,9 @@ class MonthlyActivitiesController extends Controller
             $newValues['status'] = $newStatus;
             $newValues['plan_stage'] = $nextStage;
             $newValues['plan_version'] = $nextVersion;
+            $newValues['version_number'] = $nextVersion;
             $newValues['previous_version_id'] = $monthlyActivity->id;
+            $newValues['parent_version_id'] = $monthlyActivity->id;
             $newValues['lifecycle_status'] = $newLifecycleStatus;
             $newValues['relations_officer_approval_status'] = 'pending';
             $newValues['relations_manager_approval_status'] = 'pending';
@@ -3201,7 +3232,9 @@ class MonthlyActivitiesController extends Controller
                 'execution_status' => $newValues['execution_status'],
                 'plan_stage' => $newValues['plan_stage'],
                 'plan_version' => $newValues['plan_version'],
+                'version_number' => $newValues['version_number'],
                 'previous_version_id' => $newValues['previous_version_id'],
+                'parent_version_id' => $newValues['parent_version_id'],
                 'responsible_party' => $newValues['responsible_party'],
                 'execution_time' => $newValues['execution_time'],
                 'time_from' => $newValues['time_from'],
@@ -3289,7 +3322,9 @@ class MonthlyActivitiesController extends Controller
             'execution_status' => $newValues['execution_status'],
             'plan_stage' => $newValues['plan_stage'],
             'plan_version' => $newValues['plan_version'],
+            'version_number' => $newValues['version_number'],
             'previous_version_id' => $newValues['previous_version_id'],
+            'parent_version_id' => $newValues['parent_version_id'],
             'responsible_party' => $newValues['responsible_party'],
             'execution_time' => $newValues['execution_time'],
             'time_from' => $newValues['time_from'],
@@ -3370,6 +3405,35 @@ class MonthlyActivitiesController extends Controller
             ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.updated', ['activity' => $monthlyActivity->title]))
             ->with('warning', $conflictWarning);
+    }
+
+    public function destroy(Request $request, MonthlyActivity $monthlyActivity, PlanChangeRequestWorkflowService $changeRequests)
+    {
+        $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
+        if ($this->isSupersededVersion($monthlyActivity)) {
+            return back()->withErrors(['status' => 'لا يمكن حذف نسخة قديمة من الخطة.']);
+        }
+
+        if ($this->isApprovedVersion($monthlyActivity) || $this->activityHasApprovalTrail($monthlyActivity)) {
+            $data = $request->validate([
+                'delete_reason' => ['required', 'string', 'max:2000'],
+            ]);
+
+            $changeRequests->startMonthlyDeleteRequest($monthlyActivity, $request->user(), $data['delete_reason']);
+
+            return redirect()
+                ->route('role.relations.activities.index')
+                ->with('status', 'تم إنشاء طلب حذف للخطة الشهرية وإرساله للاعتماد.');
+        }
+
+        $monthlyActivity->delete();
+
+        $this->logWorkflowAction('deleted', $monthlyActivity, $request, 'deleted');
+
+        return redirect()
+            ->route('role.relations.activities.index')
+            ->with('status', 'تم حذف الخطة الشهرية بنجاح.');
     }
 
     public function submit(MonthlyActivity $monthlyActivity, WorkflowNotificationService $workflowNotifications, MonthlyActivityLifecycleService $lifecycle, DynamicWorkflowService $dynamicWorkflowService)

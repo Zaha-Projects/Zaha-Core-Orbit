@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\WorkflowInstance;
 
 class AgendaEvent extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'event_date',
@@ -36,6 +37,8 @@ class AgendaEvent extends Model
         'notes',
         'agenda_plan_file',
         'version',
+        'version_number',
+        'parent_version_id',
     ];
 
     protected $casts = [
@@ -47,6 +50,7 @@ class AgendaEvent extends Model
         'is_mandatory' => 'boolean',
         'is_unified' => 'boolean',
         'version' => 'integer',
+        'version_number' => 'integer',
     ];
 
     public function scopeNotArchived($query)
@@ -182,5 +186,25 @@ class AgendaEvent extends Model
     public function workflowInstance()
     {
         return $this->morphOne(WorkflowInstance::class, 'entity');
+    }
+
+    public function parentVersion()
+    {
+        return $this->belongsTo(self::class, 'parent_version_id');
+    }
+
+    public function childVersions()
+    {
+        return $this->hasMany(self::class, 'parent_version_id');
+    }
+
+    public function deleteRequests()
+    {
+        return $this->hasMany(AnnualAgendaDeleteRequest::class, 'entity_id');
+    }
+
+    public function editRequests()
+    {
+        return $this->hasMany(AnnualAgendaEditRequest::class, 'entity_id');
     }
 }

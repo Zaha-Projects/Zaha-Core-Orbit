@@ -93,9 +93,10 @@
             <p class="text-muted mb-0">{{ $subtitle }}</p>
             <div class="d-flex gap-2 flex-wrap">
                 @if($canDeleteAgendaEvent)
-                    <form method="POST" action="{{ route('role.relations.agenda.destroy', $agendaEvent) }}" onsubmit="return confirm('{{ __('app.roles.relations.agenda.confirm_delete') }}')">
+                    <form method="POST" action="{{ route('role.relations.agenda.destroy', $agendaEvent) }}" onsubmit="const reason = prompt('يرجى إدخال سبب الحذف (إجباري بعد الاعتماد):'); if (reason === null) return false; this.querySelector('[name=delete_reason]').value = reason; return true;">
                         @csrf
                         @method('DELETE')
+                        <input type="hidden" name="delete_reason">
                         <button class="btn btn-outline-danger" type="submit">{{ __('app.roles.relations.agenda.actions.delete') }}</button>
                     </form>
                 @endif
