@@ -266,7 +266,7 @@
                                             <a class="btn btn-sm btn-warning" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">اعتماد ما بعد التنفيذ</a>
                                         @endif
                                         @if(auth()->user()?->hasAnyRole(['relations_manager','relations_officer','supervisor','branch_coordinator','super_admin']))
-                                            <form method="POST" action="{{ route('role.relations.activities.destroy', $activity) }}" onsubmit="const reason = prompt('يرجى إدخال سبب الحذف (إجباري بعد الاعتماد):'); if (reason === null) return false; this.querySelector('[name=delete_reason]').value = reason; return true;">
+                                            <form method="POST" action="{{ route('role.relations.activities.destroy', $activity) }}" data-delete-reason-form="monthly-activity">
                                                 @csrf
                                                 @method('DELETE')
                                                 <input type="hidden" name="delete_reason">
@@ -321,6 +321,9 @@
             </div>
         </div>
     </div>
+    @include('pages.monthly_activities.activities.partials.delete-reason-modal')
+@endsection
+
 @push('styles')
     <link rel="stylesheet" href="{{ $versionedAsset('assets/css/event-ui-shared.css') }}">
     <link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-activities-index.css') }}">
@@ -332,4 +335,3 @@
     <script src="{{ $versionedAsset('assets/js/ui-shared.js') }}"></script>
     <script src="{{ $versionedAsset('assets/js/monthly-activities-index.js') }}"></script>
 @endpush
-@endsection

@@ -37,7 +37,7 @@ class PlanChangeRequestWorkflowService
                 'requested_at' => now(),
             ]);
 
-            $this->startWorkflow('monthly_activities', $request, route('role.programs.approvals.index', ['tab' => 'delete']));
+            $this->startWorkflow('monthly_activities', $request, route('role.programs.approvals.index', ['tab' => 'delete']), $requester);
             $this->log('monthly_activities', $activity, 'delete_request_created', 'pending', $requester, ['request_id' => $request->id, 'reason' => $reason]);
 
             return $request;
@@ -62,7 +62,7 @@ class PlanChangeRequestWorkflowService
                 'requested_at' => now(),
             ]);
 
-            $this->startWorkflow('monthly_activities', $request, route('role.programs.approvals.index', ['tab' => 'edit']));
+            $this->startWorkflow('monthly_activities', $request, route('role.programs.approvals.index', ['tab' => 'edit']), $requester);
             $this->log('monthly_activities', $activity, 'edit_request_created', 'pending', $requester, ['request_id' => $request->id, 'changed_fields' => array_keys($changedValues)]);
 
             return $request;
@@ -83,7 +83,7 @@ class PlanChangeRequestWorkflowService
                 'requested_at' => now(),
             ]);
 
-            $this->startWorkflow('agenda', $request, route('role.relations.approvals.index', ['tab' => 'delete']));
+            $this->startWorkflow('agenda', $request, route('role.relations.approvals.index', ['tab' => 'delete']), $requester);
             $this->log('agenda', $event, 'delete_request_created', 'pending', $requester, ['request_id' => $request->id, 'reason' => $reason]);
 
             return $request;
@@ -107,17 +107,33 @@ class PlanChangeRequestWorkflowService
                 'requested_at' => now(),
             ]);
 
-            $this->startWorkflow('agenda', $request, route('role.relations.approvals.index', ['tab' => 'edit']));
+            $this->startWorkflow('agenda', $request, route('role.relations.approvals.index', ['tab' => 'edit']), $requester);
             $this->log('agenda', $event, 'edit_request_created', 'pending', $requester, ['request_id' => $request->id, 'changed_fields' => array_keys($changedValues)]);
 
             return $request;
         });
     }
 
+
+    public function normalizeRequesterSubmission(Model $request, string $module): ?WorkflowInstance
+    {
+        $instance = $this->workflows->forModel($module, $request);
+
+        if (! $instance) {
+            return null;
+        }
+
+        $this->advanceRequesterSubmissionSteps($instance, $request->requester);
+        $instance = $instance->fresh();
+        $this->syncCurrentApprover($request, $instance);
+
+        return $instance;
+    }
+
     public function decide(Model $request, string $module, User $actor, string $decision, ?string $comment = null): void
     {
         DB::transaction(function () use ($request, $module, $actor, $decision, $comment) {
-            $instance = $this->workflows->forModel($module, $request);
+            $instance = $this->normalizeRequesterSubmission($request, $module);
             abort_unless($instance !== null, 422);
             abort_if(! $this->workflows->canDecide($instance), 422);
             $step = $this->workflows->currentStepForUser($instance, $actor);
@@ -157,14 +173,46 @@ class PlanChangeRequestWorkflowService
         });
     }
 
-    protected function startWorkflow(string $module, Model $request, string $url): void
+    protected function startWorkflow(string $module, Model $request, string $url, User $requester): void
     {
         $instance = $this->workflows->forModel($module, $request);
         abort_unless($instance !== null, 422, 'لا يوجد مسار اعتماد نشط.');
+        $this->advanceRequesterSubmissionSteps($instance, $requester);
+        $instance = $instance->fresh();
         $this->syncCurrentApprover($request, $instance);
         $entity = $this->underlyingEntity($request);
         if ($entity) {
             $this->notifications->approvalRequested($instance, $entity, $url);
+        }
+    }
+
+
+    protected function advanceRequesterSubmissionSteps(WorkflowInstance $instance, ?User $requester): void
+    {
+        if (! $requester || $requester->hasRole('super_admin')) {
+            return;
+        }
+
+        $processedStepIds = [];
+
+        while ($this->workflows->canDecide($instance)) {
+            $step = $this->workflows->currentStep($instance);
+
+            if (! $step || ! $step->role || ! $requester->hasRole($step->role->name)) {
+                return;
+            }
+
+            if (in_array((int) $step->id, $processedStepIds, true)) {
+                return;
+            }
+
+            if (! $this->workflows->currentStepForUser($instance, $requester)) {
+                return;
+            }
+
+            $processedStepIds[] = (int) $step->id;
+            $this->workflows->recordDecision($instance, $step, $requester, DynamicWorkflowService::DECISION_APPROVED, 'تم إرسال طلب التغيير للاعتماد.');
+            $instance = $instance->fresh();
         }
     }
 

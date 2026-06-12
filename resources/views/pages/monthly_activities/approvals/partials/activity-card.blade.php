@@ -1,82 +1,83 @@
-<div class="wf-card card approvals-activity-card" data-activity-id="{{ $card['id'] }}">
-    <div class="card-header approvals-card-header">
-        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+<div class="wf-card card approvals-activity-card approvals-activity-card--modern" data-activity-id="{{ $card['id'] }}">
+    <div class="approvals-activity-card__header">
+        <div class="approvals-activity-card__title-wrap">
+            <span class="approvals-activity-card__icon"><i class="fas fa-calendar-check" aria-hidden="true"></i></span>
             <div>
-                <h3 class="h6 mb-1">{{ $card['title'] }}</h3>
-                <div class="wf-kv">{{ $card['branch_name'] }} | {{ $card['date_label'] }}</div>
-            </div>
-            <div class="text-end">
-                <span class="wf-status-badge {{ $card['status_class'] }}">{{ $card['status_label'] }}</span>
+                <div class="approval-request-card__eyebrow">طلب اعتماد خطة شهرية</div>
+                <h3 class="approvals-activity-card__title">{{ $card['title'] }}</h3>
             </div>
         </div>
-    </div>
-    <div class="card-body approvals-card-body">
-        <div class="wf-summary mb-3">
-            <div class="w-100">
-                <div class="wf-kv">
-                    {{ __('workflow_ui.common.submitted_by') }}: {{ $card['submitted_by_name'] }}
-                    @if(!empty($card['submitted_at']))
-                        | {{ __('workflow_ui.common.submitted_at') }}: {{ $card['submitted_at'] }}
-                    @endif
-                </div>
-                <div class="wf-chip-row mt-3">
-                    <span class="wf-chip wf-chip-primary">{{ __('workflow_ui.common.current_step') }}: {{ $card['current_step_label'] }}</span>
-                    <span class="wf-chip wf-chip-soft">التقدم: {{ $card['completed_steps_count'] }}/{{ $card['total_steps_count'] }}</span>
-                    @foreach($card['requirements'] as $requirement)
-                        <span class="wf-chip wf-chip-soft">{{ $requirement }}</span>
-                    @endforeach
-                </div>
-
-                <div class="approvals-status-panel mt-3">
-                    <div class="approvals-status-panel-header">
-                        <h4 class="approvals-status-title mb-0">حالات الاعتماد</h4>
-                        <span class="wf-chip wf-chip-soft">المعتمد: {{ $card['approved_steps_count'] }}/{{ $card['workflow_steps_count'] }}</span>
-                    </div>
-
-                    <div class="approvals-status-progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $card['workflow_steps_count'] }}" aria-valuenow="{{ $card['approved_steps_count'] }}">
-                        <span style="width: {{ $card['progress_percentage'] }}%"></span>
-                    </div>
-
-                    <div class="approvals-status-grid mt-3">
-                        @forelse($card['workflow_steps'] as $step)
-                            <div class="approvals-status-item {{ $step['is_current'] ? 'is-current' : '' }}">
-                                <div class="approvals-status-role">{{ $step['role_label'] }}</div>
-                                <span class="wf-status-badge wf-status-{{ $step['state'] }}">{{ $step['state_label'] }}</span>
-                            </div>
-                        @empty
-                            <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
+        <div class="approval-request-card__badges">
+            <span class="wf-status-badge {{ $card['status_class'] }}">{{ $card['status_label'] }}</span>
+            <span class="approval-version-badge">نسخة {{ $card['version_number'] }}</span>
         </div>
     </div>
 
-    <div class="card-footer approvals-card-footer">
-        <div class="d-flex justify-content-end mb-3">
-            <button
-                class="btn btn-sm btn-outline-primary approval-activity-summary-trigger"
-                type="button"
-                data-activity-title="{{ e($card['title']) }}"
-                data-details-url="{{ $card['activity_details_url'] }}"
-            >
-                <i class="fas fa-eye me-1" aria-hidden="true"></i>
-                تفاصيل النشاط
-            </button>
-        </div>
-        <div class="accordion" id="approval-accordion-{{ $card['id'] }}">
-            <div class="accordion-item border-0">
-                <h2 class="accordion-header" id="heading-{{ $card['id'] }}">
-                    <button class="accordion-button collapsed p-0 bg-transparent shadow-none approval-details-trigger" type="button" data-bs-toggle="collapse" data-bs-target="#body-{{ $card['id'] }}" data-details-url="{{ $card['details_url'] }}">
-                        {{ __('workflow_ui.approvals.details') }}
-                    </button>
-                </h2>
-                <div id="body-{{ $card['id'] }}" class="accordion-collapse collapse" data-bs-parent="#approval-accordion-{{ $card['id'] }}">
-                    <div class="accordion-body px-0 pt-3 approval-details-content" data-loaded="0">
-                        <div class="border rounded-3 p-3 wf-panel-soft">جاري تحميل التفاصيل...</div>
-                    </div>
-                </div>
+    <div class="approvals-activity-card__body">
+        <section class="approval-card-section">
+            <h4><i class="fas fa-info-circle" aria-hidden="true"></i> معلومات النشاط</h4>
+            <div class="approval-request-card__grid">
+                <div class="approval-info-item"><i class="fas fa-building" aria-hidden="true"></i><span>الفرع</span><strong>{{ $card['branch_name'] }}</strong></div>
+                <div class="approval-info-item"><i class="fas fa-user-tie" aria-hidden="true"></i><span>المسؤول</span><strong>{{ $card['responsible_user'] }}</strong></div>
+                <div class="approval-info-item"><i class="fas fa-calendar-day" aria-hidden="true"></i><span>تاريخ النشاط</span><strong>{{ $card['activity_date'] ?: $card['date_label'] }}</strong></div>
+                <div class="approval-info-item"><i class="fas fa-paper-plane" aria-hidden="true"></i><span>تاريخ الإرسال</span><strong>{{ $card['submitted_at'] ?: '-' }}</strong></div>
             </div>
+        </section>
+
+        <section class="approval-card-section approval-card-section--workflow">
+            <div class="approval-request-workflow__head">
+                <span><i class="fas fa-user-check" aria-hidden="true"></i> المعتمد الحالي: {{ $card['current_role_label'] }} — {{ $card['current_step_label'] }}</span>
+                <strong>{{ $card['approved_steps_count'] }}/{{ $card['workflow_steps_count'] }}</strong>
+            </div>
+            <div class="approvals-status-progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $card['workflow_steps_count'] }}" aria-valuenow="{{ $card['approved_steps_count'] }}">
+                <span style="width: {{ $card['progress_percentage'] }}%"></span>
+            </div>
+            <div class="approvals-status-grid mt-3">
+                @forelse($card['workflow_steps'] as $step)
+                    <div class="approvals-status-item {{ $step['is_current'] ? 'is-current' : '' }}">
+                        <div>
+                            <div class="approvals-status-role">{{ $step['role_label'] }}</div>
+                            <small class="text-muted">{{ $step['label'] }}</small>
+                        </div>
+                        <span class="wf-status-badge wf-status-{{ $step['state'] }}">{{ $step['state_label'] }}</span>
+                    </div>
+                @empty
+                    <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
+                @endforelse
+            </div>
+        </section>
+
+        <section class="approval-card-section approval-card-section--request">
+            <h4><i class="fas fa-clipboard-list" aria-hidden="true"></i> ملخص الطلب</h4>
+            <div class="wf-chip-row">
+                <span class="wf-chip wf-chip-primary">نوع الطلب: اعتماد جديد</span>
+                <span class="wf-chip wf-chip-soft">التقدم: {{ $card['completed_steps_count'] }}/{{ $card['total_steps_count'] }}</span>
+                @foreach($card['requirements'] as $requirement)
+                    <span class="wf-chip wf-chip-soft">{{ $requirement }}</span>
+                @endforeach
+            </div>
+        </section>
+    </div>
+
+    <div class="approvals-activity-card__footer">
+        <button
+            class="btn btn-sm btn-outline-primary approval-activity-summary-trigger"
+            type="button"
+            data-activity-title="{{ e($card['title']) }}"
+            data-details-url="{{ $card['activity_details_url'] }}"
+        >
+            <i class="fas fa-eye me-1" aria-hidden="true"></i>
+            عرض التفاصيل
+        </button>
+        <button class="btn btn-sm btn-primary approval-details-trigger" type="button" data-bs-toggle="collapse" data-bs-target="#body-{{ $card['id'] }}" data-details-url="{{ $card['details_url'] }}">
+            <i class="fas fa-tasks me-1" aria-hidden="true"></i>
+            مراجعة واتخاذ قرار
+        </button>
+    </div>
+
+    <div class="collapse" id="body-{{ $card['id'] }}">
+        <div class="approval-details-content p-3 border-top" data-loaded="0">
+            <div class="border rounded-3 p-3 wf-panel-soft">جاري تحميل التفاصيل...</div>
         </div>
     </div>
 </div>

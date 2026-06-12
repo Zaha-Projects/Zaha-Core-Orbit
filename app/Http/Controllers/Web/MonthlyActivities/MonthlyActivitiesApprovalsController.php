@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
-    public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService, MonthlyWorkflowPresenter $monthlyWorkflowPresenter)
+    public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
     {
         $viewer = $request->user();
         abort_unless(
@@ -150,17 +150,36 @@ class MonthlyActivitiesApprovalsController extends Controller
         ];
 
         $deleteRequests = MonthlyPlanDeleteRequest::query()
-            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role'])
+            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
             ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
             ->latest()
             ->paginate(10, ['*'], 'delete_page')
             ->withQueryString();
         $editRequests = MonthlyPlanEditRequest::query()
-            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role'])
+            ->with(['requester', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
             ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
             ->latest()
             ->paginate(10, ['*'], 'edit_page')
             ->withQueryString();
+
+        $deleteRequests->getCollection()->transform(function (MonthlyPlanDeleteRequest $deleteRequest) use ($dynamicWorkflowService, $viewer, $changeRequests) {
+            $instance = $changeRequests->normalizeRequesterSubmission($deleteRequest, 'monthly_activities');
+            $deleteRequest->setRelation('workflowInstance', $instance);
+            $deleteRequest->can_current_user_decide = $instance
+                && $dynamicWorkflowService->canDecide($instance)
+                && $dynamicWorkflowService->currentStepForUser($instance, $viewer) !== null;
+
+            return $deleteRequest;
+        });
+        $editRequests->getCollection()->transform(function (MonthlyPlanEditRequest $editRequest) use ($dynamicWorkflowService, $viewer, $changeRequests) {
+            $instance = $changeRequests->normalizeRequesterSubmission($editRequest, 'monthly_activities');
+            $editRequest->setRelation('workflowInstance', $instance);
+            $editRequest->can_current_user_decide = $instance
+                && $dynamicWorkflowService->canDecide($instance)
+                && $dynamicWorkflowService->currentStepForUser($instance, $viewer) !== null;
+
+            return $editRequest;
+        });
 
         return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests'));
     }
@@ -578,6 +597,9 @@ class MonthlyActivitiesApprovalsController extends Controller
             'title' => $activity->title,
             'branch_name' => optional($activity->branch)->name ?? '-',
             'date_label' => sprintf('%02d-%02d', (int) $activity->month, (int) $activity->day),
+            'activity_date' => optional($activity->proposed_date)->format('Y-m-d') ?: optional($activity->activity_date)->format('Y-m-d'),
+            'version_number' => (int) ($activity->version_number ?: $activity->plan_version ?: 1),
+            'responsible_user' => $activity->responsible_party ?: ($workflowSummary['submitted_by_name'] ?? '-'),
             'submitted_by_name' => $workflowSummary['submitted_by_name'] ?? '-',
             'submitted_at' => $workflowSummary['submitted_at'] ?? null,
             'status_key' => $statusKey,

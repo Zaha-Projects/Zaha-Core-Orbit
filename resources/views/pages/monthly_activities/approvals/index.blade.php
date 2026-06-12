@@ -54,62 +54,177 @@
     </div>
 
 
-    @php($activeApprovalTab = request('tab', 'approval'))
-    <ul class="nav nav-tabs mb-3" role="tablist">
-        <li class="nav-item"><a class="nav-link {{ $activeApprovalTab === 'approval' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['tab' => 'approval'])) }}">طلبات الاعتماد</a></li>
-        <li class="nav-item"><a class="nav-link {{ $activeApprovalTab === 'delete' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['tab' => 'delete'])) }}">طلبات الحذف</a></li>
-        <li class="nav-item"><a class="nav-link {{ $activeApprovalTab === 'edit' ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['tab' => 'edit'])) }}">طلبات التعديل</a></li>
-    </ul>
+    @php
+        $activeApprovalTab = request('tab', 'approval');
+        $approvalTabItems = [
+            [
+                'key' => 'approval',
+                'label' => 'طلبات الاعتماد',
+                'icon' => 'fas fa-check-circle',
+                'tone' => 'blue',
+                'count' => method_exists($activities, 'total') ? $activities->total() : $activities->count(),
+            ],
+            [
+                'key' => 'delete',
+                'label' => 'طلبات الحذف',
+                'icon' => 'fas fa-trash-alt',
+                'tone' => 'red',
+                'count' => isset($deleteRequests) && method_exists($deleteRequests, 'total') ? $deleteRequests->total() : 0,
+            ],
+            [
+                'key' => 'edit',
+                'label' => 'طلبات التعديل',
+                'icon' => 'fas fa-edit',
+                'tone' => 'amber',
+                'count' => isset($editRequests) && method_exists($editRequests, 'total') ? $editRequests->total() : 0,
+            ],
+        ];
+    @endphp
+    <nav class="approval-dashboard-tabs mb-4" aria-label="تبويبات الاعتماد">
+        @foreach($approvalTabItems as $tab)
+            <a class="approval-dashboard-tab approval-dashboard-tab--{{ $tab['tone'] }} {{ $activeApprovalTab === $tab['key'] ? 'is-active' : '' }}"
+               href="{{ route('role.programs.approvals.index', array_merge(request()->except(['page', 'delete_page', 'edit_page']), ['tab' => $tab['key']])) }}">
+                <span class="approval-dashboard-tab__icon"><i class="{{ $tab['icon'] }}" aria-hidden="true"></i></span>
+                <span class="approval-dashboard-tab__label">{{ $tab['label'] }}</span>
+                <span class="approval-dashboard-tab__count">{{ $tab['count'] }}</span>
+            </a>
+        @endforeach
+    </nav>
 
     @if($activeApprovalTab === 'delete')
-        <div class="card mb-4"><div class="card-body">
-            <h2 class="h5 mb-3">طلبات حذف الخطط الشهرية</h2>
-            <div class="table-responsive"><table class="table table-sm align-middle">
-                <thead><tr><th>الخطة</th><th>الفرع</th><th>طالب الحذف</th><th>سبب الحذف</th><th>الحالة</th><th>الإجراء</th></tr></thead>
-                <tbody>
-                @forelse($deleteRequests ?? [] as $deleteRequest)
-                    <tr>
-                        <td>{{ $deleteRequest->monthlyActivity?->title ?? '#' . $deleteRequest->entity_id }}</td>
-                        <td>{{ $deleteRequest->monthlyActivity?->branch?->name ?? '-' }}</td>
-                        <td>{{ $deleteRequest->requester?->name ?? '-' }}<br><small>{{ optional($deleteRequest->requested_at)->format('Y-m-d H:i') }}</small></td>
-                        <td>{{ $deleteRequest->reason }}</td>
-                        <td><span class="badge bg-secondary">{{ $deleteRequest->status }}</span><br><small>{{ $deleteRequest->workflowInstance?->currentStep?->name_ar }}</small></td>
-                        <td>@if(in_array($deleteRequest->status, ['pending','in_progress','changes_requested'], true))
-                            <form method="POST" action="{{ route('role.programs.approvals.delete_requests.update', $deleteRequest) }}" class="d-flex gap-1 flex-wrap">@csrf @method('PUT')
+        <div class="approval-request-list">
+            @forelse($deleteRequests ?? [] as $deleteRequest)
+                @php
+                    $activity = $deleteRequest->monthlyActivity;
+                    $instance = $deleteRequest->workflowInstance;
+                    $currentStep = $instance?->currentStep;
+                    $history = collect($deleteRequest->approval_history ?? []);
+                    $approvedCount = $history->where('decision', 'approved')->count();
+                    $totalSteps = max(($instance?->workflow?->steps?->count() ?? 0), 1);
+                    $progress = min(100, round(($approvedCount / $totalSteps) * 100));
+                @endphp
+                <article class="approval-request-card approval-request-card--delete">
+                    <header class="approval-request-card__header">
+                        <div>
+                            <div class="approval-request-card__eyebrow"><i class="fas fa-trash-alt" aria-hidden="true"></i> طلب حذف</div>
+                            <h2 class="approval-request-card__title">{{ $activity?->title ?? '#' . $deleteRequest->entity_id }}</h2>
+                        </div>
+                        <div class="approval-request-card__badges">
+                            <span class="wf-status-badge wf-status-{{ $deleteRequest->status }}">{{ $deleteRequest->status }}</span>
+                            <span class="approval-version-badge">نسخة {{ (int) ($activity?->version_number ?? $activity?->plan_version ?? 1) }}</span>
+                        </div>
+                    </header>
+
+                    <div class="approval-request-card__grid">
+                        <div class="approval-info-item"><i class="fas fa-building" aria-hidden="true"></i><span>الفرع</span><strong>{{ $activity?->branch?->name ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><i class="fas fa-user" aria-hidden="true"></i><span>طالب الحذف</span><strong>{{ $deleteRequest->requester?->name ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><i class="fas fa-calendar-day" aria-hidden="true"></i><span>تاريخ النشاط</span><strong>{{ optional($activity?->proposed_date)->format('Y-m-d') ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><i class="fas fa-clock" aria-hidden="true"></i><span>تاريخ الطلب</span><strong>{{ optional($deleteRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</strong></div>
+                    </div>
+
+                    <section class="approval-request-section approval-request-section--danger">
+                        <h3><i class="fas fa-comment-alt" aria-hidden="true"></i> سبب الحذف</h3>
+                        <p>{{ $deleteRequest->reason }}</p>
+                    </section>
+
+                    <section class="approval-request-workflow">
+                        <div class="approval-request-workflow__head">
+                            <span><i class="fas fa-user-check" aria-hidden="true"></i> المعتمد الحالي: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
+                            <strong>{{ $approvedCount }}/{{ $totalSteps }}</strong>
+                        </div>
+                        <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
+                    </section>
+
+                    <footer class="approval-request-card__footer">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ $activity ? route('role.relations.activities.show', $activity) : '#' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</a>
+                        @if(($deleteRequest->can_current_user_decide ?? false) && in_array($deleteRequest->status, ['pending','in_progress','changes_requested'], true))
+                            <form method="POST" action="{{ route('role.programs.approvals.delete_requests.update', $deleteRequest) }}" class="approval-decision-form">
+                                @csrf @method('PUT')
                                 <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
-                                <button name="decision" value="approved" class="btn btn-sm btn-success">اعتماد</button>
-                                <button name="decision" value="rejected" class="btn btn-sm btn-danger">رفض</button>
+                                <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد</button>
+                                <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض</button>
                             </form>
-                        @endif</td>
-                    </tr>
-                @empty<tr><td colspan="6" class="text-center text-muted">لا توجد طلبات حذف.</td></tr>@endforelse
-                </tbody>
-            </table></div>{{ ($deleteRequests ?? null)?->links() }}</div></div>
+                        @endif
+                    </footer>
+                </article>
+            @empty
+                <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد طلبات حذف.</div></div>
+            @endforelse
+        </div>
+        <div class="mt-3 approvals-pagination-wrap">{{ ($deleteRequests ?? null)?->links() }}</div>
     @endif
 
     @if($activeApprovalTab === 'edit')
-        <div class="card mb-4"><div class="card-body">
-            <h2 class="h5 mb-3">طلبات تعديل الخطط الشهرية</h2>
-            <div class="table-responsive"><table class="table table-sm align-middle">
-                <thead><tr><th>الخطة</th><th>طالب التعديل</th><th>التغييرات</th><th>الحالة</th><th>الإجراء</th></tr></thead>
-                <tbody>
-                @forelse($editRequests ?? [] as $editRequest)
-                    <tr>
-                        <td>{{ $editRequest->monthlyActivity?->title ?? '#' . $editRequest->entity_id }}</td>
-                        <td>{{ $editRequest->requester?->name ?? '-' }}<br><small>{{ optional($editRequest->requested_at)->format('Y-m-d H:i') }}</small></td>
-                        <td><div class="table-responsive"><table class="table table-bordered table-xs mb-0"><thead><tr><th>الحقل</th><th>القيمة القديمة</th><th>القيمة الجديدة</th></tr></thead><tbody>@foreach(($editRequest->changed_values ?? []) as $field => $change)<tr><td>{{ $field }}</td><td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td><td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td></tr>@endforeach</tbody></table></div></td>
-                        <td><span class="badge bg-secondary">{{ $editRequest->status }}</span><br><small>{{ $editRequest->workflowInstance?->currentStep?->name_ar }}</small></td>
-                        <td>@if(in_array($editRequest->status, ['pending','in_progress','changes_requested'], true))
-                            <form method="POST" action="{{ route('role.programs.approvals.edit_requests.update', $editRequest) }}" class="d-flex gap-1 flex-wrap">@csrf @method('PUT')
+        <div class="approval-request-list">
+            @forelse($editRequests ?? [] as $editRequest)
+                @php
+                    $activity = $editRequest->monthlyActivity;
+                    $instance = $editRequest->workflowInstance;
+                    $currentStep = $instance?->currentStep;
+                    $history = collect($editRequest->approval_history ?? []);
+                    $approvedCount = $history->where('decision', 'approved')->count();
+                    $totalSteps = max(($instance?->workflow?->steps?->count() ?? 0), 1);
+                    $progress = min(100, round(($approvedCount / $totalSteps) * 100));
+                @endphp
+                <article class="approval-request-card approval-request-card--edit">
+                    <header class="approval-request-card__header">
+                        <div>
+                            <div class="approval-request-card__eyebrow"><i class="fas fa-edit" aria-hidden="true"></i> طلب تعديل</div>
+                            <h2 class="approval-request-card__title">{{ $activity?->title ?? '#' . $editRequest->entity_id }}</h2>
+                        </div>
+                        <div class="approval-request-card__badges">
+                            <span class="wf-status-badge wf-status-{{ $editRequest->status }}">{{ $editRequest->status }}</span>
+                            <span class="approval-version-badge">نسخة {{ (int) ($activity?->version_number ?? $activity?->plan_version ?? 1) }}</span>
+                        </div>
+                    </header>
+
+                    <div class="approval-request-card__grid">
+                        <div class="approval-info-item"><i class="fas fa-building" aria-hidden="true"></i><span>الفرع</span><strong>{{ $activity?->branch?->name ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><i class="fas fa-user" aria-hidden="true"></i><span>طالب التعديل</span><strong>{{ $editRequest->requester?->name ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><i class="fas fa-calendar-day" aria-hidden="true"></i><span>تاريخ النشاط</span><strong>{{ optional($activity?->proposed_date)->format('Y-m-d') ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><i class="fas fa-clock" aria-hidden="true"></i><span>تاريخ الطلب</span><strong>{{ optional($editRequest->requested_at)->format('Y-m-d H:i') ?? '-' }}</strong></div>
+                    </div>
+
+                    <section class="approval-request-workflow">
+                        <div class="approval-request-workflow__head">
+                            <span><i class="fas fa-user-check" aria-hidden="true"></i> المعتمد الحالي: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
+                            <strong>{{ $approvedCount }}/{{ $totalSteps }}</strong>
+                        </div>
+                        <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
+                    </section>
+
+                    <section class="approval-changes-summary">
+                        <h3><i class="fas fa-exchange-alt" aria-hidden="true"></i> ملخص التغييرات</h3>
+                        <div class="approval-changes-grid">
+                            @foreach(($editRequest->changed_values ?? []) as $field => $change)
+                                <div class="approval-change-row">
+                                    <div class="approval-change-row__field">{{ $field }}</div>
+                                    <div class="approval-change-row__values">
+                                        <div><span>القيمة القديمة</span><strong>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</strong></div>
+                                        <div><span>القيمة الجديدة</span><strong>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</strong></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+
+                    <footer class="approval-request-card__footer">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ $activity ? route('role.relations.activities.show', $activity) : '#' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</a>
+                        @if(($editRequest->can_current_user_decide ?? false) && in_array($editRequest->status, ['pending','in_progress','changes_requested'], true))
+                            <form method="POST" action="{{ route('role.programs.approvals.edit_requests.update', $editRequest) }}" class="approval-decision-form">
+                                @csrf @method('PUT')
                                 <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
-                                <button name="decision" value="approved" class="btn btn-sm btn-success">اعتماد</button>
-                                <button name="decision" value="rejected" class="btn btn-sm btn-danger">رفض</button>
+                                <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد</button>
+                                <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض</button>
                             </form>
-                        @endif</td>
-                    </tr>
-                @empty<tr><td colspan="5" class="text-center text-muted">لا توجد طلبات تعديل.</td></tr>@endforelse
-                </tbody>
-            </table></div>{{ ($editRequests ?? null)?->links() }}</div></div>
+                        @endif
+                    </footer>
+                </article>
+            @empty
+                <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد طلبات تعديل.</div></div>
+            @endforelse
+        </div>
+        <div class="mt-3 approvals-pagination-wrap">{{ ($editRequests ?? null)?->links() }}</div>
     @endif
 
     @if($activeApprovalTab === 'approval')
