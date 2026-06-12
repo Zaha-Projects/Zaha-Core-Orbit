@@ -136,13 +136,13 @@
                     </section>
 
                     <footer class="approval-request-card__footer">
-                        <a class="btn btn-sm btn-outline-primary" href="{{ $activity ? route('role.relations.activities.show', $activity) : '#' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</a>
+                        <button class="btn btn-sm btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity?->title ?? 'تفاصيل النشاط') }}" data-details-url="{{ $activity ? route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) : '' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</button>
                         @if(($deleteRequest->can_current_user_decide ?? false) && in_array($deleteRequest->status, ['pending','in_progress','changes_requested'], true))
                             <form method="POST" action="{{ route('role.programs.approvals.delete_requests.update', $deleteRequest) }}" class="approval-decision-form">
                                 @csrf @method('PUT')
                                 <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
-                                <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد</button>
-                                <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض</button>
+                                <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد طلب الحذف</button>
+                                <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض طلب الحذف</button>
                             </form>
                         @endif
                     </footer>
@@ -209,13 +209,13 @@
                     </section>
 
                     <footer class="approval-request-card__footer">
-                        <a class="btn btn-sm btn-outline-primary" href="{{ $activity ? route('role.relations.activities.show', $activity) : '#' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</a>
+                        <button class="btn btn-sm btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity?->title ?? 'تفاصيل النشاط') }}" data-details-url="{{ $activity ? route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) : '' }}"><i class="fas fa-eye me-1" aria-hidden="true"></i> عرض التفاصيل</button>
                         @if(($editRequest->can_current_user_decide ?? false) && in_array($editRequest->status, ['pending','in_progress','changes_requested'], true))
                             <form method="POST" action="{{ route('role.programs.approvals.edit_requests.update', $editRequest) }}" class="approval-decision-form">
                                 @csrf @method('PUT')
                                 <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
-                                <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد</button>
-                                <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض</button>
+                                <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد طلب التعديل</button>
+                                <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض طلب التعديل</button>
                             </form>
                         @endif
                     </footer>
@@ -288,6 +288,10 @@
 
     <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
 
+
+
+    @endif
+
     <div class="modal fade" id="approvalActivitySummaryModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content approvals-activity-summary-modal">
@@ -305,8 +309,6 @@
         </div>
     </div>
 </div>
-
-    @endif
 
 @endsection
 

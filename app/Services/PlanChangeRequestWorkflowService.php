@@ -14,17 +14,20 @@ use App\Models\WorkflowInstance;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PlanChangeRequestWorkflowService
 {
     public function __construct(
         protected DynamicWorkflowService $workflows,
-        protected WorkflowNotificationService $notifications,
+        protected NotificationService $directNotifications,
     ) {}
 
     public function startMonthlyDeleteRequest(MonthlyActivity $activity, User $requester, string $reason): MonthlyPlanDeleteRequest
     {
         return DB::transaction(function () use ($activity, $requester, $reason) {
+            $this->assertNoActiveMonthlyChangeRequest($activity, 'delete');
+
             $request = MonthlyPlanDeleteRequest::create([
                 'requester_id' => $requester->id,
                 'request_type' => 'delete',
@@ -47,6 +50,8 @@ class PlanChangeRequestWorkflowService
     public function startMonthlyEditRequest(MonthlyActivity $activity, User $requester, array $oldValues, array $newValues, array $changedValues, ?string $reason = null): MonthlyPlanEditRequest
     {
         return DB::transaction(function () use ($activity, $requester, $oldValues, $newValues, $changedValues, $reason) {
+            $this->assertNoActiveMonthlyChangeRequest($activity, 'edit');
+
             $request = MonthlyPlanEditRequest::create([
                 'requester_id' => $requester->id,
                 'request_type' => 'edit',
@@ -72,6 +77,8 @@ class PlanChangeRequestWorkflowService
     public function startAgendaDeleteRequest(AgendaEvent $event, User $requester, string $reason): AnnualAgendaDeleteRequest
     {
         return DB::transaction(function () use ($event, $requester, $reason) {
+            $this->assertNoActiveAgendaChangeRequest($event, 'delete');
+
             $request = AnnualAgendaDeleteRequest::create([
                 'requester_id' => $requester->id,
                 'request_type' => 'delete',
@@ -93,6 +100,8 @@ class PlanChangeRequestWorkflowService
     public function startAgendaEditRequest(AgendaEvent $event, User $requester, array $oldValues, array $newValues, array $changedValues, ?string $reason = null): AnnualAgendaEditRequest
     {
         return DB::transaction(function () use ($event, $requester, $oldValues, $newValues, $changedValues, $reason) {
+            $this->assertNoActiveAgendaChangeRequest($event, 'edit');
+
             $request = AnnualAgendaEditRequest::create([
                 'requester_id' => $requester->id,
                 'request_type' => 'edit',
@@ -114,6 +123,59 @@ class PlanChangeRequestWorkflowService
         });
     }
 
+
+
+    protected function assertNoActiveMonthlyChangeRequest(MonthlyActivity $activity, string $requestType): void
+    {
+        $activeStatuses = ['pending', 'in_progress', 'changes_requested'];
+        $activeDelete = MonthlyPlanDeleteRequest::query()
+            ->where('entity_id', $activity->id)
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+        $activeEdit = MonthlyPlanEditRequest::query()
+            ->where('entity_id', $activity->id)
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+
+        if ($requestType === 'delete' && $activeDelete) {
+            throw ValidationException::withMessages(['delete_reason' => 'يوجد طلب حذف نشط لهذه الخطة الشهرية ولا يمكن إنشاء طلب حذف آخر.']);
+        }
+        if ($requestType === 'edit' && $activeEdit) {
+            throw ValidationException::withMessages(['edit_reason' => 'يوجد طلب تعديل نشط لهذه الخطة الشهرية ولا يمكن إنشاء طلب تعديل آخر.']);
+        }
+        if ($requestType === 'delete' && $activeEdit) {
+            throw ValidationException::withMessages(['delete_reason' => 'لا يمكن إنشاء طلب حذف أثناء وجود طلب تعديل نشط لهذه الخطة الشهرية.']);
+        }
+        if ($requestType === 'edit' && $activeDelete) {
+            throw ValidationException::withMessages(['edit_reason' => 'لا يمكن إنشاء طلب تعديل أثناء وجود طلب حذف نشط لهذه الخطة الشهرية.']);
+        }
+    }
+
+    protected function assertNoActiveAgendaChangeRequest(AgendaEvent $event, string $requestType): void
+    {
+        $activeStatuses = ['pending', 'in_progress', 'changes_requested'];
+        $activeDelete = AnnualAgendaDeleteRequest::query()
+            ->where('entity_id', $event->id)
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+        $activeEdit = AnnualAgendaEditRequest::query()
+            ->where('entity_id', $event->id)
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+
+        if ($requestType === 'delete' && $activeDelete) {
+            throw ValidationException::withMessages(['delete_reason' => 'يوجد طلب حذف نشط لهذه الأجندة ولا يمكن إنشاء طلب حذف آخر.']);
+        }
+        if ($requestType === 'edit' && $activeEdit) {
+            throw ValidationException::withMessages(['edit_reason' => 'يوجد طلب تعديل نشط لهذه الأجندة ولا يمكن إنشاء طلب تعديل آخر.']);
+        }
+        if ($requestType === 'delete' && $activeEdit) {
+            throw ValidationException::withMessages(['delete_reason' => 'لا يمكن إنشاء طلب حذف أثناء وجود طلب تعديل نشط لهذه الأجندة.']);
+        }
+        if ($requestType === 'edit' && $activeDelete) {
+            throw ValidationException::withMessages(['edit_reason' => 'لا يمكن إنشاء طلب تعديل أثناء وجود طلب حذف نشط لهذه الأجندة.']);
+        }
+    }
 
     public function normalizeRequesterSubmission(Model $request, string $module): ?WorkflowInstance
     {
@@ -166,10 +228,7 @@ class PlanChangeRequestWorkflowService
                 $this->applyApprovedRequest($request, $actor);
             }
 
-            $entity = $this->underlyingEntity($request);
-            if ($entity) {
-                $this->notifications->approvalDecision($instance, $entity, $actor, $decision, $module === 'agenda' ? route('role.relations.approvals.index') : route('role.programs.approvals.index'));
-            }
+            $this->notifyDecisionResult($request, $instance, $actor, $decision, $module === 'agenda' ? route('role.relations.approvals.index') : route('role.programs.approvals.index'));
         });
     }
 
@@ -180,10 +239,7 @@ class PlanChangeRequestWorkflowService
         $this->advanceRequesterSubmissionSteps($instance, $requester);
         $instance = $instance->fresh();
         $this->syncCurrentApprover($request, $instance);
-        $entity = $this->underlyingEntity($request);
-        if ($entity) {
-            $this->notifications->approvalRequested($instance, $entity, $url);
-        }
+        $this->notifyCurrentApprover($request, $instance, $url);
     }
 
 
@@ -219,6 +275,7 @@ class PlanChangeRequestWorkflowService
     protected function syncCurrentApprover(Model $request, ?WorkflowInstance $instance): void
     {
         if (! $instance?->currentStep) {
+            $request->forceFill(['current_approver_id' => null])->save();
             return;
         }
 
@@ -230,7 +287,14 @@ class PlanChangeRequestWorkflowService
     {
         if ($request instanceof MonthlyPlanDeleteRequest) {
             $entity = $request->monthlyActivity()->first();
-            $entity?->delete();
+            if ($entity) {
+                $entity->forceFill([
+                    'status' => 'cancelled',
+                    'execution_status' => 'cancelled',
+                    'cancellation_reason' => $request->reason,
+                ])->save();
+                $entity->delete();
+            }
             return;
         }
 
@@ -281,6 +345,95 @@ class PlanChangeRequestWorkflowService
             $request instanceof AnnualAgendaEditRequest => $request->agendaEvent()->first(),
             default => null,
         };
+    }
+
+
+    protected function notifyCurrentApprover(Model $request, WorkflowInstance $instance, string $url): void
+    {
+        if ($instance->status === DynamicWorkflowService::DECISION_APPROVED) {
+            $this->notifyRequester($request, 'تمت الموافقة على الطلب', $this->completionMessage($request), $url, 'plan_change_request_completed');
+            return;
+        }
+
+        $this->directNotifications->notifyUsers(
+            $this->workflows->eligibleUsersForStep($instance),
+            'plan_change_request_pending',
+            $this->requestTitle($request),
+            $this->requestMessage($request),
+            $url,
+            $this->requestMeta($request)
+        );
+    }
+
+    protected function notifyDecisionResult(Model $request, WorkflowInstance $instance, User $actor, string $decision, string $url): void
+    {
+        if ($instance->status === DynamicWorkflowService::DECISION_REJECTED || $decision === DynamicWorkflowService::DECISION_REJECTED) {
+            $this->notifyRequester($request, 'تم رفض الطلب', 'تم رفض ' . $this->requestLabel($request) . ' بواسطة ' . $actor->name . '.', $url, 'plan_change_request_rejected');
+            return;
+        }
+
+        if ($instance->status === DynamicWorkflowService::DECISION_APPROVED) {
+            $this->notifyRequester($request, 'تمت الموافقة على الطلب', $this->completionMessage($request), $url, 'plan_change_request_completed');
+            return;
+        }
+
+        $this->notifyRequester($request, 'تم اعتماد خطوة في الطلب', 'وافق ' . $actor->name . ' على ' . $this->requestLabel($request) . ' وتم تحويله للمعتمد التالي.', $url, 'plan_change_request_step_approved');
+        $this->notifyCurrentApprover($request, $instance, $url);
+    }
+
+    protected function notifyRequester(Model $request, string $title, string $message, string $url, string $type): void
+    {
+        $request->loadMissing('requester');
+        $this->directNotifications->notifyUsers(
+            collect([$request->requester])->filter(),
+            $type,
+            $title,
+            $message,
+            $url,
+            $this->requestMeta($request)
+        );
+    }
+
+    protected function requestTitle(Model $request): string
+    {
+        return 'طلب بانتظار الاعتماد: ' . $this->requestLabel($request);
+    }
+
+    protected function requestMessage(Model $request): string
+    {
+        return $this->requestLabel($request) . ' بانتظار قرارك.';
+    }
+
+    protected function completionMessage(Model $request): string
+    {
+        return match (true) {
+            $request instanceof MonthlyPlanDeleteRequest => 'تمت الموافقة على طلب الحذف وتم إلغاء/حذف الخطة الشهرية.',
+            $request instanceof MonthlyPlanEditRequest => 'تمت الموافقة على طلب التعديل وتم تفعيل نسخة جديدة من الخطة الشهرية.',
+            $request instanceof AnnualAgendaDeleteRequest => 'تمت الموافقة على طلب الحذف وتم حذف الأجندة.',
+            $request instanceof AnnualAgendaEditRequest => 'تمت الموافقة على طلب التعديل وتم تفعيل نسخة جديدة من الأجندة.',
+            default => 'تمت الموافقة على الطلب.',
+        };
+    }
+
+    protected function requestLabel(Model $request): string
+    {
+        return match (true) {
+            $request instanceof MonthlyPlanDeleteRequest => 'طلب حذف خطة شهرية',
+            $request instanceof MonthlyPlanEditRequest => 'طلب تعديل خطة شهرية',
+            $request instanceof AnnualAgendaDeleteRequest => 'طلب حذف أجندة',
+            $request instanceof AnnualAgendaEditRequest => 'طلب تعديل أجندة',
+            default => 'طلب تغيير',
+        };
+    }
+
+    protected function requestMeta(Model $request): array
+    {
+        return [
+            'request_type' => $request->request_type ?? null,
+            'entity_type' => $request->entity_type ?? null,
+            'entity_id' => $request->entity_id ?? null,
+            'request_id' => $request->getKey(),
+        ];
     }
 
     protected function log(string $module, Model $entity, string $action, string $status, User $actor, array $meta = []): void

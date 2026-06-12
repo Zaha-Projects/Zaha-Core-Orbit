@@ -3152,7 +3152,7 @@ class MonthlyActivitiesController extends Controller
 
         $changedFields = $this->meaningfulChangedFields($oldValues, $newValues);
 
-        if ($changedFields !== [] && $this->isApprovedVersion($monthlyActivity)) {
+        if ($changedFields !== [] && $this->hasManagerOrLaterApproval($monthlyActivity)) {
             $changedValues = collect($changedFields)
                 ->mapWithKeys(fn (string $field): array => [$field => [
                     'old' => $oldValues[$field] ?? null,
@@ -3415,7 +3415,7 @@ class MonthlyActivitiesController extends Controller
             return back()->withErrors(['status' => 'لا يمكن حذف نسخة قديمة من الخطة.']);
         }
 
-        if ($this->isApprovedVersion($monthlyActivity) || $this->activityHasApprovalTrail($monthlyActivity)) {
+        if ($this->hasManagerOrLaterApproval($monthlyActivity)) {
             $data = $request->validate([
                 'delete_reason' => ['required', 'string', 'max:2000'],
             ]);

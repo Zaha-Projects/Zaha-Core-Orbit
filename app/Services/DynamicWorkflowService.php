@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\MonthlyActivity;
+use App\Models\MonthlyPlanDeleteRequest;
+use App\Models\MonthlyPlanEditRequest;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
@@ -481,6 +483,10 @@ class DynamicWorkflowService
 
     private function stepAppliesToEntity(WorkflowStep $step, ?Model $entity): bool
     {
+        if ($entity instanceof MonthlyPlanDeleteRequest || $entity instanceof MonthlyPlanEditRequest) {
+            return $this->stepAppliesToMonthlyChangeRequest($step, $entity);
+        }
+
         if (! $step->hasCondition()) {
             return true;
         }
@@ -492,6 +498,87 @@ class DynamicWorkflowService
         $actualValue = data_get($entity, $step->condition_field);
 
         return $this->normalizeComparableValue($actualValue) === $this->normalizeComparableValue($step->condition_value);
+    }
+
+
+    private function stepAppliesToMonthlyChangeRequest(WorkflowStep $step, MonthlyPlanDeleteRequest|MonthlyPlanEditRequest $request): bool
+    {
+        if ($step->hasCondition()) {
+            $entity = $request->monthlyActivity()->first();
+            if (! $entity) {
+                return false;
+            }
+
+            $actualValue = data_get($entity, $step->condition_field);
+            if ($this->normalizeComparableValue($actualValue) !== $this->normalizeComparableValue($step->condition_value)) {
+                return false;
+            }
+        }
+
+        $approvedStepKeys = $this->approvedWorkflowStepKeysForMonthlyActivity((int) $request->entity_id);
+
+        return in_array((string) $step->step_key, $approvedStepKeys, true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function approvedWorkflowStepKeysForMonthlyActivity(int $activityId): array
+    {
+        $instance = WorkflowInstance::query()
+            ->where('entity_type', MonthlyActivity::class)
+            ->where('entity_id', $activityId)
+            ->latest('id')
+            ->first();
+
+        if (! $instance) {
+            return [];
+        }
+
+        $approvedStepKeys = $instance->logs()
+            ->where('action', self::DECISION_APPROVED)
+            ->whereHas('step')
+            ->with('step')
+            ->get()
+            ->map(fn (WorkflowLog $log): string => (string) $log->step?->step_key)
+            ->filter()
+            ->values();
+
+        $activity = MonthlyActivity::query()->find($activityId);
+        if ($activity) {
+            $approvedStepKeys = $approvedStepKeys->merge($this->legacyApprovedMonthlyStepKeys($activity));
+        }
+
+        return $approvedStepKeys
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function legacyApprovedMonthlyStepKeys(MonthlyActivity $activity): array
+    {
+        $keys = [];
+
+        if ((string) $activity->relations_officer_approval_status === self::DECISION_APPROVED) {
+            $keys[] = 'monthly_relations_officer_submit';
+        }
+        if ((string) $activity->relations_manager_approval_status === self::DECISION_APPROVED) {
+            $keys[] = 'monthly_supervisor_review';
+        }
+        if ((string) $activity->liaison_approval_status === self::DECISION_APPROVED) {
+            $keys[] = 'monthly_branch_coordinator_review';
+        }
+        if ((string) $activity->hq_relations_manager_approval_status === self::DECISION_APPROVED) {
+            $keys[] = 'monthly_relations_manager_review';
+        }
+        if ((string) $activity->executive_approval_status === self::DECISION_APPROVED) {
+            $keys[] = 'monthly_executive_manager_final_approval';
+        }
+
+        return $keys;
     }
 
     private function normalizeComparableValue(mixed $value): string
