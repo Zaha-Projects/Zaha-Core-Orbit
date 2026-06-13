@@ -125,7 +125,7 @@ class UsersController extends Controller
             'assigned_branch_ids.*' => ['integer', 'exists:branches,id'],
             'center_id' => ['nullable'],
             'status' => ['required', 'string', 'max:50'],
-            'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')],
+            'role' => ['sometimes', 'nullable', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'password' => ['nullable', 'string', 'min:8'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
@@ -133,7 +133,12 @@ class UsersController extends Controller
             'denied_permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
         ]);
 
-        $data = $this->normalizeBranchAssignments($data);
+        $roleSubmitted = $request->has('role') && filled($data['role'] ?? null);
+        $effectiveRole = $roleSubmitted ? $data['role'] : $user->roles->pluck('name')->first();
+        $dataForAssignments = $data;
+        $dataForAssignments['role'] = $effectiveRole;
+
+        $data = $this->normalizeBranchAssignments($dataForAssignments);
         $this->ensureBranchCoordinatorAssignments($data);
 
         $user->update([
@@ -146,11 +151,13 @@ class UsersController extends Controller
             'password' => $data['password'] ? Hash::make($data['password']) : $user->password,
         ]);
 
-        $user->syncRoles([$data['role']]);
+        if ($roleSubmitted) {
+            $user->syncRoles([$data['role']]);
+        }
 
         $role = Role::query()
             ->where('guard_name', 'web')
-            ->where('name', $data['role'])
+            ->where('name', $effectiveRole)
             ->with('permissions:id,name')
             ->first();
         $rolePermissionNames = $role?->permissions->pluck('name') ?? collect();
