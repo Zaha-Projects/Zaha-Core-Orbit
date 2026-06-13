@@ -2670,6 +2670,113 @@ class MonthlyActivitiesController extends Controller
         ));
     }
 
+
+    public function trash(Request $request)
+    {
+        $user = $request->user();
+        $selectedBranchId = filter_var($request->input('branch_id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
+
+        $activitiesQuery = MonthlyActivity::query()
+            ->onlyTrashed()
+            ->with(['branch', 'creator', 'deleteRequests.requester', 'deleteRequests.currentApprover'])
+            ->withCount('newerVersions')
+            ->whereDoesntHave('newerVersions')
+            ->notArchived();
+
+        if ($selectedBranchId) {
+            $activitiesQuery->where('branch_id', $selectedBranchId);
+        }
+
+        $this->applyBranchVisibilityScope($activitiesQuery, $user);
+        $this->applyVolunteerCoordinatorVisibilityScope($activitiesQuery, $user);
+
+        $activities = $activitiesQuery
+            ->latest('deleted_at')
+            ->paginate((int) $request->input('per_page', 15) ?: 15)
+            ->withQueryString();
+
+        $deletedBy = WorkflowActionLog::query()
+            ->with('performer:id,name')
+            ->where('module', 'monthly_activities')
+            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_id', $activities->getCollection()->pluck('id'))
+            ->whereIn('action_type', ['deleted', 'delete_request_approved'])
+            ->latest('performed_at')
+            ->get()
+            ->unique('entity_id')
+            ->keyBy('entity_id');
+
+        $branches = Branch::query()->orderBy('name')->get();
+        $filters = ['branch_id' => $selectedBranchId];
+
+        return view('pages.monthly_activities.activities.trash', compact('activities', 'deletedBy', 'branches', 'filters'));
+    }
+
+    public function restore(int $monthlyActivity)
+    {
+        $activity = MonthlyActivity::onlyTrashed()->findOrFail($monthlyActivity);
+        $activity->restore();
+        $activity->forceFill(['status' => $activity->status === 'cancelled' ? 'draft' : $activity->status])->save();
+
+        return redirect()->route('role.relations.activities.trash')->with('status', 'تمت استعادة النشاط الشهري بنجاح.');
+    }
+
+    public function changeRequestReports(Request $request)
+    {
+        $filters = $request->validate([
+            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
+            'request_type' => ['nullable', 'in:delete,edit'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'current_step' => ['nullable', 'string', 'max:100'],
+            'requester_id' => ['nullable', 'integer', 'exists:users,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+        ]);
+
+        $apply = function (Builder $query) use ($filters): Builder {
+            return $query
+                ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
+                ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+                ->when($filters['requester_id'] ?? null, fn ($q, $requesterId) => $q->where('requester_id', $requesterId))
+                ->when($filters['date_from'] ?? null, fn ($q, $date) => $q->whereDate('requested_at', '>=', $date))
+                ->when($filters['date_to'] ?? null, fn ($q, $date) => $q->whereDate('requested_at', '<=', $date))
+                ->when($filters['current_step'] ?? null, fn ($q, $step) => $q->whereHas('workflowInstance.currentStep', fn ($stepQuery) => $stepQuery->where('step_key', $step)));
+        };
+
+        $deleteBase = $apply(MonthlyPlanDeleteRequest::query());
+        $editBase = $apply(MonthlyPlanEditRequest::query());
+
+        if (($filters['request_type'] ?? null) === 'delete') {
+            $editBase->whereRaw('1 = 0');
+        } elseif (($filters['request_type'] ?? null) === 'edit') {
+            $deleteBase->whereRaw('1 = 0');
+        }
+
+        $statistics = [
+            'total_delete_requests' => (clone $deleteBase)->count(),
+            'pending_delete_requests' => (clone $deleteBase)->where('status', 'pending')->count(),
+            'approved_delete_requests' => (clone $deleteBase)->where('status', 'approved')->count(),
+            'rejected_delete_requests' => (clone $deleteBase)->where('status', 'rejected')->count(),
+            'total_edit_requests' => (clone $editBase)->count(),
+            'pending_edit_requests' => (clone $editBase)->where('status', 'pending')->count(),
+            'approved_edit_requests' => (clone $editBase)->where('status', 'approved')->count(),
+            'rejected_edit_requests' => (clone $editBase)->where('status', 'rejected')->count(),
+            'soft_deleted_monthly_activities' => MonthlyActivity::onlyTrashed()->count(),
+            'activities_with_versions' => MonthlyActivity::query()->whereHas('childVersions')->count(),
+        ];
+
+        $recentDeleteRequests = (clone $deleteBase)->with(['requester', 'currentApprover', 'monthlyActivity.branch', 'workflowInstance.currentStep'])->latest('requested_at')->take(10)->get();
+        $recentEditRequests = (clone $editBase)->with(['requester', 'currentApprover', 'monthlyActivity.branch', 'workflowInstance.currentStep'])->latest('requested_at')->take(10)->get();
+        $requestsByBranch = collect(['delete' => (clone $deleteBase)->with('monthlyActivity.branch')->get(), 'edit' => (clone $editBase)->with('monthlyActivity.branch')->get()])->flatten(1)->groupBy(fn ($r) => $r->monthlyActivity?->branch?->name ?? 'غير محدد')->map->count();
+        $requestsByStatus = collect(['delete' => (clone $deleteBase)->get(), 'edit' => (clone $editBase)->get()])->flatten(1)->groupBy('status')->map->count();
+        $requestsByStep = collect(['delete' => (clone $deleteBase)->with(['workflowInstance.currentStep', 'currentApprover'])->get(), 'edit' => (clone $editBase)->with(['workflowInstance.currentStep', 'currentApprover'])->get()])->flatten(1)->groupBy(fn ($r) => $r->workflowInstance?->currentStep?->name_ar ?? $r->currentApprover?->name ?? 'لا يوجد')->map->count();
+
+        $branches = Branch::orderBy('name')->get();
+        $requesters = User::whereIn('id', collect([(clone $deleteBase)->pluck('requester_id'), (clone $editBase)->pluck('requester_id')])->flatten()->filter()->unique())->orderBy('name')->get();
+
+        return view('pages.monthly_activities.reports.change_requests', compact('statistics', 'recentDeleteRequests', 'recentEditRequests', 'requestsByBranch', 'requestsByStatus', 'requestsByStep', 'branches', 'requesters', 'filters'));
+    }
+
     public function showDeleted(int $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
     {
         $deletedActivity = MonthlyActivity::onlyTrashed()->findOrFail($monthlyActivity);

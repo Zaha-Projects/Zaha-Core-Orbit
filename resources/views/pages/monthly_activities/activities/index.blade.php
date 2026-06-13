@@ -105,7 +105,7 @@
 
         @unless($isBranchCalendarOnly)
         <div class="d-flex justify-content-end mb-3">
-            <a class="btn btn-outline-danger position-relative" href="{{ route('role.relations.activities.index', array_merge(request()->except(['page']), ['deleted' => empty($showDeleted) ? 1 : null])) }}">
+            <a class="btn btn-outline-danger position-relative" href="{{ empty($showDeleted) ? route('role.relations.activities.trash') : route('role.relations.activities.index') }}">
                 <i class="fas fa-trash-alt me-1" aria-hidden="true"></i>{{ empty($showDeleted) ? 'المحذوفات' : 'العودة للقائمة' }}
                 <span class="badge rounded-pill bg-danger ms-1">{{ $deletedActivitiesCount ?? 0 }}</span>
             </a>
