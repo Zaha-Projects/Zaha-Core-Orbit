@@ -89,9 +89,9 @@
                     @elseif($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                         <span class="btn btn-outline-success disabled">عرض فقط (موحد معتمد)</span>
                     @elseif($editMirrorMode && $canOpenPlanningForm)
-                        <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">فتح نموذج التعديل</a>
+                        <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}"><i class="fas fa-pencil-alt me-1" aria-hidden="true"></i>فتح نموذج التعديل</a>
                     @elseif($canOpenPlanningForm)
-                        <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}">تعديل</a>
+                        <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}"><i class="fas fa-pencil-alt me-1" aria-hidden="true"></i>تعديل النشاط</a>
                     @else
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post', 'need_decision' => 1]) }}#execution-needs-decisions">تحديث قرار الاحتياج</a>
                     @endif
@@ -100,7 +100,7 @@
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="delete_reason">
-                            <button class="btn btn-outline-danger" type="submit">حذف</button>
+                            <button class="btn btn-outline-danger" type="submit"><i class="fas fa-trash-alt me-1" aria-hidden="true"></i>حذف النشاط</button>
                         </form>
                     @endif
                 </div>

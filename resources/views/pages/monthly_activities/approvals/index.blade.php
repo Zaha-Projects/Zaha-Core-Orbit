@@ -62,21 +62,21 @@
                 'label' => 'طلبات الاعتماد',
                 'icon' => 'fas fa-check-circle',
                 'tone' => 'blue',
-                'count' => method_exists($activities, 'total') ? $activities->total() : $activities->count(),
+                'count' => $tabCounts['approval'] ?? (method_exists($activities, 'total') ? $activities->total() : $activities->count()),
             ],
             [
                 'key' => 'delete',
                 'label' => 'طلبات الحذف',
                 'icon' => 'fas fa-trash-alt',
                 'tone' => 'red',
-                'count' => isset($deleteRequests) && method_exists($deleteRequests, 'total') ? $deleteRequests->total() : 0,
+                'count' => $tabCounts['delete'] ?? (isset($deleteRequests) && method_exists($deleteRequests, 'total') ? $deleteRequests->total() : 0),
             ],
             [
                 'key' => 'edit',
                 'label' => 'طلبات التعديل',
                 'icon' => 'fas fa-edit',
                 'tone' => 'amber',
-                'count' => isset($editRequests) && method_exists($editRequests, 'total') ? $editRequests->total() : 0,
+                'count' => $tabCounts['edit'] ?? (isset($editRequests) && method_exists($editRequests, 'total') ? $editRequests->total() : 0),
             ],
         ];
     @endphp
@@ -90,6 +90,59 @@
             </a>
         @endforeach
     </nav>
+
+    <div class="wf-card card mb-3">
+        <div class="card-header approvals-card-header">
+            <h2 class="h6 mb-0">التصفية وعرض الاعتمادات</h2>
+        </div>
+        <div class="card-body d-flex flex-column gap-3">
+            <div class="wf-tabbar">
+                <a class="wf-tab {{ request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['my_pending' => 1])) }}">{{ __('workflow_ui.approvals.tabs.my_pending') }}</a>
+                <a class="wf-tab {{ !request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except(['page','my_pending']), ['my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.all') }}</a>
+            </div>
+
+            <form method="GET" class="row g-2 align-items-end">
+                @include('pages.shared.filters.workflow-status-and-step', [
+                    'statusFieldName' => 'approval_status',
+                    'statusLabel' => __('workflow_ui.approvals.filters.status_type'),
+                    'statusPlaceholder' => __('workflow_ui.approvals.filters.all_statuses'),
+                    'statusOptions' => $statusOptions,
+                    'selectedStatus' => $filters['approval_status'] ?? '',
+                    'statusColumnClass' => 'col-md-3',
+                    'stepFieldName' => 'current_step',
+                    'stepLabel' => __('workflow_ui.common.current_step'),
+                    'stepPlaceholder' => __('workflow_ui.common.none_option'),
+                    'currentStepOptions' => $currentStepOptions,
+                    'selectedStep' => $filters['current_step'] ?? '',
+                    'stepColumnClass' => 'col-md-2',
+                ])
+                @include('pages.shared.filters.select-field', [
+                    'columnClass' => 'col-md-2',
+                    'fieldName' => 'branch_id',
+                    'label' => __('workflow_ui.approvals.filters.branch'),
+                    'placeholder' => __('workflow_ui.common.none_option'),
+                    'options' => $branches,
+                    'selectedValue' => $filters['branch_id'] ?? '',
+                    'optionValueKey' => 'id',
+                    'optionLabelKey' => 'name',
+                ])
+                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.from') }}</label><input class="form-control" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
+                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.to') }}</label><input class="form-control" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <button class="btn btn-outline-primary btn-sm">{{ __('workflow_ui.approvals.filters.apply') }}</button>
+                    @if(!empty($filters['approval_status']) || !empty($filters['branch_id']) || !empty($filters['current_step']) || !empty($filters['date_from']) || !empty($filters['date_to']) || !empty($filters['my_pending']))
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ route('role.programs.approvals.index') }}">{{ __('workflow_ui.approvals.filters.reset') }}</a>
+                    @endif
+                </div>
+            </form>
+        </div>
+        <div class="card-footer approvals-card-footer small text-muted">
+            استخدم الفلاتر للحصول على النتائج المطلوبة بسرعة.
+        </div>
+    </div>
+
+
+    @includeWhen(!empty($adminRequestStats), 'pages.monthly_activities.approvals.partials.change-request-admin-stats', ['stats' => $adminRequestStats])
 
     @if($activeApprovalTab === 'delete')
         <div class="approval-request-list">
@@ -332,56 +385,6 @@
     @endif
 
     @if($activeApprovalTab === 'approval')
-    <div class="wf-card card mb-3">
-        <div class="card-header approvals-card-header">
-            <h2 class="h6 mb-0">التصفية وعرض الاعتمادات</h2>
-        </div>
-        <div class="card-body d-flex flex-column gap-3">
-            <div class="wf-tabbar">
-                <a class="wf-tab {{ request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except('page'), ['my_pending' => 1])) }}">{{ __('workflow_ui.approvals.tabs.my_pending') }}</a>
-                <a class="wf-tab {{ !request('my_pending') ? 'active' : '' }}" href="{{ route('role.programs.approvals.index', array_merge(request()->except(['page','my_pending']), ['my_pending' => null])) }}">{{ __('workflow_ui.approvals.tabs.all') }}</a>
-            </div>
-
-            <form method="GET" class="row g-2 align-items-end">
-                @include('pages.shared.filters.workflow-status-and-step', [
-                    'statusFieldName' => 'approval_status',
-                    'statusLabel' => __('workflow_ui.approvals.filters.status_type'),
-                    'statusPlaceholder' => __('workflow_ui.approvals.filters.all_statuses'),
-                    'statusOptions' => $statusOptions,
-                    'selectedStatus' => $filters['approval_status'] ?? '',
-                    'statusColumnClass' => 'col-md-3',
-                    'stepFieldName' => 'current_step',
-                    'stepLabel' => __('workflow_ui.common.current_step'),
-                    'stepPlaceholder' => __('workflow_ui.common.none_option'),
-                    'currentStepOptions' => $currentStepOptions,
-                    'selectedStep' => $filters['current_step'] ?? '',
-                    'stepColumnClass' => 'col-md-2',
-                ])
-                @include('pages.shared.filters.select-field', [
-                    'columnClass' => 'col-md-2',
-                    'fieldName' => 'branch_id',
-                    'label' => __('workflow_ui.approvals.filters.branch'),
-                    'placeholder' => __('workflow_ui.common.none_option'),
-                    'options' => $branches,
-                    'selectedValue' => $filters['branch_id'] ?? '',
-                    'optionValueKey' => 'id',
-                    'optionLabelKey' => 'name',
-                ])
-                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.from') }}</label><input class="form-control" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
-                <div class="col-md-2"><label class="form-label">{{ __('workflow_ui.approvals.filters.to') }}</label><input class="form-control" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
-                <div class="col-12 d-flex justify-content-end gap-2">
-                    <button class="btn btn-outline-primary btn-sm">{{ __('workflow_ui.approvals.filters.apply') }}</button>
-                    @if(!empty($filters['approval_status']) || !empty($filters['branch_id']) || !empty($filters['current_step']) || !empty($filters['date_from']) || !empty($filters['date_to']) || !empty($filters['my_pending']))
-                        <a class="btn btn-outline-secondary btn-sm" href="{{ route('role.programs.approvals.index') }}">{{ __('workflow_ui.approvals.filters.reset') }}</a>
-                    @endif
-                </div>
-            </form>
-        </div>
-        <div class="card-footer approvals-card-footer small text-muted">
-            استخدم الفلاتر للحصول على النتائج المطلوبة بسرعة.
-        </div>
-    </div>
-
     <div class="d-flex flex-column gap-3">
         @forelse($activityCards as $card)
             @include('pages.monthly_activities.approvals.partials.activity-card', ['card' => $card])
