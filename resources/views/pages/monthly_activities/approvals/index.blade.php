@@ -56,6 +56,58 @@
 
     @php
         $activeApprovalTab = request('tab', 'approval');
+        $monthlyEditFieldLabels = [
+            'activity_date' => 'تاريخ النشاط',
+            'proposed_date' => 'التاريخ المقترح',
+            'modified_proposed_date' => 'التاريخ المعدل',
+            'actual_date' => 'تاريخ التنفيذ الفعلي',
+            'title' => 'عنوان النشاط',
+            'short_description' => 'الوصف المختصر',
+            'description' => 'الوصف',
+            'branch_id' => 'الفرع',
+            'target_group_id' => 'الفئة المستهدفة',
+            'is_from_agenda' => 'مرتبط بالأجندة',
+            'needs_media_coverage' => 'يحتاج تغطية إعلامية',
+            'needs_volunteers' => 'يحتاج متطوعين',
+            'requires_workshops' => 'يحتاج ورشات',
+            'requires_communications' => 'يحتاج اتصالات',
+            'execution_needs_payload' => 'تفاصيل الاحتياجات التنفيذية',
+            'execution_status' => 'حالة التنفيذ',
+            'status' => 'حالة النشاط',
+        ];
+        $formatMonthlyEditValue = static function ($value, string $field): string {
+            if ($value === null || $value === '') {
+                return '<span class="approval-change-empty">-</span>';
+            }
+
+            if (is_bool($value)) {
+                return '<span class="approval-change-pill">' . ($value ? 'نعم' : 'لا') . '</span>';
+            }
+
+            if (is_numeric($value) && str_starts_with($field, 'needs_')) {
+                return '<span class="approval-change-pill">' . ((int) $value === 1 ? 'نعم' : 'لا') . '</span>';
+            }
+
+            if (is_array($value)) {
+                $json = e(json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+                $summary = $field === 'execution_needs_payload'
+                    ? 'تم تحديث تفاصيل الاحتياجات التنفيذية — اضغط لعرض البيانات'
+                    : 'بيانات متعددة — اضغط لعرض التفاصيل';
+
+                return '<details class="approval-change-json"><summary>' . e($summary) . '</summary><pre>' . $json . '</pre></details>';
+            }
+
+            $text = (string) $value;
+            if (preg_match('/^\d{4}-\d{2}-\d{2}T/', $text)) {
+                $text = substr($text, 0, 10);
+            }
+
+            if (in_array($text, ['1', '0'], true) && (str_starts_with($field, 'is_') || str_starts_with($field, 'requires_'))) {
+                $text = $text === '1' ? 'نعم' : 'لا';
+            }
+
+            return '<span>' . e($text) . '</span>';
+        };
         $approvalTabItems = [
             [
                 'key' => 'approval',
@@ -347,11 +399,16 @@
                         <h3><i class="fas fa-exchange-alt" aria-hidden="true"></i> ملخص التغييرات</h3>
                         <div class="approval-changes-grid">
                             @foreach(($editRequest->changed_values ?? []) as $field => $change)
+                                @php($fieldLabel = $monthlyEditFieldLabels[$field] ?? \Illuminate\Support\Str::of($field)->replace('_', ' ')->title())
                                 <div class="approval-change-row">
-                                    <div class="approval-change-row__field">{{ $field }}</div>
+                                    <div class="approval-change-row__field">
+                                        <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+                                        <span>{{ $fieldLabel }}</span>
+                                        <small>{{ $field }}</small>
+                                    </div>
                                     <div class="approval-change-row__values">
-                                        <div><span>القيمة القديمة</span><strong>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</strong></div>
-                                        <div><span>القيمة الجديدة</span><strong>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</strong></div>
+                                        <div class="approval-change-value approval-change-value--old"><span>القيمة القديمة</span><strong>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field) !!}</strong></div>
+                                        <div class="approval-change-value approval-change-value--new"><span>القيمة الجديدة</span><strong>{!! $formatMonthlyEditValue($change['new'] ?? null, (string) $field) !!}</strong></div>
                                     </div>
                                 </div>
                             @endforeach
