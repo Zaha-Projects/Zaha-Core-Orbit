@@ -8,6 +8,9 @@
     $subtitle = ($viewScope ?? 'default') === 'all_branches'
         ? __('app.roles.programs.monthly_activities.other_branches_subtitle')
         : $subtitle;
+    if (!empty($showDeleted)) {
+        $subtitle = 'عرض الأنشطة الشهرية المحذوفة فقط مع إمكانية فتح تفاصيلها.';
+    }
     $normalizeMonthlyPageStatus = function (?string $status): ?string {
         return match ((string) $status) {
             'approved' => 'approved',
@@ -101,6 +104,13 @@
         @endif
 
         @unless($isBranchCalendarOnly)
+        <div class="d-flex justify-content-end mb-3">
+            <a class="btn btn-outline-danger position-relative" href="{{ route('role.relations.activities.index', array_merge(request()->except(['page']), ['deleted' => empty($showDeleted) ? 1 : null])) }}">
+                <i class="fas fa-trash-alt me-1" aria-hidden="true"></i>{{ empty($showDeleted) ? 'المحذوفات' : 'العودة للقائمة' }}
+                <span class="badge rounded-pill bg-danger ms-1">{{ $deletedActivitiesCount ?? 0 }}</span>
+            </a>
+        </div>
+        @empty($showDeleted)
         <div class="event-kpi-grid">
             @foreach (($summaryCards ?? collect()) as $card)
                 @php
@@ -119,6 +129,7 @@
                 </a>
             @endforeach
         </div>
+        @endempty
         @endunless
 
         <div class="card event-card mb-4">
@@ -130,6 +141,9 @@
                     @endif
                     @if (!empty($filters['summary_filter']))
                         <input type="hidden" name="summary_filter" value="{{ $filters['summary_filter'] }}">
+                    @endif
+                    @if (!empty($showDeleted))
+                        <input type="hidden" name="deleted" value="1">
                     @endif
                     @if ($canFilterBranches)
                         @include('pages.shared.filters.select-field', [
@@ -186,14 +200,14 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                         <div>
-                            <h2 class="event-section-title mb-1">{{ __('app.roles.programs.monthly_activities.list_title') }}</h2>
+                            <h2 class="event-section-title mb-1">{{ !empty($showDeleted) ? 'الأنشطة الشهرية المحذوفة' : __('app.roles.programs.monthly_activities.list_title') }}</h2>
                             <div class="d-flex align-items-center flex-wrap gap-2">
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.index', $previousMonthQuery) }}">السابق</a>
                                 <span class="badge bg-light text-dark border">{{ optional($selectedMonthDate ?? null)->translatedFormat('F Y') }}</span>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.index', $nextMonthQuery) }}">التالي</a>
                             </div>
                         </div>
-                        <span class="text-muted small">عرض {{ $activities->total() }} نشاط لهذا الشهر</span>
+                        <span class="text-muted small">عرض {{ $activities->total() }} {{ !empty($showDeleted) ? 'نشاط محذوف' : 'نشاط لهذا الشهر' }}</span>
                     </div>
                     <div class="monthly-cards-grid">
                         @forelse ($activities as $activity)
@@ -252,7 +266,7 @@
                                 </div>
                                 <div class="module-card-footer">
                                     <div class="event-actions">
-                                    <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.show', $activity) }}">عرض</a>
+                                    <a class="btn btn-sm btn-outline-dark" href="{{ !empty($showDeleted) ? route('role.relations.activities.deleted.show', $activity->id) : route('role.relations.activities.show', $activity) }}"><i class="fas fa-eye me-1"></i>عرض التفاصيل</a>
                                     @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                                         <span class="badge bg-success-subtle text-success">موحد معتمد — عرض فقط</span>
                                     @else

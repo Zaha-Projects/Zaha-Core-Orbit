@@ -1577,12 +1577,14 @@ class MonthlyActivitiesController extends Controller
         $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
         $selectedYear = $this->normalizeMonthlyIndexYear($request->input('year'));
         $selectedMonth = $this->normalizeMonthlyIndexMonth($request->input('month'));
+        $showDeleted = $request->boolean('deleted');
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);
         }
 
         $activitiesBaseQuery = MonthlyActivity::query()
+            ->when($showDeleted, fn ($query) => $query->onlyTrashed())
             ->withCount('newerVersions')
             ->whereDoesntHave('newerVersions')
             ->enterpriseFilter($request->except(['status', 'year', 'month', 'per_page', 'branch_id']))
@@ -1612,7 +1614,16 @@ class MonthlyActivitiesController extends Controller
                 });
         }
 
-        $summaryCards = $this->buildMonthlyIndexSummaryCards($activitiesBaseQuery);
+        $deletedActivitiesCount = (clone $activitiesBaseQuery)->toBase()->cloneWithout(['orders', 'limit', 'offset'])->count();
+        if (! $showDeleted) {
+            $deletedCountQuery = MonthlyActivity::query()->onlyTrashed()->whereDoesntHave('newerVersions')->notArchived();
+            $this->applyMonthlyPageMonthFilter($deletedCountQuery, $selectedYear, $selectedMonth);
+            if ($selectedBranchId) { $deletedCountQuery->where('branch_id', $selectedBranchId); }
+            if ($viewScope !== 'all_branches') { $this->applyBranchVisibilityScope($deletedCountQuery, $user); }
+            $deletedActivitiesCount = $deletedCountQuery->count();
+        }
+
+        $summaryCards = $showDeleted ? collect() : $this->buildMonthlyIndexSummaryCards($activitiesBaseQuery);
         $this->applyMonthlyIndexSummaryFilter($activitiesBaseQuery, $selectedSummaryFilter);
 
         $allowedPerPage = [8, 16, 24, 50, 100];
@@ -1649,6 +1660,7 @@ class MonthlyActivitiesController extends Controller
             'status' => $selectedStatus,
             'branch_id' => $selectedBranchId,
             'summary_filter' => $selectedSummaryFilter,
+            'deleted' => $showDeleted,
             'per_page' => $perPage,
         ];
         $selectedMonthDate = Carbon::create($selectedYear, $selectedMonth, 1)->startOfMonth();
@@ -1680,6 +1692,8 @@ class MonthlyActivitiesController extends Controller
             'selectedMonthDate',
             'previousMonthQuery',
             'nextMonthQuery',
+            'showDeleted',
+            'deletedActivitiesCount',
         ));
     }
 
@@ -2654,6 +2668,13 @@ class MonthlyActivitiesController extends Controller
             'activeEditRequest',
             'hasActiveChangeRequest',
         ));
+    }
+
+    public function showDeleted(int $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
+    {
+        $deletedActivity = MonthlyActivity::onlyTrashed()->findOrFail($monthlyActivity);
+
+        return $this->show($deletedActivity, $monthlyWorkflowPresenter, $changeRequests);
     }
 
     public function show(MonthlyActivity $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)

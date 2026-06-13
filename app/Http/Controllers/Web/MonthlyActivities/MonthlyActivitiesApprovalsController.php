@@ -149,15 +149,19 @@ class MonthlyActivitiesApprovalsController extends Controller
             'my_pending' => $activityCards->where('can_current_user_decide', true)->count(),
         ];
 
-        $deleteRequests = MonthlyPlanDeleteRequest::query()
+        $deleteRequestsBase = MonthlyPlanDeleteRequest::query()
             ->with(['requester', 'currentApprover', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
-            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
+            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope));
+        $this->applyChangeRequestFilters($deleteRequestsBase, $filters);
+        $deleteRequests = (clone $deleteRequestsBase)
             ->latest()
             ->paginate(10, ['*'], 'delete_page')
             ->withQueryString();
-        $editRequests = MonthlyPlanEditRequest::query()
+        $editRequestsBase = MonthlyPlanEditRequest::query()
             ->with(['requester', 'currentApprover', 'monthlyActivity.branch', 'workflowInstance.currentStep.role', 'workflowInstance.workflow.steps'])
-            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope))
+            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope));
+        $this->applyChangeRequestFilters($editRequestsBase, $filters);
+        $editRequests = (clone $editRequestsBase)
             ->latest()
             ->paginate(10, ['*'], 'edit_page')
             ->withQueryString();
@@ -192,7 +196,45 @@ class MonthlyActivitiesApprovalsController extends Controller
             $editRequests->setCollection($editRequests->getCollection()->filter(fn (MonthlyPlanEditRequest $request) => (bool) ($request->can_current_user_decide ?? false))->values());
         }
 
-        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests'));
+        $tabCounts = [
+            'approval' => $activities->getCollection()->count(),
+            'delete' => $deleteRequests->getCollection()->count(),
+            'edit' => $editRequests->getCollection()->count(),
+        ];
+        $adminRequestStats = $viewer->hasRole('super_admin') ? $this->monthlyChangeRequestStats($filters, $branchApprovalScope) : null;
+
+        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests', 'tabCounts', 'adminRequestStats'));
+    }
+
+    protected function applyChangeRequestFilters($query, array $filters): void
+    {
+        $query
+            ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
+            ->when($filters['approval_status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($filters['date_from'] ?? null, fn ($q, $dateFrom) => $q->whereDate('requested_at', '>=', $dateFrom))
+            ->when($filters['date_to'] ?? null, fn ($q, $dateTo) => $q->whereDate('requested_at', '<=', $dateTo))
+            ->when($filters['current_step'] ?? null, fn ($q, $step) => $q->whereHas('workflowInstance.currentStep', fn ($stepQuery) => $stepQuery->where('step_key', $step)));
+    }
+
+    protected function monthlyChangeRequestStats(array $filters, ?array $branchApprovalScope): array
+    {
+        $build = function (string $model) use ($filters, $branchApprovalScope) {
+            $query = $model::query()
+                ->with(['requester', 'currentApprover'])
+                ->when($branchApprovalScope !== null, fn ($q) => $branchApprovalScope === [] ? $q->whereRaw('1 = 0') : $q->whereIn('branch_id', $branchApprovalScope));
+            $this->applyChangeRequestFilters($query, $filters);
+            return $query;
+        };
+        $deleteBase = $build(MonthlyPlanDeleteRequest::class);
+        $editBase = $build(MonthlyPlanEditRequest::class);
+
+        return [
+            'delete' => ['total' => (clone $deleteBase)->count(), 'pending' => (clone $deleteBase)->where('status', 'pending')->count(), 'approved' => (clone $deleteBase)->where('status', 'approved')->count(), 'rejected' => (clone $deleteBase)->where('status', 'rejected')->count()],
+            'edit' => ['total' => (clone $editBase)->count(), 'pending' => (clone $editBase)->where('status', 'pending')->count(), 'approved' => (clone $editBase)->where('status', 'approved')->count(), 'rejected' => (clone $editBase)->where('status', 'rejected')->count()],
+            'by_branch' => (clone $deleteBase)->selectRaw('branch_id, count(*) as total')->groupBy('branch_id')->with('monthlyActivity.branch')->limit(8)->get(),
+            'recent_delete' => (clone $deleteBase)->latest()->limit(5)->get(),
+            'recent_edit' => (clone $editBase)->latest()->limit(5)->get(),
+        ];
     }
 
     public function details(
