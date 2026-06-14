@@ -87,7 +87,7 @@
                 </div>
                 <a
                     class="btn {{ !empty($showDeleted) ? 'btn-outline-secondary' : 'btn-outline-danger' }} position-relative"
-                    href="{{ route('role.relations.activities.index', !empty($showDeleted) ? request()->except(['page', 'deleted']) : array_merge(request()->except(['page']), ['deleted' => 1])) }}"
+                    href="{{ !empty($showDeleted) ? route('role.relations.activities.index', request()->except(['page', 'deleted'])) : route('role.relations.activities.trash', request()->only(['branch_id', 'year', 'month'])) }}"
                     aria-label="{{ !empty($showDeleted) ? 'العودة إلى الخطط الشهرية' : 'فتح سلة محذوفات الخطط الشهرية' }}"
                 >
                     <i class="fas {{ !empty($showDeleted) ? 'fa-arrow-right' : 'fa-trash-alt' }} me-1" aria-hidden="true"></i>
