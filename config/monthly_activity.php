@@ -23,6 +23,23 @@ return [
         ],
     ],
 
+
+    'change_requests' => [
+        /*
+         |-----------------------------------------------------------------
+         | Roles allowed to open planning edit forms or request deletion
+         |-----------------------------------------------------------------
+         |
+         | Keep the default limited to the branch relations officer. Add
+         | roles here later (for example supervisor or branch_coordinator)
+         | if those users should regain the edit/delete-request actions.
+         |
+         */
+        'allowed_roles' => [
+            'relations_officer',
+        ],
+    ],
+
     'agenda_linked_edit' => [
         'enabled' => true,
 

@@ -283,10 +283,32 @@ class MonthlyActivitiesController extends Controller
             && $user->hasAnyRole(self::MONTHLY_ACTIVITY_EDIT_ROLES);
     }
 
-    protected function canUseMonthlyActivityPlanningEdit(?User $user): bool
+    protected function monthlyActivityChangeRequestRoles(): array
     {
-        return $user !== null
-            && $user->hasAnyRole(self::MONTHLY_ACTIVITY_PLANNING_EDIT_ROLES);
+        return array_values(array_filter((array) config('monthly_activity.change_requests.allowed_roles', ['relations_officer'])));
+    }
+
+    protected function canManageMonthlyActivityChangeRequest(?User $user, ?MonthlyActivity $monthlyActivity = null): bool
+    {
+        if ($user === null || ! $user->hasAnyRole($this->monthlyActivityChangeRequestRoles())) {
+            return false;
+        }
+
+        if ($monthlyActivity === null || blank($monthlyActivity->branch_id)) {
+            return true;
+        }
+
+        if ((int) ($user->branch_id ?? 0) === (int) $monthlyActivity->branch_id) {
+            return true;
+        }
+
+        return method_exists($user, 'assignedBranches')
+            && $user->assignedBranches()->whereKey((int) $monthlyActivity->branch_id)->exists();
+    }
+
+    protected function canUseMonthlyActivityPlanningEdit(?User $user, ?MonthlyActivity $monthlyActivity = null): bool
+    {
+        return $this->canManageMonthlyActivityChangeRequest($user, $monthlyActivity);
     }
 
     protected function creatorIsPrimaryBranchRelationsOfficer(MonthlyActivity $monthlyActivity): bool
@@ -1678,6 +1700,7 @@ class MonthlyActivitiesController extends Controller
 
         $monthlyStatusOptions = $this->monthlyPageStatusOptions();
         $monthlyActivityEditRoles = self::MONTHLY_ACTIVITY_EDIT_ROLES;
+        $monthlyActivityChangeRequestRoles = $this->monthlyActivityChangeRequestRoles();
 
         return view('pages.monthly_activities.activities.index', compact(
             'activities',
@@ -1689,6 +1712,7 @@ class MonthlyActivitiesController extends Controller
             'monthlyStatusOptions',
             'summaryCards',
             'monthlyActivityEditRoles',
+            'monthlyActivityChangeRequestRoles',
             'selectedMonthDate',
             'previousMonthQuery',
             'nextMonthQuery',
@@ -2695,7 +2719,7 @@ class MonthlyActivitiesController extends Controller
         }
 
         $monthlyActivity->load(['agendaEvent', 'creator', 'supplies', 'team', 'attachments', 'approvals', 'sponsors', 'partners', 'evaluationResponses.question', 'followups']);
-        if (request()->boolean('form') && ! $this->canUseMonthlyActivityPlanningEdit(request()->user())) {
+        if (request()->boolean('form') && ! $this->canUseMonthlyActivityPlanningEdit(request()->user(), $monthlyActivity)) {
             abort(403);
         }
 
@@ -2948,7 +2972,7 @@ class MonthlyActivitiesController extends Controller
                 ->with('status', 'تم حفظ متابعة احتياجات التنفيذ بنجاح.');
         }
 
-        abort_unless($this->canUseMonthlyActivityPlanningEdit($request->user()), 403);
+        abort_unless($this->canUseMonthlyActivityPlanningEdit($request->user(), $monthlyActivity), 403);
 
         $isCreator = (int) $monthlyActivity->created_by === (int) $request->user()->id;
 
@@ -3558,6 +3582,10 @@ class MonthlyActivitiesController extends Controller
     public function destroy(Request $request, MonthlyActivity $monthlyActivity, PlanChangeRequestWorkflowService $changeRequests)
     {
         $this->ensureActivityVisibleToUser($monthlyActivity, $request->user());
+
+        if (! $this->canManageMonthlyActivityChangeRequest($request->user(), $monthlyActivity)) {
+            abort(403);
+        }
 
         if ($this->isSupersededVersion($monthlyActivity)) {
             return back()->withErrors(['status' => 'لا يمكن حذف نسخة قديمة من الخطة.']);

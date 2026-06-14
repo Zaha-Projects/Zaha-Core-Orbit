@@ -30,14 +30,14 @@
     $activeEditRequest = $activeEditRequest ?? null;
     $activeChangeRequest = $activeDeleteRequest ?? $activeEditRequest;
     $hasActiveChangeRequest = (bool) ($hasActiveChangeRequest ?? $activeChangeRequest);
-    $canOpenPlanningForm = $viewer?->hasAnyRole([
-        'relations_manager',
-        'relations_officer',
-        'supervisor',
-        'followup_officer',
-        'evaluation_officer',
-        'super_admin',
-    ]);
+    $monthlyActivityChangeRequestRoles = array_values(array_filter((array) config('monthly_activity.change_requests.allowed_roles', ['relations_officer'])));
+    $canManageMonthlyActivityChangeRequest = $viewer
+        && $viewer->hasAnyRole($monthlyActivityChangeRequestRoles)
+        && (
+            (int) ($viewer->branch_id ?? 0) === (int) $monthlyActivity->branch_id
+            || (method_exists($viewer, 'assignedBranches') && $viewer->assignedBranches()->whereKey((int) $monthlyActivity->branch_id)->exists())
+        );
+    $canOpenPlanningForm = $canManageMonthlyActivityChangeRequest;
     $canBranchPartialEditUnified = $isReadOnlyUnified
         && (bool) config('monthly_activity.unified_branch_edit.enabled', true)
         && $viewer
@@ -95,7 +95,7 @@
                     @else
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post', 'need_decision' => 1]) }}#execution-needs-decisions">تحديث قرار الاحتياج</a>
                     @endif
-                    @if(! $hasActiveChangeRequest && auth()->user()?->hasAnyRole(['relations_manager','relations_officer','supervisor','branch_coordinator','super_admin']))
+                    @if(! $hasActiveChangeRequest && $canManageMonthlyActivityChangeRequest)
                         <form method="POST" action="{{ route('role.relations.activities.destroy', $monthlyActivity) }}" data-delete-reason-form="monthly-activity">
                             @csrf
                             @method('DELETE')

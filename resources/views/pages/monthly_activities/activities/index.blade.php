@@ -54,6 +54,7 @@
     $branchFilterSelected = $filters['branch_id'] ?? '';
     $authUser = auth()->user();
     $monthlyActivityEditRoles = $monthlyActivityEditRoles ?? [];
+    $monthlyActivityChangeRequestRoles = $monthlyActivityChangeRequestRoles ?? config('monthly_activity.change_requests.allowed_roles', ['relations_officer']);
     $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
     $calendarCreateBranchId = filled($branchFilterSelected)
         ? (int) $branchFilterSelected
@@ -244,9 +245,15 @@
                                             )
                                         )
                                     );
-                                $canEditMonthlyActivity = $viewer
-                                    && $viewer->hasAnyRole($monthlyActivityEditRoles);
-                                $canSubmitMonthlyActivity = $canEditMonthlyActivity
+                                $canManageMonthlyActivityChangeRequest = $viewer
+                                    && $viewer->hasAnyRole($monthlyActivityChangeRequestRoles)
+                                    && (
+                                        (int) ($viewer->branch_id ?? 0) === (int) $activity->branch_id
+                                        || (method_exists($viewer, 'assignedBranches') && $viewer->assignedBranches()->whereKey((int) $activity->branch_id)->exists())
+                                    );
+                                $canEditMonthlyActivity = $canManageMonthlyActivityChangeRequest;
+                                $canSubmitMonthlyActivity = $viewer
+                                    && $viewer->hasAnyRole($monthlyActivityEditRoles)
                                     && in_array((string) $activity->status, ['draft', 'changes_requested'], true);
                             @endphp
                             <article class="monthly-activity-card">
@@ -284,7 +291,7 @@
                                         @if($canReviewPostExecution)
                                             <a class="btn btn-sm btn-warning" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">اعتماد ما بعد التنفيذ</a>
                                         @endif
-                                        @if(auth()->user()?->hasAnyRole(['relations_manager','relations_officer','supervisor','branch_coordinator','super_admin']))
+                                        @if($canManageMonthlyActivityChangeRequest)
                                             <form method="POST" action="{{ route('role.relations.activities.destroy', $activity) }}" data-delete-reason-form="monthly-activity">
                                                 @csrf
                                                 @method('DELETE')
