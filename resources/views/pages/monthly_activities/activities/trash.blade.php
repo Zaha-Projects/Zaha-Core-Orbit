@@ -66,7 +66,7 @@
                             <td>{{ $activity->executive_approval_status ?: $activity->status ?: '-' }}</td>
                             <td class="text-end">
                                 <div class="d-inline-flex gap-2">
-                                    <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.deleted.show', $activity->id) }}">عرض</a>
+                                    <button class="btn btn-sm btn-outline-dark" type="button" data-bs-toggle="modal" data-bs-target="#deletedMonthlyActivityModal{{ $activity->id }}">عرض</button>
                                     @if(auth()->user()?->hasAnyRole(['super_admin', 'admin']))
                                         <form method="POST" action="{{ route('role.relations.activities.trash.restore', $activity->id) }}">
                                             @csrf
@@ -85,5 +85,49 @@
         </div>
         <div class="card-footer">{{ $activities->links('pagination::bootstrap-5') }}</div>
     </div>
+
+    @foreach($activities as $activity)
+        @php
+            $deleteRequest = $activity->deleteRequests->sortByDesc('requested_at')->first();
+            $deleteLog = $deletedBy->get($activity->id);
+        @endphp
+        <div class="modal fade" id="deletedMonthlyActivityModal{{ $activity->id }}" tabindex="-1" aria-labelledby="deletedMonthlyActivityModalLabel{{ $activity->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div>
+                            <h2 class="modal-title h5" id="deletedMonthlyActivityModalLabel{{ $activity->id }}">{{ $activity->title }}</h2>
+                            <p class="text-muted small mb-0">تفاصيل مختصرة للنشاط المحذوف دون فتح صفحة النشاط الكاملة.</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6"><strong>الفرع:</strong> {{ $activity->branch?->name ?? '-' }}</div>
+                            <div class="col-md-6"><strong>أنشئ بواسطة / المسؤول:</strong> {{ $activity->creator?->name ?? $activity->responsible_party ?? '-' }}</div>
+                            <div class="col-md-6"><strong>تاريخ النشاط:</strong> {{ $activity->activity_date ? optional($activity->activity_date)->format('Y-m-d') : sprintf('%02d/%02d/%04d', $activity->day, $activity->month, $activity->year) }}</div>
+                            <div class="col-md-6"><strong>تاريخ الحذف:</strong> {{ optional($activity->deleted_at)->format('Y-m-d H:i') ?? '-' }}</div>
+                            <div class="col-md-6"><strong>حذف بواسطة:</strong> {{ $deleteLog?->performer?->name ?? $deleteRequest?->currentApprover?->name ?? '-' }}</div>
+                            <div class="col-md-6"><strong>حالة/مرجع طلب الحذف:</strong> {{ $deleteRequest ? ('#'.$deleteRequest->id.' / '.$deleteRequest->status) : '-' }}</div>
+                            <div class="col-md-6"><strong>حالة الاعتماد الأصلية:</strong> {{ $activity->executive_approval_status ?: $activity->status ?: '-' }}</div>
+                            <div class="col-md-6"><strong>نسخة الخطة:</strong> {{ (int) ($activity->plan_version ?: 1) }}</div>
+                            <div class="col-12">
+                                <strong>سبب الحذف:</strong>
+                                <div class="border rounded bg-light p-3 mt-2">{{ $deleteRequest?->reason ?? $deleteLog?->notes ?? '-' }}</div>
+                            </div>
+                            <div class="col-12">
+                                <strong>الوصف:</strong>
+                                <div class="border rounded bg-light p-3 mt-2">{{ $activity->short_description ?: $activity->description ?: 'لا يوجد وصف.' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endforeach
+
 </div>
 @endsection

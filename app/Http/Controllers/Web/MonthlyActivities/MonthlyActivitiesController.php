@@ -2776,13 +2776,13 @@ class MonthlyActivitiesController extends Controller
 
     public function showDeleted(int $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
     {
-        $deletedActivity = MonthlyActivity::onlyTrashed()->findOrFail($monthlyActivity);
-
-        return $this->show($deletedActivity, $monthlyWorkflowPresenter, $changeRequests);
+        abort(404);
     }
 
     public function show(MonthlyActivity $monthlyActivity, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
     {
+        abort_if(method_exists($monthlyActivity, 'trashed') && $monthlyActivity->trashed(), 404);
+
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
         $monthlyActivity->load([

@@ -246,6 +246,7 @@
                                         )
                                     );
                                 $canManageMonthlyActivityChangeRequest = $viewer
+                                    && ! $activity->trashed()
                                     && $viewer->hasAnyRole($monthlyActivityChangeRequestRoles)
                                     && (
                                         (int) ($viewer->branch_id ?? 0) === (int) $activity->branch_id
@@ -278,7 +279,11 @@
                                 </div>
                                 <div class="module-card-footer">
                                     <div class="event-actions">
-                                    <a class="btn btn-sm btn-outline-dark" href="{{ !empty($showDeleted) ? route('role.relations.activities.deleted.show', $activity->id) : route('role.relations.activities.show', $activity) }}"><i class="fas fa-eye me-1"></i>عرض التفاصيل</a>
+                                    @if(!empty($showDeleted))
+                                        <span class="badge bg-secondary-subtle text-secondary">محذوف — العرض من صفحة السلة فقط</span>
+                                    @else
+                                        <a class="btn btn-sm btn-outline-dark" href="{{ route('role.relations.activities.show', $activity) }}"><i class="fas fa-eye me-1"></i>عرض التفاصيل</a>
+                                    @endif
                                     @if($isReadOnlyUnified && ! $canBranchPartialEditUnified)
                                         <span class="badge bg-success-subtle text-success">موحد معتمد — عرض فقط</span>
                                     @else
