@@ -535,14 +535,15 @@ class DynamicWorkflowService
             return [];
         }
 
-        $approvedStepKeys = $instance->logs()
+        $approvedStepKeys = collect($instance->logs()
             ->where('action', self::DECISION_APPROVED)
             ->whereHas('step')
             ->with('step')
             ->get()
             ->map(fn (WorkflowLog $log): string => (string) $log->step?->step_key)
             ->filter()
-            ->values();
+            ->values()
+            ->all());
 
         $activity = MonthlyActivity::query()->find($activityId);
         if ($activity) {
