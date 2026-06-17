@@ -207,6 +207,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}', [ProgramsMonthlyActivityApprovalsController::class, 'update'])->name('role.programs.approvals.update');
     Route::put('/dashboard/programs/monthly-activities/approvals/delete-requests/{deleteRequest}', [ProgramsMonthlyActivityApprovalsController::class, 'decideDeleteRequest'])->name('role.programs.approvals.delete_requests.update');
     Route::put('/dashboard/programs/monthly-activities/approvals/edit-requests/{editRequest}', [ProgramsMonthlyActivityApprovalsController::class, 'decideEditRequest'])->name('role.programs.approvals.edit_requests.update');
+    Route::put('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}/execution-need', [ProgramsMonthlyActivityApprovalsController::class, 'decideExecutionNeed'])->name('role.programs.approvals.execution_needs.update');
     Route::get('/dashboard/finance', [FinanceOfficerDashboardController::class, 'index'])->middleware('role:finance_officer')->name('role.finance_officer.dashboard');
     Route::get('/dashboard/finance/donations', [FinanceDonationsCashController::class, 'index'])->middleware('role:finance_officer')->name('role.finance.donations.index');
     Route::get('/dashboard/finance/donations/create', [FinanceDonationsCashController::class, 'create'])->middleware('role:finance_officer')->name('role.finance.donations.create');

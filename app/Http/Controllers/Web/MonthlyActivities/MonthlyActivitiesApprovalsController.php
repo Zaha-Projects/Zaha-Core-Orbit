@@ -19,6 +19,7 @@ use App\Services\MonthlyActivityLifecycleService;
 use App\Services\PlanChangeRequestWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use App\Models\User;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
@@ -196,14 +197,140 @@ class MonthlyActivitiesApprovalsController extends Controller
             $editRequests->setCollection($editRequests->getCollection()->filter(fn (MonthlyPlanEditRequest $request) => (bool) ($request->can_current_user_decide ?? false))->values());
         }
 
+
+        $postExecutionBase = MonthlyActivity::query()
+            ->with(['creator', 'branch', 'workflowInstance.currentStep.role', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
+            ->where('status', 'post_execution_submitted')
+            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope));
+        $this->applyMonthlyActivityApprovalFilters($postExecutionBase, $filters, 'actual_date');
+        $postExecutionApprovals = (clone $postExecutionBase)
+            ->latest('updated_at')
+            ->paginate(10, ['*'], 'post_execution_page')
+            ->withQueryString();
+        $postExecutionApprovals->getCollection()->transform(function (MonthlyActivity $activity) use ($viewer) {
+            $activity->can_current_user_decide = $this->canReviewPostExecution($activity, $viewer);
+            $activity->workflow_timeline = $this->workflowTimelineForActivity($activity);
+            return $activity;
+        });
+
+        $executionNeedsBase = MonthlyActivity::query()
+            ->with(['creator', 'branch'])
+            ->whereNotNull('execution_needs_payload')
+            ->where(function ($query) {
+                $query->whereNull('execution_needs_followup')
+                    ->orWhereJsonLength('execution_needs_followup', 0)
+                    ->orWhere('execution_needs_followup', '!=', '[]');
+            })
+            ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope));
+        $this->applyMonthlyActivityApprovalFilters($executionNeedsBase, $filters, 'proposed_date');
+        $executionNeedsDecisions = (clone $executionNeedsBase)
+            ->latest('updated_at')
+            ->paginate(10, ['*'], 'execution_needs_page')
+            ->withQueryString();
+        $executionNeedsDecisions->getCollection()->transform(function (MonthlyActivity $activity) use ($viewer) {
+            $activity->execution_need_decision_items = $this->executionNeedDecisionItemsForActivity($activity, $viewer);
+            $activity->can_current_user_decide = collect($activity->execution_need_decision_items)->contains('can_decide', true);
+            $activity->workflow_timeline = $this->workflowTimelineForActivity($activity);
+            return $activity;
+        });
+        $executionNeedsDecisions->setCollection($executionNeedsDecisions->getCollection()->filter(fn (MonthlyActivity $activity) => collect($activity->execution_need_decision_items)->isNotEmpty())->values());
+
+        if (! empty($filters['my_pending'])) {
+            $postExecutionApprovals->setCollection($postExecutionApprovals->getCollection()->filter(fn (MonthlyActivity $activity) => (bool) ($activity->can_current_user_decide ?? false))->values());
+            $executionNeedsDecisions->setCollection($executionNeedsDecisions->getCollection()->filter(fn (MonthlyActivity $activity) => (bool) ($activity->can_current_user_decide ?? false))->values());
+        }
+
         $tabCounts = [
             'approval' => $activities->getCollection()->count(),
             'delete' => $deleteRequests->getCollection()->count(),
             'edit' => $editRequests->getCollection()->count(),
+            'post_execution' => $postExecutionApprovals->getCollection()->count(),
+            'execution_needs' => $executionNeedsDecisions->getCollection()->count(),
         ];
         $adminRequestStats = $viewer->hasRole('super_admin') ? $this->monthlyChangeRequestStats($filters, $branchApprovalScope) : null;
 
-        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests', 'tabCounts', 'adminRequestStats'));
+        return view('pages.monthly_activities.approvals.index', compact('activities', 'branches', 'filters', 'viewer', 'activityCards', 'kpis', 'statusOptions', 'currentStepOptions', 'deleteRequests', 'editRequests', 'postExecutionApprovals', 'executionNeedsDecisions', 'tabCounts', 'adminRequestStats'));
+    }
+
+
+    protected function applyMonthlyActivityApprovalFilters($query, array $filters, string $dateColumn): void
+    {
+        $query
+            ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
+            ->when($filters['approval_status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($filters['date_from'] ?? null, fn ($q, $dateFrom) => $q->whereDate($dateColumn, '>=', $dateFrom))
+            ->when($filters['date_to'] ?? null, fn ($q, $dateTo) => $q->whereDate($dateColumn, '<=', $dateTo));
+    }
+
+    protected function canReviewPostExecution(MonthlyActivity $monthlyActivity, ?User $user): bool
+    {
+        if ($user === null || (string) $monthlyActivity->status !== 'post_execution_submitted') {
+            return false;
+        }
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+        if (! $user->hasRole('supervisor')) {
+            return false;
+        }
+        $branchId = (int) $monthlyActivity->branch_id;
+        return (int) ($user->branch_id ?? 0) === $branchId
+            || $user->assignedBranches()->whereKey($branchId)->exists();
+    }
+
+    protected function executionNeedDecisionItemsForActivity(MonthlyActivity $activity, ?User $viewer): array
+    {
+        $definitions = $activity->enabledExecutionNeeds();
+        $followups = collect($activity->execution_needs_followup ?? [])->keyBy(fn ($row) => (string) ($row['key'] ?? ''));
+        return collect($definitions)->map(function (array $definition, string $key) use ($activity, $viewer, $followups) {
+            $roles = (array) data_get(config('execution_needs.decision_matrix', []), $key.'.roles', []);
+            if ($roles === []) { $roles = ['supervisor']; }
+            $row = $followups->get($key, []);
+            $status = (string) ($row['status'] ?? 'pending');
+            if (in_array($status, ['secured', 'not_secured'], true)) { return null; }
+            $canDecide = $viewer && ($viewer->hasRole('super_admin') || collect($roles)->contains(fn ($role) => $viewer->hasRole($role)));
+            return [
+                'key' => $key,
+                'label' => $definition['label'] ?? $key,
+                'description' => $definition['description'] ?? data_get($activity->execution_needs_payload, $key.'.notes', '-'),
+                'status' => $status ?: 'pending',
+                'approver' => collect($roles)->implode('، '),
+                'requested_by' => $activity->creator?->name ?? '-',
+                'can_decide' => (bool) $canDecide,
+            ];
+        })->filter()->values()->all();
+    }
+
+    protected function workflowTimelineForActivity(MonthlyActivity $activity): array
+    {
+        return $activity->workflowInstance?->logs?->map(fn ($log) => [
+            'step_name' => $log->step?->name_ar ?? $log->step?->name_en ?? '-',
+            'approver_name' => $log->actor?->name ?? '-',
+            'status' => $log->action ?? $log->status ?? '-',
+            'decided_at' => optional($log->created_at)->format('Y-m-d H:i') ?? '-',
+            'comment' => $log->comment ?? null,
+        ])->values()->all() ?? [];
+    }
+
+    public function decideExecutionNeed(Request $request, MonthlyActivity $monthlyActivity)
+    {
+        $data = $request->validate([
+            'need_key' => ['required', 'string'],
+            'decision' => ['required', 'string', 'in:approved,rejected'],
+            'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
+        ]);
+        $items = collect($this->executionNeedDecisionItemsForActivity($monthlyActivity, $request->user()))->keyBy('key');
+        abort_unless(($items[$data['need_key']]['can_decide'] ?? false), 403);
+        $followups = collect($monthlyActivity->execution_needs_followup ?? [])->keyBy(fn ($row) => (string) ($row['key'] ?? ''));
+        $followups->put($data['need_key'], [
+            'key' => $data['need_key'],
+            'status' => $data['decision'] === 'approved' ? 'secured' : 'not_secured',
+            'notes' => $data['comment'] ?? null,
+            'decision_by_role' => $items[$data['need_key']]['approver'] ?? null,
+            'decision_by_name' => $request->user()->name,
+        ]);
+        $monthlyActivity->update(['execution_needs_followup' => $followups->values()->all()]);
+        return redirect()->route('role.programs.approvals.index', ['tab' => 'execution_needs'])->with('status', 'تم تحديث قرار احتياج التنفيذ.');
     }
 
     protected function applyChangeRequestFilters($query, array $filters): void
