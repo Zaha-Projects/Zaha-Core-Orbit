@@ -130,6 +130,20 @@
                 'tone' => 'amber',
                 'count' => $tabCounts['edit'] ?? (isset($editRequests) && method_exists($editRequests, 'total') ? $editRequests->total() : 0),
             ],
+            [
+                'key' => 'post_execution',
+                'label' => 'اعتمادات ما بعد التنفيذ',
+                'icon' => 'fas fa-clipboard-check',
+                'tone' => 'blue',
+                'count' => $tabCounts['post_execution'] ?? 0,
+            ],
+            [
+                'key' => 'execution_needs',
+                'label' => 'قرارات احتياجات التنفيذ',
+                'icon' => 'fas fa-tasks',
+                'tone' => 'amber',
+                'count' => $tabCounts['execution_needs'] ?? 0,
+            ],
         ];
     @endphp
     <nav class="approval-dashboard-tabs mb-4" aria-label="تبويبات الاعتماد">
@@ -440,6 +454,47 @@
         </div>
         <div class="mt-3 approvals-pagination-wrap">{{ ($editRequests ?? null)?->links() }}</div>
     @endif
+
+    @if($activeApprovalTab === 'post_execution')
+        <div class="approval-request-list">
+            @forelse($postExecutionApprovals ?? [] as $activity)
+                @php($payload = $activity->post_execution_payload ?? [])
+                <article class="approval-request-card approval-request-card--edit">
+                    <header class="approval-request-card__header"><div><div class="approval-request-card__eyebrow"><i class="fas fa-clipboard-check"></i> اعتماد ما بعد التنفيذ</div><h2 class="approval-request-card__title">{{ $activity->title }}</h2></div><span class="wf-status-badge wf-status-{{ $activity->status }}">{{ $activity->status }}</span></header>
+                    <div class="approval-request-card__grid">
+                        <div class="approval-info-item"><span>الفرع</span><strong>{{ $activity->branch?->name ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><span>تاريخ النشاط</span><strong>{{ optional($activity->proposed_date)->format('Y-m-d') ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><span>مقدم الطلب</span><strong>{{ $activity->creator?->name ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><span>تاريخ الإرسال</span><strong>{{ optional($activity->updated_at)->format('Y-m-d H:i') ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><span>عدد الحضور الفعلي</span><strong>{{ $activity->actual_attendance ?? '-' }}</strong></div>
+                        <div class="approval-info-item"><span>الخطوة الحالية</span><strong>اعتماد رئيس الفرع</strong></div>
+                    </div>
+                    <section class="approval-request-section"><h3>ملخص الإنجاز</h3><p>{{ collect($payload['teams'] ?? [])->pluck('accomplished_tasks')->filter()->implode('، ') ?: '-' }}</p></section>
+                    @if(!empty($activity->workflow_timeline))<section class="approval-request-workflow approval-request-workflow--timeline"><h3>تتبع مسار الاعتماد</h3><div class="approval-workflow-timeline">@foreach($activity->workflow_timeline as $step)<div class="approval-workflow-timeline__item"><div><strong>{{ $step['step_name'] }}</strong></div><div><span>{{ $step['approver_name'] }}</span><strong>{{ $step['status'] }}</strong><small>{{ $step['decided_at'] }}</small></div>@if(!empty($step['comment']))<p>{{ $step['comment'] }}</p>@endif</div>@endforeach</div></section>@endif
+                    <footer class="approval-request-card__footer">
+                        <button class="btn btn-sm btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity->title) }}" data-details-url="{{ route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) }}">عرض التفاصيل</button>
+                        @if($activity->can_current_user_decide)<form method="POST" action="{{ route('role.relations.activities.close', $activity) }}" class="approval-decision-form">@csrf @method('PATCH')<button class="btn btn-sm btn-success">Approve Post Execution</button><a class="btn btn-sm btn-outline-danger" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}">Reject Post Execution</a></form>@endif
+                    </footer>
+                </article>
+            @empty <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد اعتمادات ما بعد التنفيذ.</div></div> @endforelse
+        </div><div class="mt-3 approvals-pagination-wrap">{{ ($postExecutionApprovals ?? null)?->links() }}</div>
+    @endif
+
+    @if($activeApprovalTab === 'execution_needs')
+        <div class="approval-request-list">
+            @forelse($executionNeedsDecisions ?? [] as $activity)
+                @foreach($activity->execution_need_decision_items as $need)
+                <article class="approval-request-card approval-request-card--edit">
+                    <header class="approval-request-card__header"><div><div class="approval-request-card__eyebrow"><i class="fas fa-tasks"></i> قرار احتياج تنفيذ</div><h2 class="approval-request-card__title">{{ $activity->title }}</h2></div><span class="wf-status-badge wf-status-pending">{{ $need['status'] }}</span></header>
+                    <div class="approval-request-card__grid"><div class="approval-info-item"><span>الفرع</span><strong>{{ $activity->branch?->name ?? '-' }}</strong></div><div class="approval-info-item"><span>نوع الاحتياج</span><strong>{{ $need['label'] }}</strong></div><div class="approval-info-item"><span>مقدم الطلب</span><strong>{{ $need['requested_by'] }}</strong></div><div class="approval-info-item"><span>المعتمد الحالي</span><strong>{{ $need['approver'] }}</strong></div></div>
+                    <section class="approval-request-section"><h3>وصف الاحتياج</h3><p>{{ $need['description'] ?: '-' }}</p></section>
+                    <footer class="approval-request-card__footer"><button class="btn btn-sm btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity->title) }}" data-details-url="{{ route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) }}">عرض التفاصيل</button>@if($need['can_decide'])<form method="POST" action="{{ route('role.programs.approvals.execution_needs.update', $activity) }}" class="approval-decision-form">@csrf @method('PUT')<input type="hidden" name="need_key" value="{{ $need['key'] }}"><input name="comment" class="form-control form-control-sm" placeholder="ملاحظة"><button name="decision" value="approved" class="btn btn-sm btn-success">Approve Decision</button><button name="decision" value="rejected" class="btn btn-sm btn-outline-danger">Reject Decision</button></form>@endif</footer>
+                </article>
+                @endforeach
+            @empty <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد قرارات احتياجات تنفيذ.</div></div> @endforelse
+        </div><div class="mt-3 approvals-pagination-wrap">{{ ($executionNeedsDecisions ?? null)?->links() }}</div>
+    @endif
+
 
     @if($activeApprovalTab === 'approval')
     <div class="d-flex flex-column gap-3">

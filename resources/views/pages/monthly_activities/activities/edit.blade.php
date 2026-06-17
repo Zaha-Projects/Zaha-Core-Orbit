@@ -164,8 +164,11 @@
     @if (request('mode') === 'post' && $canCompleteAfterExecution && ! $isExecutionNeedDecisionOnly)
         <div class="alert alert-info">أنت الآن في وضع <strong>إكمال التعبئة بعد التنفيذ</strong>. بعد الإرسال ستنتقل لرئيس الفرع للاعتماد.</div>
     @endif
-    @if (request('mode') === 'post' && $canReviewPostExecution && ! $isExecutionNeedDecisionOnly)
-        <div class="alert alert-warning">أنت الآن في وضع <strong>اعتماد ما بعد التنفيذ كرئيس فرع</strong>. بعد الاعتماد سيتم تحويلها للمتابعة والتقييم.</div>
+    @if (request('mode') === 'post' && ($canReviewPostExecution || $isExecutionNeedDecisionOnly))
+        <div class="alert alert-warning d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <span>تم إرسال الطلب ويجب اتخاذ القرار من خلال صفحة الاعتمادات.</span>
+            <a class="btn btn-sm btn-outline-primary" href="{{ route('role.programs.approvals.index') }}">الانتقال إلى صفحة الاعتمادات</a>
+        </div>
     @endif
 
     @if (! $isPostMode)
@@ -580,7 +583,7 @@
     </div>
     @endif
 
-    @if ($isPostMode)
+    @if ($isPostMode && ! $isExecutionNeedDecisionOnly)
     <div class="card event-card mb-4 post-execution-section post-execution-section-needs" id="execution-needs-decisions">
         <div class="card-body">
             <h2 class="h6 mb-3">تأكيد تأمين احتياجات التنفيذ</h2>
@@ -849,6 +852,7 @@
     </div>
     @endif
 
+    @if(! $canReviewPostExecution)
     <div class="card event-card post-execution-section post-execution-section-close" id="post-execution-close">
         <div class="card-body">
             <h2 class="h6 mb-3">{{ __('app.roles.programs.monthly_activities.close_title') }}</h2>
@@ -954,6 +958,7 @@
             </form>
         </div>
     </div>
+    @endif
     @endif
     @endif
     </div>
