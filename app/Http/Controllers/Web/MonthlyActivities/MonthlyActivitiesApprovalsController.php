@@ -199,7 +199,7 @@ class MonthlyActivitiesApprovalsController extends Controller
 
 
         $postExecutionBase = MonthlyActivity::query()
-            ->with(['creator', 'branch', 'workflowInstance.currentStep.role', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
+            ->with(['creator', 'branch', 'attachments.uploader', 'supplies', 'team', 'workflowInstance.currentStep.role', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
             ->where('status', 'post_execution_submitted')
             ->when($branchApprovalScope !== null, fn ($query) => $branchApprovalScope === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchApprovalScope));
         $this->applyMonthlyActivityApprovalFilters($postExecutionBase, $filters, 'actual_date');
