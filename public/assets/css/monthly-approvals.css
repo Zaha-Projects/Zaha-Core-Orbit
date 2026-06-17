@@ -426,3 +426,94 @@
         grid-template-columns: 1fr;
     }
 }
+
+.post-execution-review { border-inline-start: 5px solid #2563eb; }
+.post-execution-review__hero {
+    align-items: center;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 60%, #f0fdf4 100%);
+    border: 1px solid #dbeafe;
+    border-radius: 1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+.post-execution-summary-card { margin-bottom: 1rem; }
+.post-execution-layout { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) 320px; }
+.post-execution-layout__main { display: grid; gap: 1rem; min-width: 0; }
+.post-execution-layout__aside { display: grid; gap: 1rem; align-content: start; }
+.post-execution-stats { display: grid; gap: .75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.post-execution-stats > div,
+.post-execution-attachment-card,
+.post-execution-team-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: .95rem;
+    padding: .85rem;
+}
+.post-execution-stats span,
+.post-execution-attachment-card span,
+.post-execution-team-card span,
+.post-execution-team-card small { color: #64748b; font-size: .78rem; font-weight: 800; }
+.post-execution-stats strong { color: #0f172a; display: block; font-size: 1.45rem; font-weight: 900; }
+.post-execution-stats .is-success { background: #f0fdf4; border-color: #bbf7d0; }
+.post-execution-stats .is-danger { background: #fef2f2; border-color: #fecaca; }
+.post-execution-needs-grid,
+.post-execution-attachments { display: grid; gap: .75rem; }
+.post-execution-needs-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.post-execution-need-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: .9rem;
+}
+.post-execution-need-card.is-implemented { background: #f0fdf4; border-color: #86efac; }
+.post-execution-need-card.is-not-implemented { background: #fef2f2; border-color: #fca5a5; }
+.post-execution-need-card__head { align-items: flex-start; display: flex; gap: .75rem; justify-content: space-between; margin-bottom: .75rem; }
+.post-execution-need-card__head strong,
+.post-execution-team-card strong { color: #0f172a; font-weight: 900; }
+.post-execution-need-card p { color: #334155; margin: 0; white-space: pre-wrap; }
+.post-execution-need-card p span { color: #64748b; display: block; font-size: .78rem; font-weight: 900; margin-bottom: .25rem; }
+.post-execution-attachment-card { display: grid; gap: .55rem; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: center; }
+.post-execution-attachment-card strong { color: #0f172a; display: block; overflow-wrap: anywhere; }
+.post-execution-attachment-card__actions { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-end; }
+.post-execution-team-card { display: grid; gap: .55rem; }
+.post-execution-empty {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 1rem;
+    color: #64748b;
+    display: grid;
+    gap: .35rem;
+    justify-items: center;
+    padding: 1.25rem;
+    text-align: center;
+}
+.post-execution-empty i { color: #94a3b8; font-size: 1.6rem; }
+.post-execution-actions { background: #f8fafc; border-radius: 1rem; padding: 1rem; }
+.workflow-ui .wf-status-approved { background: #dcfce7; color: #166534; }
+.workflow-ui .wf-status-rejected { background: #fee2e2; color: #991b1b; }
+.workflow-ui .wf-status-pending,
+.workflow-ui .wf-status-post_execution_submitted { background: #fef3c7; color: #92400e; }
+
+[data-theme="dark"] .post-execution-review__hero,
+[data-theme="dark"] .post-execution-stats > div,
+[data-theme="dark"] .post-execution-attachment-card,
+[data-theme="dark"] .post-execution-team-card,
+[data-theme="dark"] .post-execution-empty,
+[data-theme="dark"] .post-execution-actions,
+[data-theme="dark"] .post-execution-need-card { background: var(--surface-soft); border-color: var(--border-color); }
+
+@media (max-width: 991.98px) {
+    .post-execution-layout { grid-template-columns: 1fr; }
+    .post-execution-attachment-card { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 767.98px) {
+    .post-execution-review__hero,
+    .post-execution-need-card__head { align-items: stretch; flex-direction: column; }
+    .post-execution-stats,
+    .post-execution-attachment-card { grid-template-columns: 1fr; }
+    .post-execution-attachment-card__actions { justify-content: stretch; }
+    .post-execution-attachment-card__actions .btn { width: 100%; }
+}
