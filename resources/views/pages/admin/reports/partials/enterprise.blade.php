@@ -7,7 +7,7 @@
                 <label class="form-label">{{ __('app.enterprise.year') }}</label>
                 <select class="form-select" name="year">
                     @foreach ($years as $option)
-                        <option value="{{ $option }}" @selected(($enterpriseFilters['year'] ?? now()->year) == $option)>{{ $option }}</option>
+                        <option value="{{ $option }}" {{ (int) ($enterpriseFilters['year'] ?? now()->year) === (int) $option ? 'selected' : '' }}>{{ $option }}</option>
                     @endforeach
                 </select>
             </div>
