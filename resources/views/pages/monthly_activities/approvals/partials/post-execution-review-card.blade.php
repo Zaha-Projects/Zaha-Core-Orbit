@@ -158,12 +158,24 @@
     <footer class="post-execution-actions approval-request-card__footer">
         <button class="btn btn-outline-primary approval-activity-summary-trigger" type="button" data-activity-title="{{ e($activity->title) }}" data-details-url="{{ route('role.programs.approvals.details', ['monthlyActivity' => $activity, 'view' => 'activity']) }}">عرض التفاصيل الأصلية</button>
         @if($activity->can_current_user_decide)
-            <form method="POST" action="{{ route('role.relations.activities.close', $activity) }}" class="approval-decision-form" data-confirm-title="تأكيد اعتماد ما بعد التنفيذ" data-confirm-body="هل تريد اعتماد ما بعد التنفيذ وإغلاق المراجعة؟">
-                @csrf @method('PATCH')
-                <button class="btn btn-lg btn-success">Approve Post Execution</button>
-                <a class="btn btn-lg btn-outline-warning" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}" onclick="return confirm('هل تريد طلب استيضاح والعودة لشاشة متابعة ما بعد التنفيذ؟')">Request Clarification</a>
-                <a class="btn btn-lg btn-outline-danger" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $activity, 'mode' => 'post']) }}" onclick="return confirm('هل تريد رفض اعتماد ما بعد التنفيذ والعودة لشاشة المراجعة؟')">Reject Post Execution</a>
-            </form>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <form method="POST" action="{{ route('role.relations.activities.close', $activity) }}" class="approval-decision-form" data-confirm-title="تأكيد اعتماد ما بعد التنفيذ" data-confirm-body="هل تريد اعتماد ما بعد التنفيذ وإغلاق الفرصة؟">
+                    @csrf @method('PATCH')
+                    <button class="btn btn-lg btn-success">اعتماد ما بعد التنفيذ وإغلاق الفرصة</button>
+                </form>
+                <form method="POST" action="{{ route('role.programs.approvals.post_execution_decision', $activity) }}" onsubmit="const reason = prompt('يرجى كتابة سبب طلب التوضيح'); if (!reason) return false; this.querySelector('[name=comment]').value = reason; return confirm('هل تريد إرسال طلب التوضيح لمسؤول التطوع في الفرع؟');">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="decision" value="clarification">
+                    <input type="hidden" name="comment">
+                    <button class="btn btn-lg btn-outline-warning" type="submit">طلب توضيح</button>
+                </form>
+                <form method="POST" action="{{ route('role.programs.approvals.post_execution_decision', $activity) }}" onsubmit="const reason = prompt('يرجى كتابة سبب الرفض'); if (!reason) return false; this.querySelector('[name=comment]').value = reason; return confirm('هل تريد رفض ما بعد التنفيذ وإشعار مسؤول التطوع في الفرع؟');">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="decision" value="rejected">
+                    <input type="hidden" name="comment">
+                    <button class="btn btn-lg btn-outline-danger" type="submit">رفض ما بعد التنفيذ</button>
+                </form>
+            </div>
         @endif
     </footer>
 </article>

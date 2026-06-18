@@ -247,6 +247,7 @@
                                     );
                                 $canManageMonthlyActivityChangeRequest = $viewer
                                     && ! $activity->trashed()
+                                    && (string) $activity->status !== 'closed'
                                     && $viewer->hasAnyRole($monthlyActivityChangeRequestRoles)
                                     && (
                                         (int) ($viewer->branch_id ?? 0) === (int) $activity->branch_id

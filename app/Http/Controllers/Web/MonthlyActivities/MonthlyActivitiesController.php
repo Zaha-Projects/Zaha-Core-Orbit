@@ -223,10 +223,23 @@ class MonthlyActivitiesController extends Controller
 
     protected function canCompleteAfterExecution(MonthlyActivity $monthlyActivity, ?User $user): bool
     {
-        return $user !== null
-            && $this->canUseMonthlyActivityEditRoute($user)
-            && (int) $monthlyActivity->created_by === (int) $user->id
-            && ! in_array((string) $monthlyActivity->status, ['post_execution_submitted', 'closed'], true);
+        if ($user === null || ! $this->canUseMonthlyActivityEditRoute($user) || in_array((string) $monthlyActivity->status, ['post_execution_submitted', 'closed'], true)) {
+            return false;
+        }
+
+        if ((int) $monthlyActivity->created_by === (int) $user->id) {
+            return true;
+        }
+
+        $reviewDecision = (string) data_get($monthlyActivity->post_execution_payload ?? [], 'review.decision');
+
+        return $user->hasRole('volunteer_coordinator')
+            && in_array((string) $monthlyActivity->status, ['changes_requested', 'rejected'], true)
+            && in_array($reviewDecision, ['clarification', 'rejected'], true)
+            && (
+                (int) ($user->branch_id ?? 0) === (int) $monthlyActivity->branch_id
+                || $user->assignedBranches()->whereKey((int) $monthlyActivity->branch_id)->exists()
+            );
     }
 
     protected function canReviewPostExecution(MonthlyActivity $monthlyActivity, ?User $user): bool
@@ -3774,6 +3787,35 @@ class MonthlyActivitiesController extends Controller
         return redirect()
             ->route('role.relations.activities.index')
             ->with('status', __('app.roles.programs.monthly_activities.closed', ['activity' => $monthlyActivity->title]));
+    }
+
+
+    public function postExecutionFeedback(Request $request)
+    {
+        $viewer = $request->user();
+        abort_unless($viewer?->hasAnyRole(['volunteer_coordinator', 'super_admin']), 403);
+
+        $activities = MonthlyActivity::query()
+            ->with(['branch', 'creator'])
+            ->whereIn('status', ['changes_requested', 'rejected'])
+            ->whereNotNull('post_execution_payload')
+            ->where(function ($query): void {
+                $query->where('post_execution_payload->review->decision', 'clarification')
+                    ->orWhere('post_execution_payload->review->decision', 'rejected');
+            })
+            ->when(! $viewer->hasRole('super_admin'), function ($query) use ($viewer): void {
+                $branchIds = method_exists($viewer, 'approvalBranchIds') ? $viewer->approvalBranchIds() : [];
+                if ($branchIds === []) {
+                    $branchIds = filled($viewer->branch_id) ? [(int) $viewer->branch_id] : [];
+                }
+
+                $branchIds === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchIds);
+            })
+            ->latest('updated_at')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('pages.monthly_activities.activities.post-execution-feedback', compact('activities'));
     }
 
     public function calendar(Request $request)

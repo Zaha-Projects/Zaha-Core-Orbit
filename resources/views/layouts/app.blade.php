@@ -257,6 +257,8 @@
                 <li class="side-item {{ request()->routeIs('role.super_admin.workflows*') || request()->routeIs('role.super_admin.workflow_steps*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.workflows') }}"><i class="fas fa-diagram-project"></i><span>{{ __('app.roles.super_admin.actions.workflows.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.branches*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.branches') }}"><i class="fas fa-building"></i><span>{{ __('app.roles.super_admin.sidebar.branches') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.approvals*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.approvals') }}"><i class="fas fa-list-check"></i><span>{{ __('app.roles.super_admin.sidebar.approvals') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.reports') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.reports') }}"><i class="fas fa-chart-simple"></i><span>تقارير الإدارة</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.site_settings.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.site_settings.index') }}"><i class="fas fa-gear"></i><span>إعدادات الموقع</span></a></li>
             @endif
 
             @can('agenda.view')
@@ -268,6 +270,9 @@
             @canany(['monthly_activities.view','monthly_plan.view'])
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
+            @if($user?->hasAnyRole(['volunteer_coordinator', 'super_admin']))
+                <li class="side-item {{ request()->routeIs('role.relations.activities.post_execution_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.post_execution_feedback') }}"><i class="fas fa-clipboard-question"></i><span>ملاحظات ما بعد التنفيذ</span></a></li>
+            @endif
             @can('monthly_activities.view_other_branches')
                 @php($otherBranchesLabel = __('app.acl.permissions.monthly_activities_view_other_branches'))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') === 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}"><i class="fas fa-table-cells-large"></i><span>{{ $otherBranchesLabel !== 'app.acl.permissions.monthly_activities_view_other_branches' ? $otherBranchesLabel : 'عرض الخطط الشهرية للفروع الأخرى' }}</span></a></li>

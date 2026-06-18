@@ -32,6 +32,7 @@
     $hasActiveChangeRequest = (bool) ($hasActiveChangeRequest ?? $activeChangeRequest);
     $monthlyActivityChangeRequestRoles = array_values(array_filter((array) config('monthly_activity.change_requests.allowed_roles', ['relations_officer'])));
     $canManageMonthlyActivityChangeRequest = $viewer
+        && (string) $monthlyActivity->status !== 'closed'
         && $viewer->hasAnyRole($monthlyActivityChangeRequestRoles)
         && (
             (int) ($viewer->branch_id ?? 0) === (int) $monthlyActivity->branch_id

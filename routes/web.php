@@ -20,6 +20,7 @@ use App\Http\Controllers\Web\Access\UsersController as SuperAdminUsersManagement
 use App\Http\Controllers\Web\Access\ApprovalsController as SuperAdminApprovalsController;
 use App\Http\Controllers\Web\Access\WorkflowsController as SuperAdminWorkflowsController;
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
+use App\Http\Controllers\Roles\SuperAdmin\SiteSettingsController as SuperAdminSiteSettingsController;
 use App\Http\Controllers\Roles\SuperAdmin\EvaluationAssignmentsController as SuperAdminEvaluationAssignmentsController;
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
@@ -114,6 +115,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/users', [UserDirectoryController::class, 'index'])->name('directory.users.index');
     Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');
+    Route::get('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.site_settings.index');
+    Route::put('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.site_settings.update');
+    Route::post('/dashboard/admin/site-settings/cache/refresh', [SuperAdminSiteSettingsController::class, 'refreshReportCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.refresh');
+    Route::delete('/dashboard/admin/site-settings/cache/report', [SuperAdminSiteSettingsController::class, 'deleteReportCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.delete');
+    Route::delete('/dashboard/admin/site-settings/cache/application', [SuperAdminSiteSettingsController::class, 'clearApplicationCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.clear_all');
     Route::get('/dashboard/admin/monthly-activities/change-requests/reports', [ProgramsMonthlyActivitiesController::class, 'changeRequestReports'])->middleware('role:super_admin|admin')->name('role.super_admin.monthly_activities.change_requests.reports');
     Route::get('/dashboard/admin/evaluation-assignments', [SuperAdminEvaluationAssignmentsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.evaluation_assignments.index');
     Route::put('/dashboard/admin/evaluation-assignments/{user}', [SuperAdminEvaluationAssignmentsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.evaluation_assignments.update');
@@ -176,6 +182,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/relations/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.index');
     Route::get('/dashboard/relations/monthly-activities/calendar', [ProgramsMonthlyActivitiesController::class, 'calendar'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.calendar');
     Route::get('/dashboard/relations/monthly-activities/trash', [ProgramsMonthlyActivitiesController::class, 'trash'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|volunteer_coordinator|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.trash');
+    Route::get('/dashboard/relations/monthly-activities/post-execution-feedback', [ProgramsMonthlyActivitiesController::class, 'postExecutionFeedback'])->middleware('role:volunteer_coordinator|super_admin')->middleware('branch.isolation')->name('role.relations.activities.post_execution_feedback');
     Route::patch('/dashboard/relations/monthly-activities/trash/{monthlyActivity}/restore', [ProgramsMonthlyActivitiesController::class, 'restore'])->middleware('role:super_admin|admin')->middleware('branch.isolation')->name('role.relations.activities.trash.restore');
     Route::post('/dashboard/relations/monthly-activities/sync-from-agenda', [ProgramsMonthlyActivitiesController::class, 'syncFromAgenda'])->middleware('role:relations_manager|relations_officer|super_admin')->middleware('branch.isolation')->name('role.relations.activities.sync_from_agenda');
     Route::get('/dashboard/relations/monthly-activities/create', [ProgramsMonthlyActivitiesController::class, 'create'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|monthly_activities.create')->middleware('branch.isolation')->name('role.relations.activities.create');
@@ -197,6 +204,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/programs/attachments/{monthlyActivityAttachment}/download', [ProgramsMonthlyActivityAttachmentsController::class, 'download'])->middleware('role:programs_manager|programs_officer|relations_manager|relations_officer|supervisor|branch_coordinator|followup_officer|evaluation_officer|evaluation_followup_viewer|volunteer_coordinator|communication_head|transport_officer|movement_manager|administrative_unit_manager|super_admin')->name('role.programs.attachments.download');
     Route::delete('/dashboard/programs/attachments/{monthlyActivityAttachment}', [ProgramsMonthlyActivityAttachmentsController::class, 'destroy'])->middleware('role:programs_manager|programs_officer|relations_manager|relations_officer|super_admin')->name('role.programs.attachments.destroy');
     Route::get('/dashboard/programs/monthly-activities/approvals', [ProgramsMonthlyActivityApprovalsController::class, 'index'])->name('role.programs.approvals.index');
+    Route::patch('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}/post-execution-decision', [ProgramsMonthlyActivityApprovalsController::class, 'decidePostExecution'])->name('role.programs.approvals.post_execution_decision');
     Route::get('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}/details', [ProgramsMonthlyActivityApprovalsController::class, 'details'])->name('role.programs.approvals.details');
 
     Route::get('/dashboard/programs/workshops-requests', [WorkshopsRequestsController::class, 'index'])->middleware('role:workshops_secretary|super_admin')->name('role.programs.workshops_requests.index');

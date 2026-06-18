@@ -3,138 +3,25 @@
 namespace App\Http\Controllers\Roles\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AgendaApproval;
-use App\Models\AgendaEvent;
-use App\Models\AuditLog;
-use App\Models\Booking;
-use App\Models\Branch;
-use App\Models\DonationCash;
-use App\Models\MaintenanceRequest;
-use App\Models\MonthlyActivity;
-use App\Models\Payment;
-use App\Models\Trip;
-use App\Models\User;
-use App\Models\Vehicle;
-use App\Models\ZahaTimeOption;
+use App\Services\AdminReports\AdminReportsService;
 use App\Services\EnterpriseAnalyticsService;
 use Illuminate\Http\Request;
 
 class ReportsController extends Controller
 {
-    public function index(Request $request, EnterpriseAnalyticsService $analyticsService)
+    public function index(Request $request, AdminReportsService $reportsService, EnterpriseAnalyticsService $analyticsService)
     {
-        $overview = [
-            'branches' => Branch::count(),
-            'centers' => 0,
-            'users' => User::count(),
-            'vehicles' => Vehicle::count(),
-        ];
+        $reportYear = (int) $request->input('report_year', now()->year);
+        $reportMonth = (int) $request->input('report_month', now()->month);
+        $activeTab = (string) $request->input('tab', config('admin_reports.relations.default_tab'));
+        $availableTabs = config('admin_reports.relations.available_tabs', []);
 
-        $operations = [
-            'agenda_events' => AgendaEvent::count(),
-            'monthly_activities' => MonthlyActivity::count(),
-            'bookings' => Booking::count(),
-            'maintenance_requests' => MaintenanceRequest::count(),
-            'trips' => Trip::count(),
-        ];
-
-        $financials = [
-            'payments' => Payment::count(),
-            'payments_total' => Payment::sum('amount'),
-            'donations' => DonationCash::count(),
-            'donations_total' => DonationCash::sum('amount'),
-        ];
-
-        $maintenanceStatus = MaintenanceRequest::query()
-            ->selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->orderByDesc('total')
-            ->get();
-
-        $agendaApprovals = AgendaApproval::query()
-            ->selectRaw('decision, COUNT(*) as total')
-            ->groupBy('decision')
-            ->orderByDesc('total')
-            ->get();
-
-        $bookingStatus = Booking::query()
-            ->selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->orderByDesc('total')
-            ->get();
-
-        $activitiesWithNeedsPayload = MonthlyActivity::query()
-            ->whereNotNull('execution_needs_payload')
-            ->get(['id', 'execution_needs_payload']);
-        $activitiesWithNeedsFollowup = MonthlyActivity::query()
-            ->whereNotNull('execution_needs_followup')
-            ->get(['id', 'execution_needs_followup']);
-
-        $securedCount = 0;
-        $notSecuredCount = 0;
-        $scores = [];
-        foreach ($activitiesWithNeedsFollowup as $activity) {
-            foreach ((array) $activity->execution_needs_followup as $row) {
-                if (($row['status'] ?? null) === 'secured') {
-                    $securedCount++;
-                } elseif (($row['status'] ?? null) === 'not_secured') {
-                    $notSecuredCount++;
-                }
-
-                if (isset($row['effectiveness_score']) && $row['effectiveness_score'] !== null && $row['effectiveness_score'] !== '') {
-                    $scores[] = (float) $row['effectiveness_score'];
-                }
-            }
+        if (! array_key_exists($activeTab, $availableTabs)) {
+            $activeTab = (string) config('admin_reports.relations.default_tab');
         }
 
-        $zahaUsage = [];
-        foreach ($activitiesWithNeedsPayload as $activity) {
-            $options = data_get($activity->execution_needs_payload, 'programs.zaha_time_options', []);
-            foreach ((array) $options as $optionCode) {
-                if (! filled($optionCode)) {
-                    continue;
-                }
-                $zahaUsage[$optionCode] = ($zahaUsage[$optionCode] ?? 0) + 1;
-            }
-        }
-
-        $zahaLookup = ZahaTimeOption::query()->orderBy('sort_order')->orderBy('name')->get();
-        $zahaTimeStats = [
-            'total' => $zahaLookup->count(),
-            'active' => $zahaLookup->where('is_active', true)->count(),
-            'usage' => $zahaLookup->map(function (ZahaTimeOption $option) use ($zahaUsage) {
-                return [
-                    'code' => $option->code,
-                    'name' => $option->name,
-                    'used' => (int) ($zahaUsage[$option->code] ?? 0),
-                ];
-            }),
-        ];
-
-        $executionNeedsStats = [
-            'with_payload' => $activitiesWithNeedsPayload->count(),
-            'with_followup' => $activitiesWithNeedsFollowup->count(),
-            'secured_count' => $securedCount,
-            'not_secured_count' => $notSecuredCount,
-            'avg_effectiveness' => count($scores) > 0 ? round(array_sum($scores) / count($scores), 2) : null,
-        ];
-
-
-        $dailyOperationLogs = AuditLog::query()
-            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
-            ->whereDate('created_at', '>=', now()->subDays(30)->toDateString())
-            ->groupByRaw('DATE(created_at)')
-            ->orderBy('day')
-            ->get();
-
-        $userDelayStats = AuditLog::query()
-            ->selectRaw('user_id, MIN(created_at) as first_action_at, MAX(created_at) as last_action_at, COUNT(*) as total_actions')
-            ->whereNotNull('user_id')
-            ->groupBy('user_id')
-            ->with('user:id,name')
-            ->orderByDesc('total_actions')
-            ->limit(25)
-            ->get();
+        $reportData = $reportsService->build($reportYear, $reportMonth);
+        $cacheConfig = $reportsService->cacheConfig();
 
         $year = (int) $request->input('year', now()->year);
         $analytics = $analyticsService->build($year);
@@ -142,22 +29,18 @@ class ReportsController extends Controller
         $years = range(now()->year - 2, now()->year + 1);
         $enterpriseFilters = $request->only(['year']);
 
-        return view('roles.super_admin.reports', compact(
-            'overview',
-            'operations',
-            'financials',
-            'maintenanceStatus',
-            'agendaApprovals',
-            'bookingStatus',
-            'executionNeedsStats',
-            'zahaTimeStats',
+        return view('pages.admin.reports.index', compact(
+            'reportData',
+            'reportYear',
+            'reportMonth',
+            'activeTab',
+            'availableTabs',
+            'cacheConfig',
             'analytics',
             'branchMetrics',
             'year',
             'years',
-            'enterpriseFilters',
-            'dailyOperationLogs',
-            'userDelayStats'
+            'enterpriseFilters'
         ));
     }
 }
