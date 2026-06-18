@@ -270,6 +270,9 @@
             @canany(['monthly_activities.view','monthly_plan.view'])
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
+            @if($user?->hasAnyRole(['volunteer_coordinator', 'super_admin']))
+                <li class="side-item {{ request()->routeIs('role.relations.activities.post_execution_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.post_execution_feedback') }}"><i class="fas fa-clipboard-question"></i><span>ملاحظات ما بعد التنفيذ</span></a></li>
+            @endif
             @can('monthly_activities.view_other_branches')
                 @php($otherBranchesLabel = __('app.acl.permissions.monthly_activities_view_other_branches'))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') === 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}"><i class="fas fa-table-cells-large"></i><span>{{ $otherBranchesLabel !== 'app.acl.permissions.monthly_activities_view_other_branches' ? $otherBranchesLabel : 'عرض الخطط الشهرية للفروع الأخرى' }}</span></a></li>
