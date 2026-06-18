@@ -15,6 +15,9 @@ class SettingSeeder extends Seeder
             'branch_monthly_score_weight_commitment' => '60',
             'audience_satisfaction_collection_method' => 'internal_form',
             'form5_details_status' => 'draft_v1_prepared',
+            'admin_reports_cache_enabled' => '1',
+            'admin_reports_cache_ttl_minutes' => '30',
+            'admin_reports_cache_prefix' => 'super-admin.plan-reports',
         ];
 
         foreach ($settings as $key => $value) {

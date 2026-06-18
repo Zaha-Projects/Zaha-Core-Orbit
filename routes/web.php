@@ -20,6 +20,7 @@ use App\Http\Controllers\Web\Access\UsersController as SuperAdminUsersManagement
 use App\Http\Controllers\Web\Access\ApprovalsController as SuperAdminApprovalsController;
 use App\Http\Controllers\Web\Access\WorkflowsController as SuperAdminWorkflowsController;
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
+use App\Http\Controllers\Roles\SuperAdmin\SiteSettingsController as SuperAdminSiteSettingsController;
 use App\Http\Controllers\Roles\SuperAdmin\EvaluationAssignmentsController as SuperAdminEvaluationAssignmentsController;
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
@@ -114,6 +115,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/users', [UserDirectoryController::class, 'index'])->name('directory.users.index');
     Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');
+    Route::get('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.site_settings.index');
+    Route::put('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.site_settings.update');
+    Route::post('/dashboard/admin/site-settings/cache/refresh', [SuperAdminSiteSettingsController::class, 'refreshReportCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.refresh');
+    Route::delete('/dashboard/admin/site-settings/cache/report', [SuperAdminSiteSettingsController::class, 'deleteReportCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.delete');
+    Route::delete('/dashboard/admin/site-settings/cache/application', [SuperAdminSiteSettingsController::class, 'clearApplicationCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.clear_all');
     Route::get('/dashboard/admin/monthly-activities/change-requests/reports', [ProgramsMonthlyActivitiesController::class, 'changeRequestReports'])->middleware('role:super_admin|admin')->name('role.super_admin.monthly_activities.change_requests.reports');
     Route::get('/dashboard/admin/evaluation-assignments', [SuperAdminEvaluationAssignmentsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.evaluation_assignments.index');
     Route::put('/dashboard/admin/evaluation-assignments/{user}', [SuperAdminEvaluationAssignmentsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.evaluation_assignments.update');
