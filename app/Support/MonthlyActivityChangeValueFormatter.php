@@ -46,6 +46,22 @@ class MonthlyActivityChangeValueFormatter
         'games' => 'ألعاب',
         'music' => 'موسيقى',
         'theater' => 'مسرح',
+        'availability' => 'توفر الاحتياجات داخل المركز',
+        'volunteers' => 'المتطوعون',
+        'official_correspondence' => 'المخاطبات الرسمية',
+        'media_coverage' => 'التغطية الإعلامية',
+        'supplies' => 'المستلزمات',
+        'official_sponsorship' => 'الرعاية الرسمية',
+        'external_partners' => 'الشركاء الخارجيون',
+        'ceremony' => 'أجندة الحفل',
+        'transport' => 'المواصلات',
+        'maintenance' => 'عمال الصيانة',
+        'maintenance_workers' => 'عمال الصيانة',
+        'gifts' => 'الهدايا والدروع',
+        'programs' => 'مشاركة البرامج',
+        'certificates' => 'الشهادات',
+        'thanks_letters' => 'كتب الشكر',
+        'invitations' => 'بطاقات الدعوة',
     ];
 
     protected const FIELD_LABELS = [
@@ -96,13 +112,20 @@ class MonthlyActivityChangeValueFormatter
         'volunteer_gender' => 'الجنس',
         'volunteer_tasks_summary' => 'مهام المتطوعين',
         'zaha_time_options' => 'خيارات وقت زها',
+        'schema_version' => 'إصدار النموذج',
+        'needs_registry' => 'سجل الاحتياجات',
+        'needs_ceremony_agenda' => 'يحتاج أجندة حفل',
+        'needs_transport' => 'يحتاج مواصلات',
+        'needs_maintenance_workers' => 'يحتاج عمال صيانة',
+        'needs_gifts' => 'يحتاج هدايا ودروع',
+        'needs_programs_participation' => 'يحتاج مشاركة البرامج',
+        'needs_certificates_and_thanks' => 'يحتاج شهادات وكتب شكر',
+        'needs_invitations' => 'يحتاج بطاقات دعوة',
     ];
 
     protected const HIDDEN_TECHNICAL_FIELDS = [
         'need_code',
         'future_cycle_id',
-        'schema_version',
-        'needs_registry',
     ];
 
     protected const NEED_FLAG_TO_SECTION = [
@@ -165,21 +188,21 @@ class MonthlyActivityChangeValueFormatter
             $details = $payload[$section] ?? [];
             $isEnabled = in_array($section, $enabledSections, true);
 
-            if (self::shouldHideExecutionNeedSection($section, $details, $isEnabled)) {
+            if (self::shouldHideExecutionNeedSection($section, $details, $isEnabled, array_key_exists($section, $payload))) {
                 continue;
             }
 
             $label = self::sectionLabel($section);
             $summary = is_array($details)
-                ? self::nestedSummary($details, true)
+                ? self::nestedSummary($details)
                 : self::stringValue($details);
 
             if (self::isEmptyText($summary)) {
-                if (! $isEnabled) {
+                if (! $isEnabled && ! array_key_exists($section, $payload)) {
                     continue;
                 }
 
-                $summary = e('مطلوب، ولا توجد تفاصيل إضافية مدخلة');
+                $summary = e('لا توجد تفاصيل مدخلة');
             }
 
             $items[] = '<li><strong>'.e($label).':</strong> '.$summary.'</li>';
@@ -300,13 +323,10 @@ class MonthlyActivityChangeValueFormatter
         return $value === false || $value === 0 || $value === '0' || $value === 'not_available';
     }
 
-    protected static function shouldHideExecutionNeedSection(string $section, mixed $details, bool $isEnabled): bool
+    protected static function shouldHideExecutionNeedSection(string $section, mixed $details, bool $isEnabled, bool $existsInPayload): bool
     {
         return in_array($section, self::HIDDEN_TECHNICAL_FIELDS, true)
-            || str_starts_with($section, 'needs_')
-            || $section === 'availability'
-            || (! $isEnabled && self::isEmpty($details))
-            || self::isNonDisplayValue($details);
+            || (! $existsInPayload && ! $isEnabled && self::isEmpty($details));
     }
 
     /**

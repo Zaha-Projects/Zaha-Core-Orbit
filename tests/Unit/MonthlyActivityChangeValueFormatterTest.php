@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 
 class MonthlyActivityChangeValueFormatterTest extends TestCase
 {
-    public function test_execution_needs_payload_arrays_render_as_readable_text_not_raw_json(): void
+    public function test_execution_needs_payload_arrays_render_all_details_in_arabic_not_raw_json(): void
     {
         $html = MonthlyActivityChangeValueFormatter::format([
             'gifts' => [
@@ -49,19 +49,29 @@ class MonthlyActivityChangeValueFormatterTest extends TestCase
         $this->assertStringContainsString('فرع الزرقاء', $html);
         $this->assertStringContainsString('أجندة الحفل', $html);
         $this->assertStringContainsString('فقرة افتتاحية', $html);
+        $this->assertStringContainsString('سجل الاحتياجات', $html);
+        $this->assertStringContainsString('مطلوب: نعم', $html);
+        $this->assertStringContainsString('مطلوب: لا', $html);
+        $this->assertStringContainsString('توفر الاحتياجات داخل المركز', $html);
+        $this->assertStringContainsString('غير متوفر داخل المركز', $html);
+        $this->assertStringContainsString('إصدار النموذج', $html);
+        $this->assertStringContainsString('يحتاج مواصلات', $html);
+        $this->assertStringContainsString('يحتاج عمال صيانة', $html);
         $this->assertStringContainsString('سرد قصصي', $html);
         $this->assertStringNotContainsString('{', $html);
         $this->assertStringNotContainsString('need_code', $html);
+        $this->assertStringNotContainsString('رمز الاحتياج', $html);
         $this->assertStringNotContainsString('delivery_entity', $html);
+        $this->assertStringNotContainsString('needs_registry', $html);
+        $this->assertStringNotContainsString('schema_version', $html);
         $this->assertStringNotContainsString('Needs', $html);
         $this->assertStringNotContainsString('Enabled', $html);
         $this->assertStringNotContainsString('Schema Version', $html);
         $this->assertStringNotContainsString('Maintenance', $html);
         $this->assertStringNotContainsString('storytelling', $html);
-        $this->assertStringNotContainsString('غير متوفر داخل المركز', $html);
     }
 
-    public function test_enabled_execution_need_with_empty_details_still_displays_the_need(): void
+    public function test_enabled_execution_need_with_empty_details_displays_arabic_empty_message(): void
     {
         $html = MonthlyActivityChangeValueFormatter::format([
             'needs_registry' => [
@@ -79,8 +89,10 @@ class MonthlyActivityChangeValueFormatterTest extends TestCase
         ], 'execution_needs_payload')->toHtml();
 
         $this->assertStringContainsString('الهدايا والدروع', $html);
-        $this->assertStringContainsString('مطلوب', $html);
-        $this->assertStringNotContainsString('لا توجد تفاصيل مدخلة', $html);
+        $this->assertStringContainsString('لا توجد تفاصيل مدخلة', $html);
+        $this->assertStringContainsString('سجل الاحتياجات', $html);
+        $this->assertStringContainsString('توفر الاحتياجات داخل المركز', $html);
         $this->assertStringNotContainsString('Needs', $html);
+        $this->assertStringNotContainsString('Enabled', $html);
     }
 }
