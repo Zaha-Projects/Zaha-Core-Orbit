@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="{{ $versionedAsset('assets/css/workflow-ui.css') }}">
 @endif
 <link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-approvals.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-change-values.css') }}">
 @endpush
 
 @section('content')
@@ -75,7 +76,7 @@
             'execution_status' => 'حالة التنفيذ',
             'status' => 'حالة النشاط',
         ];
-        $formatMonthlyEditValue = static fn ($value, string $field) => \App\Support\MonthlyActivityChangeValueFormatter::format($value, $field);
+        $formatMonthlyEditValue = static fn ($value, string $field, $compareValue = null) => \App\Support\MonthlyActivityChangeValueFormatter::formatCompared($value, $field, $compareValue);
         $approvalTabItems = [
             [
                 'key' => 'approval',
@@ -381,15 +382,15 @@
                         <h3><i class="fas fa-exchange-alt" aria-hidden="true"></i> ملخص التغييرات</h3>
                         <div class="approval-changes-grid">
                             @foreach(($editRequest->changed_values ?? []) as $field => $change)
-                                @php($fieldLabel = $monthlyEditFieldLabels[$field] ?? \Illuminate\Support\Str::of($field)->replace('_', ' ')->title())
+                                @php($fieldLabel = $monthlyEditFieldLabels[$field] ?? (string) \Illuminate\Support\Str::of($field)->replace('_', ' ')->title())
                                 <div class="approval-change-row">
                                     <div class="approval-change-row__field">
                                         <i class="fas fa-pen-to-square" aria-hidden="true"></i>
                                         <span>{{ $fieldLabel }}</span>
                                     </div>
                                     <div class="approval-change-row__values">
-                                        <div class="approval-change-value approval-change-value--old"><span>القيمة القديمة</span><strong>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field) !!}</strong></div>
-                                        <div class="approval-change-value approval-change-value--new"><span>القيمة الجديدة</span><strong>{!! $formatMonthlyEditValue($change['new'] ?? null, (string) $field) !!}</strong></div>
+                                        <div class="approval-change-value approval-change-value--old"><span>القيمة القديمة</span><strong>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field, $change['new'] ?? null) !!}</strong></div>
+                                        <div class="approval-change-value approval-change-value--new"><span>القيمة الجديدة</span><strong>{!! $formatMonthlyEditValue($change['new'] ?? null, (string) $field, $change['old'] ?? null) !!}</strong></div>
                                     </div>
                                 </div>
                             @endforeach

@@ -95,4 +95,29 @@ class MonthlyActivityChangeValueFormatterTest extends TestCase
         $this->assertStringNotContainsString('Needs', $html);
         $this->assertStringNotContainsString('Enabled', $html);
     }
+
+    public function test_execution_needs_payload_comparison_marks_changed_rows_in_table(): void
+    {
+        $old = [
+            'transport' => [
+                'vehicles_count' => 1,
+                'vehicle_type' => 'حافلة',
+            ],
+        ];
+
+        $new = [
+            'transport' => [
+                'vehicles_count' => 2,
+                'vehicle_type' => 'حافلة',
+            ],
+        ];
+
+        $html = MonthlyActivityChangeValueFormatter::formatCompared($new, 'execution_needs_payload', $old)->toHtml();
+
+        $this->assertStringContainsString('approval-change-needs-table', $html);
+        $this->assertStringContainsString('is-changed', $html);
+        $this->assertStringContainsString('تم التغيير', $html);
+        $this->assertStringContainsString('المواصلات', $html);
+        $this->assertStringContainsString('عدد المركبات: 2', $html);
+    }
 }

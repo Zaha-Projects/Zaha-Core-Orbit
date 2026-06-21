@@ -1,0 +1,98 @@
+.approval-change-needs-table-wrap {
+    border: 1px solid #e2e8f0;
+    border-radius: .75rem;
+    max-height: 420px;
+    overflow: auto;
+}
+
+.approval-change-needs-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    direction: rtl;
+    font-size: .86rem;
+    line-height: 1.75;
+    margin: 0;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.approval-change-needs-table th,
+.approval-change-needs-table td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: .55rem .65rem;
+    vertical-align: top;
+}
+
+.approval-change-needs-table tr:last-child th,
+.approval-change-needs-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.approval-change-needs-table th {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 900;
+    width: 34%;
+}
+
+.approval-change-needs-table th span {
+    display: block;
+}
+
+.approval-change-needs-table td {
+    background: #fff;
+    color: #334155;
+    overflow-wrap: anywhere;
+}
+
+.approval-change-needs-table tr.is-changed th,
+.approval-change-needs-table tr.is-changed td {
+    background: #fef2f2;
+    border-bottom-color: #fecaca;
+}
+
+.approval-change-needs-table tr.is-changed th {
+    color: #991b1b;
+}
+
+.approval-change-diff-badge {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 999px;
+    color: #991b1b;
+    display: inline-flex;
+    font-size: .7rem;
+    font-weight: 900;
+    margin-top: .35rem;
+    padding: .05rem .45rem;
+}
+
+[data-theme="dark"] .approval-change-needs-table-wrap,
+[data-theme="dark"] .approval-change-needs-table th,
+[data-theme="dark"] .approval-change-needs-table td {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .approval-change-needs-table th,
+[data-theme="dark"] .approval-change-needs-table td {
+    background: var(--surface-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .approval-change-needs-table tr.is-changed th,
+[data-theme="dark"] .approval-change-needs-table tr.is-changed td {
+    background: rgba(153, 27, 27, .18);
+    border-color: rgba(248, 113, 113, .45);
+}
+
+@media (max-width: 575.98px) {
+    .approval-change-needs-table {
+        font-size: .82rem;
+    }
+
+    .approval-change-needs-table th,
+    .approval-change-needs-table td {
+        display: block;
+        width: 100%;
+    }
+}

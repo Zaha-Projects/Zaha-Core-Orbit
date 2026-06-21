@@ -140,6 +140,11 @@ class MonthlyActivityChangeValueFormatter
 
     public static function format(mixed $value, string $field): HtmlString
     {
+        return self::formatCompared($value, $field);
+    }
+
+    public static function formatCompared(mixed $value, string $field, mixed $compareValue = null): HtmlString
+    {
         if (self::isEmpty($value)) {
             return new HtmlString(self::EMPTY_HTML);
         }
@@ -153,7 +158,7 @@ class MonthlyActivityChangeValueFormatter
         }
 
         if (is_array($value)) {
-            return new HtmlString(self::formatArray($value, $field));
+            return new HtmlString(self::formatArray($value, $field, $compareValue));
         }
 
         return new HtmlString('<span>'.e(self::stringValue($value)).'</span>');
@@ -164,17 +169,67 @@ class MonthlyActivityChangeValueFormatter
         return self::fieldLabel($field);
     }
 
-    protected static function formatArray(array $value, string $field): string
+    protected static function formatArray(array $value, string $field, mixed $compareValue = null): string
     {
-        $items = $field === 'execution_needs_payload'
-            ? self::executionNeedsItems($value)
-            : self::arrayItems($value);
+        if ($field === 'execution_needs_payload') {
+            return self::executionNeedsTable($value, is_array($compareValue) ? $compareValue : null);
+        }
+
+        $items = self::arrayItems($value);
 
         if ($items === []) {
             return '<span class="approval-change-empty">لا توجد تفاصيل مدخلة</span>';
         }
 
         return '<ul class="approval-change-list mb-0">'.implode('', $items).'</ul>';
+    }
+
+    protected static function executionNeedsTable(array $payload, ?array $comparePayload = null): string
+    {
+        $rows = self::executionNeedsRows($payload, $comparePayload);
+
+        if ($rows === []) {
+            return '<span class="approval-change-empty">لا توجد تفاصيل مدخلة</span>';
+        }
+
+        return '<div class="approval-change-needs-table-wrap"><table class="approval-change-needs-table"><tbody>'.implode('', $rows).'</tbody></table></div>';
+    }
+
+    protected static function executionNeedsRows(array $payload, ?array $comparePayload = null): array
+    {
+        $rows = [];
+        $enabledSections = self::enabledExecutionNeedSections($payload);
+        $compareEnabledSections = $comparePayload ? self::enabledExecutionNeedSections($comparePayload) : [];
+        $sections = array_values(array_unique(array_merge(
+            array_keys($payload),
+            $enabledSections,
+            $comparePayload ? array_keys($comparePayload) : [],
+            $compareEnabledSections
+        )));
+
+        foreach ($sections as $section) {
+            $section = (string) $section;
+            $existsInPayload = array_key_exists($section, $payload);
+            $existsInComparePayload = $comparePayload !== null && array_key_exists($section, $comparePayload);
+            $details = $payload[$section] ?? [];
+            $isEnabled = in_array($section, $enabledSections, true);
+
+            if (self::shouldHideExecutionNeedSection($section, $details, $isEnabled, $existsInPayload, $existsInComparePayload)) {
+                continue;
+            }
+
+            $summary = self::executionNeedSummary($details);
+            $compareSummary = $comparePayload && array_key_exists($section, $comparePayload)
+                ? self::executionNeedSummary($comparePayload[$section])
+                : null;
+            $isChanged = $comparePayload !== null && $summary !== $compareSummary;
+            $changedBadge = $isChanged ? '<span class="approval-change-diff-badge">تم التغيير</span>' : '';
+            $rowClass = $isChanged ? ' class="is-changed"' : '';
+
+            $rows[] = '<tr'.$rowClass.'><th><span>'.e(self::sectionLabel($section)).'</span>'.$changedBadge.'</th><td>'.$summary.'</td></tr>';
+        }
+
+        return $rows;
     }
 
     protected static function executionNeedsItems(array $payload): array
@@ -209,6 +264,17 @@ class MonthlyActivityChangeValueFormatter
         }
 
         return $items;
+    }
+
+    protected static function executionNeedSummary(mixed $details): string
+    {
+        $summary = is_array($details)
+            ? self::nestedSummary($details)
+            : self::stringValue($details);
+
+        return self::isEmptyText($summary)
+            ? e('لا توجد تفاصيل مدخلة')
+            : $summary;
     }
 
     protected static function arrayItems(array $value): array
@@ -323,10 +389,10 @@ class MonthlyActivityChangeValueFormatter
         return $value === false || $value === 0 || $value === '0' || $value === 'not_available';
     }
 
-    protected static function shouldHideExecutionNeedSection(string $section, mixed $details, bool $isEnabled, bool $existsInPayload): bool
+    protected static function shouldHideExecutionNeedSection(string $section, mixed $details, bool $isEnabled, bool $existsInPayload, bool $existsInComparePayload = false): bool
     {
         return in_array($section, self::HIDDEN_TECHNICAL_FIELDS, true)
-            || (! $existsInPayload && ! $isEnabled && self::isEmpty($details));
+            || (! $existsInPayload && ! $existsInComparePayload && ! $isEnabled && self::isEmpty($details));
     }
 
     /**

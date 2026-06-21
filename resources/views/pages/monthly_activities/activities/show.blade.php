@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.css') }}">
 <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
 <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-show.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-change-values.css') }}">
 @endpush
 
 @php
@@ -22,7 +23,7 @@
             default => '-',
         };
     };
-    $formatMonthlyEditValue = static fn ($value, string $field) => \App\Support\MonthlyActivityChangeValueFormatter::format($value, $field);
+    $formatMonthlyEditValue = static fn ($value, string $field, $compareValue = null) => \App\Support\MonthlyActivityChangeValueFormatter::formatCompared($value, $field, $compareValue);
     $isReadOnlyUnified = (bool) $monthlyActivity->is_from_agenda
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
@@ -173,8 +174,8 @@
                                         @foreach($activeEditRequest->changed_values as $field => $change)
                                             <tr>
                                                 <td>{{ \App\Support\MonthlyActivityChangeValueFormatter::fieldLabelForDisplay((string) $field) }}</td>
-                                                <td>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field) !!}</td>
-                                                <td>{!! $formatMonthlyEditValue($change['new'] ?? null, (string) $field) !!}</td>
+                                                <td>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field, $change['new'] ?? null) !!}</td>
+                                                <td>{!! $formatMonthlyEditValue($change['new'] ?? null, (string) $field, $change['old'] ?? null) !!}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
