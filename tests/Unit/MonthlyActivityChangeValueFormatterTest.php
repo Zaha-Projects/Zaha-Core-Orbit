@@ -60,4 +60,27 @@ class MonthlyActivityChangeValueFormatterTest extends TestCase
         $this->assertStringNotContainsString('storytelling', $html);
         $this->assertStringNotContainsString('غير متوفر داخل المركز', $html);
     }
+
+    public function test_enabled_execution_need_with_empty_details_still_displays_the_need(): void
+    {
+        $html = MonthlyActivityChangeValueFormatter::format([
+            'needs_registry' => [
+                'gifts' => ['enabled' => true, 'availability' => 'not_available'],
+            ],
+            'availability' => [
+                'gifts' => 'not_available',
+            ],
+            'gifts' => [
+                'need_code' => 'gifts',
+                'count' => null,
+                'description' => null,
+                'delivery_entity' => null,
+            ],
+        ], 'execution_needs_payload')->toHtml();
+
+        $this->assertStringContainsString('الهدايا والدروع', $html);
+        $this->assertStringContainsString('مطلوب', $html);
+        $this->assertStringNotContainsString('لا توجد تفاصيل مدخلة', $html);
+        $this->assertStringNotContainsString('Needs', $html);
+    }
 }

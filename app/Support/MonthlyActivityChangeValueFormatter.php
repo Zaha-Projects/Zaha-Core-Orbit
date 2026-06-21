@@ -158,11 +158,14 @@ class MonthlyActivityChangeValueFormatter
     {
         $items = [];
         $enabledSections = self::enabledExecutionNeedSections($payload);
+        $sections = array_values(array_unique(array_merge(array_keys($payload), $enabledSections)));
 
-        foreach ($payload as $section => $details) {
+        foreach ($sections as $section) {
             $section = (string) $section;
+            $details = $payload[$section] ?? [];
+            $isEnabled = in_array($section, $enabledSections, true);
 
-            if (self::shouldHideExecutionNeedSection($section, $details)) {
+            if (self::shouldHideExecutionNeedSection($section, $details, $isEnabled)) {
                 continue;
             }
 
@@ -172,7 +175,7 @@ class MonthlyActivityChangeValueFormatter
                 : self::stringValue($details);
 
             if (self::isEmptyText($summary)) {
-                if (! in_array($section, $enabledSections, true)) {
+                if (! $isEnabled) {
                     continue;
                 }
 
@@ -297,12 +300,12 @@ class MonthlyActivityChangeValueFormatter
         return $value === false || $value === 0 || $value === '0' || $value === 'not_available';
     }
 
-    protected static function shouldHideExecutionNeedSection(string $section, mixed $details): bool
+    protected static function shouldHideExecutionNeedSection(string $section, mixed $details, bool $isEnabled): bool
     {
         return in_array($section, self::HIDDEN_TECHNICAL_FIELDS, true)
             || str_starts_with($section, 'needs_')
             || $section === 'availability'
-            || self::isEmpty($details)
+            || (! $isEnabled && self::isEmpty($details))
             || self::isNonDisplayValue($details);
     }
 
