@@ -14,8 +14,7 @@
 @section('content')
     <section class="mb-4">
         <div class="card p-4">
-            <h1 class="h4 mb-2">{{ __('app.common.dashboard') }}</h1>
-            <p class="text-muted mb-0">{{ __('app.dashboard.no_role_message') }}</p>
+            <h1 class="h4 mb-0">{{ __('app.common.dashboard') }}</h1>
         </div>
     </section>
 
@@ -34,9 +33,6 @@
                 </a>
             </div>
         @empty
-            <div class="col-12">
-                <div class="alert alert-info mb-0">{{ __('app.dashboard.no_role_message') }}</div>
-            </div>
         @endforelse
     </section>
 

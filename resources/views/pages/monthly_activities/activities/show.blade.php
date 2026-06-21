@@ -22,6 +22,7 @@
             default => '-',
         };
     };
+    $formatMonthlyEditValue = static fn ($value, string $field) => \App\Support\MonthlyActivityChangeValueFormatter::format($value, $field);
     $isReadOnlyUnified = (bool) $monthlyActivity->is_from_agenda
         && (string) $monthlyActivity->plan_type === 'unified'
         && (string) optional($monthlyActivity->agendaEvent)->event_type === 'mandatory';
@@ -172,8 +173,8 @@
                                         @foreach($activeEditRequest->changed_values as $field => $change)
                                             <tr>
                                                 <td>{{ $field }}</td>
-                                                <td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td>
-                                                <td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td>
+                                                <td>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field) !!}</td>
+                                                <td>{!! $formatMonthlyEditValue($change['new'] ?? null, (string) $field) !!}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>

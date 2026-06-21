@@ -75,39 +75,7 @@
             'execution_status' => 'حالة التنفيذ',
             'status' => 'حالة النشاط',
         ];
-        $formatMonthlyEditValue = static function ($value, string $field): string {
-            if ($value === null || $value === '') {
-                return '<span class="approval-change-empty">-</span>';
-            }
-
-            if (is_bool($value)) {
-                return '<span class="approval-change-pill">' . ($value ? 'نعم' : 'لا') . '</span>';
-            }
-
-            if (is_numeric($value) && str_starts_with($field, 'needs_')) {
-                return '<span class="approval-change-pill">' . ((int) $value === 1 ? 'نعم' : 'لا') . '</span>';
-            }
-
-            if (is_array($value)) {
-                $json = e(json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-                $summary = $field === 'execution_needs_payload'
-                    ? 'تم تحديث تفاصيل الاحتياجات التنفيذية — اضغط لعرض البيانات'
-                    : 'بيانات متعددة — اضغط لعرض التفاصيل';
-
-                return '<details class="approval-change-json"><summary>' . e($summary) . '</summary><pre>' . $json . '</pre></details>';
-            }
-
-            $text = (string) $value;
-            if (preg_match('/^\d{4}-\d{2}-\d{2}T/', $text)) {
-                $text = substr($text, 0, 10);
-            }
-
-            if (in_array($text, ['1', '0'], true) && (str_starts_with($field, 'is_') || str_starts_with($field, 'requires_'))) {
-                $text = $text === '1' ? 'نعم' : 'لا';
-            }
-
-            return '<span>' . e($text) . '</span>';
-        };
+        $formatMonthlyEditValue = static fn ($value, string $field) => \App\Support\MonthlyActivityChangeValueFormatter::format($value, $field);
         $approvalTabItems = [
             [
                 'key' => 'approval',
