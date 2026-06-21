@@ -172,7 +172,7 @@
                                     <tbody>
                                         @foreach($activeEditRequest->changed_values as $field => $change)
                                             <tr>
-                                                <td>{{ $field }}</td>
+                                                <td>{{ \App\Support\MonthlyActivityChangeValueFormatter::fieldLabelForDisplay((string) $field) }}</td>
                                                 <td>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field) !!}</td>
                                                 <td>{!! $formatMonthlyEditValue($change['new'] ?? null, (string) $field) !!}</td>
                                             </tr>

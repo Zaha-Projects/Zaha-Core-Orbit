@@ -386,7 +386,6 @@
                                     <div class="approval-change-row__field">
                                         <i class="fas fa-pen-to-square" aria-hidden="true"></i>
                                         <span>{{ $fieldLabel }}</span>
-                                        <small>{{ $field }}</small>
                                     </div>
                                     <div class="approval-change-row__values">
                                         <div class="approval-change-value approval-change-value--old"><span>القيمة القديمة</span><strong>{!! $formatMonthlyEditValue($change['old'] ?? null, (string) $field) !!}</strong></div>
