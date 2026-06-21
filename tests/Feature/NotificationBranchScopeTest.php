@@ -110,14 +110,16 @@ class NotificationBranchScopeTest extends TestCase
     public function test_notifications_menu_shows_notification_date_and_time(): void
     {
         $user = User::factory()->create();
-        InAppNotification::create([
+        $notification = InAppNotification::create([
             'user_id' => $user->id,
             'type' => 'test',
             'title' => 'Timed notification',
             'message' => 'Notification body',
+        ]);
+        $notification->forceFill([
             'created_at' => Carbon::parse('2026-06-09 15:45:00'),
             'updated_at' => Carbon::parse('2026-06-09 15:45:00'),
-        ]);
+        ])->save();
 
         $this->actingAs($user);
 
@@ -143,5 +145,47 @@ class NotificationBranchScopeTest extends TestCase
             ->assertRedirect(route('role.relations.activities.index'));
 
         $this->assertNotNull($notification->fresh()->read_at);
+    }
+
+    public function test_notification_badge_count_excludes_notification_after_user_opens_it(): void
+    {
+        $user = User::factory()->create();
+        $notification = InAppNotification::create([
+            'user_id' => $user->id,
+            'type' => 'test',
+            'title' => 'Open me',
+            'action_url' => route('role.relations.activities.index'),
+        ]);
+
+        $this->actingAs($user);
+
+        $this->assertStringContainsString(
+            __('app.layout.new_notifications_count', ['count' => 1]),
+            view('layouts.app.partials.notifications-menu')->render()
+        );
+        $this->assertStringContainsString(
+            'data-notification-count="unread">1</span>',
+            view('layouts.app.partials.notifications-menu')->render()
+        );
+        $this->assertStringContainsString(
+            'data-notification-count="read">0</span>',
+            view('layouts.app.partials.notifications-menu')->render()
+        );
+
+        $this->get(route('role.notifications.open', $notification))
+            ->assertRedirect(route('role.relations.activities.index'));
+
+        $this->assertStringContainsString(
+            __('app.layout.new_notifications_count', ['count' => 0]),
+            view('layouts.app.partials.notifications-menu')->render()
+        );
+        $this->assertStringContainsString(
+            'data-notification-count="unread">0</span>',
+            view('layouts.app.partials.notifications-menu')->render()
+        );
+        $this->assertStringContainsString(
+            'data-notification-count="read">1</span>',
+            view('layouts.app.partials.notifications-menu')->render()
+        );
     }
 }

@@ -11,9 +11,7 @@ class NotificationsController extends Controller
     {
         abort_unless($notification->user_id === auth()->id(), 403);
 
-        if (! $notification->read_at) {
-            $notification->update(['read_at' => now()]);
-        }
+        $notification->markAsRead();
 
         return redirect()->to($notification->action_url ?: url()->previous());
     }
@@ -22,7 +20,7 @@ class NotificationsController extends Controller
     {
         abort_unless($notification->user_id === auth()->id(), 403);
 
-        $notification->update(['read_at' => now()]);
+        $notification->markAsRead();
 
         return back();
     }

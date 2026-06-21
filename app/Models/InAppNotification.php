@@ -28,4 +28,23 @@ class InAppNotification extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function scopeUnread($query)
+    {
+        return $query->whereNull('read_at');
+    }
+
+    public function scopeRead($query)
+    {
+        return $query->whereNotNull('read_at');
+    }
+
+    public function markAsRead(): bool
+    {
+        if ($this->read_at) {
+            return true;
+        }
+
+        return $this->forceFill(['read_at' => now()])->save();
+    }
 }

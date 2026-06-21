@@ -1,13 +1,16 @@
 @php
     $notificationMenuLimit = (int) config('notifications.menu_limit', 25);
     $notificationMenuLimit = $notificationMenuLimit > 0 ? $notificationMenuLimit : 25;
-    $unreadNotificationItems = auth()->check()
-        ? auth()->user()->inAppNotifications()->whereNull('read_at')->latest()->take($notificationMenuLimit)->get()
+    $notificationQuery = auth()->check() ? auth()->user()->inAppNotifications() : null;
+    $unreadNotificationCount = $notificationQuery ? (clone $notificationQuery)->unread()->count() : 0;
+    $readNotificationCount = $notificationQuery ? (clone $notificationQuery)->read()->count() : 0;
+    $notificationCount = $unreadNotificationCount;
+    $unreadNotificationItems = $notificationQuery
+        ? (clone $notificationQuery)->unread()->latest()->take($notificationMenuLimit)->get()
         : collect();
-    $readNotificationItems = auth()->check()
-        ? auth()->user()->inAppNotifications()->whereNotNull('read_at')->latest()->take($notificationMenuLimit)->get()
+    $readNotificationItems = $notificationQuery
+        ? (clone $notificationQuery)->read()->latest()->take($notificationMenuLimit)->get()
         : collect();
-    $notificationCount = $unreadNotificationItems->count();
     $notificationVariant = $variant ?? 'nxl';
 @endphp
 
@@ -38,14 +41,13 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#notifications-unread-{{ $notificationVariant }}" type="button" role="tab">
                         {{ __('app.common.unread') }}
-                        @if($notificationCount > 0)
-                            <span class="badge bg-danger ms-1">{{ $notificationCount }}</span>
-                        @endif
+                        <span class="badge {{ $unreadNotificationCount > 0 ? 'bg-danger' : 'bg-secondary' }} ms-1" data-notification-count="unread">{{ $unreadNotificationCount }}</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notifications-read-{{ $notificationVariant }}" type="button" role="tab">
                         {{ __('app.common.read') }}
+                        <span class="badge {{ $readNotificationCount > 0 ? 'bg-success' : 'bg-secondary' }} ms-1" data-notification-count="read">{{ $readNotificationCount }}</span>
                     </button>
                 </li>
             </ul>
