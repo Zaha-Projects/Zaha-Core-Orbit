@@ -15,6 +15,7 @@ class DashboardController extends Controller
     public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService)
     {
         $user = $request->user();
+        $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
 
         $cards = collect([
             ['permission' => 'agenda.view', 'title' => __('app.roles.relations.agenda.title'), 'description' => __('app.roles.relations.agenda.subtitle'), 'route' => 'role.relations.agenda.index', 'icon' => 'fas fa-calendar-days'],
@@ -23,7 +24,11 @@ class DashboardController extends Controller
             ['permission' => 'monthly_activities.approve', 'workflow_module' => 'monthly_activities', 'title' => __('app.roles.programs.monthly_activities.approvals.title'), 'description' => __('app.roles.programs.monthly_activities.approvals.subtitle'), 'route' => 'role.programs.approvals.index', 'icon' => 'fas fa-square-check'],
             ['permission' => 'reports.view', 'title' => __('app.roles.reports.title'), 'description' => __('app.roles.reports.subtitle'), 'route' => 'role.reports.index', 'icon' => 'fas fa-chart-simple'],
             ['permission' => 'users.view', 'title' => __('app.roles.super_admin.users.title'), 'description' => __('app.roles.super_admin.users.subtitle'), 'route' => 'role.super_admin.users', 'icon' => 'fas fa-users'],
-        ])->filter(function (array $card) use ($dynamicWorkflowService, $user) {
+        ])->filter(function (array $card) use ($dynamicWorkflowService, $user, $isProgramsManagerViewOnly) {
+            if ($isProgramsManagerViewOnly && in_array($card['permission'], ['agenda.approve', 'monthly_activities.approve'], true)) {
+                return false;
+            }
+
             if ($user->hasRole('super_admin') || $user->can($card['permission'])) {
                 return true;
             }

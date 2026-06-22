@@ -11,13 +11,20 @@
     $user = auth()->user();
     $displayName = $user?->name ?? config('app.name', __('app.common.app_name'));
     $currentRoute = request()->route()?->getName();
+    $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
     $canAccessAgendaApprovals = $user && (
-        $user->can('agenda.approve')
-        || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('agenda', $user)
+        ! $isProgramsManagerViewOnly
+        && (
+            $user->can('agenda.approve')
+            || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('agenda', $user)
+        )
     );
     $canAccessMonthlyApprovals = $user && (
-        $user->can('monthly_activities.approve')
-        || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('monthly_activities', $user)
+        ! $isProgramsManagerViewOnly
+        && (
+            $user->can('monthly_activities.approve')
+            || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('monthly_activities', $user)
+        )
     );
     $canAccessAdminSidebar = $user && (
         $user->hasRole('super_admin')

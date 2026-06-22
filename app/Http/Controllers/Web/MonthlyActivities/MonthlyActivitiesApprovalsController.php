@@ -24,9 +24,16 @@ use App\Models\User;
 
 class MonthlyActivitiesApprovalsController extends Controller
 {
+    protected function abortIfProgramsManagerViewOnly(?User $user): void
+    {
+        abort_if($user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin'), 403);
+    }
+
     public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
     {
         $viewer = $request->user();
+        $this->abortIfProgramsManagerViewOnly($viewer);
+
         abort_unless(
             $dynamicWorkflowService->userMayParticipateInWorkflow('monthly_activities', $viewer) || $viewer->can('monthly_activities.approve'),
             403
@@ -258,6 +265,8 @@ class MonthlyActivitiesApprovalsController extends Controller
     public function decidePostExecution(Request $request, MonthlyActivity $monthlyActivity, NotificationService $notifications)
     {
         $viewer = $request->user();
+        $this->abortIfProgramsManagerViewOnly($viewer);
+
         abort_unless($this->canReviewPostExecution($monthlyActivity, $viewer), 403);
 
         $data = $request->validate([
@@ -413,6 +422,8 @@ class MonthlyActivitiesApprovalsController extends Controller
 
     public function decideExecutionNeed(Request $request, MonthlyActivity $monthlyActivity)
     {
+        $this->abortIfProgramsManagerViewOnly($request->user());
+
         $data = $request->validate([
             'need_key' => ['required', 'string'],
             'decision' => ['required', 'string', 'in:approved,rejected'],
@@ -470,6 +481,8 @@ class MonthlyActivitiesApprovalsController extends Controller
         MonthlyWorkflowPresenter $monthlyWorkflowPresenter
     ): JsonResponse {
         $viewer = $request->user();
+        $this->abortIfProgramsManagerViewOnly($viewer);
+
         abort_unless(
             $dynamicWorkflowService->userMayParticipateInWorkflow('monthly_activities', $viewer) || $viewer->can('monthly_activities.approve'),
             403
@@ -532,6 +545,8 @@ class MonthlyActivitiesApprovalsController extends Controller
 
     public function update(Request $request, WorkflowNotificationService $workflowNotifications, MonthlyActivity $monthlyActivity, MonthlyActivityLifecycleService $lifecycleService, DynamicWorkflowService $dynamicWorkflowService)
     {
+        $this->abortIfProgramsManagerViewOnly($request->user());
+
         $data = $request->validate([
             'decision' => ['nullable', 'string', 'in:approved,approved_final,approved_send_executive,changes_requested,rejected'],
             'comment' => ['nullable', 'string'],
@@ -663,6 +678,8 @@ class MonthlyActivitiesApprovalsController extends Controller
 
     public function decideDeleteRequest(Request $request, MonthlyPlanDeleteRequest $deleteRequest, PlanChangeRequestWorkflowService $changeRequests)
     {
+        $this->abortIfProgramsManagerViewOnly($request->user());
+
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
@@ -675,6 +692,8 @@ class MonthlyActivitiesApprovalsController extends Controller
 
     public function decideEditRequest(Request $request, MonthlyPlanEditRequest $editRequest, PlanChangeRequestWorkflowService $changeRequests)
     {
+        $this->abortIfProgramsManagerViewOnly($request->user());
+
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],

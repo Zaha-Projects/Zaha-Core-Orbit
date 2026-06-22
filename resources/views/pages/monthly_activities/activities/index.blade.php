@@ -53,6 +53,8 @@
     ];
     $branchFilterSelected = $filters['branch_id'] ?? '';
     $authUser = auth()->user();
+    $canCreateMonthlyActivity = ($authUser?->can('monthly_activities.create') ?? false) || ($authUser?->hasRole('super_admin') ?? false);
+    $canViewDeletedMonthlyActivities = $authUser?->hasAnyRole(['relations_manager', 'relations_officer', 'supervisor', 'branch_coordinator', 'volunteer_coordinator', 'super_admin']) ?? false;
     $monthlyActivityEditRoles = $monthlyActivityEditRoles ?? [];
     $monthlyActivityChangeRequestRoles = $monthlyActivityChangeRequestRoles ?? config('monthly_activity.change_requests.allowed_roles', ['relations_officer']);
     $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
@@ -76,7 +78,7 @@
         data-calendar-endpoint="{{ route('role.relations.activities.calendar') }}"
         data-rtl="{{ app()->getLocale() === 'ar' ? '1' : '0' }}"
         data-week-start="{{ app()->getLocale() === 'ar' ? '6' : '0' }}"
-        data-create-url="{{ route('role.relations.activities.create') }}"
+        data-create-url="{{ $canCreateMonthlyActivity ? route('role.relations.activities.create') : '' }}"
         data-default-branch-id="{{ $calendarCreateBranchId ?: '' }}"
         data-initial-view="{{ $isBranchCalendarOnly ? 'calendar' : 'table' }}"
     >
@@ -86,6 +88,7 @@
                     <h1 class="h4 mb-2">{{ $title }}</h1>
                     <p class="text-muted mb-0">{{ $subtitle }}</p>
                 </div>
+                @if($canViewDeletedMonthlyActivities)
                 <a
                     class="btn {{ !empty($showDeleted) ? 'btn-outline-secondary' : 'btn-outline-danger' }} position-relative"
                     href="{{ !empty($showDeleted) ? route('role.relations.activities.index', request()->except(['page', 'deleted'])) : route('role.relations.activities.trash', request()->only(['branch_id', 'year', 'month'])) }}"
@@ -95,6 +98,7 @@
                     {{ !empty($showDeleted) ? 'العودة إلى الخطط الشهرية' : 'سلة المحذوفات' }}
                     <span class="badge rounded-pill {{ !empty($showDeleted) ? 'bg-secondary' : 'bg-danger' }} ms-1">{{ $deletedActivitiesCount ?? 0 }}</span>
                 </a>
+                @endif
             </div>
         </div>
 
@@ -184,7 +188,7 @@
             </div>
         </div>
 
-        @unless($isBranchCalendarOnly)
+        @if(! $isBranchCalendarOnly && $canCreateMonthlyActivity)
         <div class="card event-card mb-4">
             <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 <div>
@@ -194,7 +198,7 @@
                 <a href="{{ route('role.relations.activities.create') }}" class="btn btn-primary">{{ __('app.roles.programs.monthly_activities.actions.create') }}</a>
             </div>
         </div>
-        @endunless
+        @endif
 
         <div class="agenda-view-switch mb-3 {{ $isBranchCalendarOnly ? 'd-none' : '' }}" role="tablist">
             <button type="button" class="btn btn-sm btn-primary active" data-view-toggle="table" aria-pressed="true">بطاقات</button>

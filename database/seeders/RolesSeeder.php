@@ -106,12 +106,9 @@ class RolesSeeder extends Seeder
             ],
             'programs_manager' => [
                 'agenda.view',
-                'agenda.approve',
-                'agenda.participation.update',
                 'communications.view_media',
                 'monthly_activities.view',
                 'monthly_activities.view_other_branches',
-                'monthly_activities.approve',
                 'branches.view.all',
                 'reports.view',
                 'kpi.view',

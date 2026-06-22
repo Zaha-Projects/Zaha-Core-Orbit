@@ -18,9 +18,16 @@ use Illuminate\Http\Request;
 
 class AgendaApprovalsController extends Controller
 {
+    protected function abortIfProgramsManagerViewOnly($user): void
+    {
+        abort_if($user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin'), 403);
+    }
+
     public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService, AgendaWorkflowPresenter $agendaWorkflowPresenter)
     {
         $viewer = $request->user();
+        $this->abortIfProgramsManagerViewOnly($viewer);
+
         abort_unless(
             $dynamicWorkflowService->userMayParticipateInWorkflow('agenda', $viewer) || $viewer->can('agenda.approve'),
             403
@@ -123,6 +130,8 @@ class AgendaApprovalsController extends Controller
         ]);
 
         $user = $request->user();
+        $this->abortIfProgramsManagerViewOnly($user);
+
         abort_unless(
             $dynamicWorkflowService->userMayParticipateInWorkflow('agenda', $user) || $user->can('agenda.approve'),
             403
@@ -182,6 +191,8 @@ class AgendaApprovalsController extends Controller
 
     public function decideDeleteRequest(Request $request, AnnualAgendaDeleteRequest $deleteRequest, PlanChangeRequestWorkflowService $changeRequests)
     {
+        $this->abortIfProgramsManagerViewOnly($request->user());
+
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
@@ -194,6 +205,8 @@ class AgendaApprovalsController extends Controller
 
     public function decideEditRequest(Request $request, AnnualAgendaEditRequest $editRequest, PlanChangeRequestWorkflowService $changeRequests)
     {
+        $this->abortIfProgramsManagerViewOnly($request->user());
+
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],

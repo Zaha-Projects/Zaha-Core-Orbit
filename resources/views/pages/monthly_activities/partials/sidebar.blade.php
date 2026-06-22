@@ -1,5 +1,6 @@
 @php
     $canAccessMonthlyApprovals = auth()->user()
+        && ! (auth()->user()->hasRole('programs_manager') && ! auth()->user()->hasRole('super_admin'))
         && (
             auth()->user()->can('monthly_activities.approve')
             || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('monthly_activities', auth()->user())
