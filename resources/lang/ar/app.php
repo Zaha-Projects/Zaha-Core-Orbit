@@ -664,7 +664,7 @@ return [
                 'statuses' => [
                     'draft' => 'مسودة',
                     'submitted' => 'مرسل',
-                    'approved' => 'معتمد',
+                    'approved' => 'معتمدة',
                     'changes_requested' => 'مطلوب تعديل',
                     'postponed' => 'مؤجل',
                     'cancelled' => 'ملغي',

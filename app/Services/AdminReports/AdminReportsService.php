@@ -86,7 +86,7 @@ class AdminReportsService
             ->leftJoin('workflow_steps', 'workflow_steps.id', '=', 'workflow_instances.current_step_id')
             ->select('monthly_activities.branch_id')
             ->selectRaw('COUNT(*) as total')
-            ->selectRaw("SUM(CASE WHEN monthly_activities.execution_status = 'executed' OR monthly_activities.status IN ('executed','completed','closed','post_execution_submitted') OR monthly_activities.lifecycle_status IN ('Executed','Evaluated','Closed','Exec Director Approved') OR workflow_instances.status = 'approved' THEN 1 ELSE 0 END) as completed")
+            ->selectRaw("SUM(CASE WHEN {$this->monthlyActivityExecutedSql()} THEN 1 ELSE 0 END) as completed")
             ->selectRaw("SUM(CASE WHEN workflow_instances.status IN ('pending','in_progress') THEN 1 ELSE 0 END) as pending_approval")
             ->selectRaw("SUM(CASE WHEN workflow_instances.status = 'changes_requested' THEN 1 ELSE 0 END) as pending_changes")
             ->selectRaw("SUM(CASE WHEN workflow_instances.status IN ('pending','in_progress') AND workflow_steps.step_key = 'monthly_branch_coordinator_review' THEN 1 ELSE 0 END) as pending_branch_coordinator")
@@ -178,6 +178,21 @@ class AdminReportsService
             'users' => User::count(),
             'vehicles' => Vehicle::count(),
         ];
+    }
+
+    protected function monthlyActivityExecutedSql(): string
+    {
+        return "monthly_activities.actual_date IS NOT NULL
+            OR monthly_activities.status IN ('executed','completed','closed','post_execution_submitted')
+            OR monthly_activities.lifecycle_status IN ('Executed','Evaluated','Closed')
+            OR (
+                monthly_activities.execution_status = 'executed'
+                AND (
+                    monthly_activities.actual_date IS NOT NULL
+                    OR monthly_activities.status IN ('executed','completed','closed','post_execution_submitted')
+                    OR monthly_activities.lifecycle_status IN ('Executed','Evaluated','Closed')
+                )
+            )";
     }
 
     protected function operations(): array
