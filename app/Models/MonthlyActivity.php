@@ -205,18 +205,20 @@ class MonthlyActivity extends Model
             return $executionStatus;
         }
 
-        if (
-            $executionStatus === 'executed'
-            && (
-                filled($this->actual_date)
-                || in_array((string) $this->status, ['executed', 'completed', 'closed', 'post_execution_submitted'], true)
-                || in_array((string) $this->lifecycle_status, ['Executed', 'Evaluated', 'Closed'], true)
-            )
-        ) {
+        if ($this->hasExecutionEvidenceForDisplay()) {
             return 'executed';
         }
 
         return 'planned';
+    }
+
+    public function hasExecutionEvidenceForDisplay(): bool
+    {
+        return filled($this->actual_date)
+            || filled($this->actual_attendance)
+            || filled($this->post_execution_payload)
+            || in_array((string) $this->status, ['executed', 'completed', 'closed', 'post_execution_submitted'], true)
+            || in_array((string) $this->lifecycle_status, ['Executed', 'Evaluated', 'Closed'], true);
     }
 
     public function getPlanningAttachmentAttribute(): ?string

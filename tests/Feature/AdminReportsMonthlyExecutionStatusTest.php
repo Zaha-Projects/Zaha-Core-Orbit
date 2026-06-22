@@ -61,12 +61,29 @@ class AdminReportsMonthlyExecutionStatusTest extends TestCase
             'actual_date' => '2026-06-11',
         ]);
 
+        MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'created_by' => $creator->id,
+            'activity_date' => '2026-06-12',
+            'proposed_date' => '2026-06-12',
+            'month' => 6,
+            'day' => 12,
+            'status' => 'approved',
+            'execution_status' => 'planned',
+            'lifecycle_status' => 'Exec Director Approved',
+            'post_execution_payload' => [
+                'teams' => [
+                    ['team_name' => 'Unit team', 'accomplished_tasks' => 'Completed.'],
+                ],
+            ],
+        ]);
+
         $report = app(AdminReportsService::class)->build(2026, 6);
         $branchRow = $report['relations']['monthly_by_branch']
             ->firstWhere('branch', $branch->name);
 
         $this->assertNotNull($branchRow);
-        $this->assertSame(2, $branchRow['total']);
-        $this->assertSame(1, $branchRow['completed']);
+        $this->assertSame(3, $branchRow['total']);
+        $this->assertSame(2, $branchRow['completed']);
     }
 }

@@ -183,12 +183,16 @@ class AdminReportsService
     protected function monthlyActivityExecutedSql(): string
     {
         return "monthly_activities.actual_date IS NOT NULL
+            OR monthly_activities.actual_attendance IS NOT NULL
+            OR monthly_activities.post_execution_payload IS NOT NULL
             OR monthly_activities.status IN ('executed','completed','closed','post_execution_submitted')
             OR monthly_activities.lifecycle_status IN ('Executed','Evaluated','Closed')
             OR (
                 monthly_activities.execution_status = 'executed'
                 AND (
                     monthly_activities.actual_date IS NOT NULL
+                    OR monthly_activities.actual_attendance IS NOT NULL
+                    OR monthly_activities.post_execution_payload IS NOT NULL
                     OR monthly_activities.status IN ('executed','completed','closed','post_execution_submitted')
                     OR monthly_activities.lifecycle_status IN ('Executed','Evaluated','Closed')
                 )
