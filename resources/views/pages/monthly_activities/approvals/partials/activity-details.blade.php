@@ -96,9 +96,30 @@
                             @endforeach
                         </select>
                     </div>
+
+                    <div class="mb-2 decision-focus-areas">
+                        <label class="form-label d-block">الأقسام المرتبطة بطلب التعديل أو الرفض</label>
+                        <div class="row g-2">
+                            @foreach([
+                                'general_info' => 'المعلومات العامة (مثل الاسم والوصف)',
+                                'execution_needs' => 'احتياجات التنفيذ',
+                                'date_place' => 'الموعد والمكان',
+                                'teams_organization' => 'الفرق والتنظيم',
+                            ] as $areaKey => $areaLabel)
+                                <div class="col-12 col-md-6">
+                                    <label class="border rounded-3 p-2 d-flex gap-2 align-items-start h-100">
+                                        <input class="form-check-input mt-1" type="checkbox" name="focus_areas[]" value="{{ $areaKey }}">
+                                        <span>{{ $areaLabel }}</span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        <small class="text-muted d-block mt-1">تظهر هذه الأقسام لمسؤول العلاقات لتحديد مكان التعديل المطلوب بسرعة.</small>
+                        @error('focus_areas')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    </div>
                     <div class="mb-2">
                         <label class="form-label">{{ __('workflow_ui.common.comment') }}</label>
-                        <textarea class="form-control decision-comment" name="comment" rows="3"></textarea>
+                        <textarea class="form-control decision-comment" name="comment" rows="3" placeholder="اكتب السبب أو التعديل المطلوب بوضوح"></textarea>
                     </div>
                 @else
                     <div class="alert alert-light border mb-2">{{ __('workflow_ui.approvals.note_only_hint') }}</div>
