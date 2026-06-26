@@ -20,6 +20,7 @@ use App\Services\PlanChangeRequestWorkflowService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use App\Models\User;
 
 class MonthlyActivitiesApprovalsController extends Controller
@@ -552,7 +553,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'decision' => ['nullable', 'string', 'in:approved,approved_final,approved_send_executive,changes_requested,rejected'],
             'comment' => ['nullable', 'string'],
             'focus_areas' => ['nullable', 'array'],
-            'focus_areas.*' => ['string', 'in:general_info,execution_needs,date_place,teams_organization'],
+            'focus_areas.*' => ['string', Rule::in(array_keys($this->focusAreaLabels()))],
             'is_edit_request_implemented' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
             'coverage_status' => ['nullable', 'string', 'in:not_required,planned,in_progress,completed'],
@@ -663,7 +664,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             $monthlyActivity->fresh('creator'),
             $user,
             $workflowDecision,
-            route('role.relations.activities.show', $monthlyActivity),
+            route('role.relations.activities.returned_feedback', ['activity_id' => $monthlyActivity->id]),
             $decisionComment
         );
 
@@ -697,7 +698,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
             'focus_areas' => ['nullable', 'array'],
-            'focus_areas.*' => ['string', 'in:general_info,execution_needs,date_place,teams_organization'],
+            'focus_areas.*' => ['string', Rule::in(array_keys($this->focusAreaLabels()))],
         ]);
 
         if ($data['decision'] === 'rejected' && empty($data['focus_areas'])) {
@@ -719,7 +720,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
             'focus_areas' => ['nullable', 'array'],
-            'focus_areas.*' => ['string', 'in:general_info,execution_needs,date_place,teams_organization'],
+            'focus_areas.*' => ['string', Rule::in(array_keys($this->focusAreaLabels()))],
         ]);
 
         if ($data['decision'] === 'rejected' && empty($data['focus_areas'])) {
@@ -736,12 +737,7 @@ class MonthlyActivitiesApprovalsController extends Controller
 
     protected function focusAreaLabels(): array
     {
-        return [
-            'general_info' => 'المعلومات العامة (مثل الاسم والوصف)',
-            'execution_needs' => 'احتياجات التنفيذ',
-            'date_place' => 'الموعد والمكان',
-            'teams_organization' => 'الفرق والتنظيم',
-        ];
+        return (array) config('monthly_activity.decision_focus_areas', []);
     }
 
     protected function formatDecisionComment(?string $comment, array $focusAreas = []): ?string

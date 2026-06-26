@@ -57,12 +57,7 @@
 
     @php
         $activeApprovalTab = request('tab', 'approval');
-        $decisionFocusAreaLabels = [
-            'general_info' => 'المعلومات العامة (مثل الاسم والوصف)',
-            'execution_needs' => 'احتياجات التنفيذ',
-            'date_place' => 'الموعد والمكان',
-            'teams_organization' => 'الفرق والتنظيم',
-        ];
+        $decisionFocusAreaLabels = (array) config('monthly_activity.decision_focus_areas', []);
         $monthlyEditFieldLabels = [
             'activity_date' => 'تاريخ النشاط',
             'proposed_date' => 'التاريخ المقترح',

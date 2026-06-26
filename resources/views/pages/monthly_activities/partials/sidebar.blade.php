@@ -15,6 +15,14 @@
     </a>
 </li>
 @endcanany
+@if(auth()->user()?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
+<li class="nxl-item">
+    <a class="nxl-link {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'active' : '' }}" href="{{ route('role.relations.activities.returned_feedback') }}">
+        <span class="nxl-micon"><i class="feather-corner-down-left"></i></span>
+        <span class="nxl-mtext">طلبات راجعة للفرع</span>
+    </a>
+</li>
+@endif
 @can('monthly_activities.view_other_branches')
 <li class="nxl-item">
     <a class="nxl-link {{ request()->routeIs('role.relations.activities.*') && request('scope') === 'all_branches' ? 'active' : '' }}" href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}">

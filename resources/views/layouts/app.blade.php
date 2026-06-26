@@ -277,6 +277,9 @@
             @canany(['monthly_activities.view','monthly_plan.view'])
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
+            @if($user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
+                <li class="side-item {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.returned_feedback') }}"><i class="fas fa-reply-all"></i><span>طلبات راجعة للفرع</span></a></li>
+            @endif
             @if($user?->hasAnyRole(['volunteer_coordinator', 'super_admin']))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.post_execution_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.post_execution_feedback') }}"><i class="fas fa-clipboard-question"></i><span>ملاحظات ما بعد التنفيذ</span></a></li>
             @endif

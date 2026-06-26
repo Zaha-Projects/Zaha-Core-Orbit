@@ -100,12 +100,7 @@
                     <div class="mb-2 decision-focus-areas">
                         <label class="form-label d-block">الأقسام المرتبطة بطلب التعديل أو الرفض</label>
                         <div class="row g-2">
-                            @foreach([
-                                'general_info' => 'المعلومات العامة (مثل الاسم والوصف)',
-                                'execution_needs' => 'احتياجات التنفيذ',
-                                'date_place' => 'الموعد والمكان',
-                                'teams_organization' => 'الفرق والتنظيم',
-                            ] as $areaKey => $areaLabel)
+                            @foreach((array) config('monthly_activity.decision_focus_areas', []) as $areaKey => $areaLabel)
                                 <div class="col-12 col-md-6">
                                     <label class="border rounded-3 p-2 d-flex gap-2 align-items-start h-100">
                                         <input class="form-check-input mt-1" type="checkbox" name="focus_areas[]" value="{{ $areaKey }}">
