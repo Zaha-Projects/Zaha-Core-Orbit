@@ -3804,7 +3804,9 @@ class MonthlyActivitiesController extends Controller
             }
         }
 
-        $activityId = $request->integer('activity_id') ?: null;
+        $activityId = filter_var($request->input('activity_id'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]) ?: null;
         $type = $request->input('type', 'all');
         $applyBranchScope = function ($query) use ($branchIds): void {
             if ($branchIds === null) {
