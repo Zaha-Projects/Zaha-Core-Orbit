@@ -82,11 +82,7 @@
             </div>
 
             @forelse($items as $item)
-                @php
-                    $isHighlighted = request('activity_id') && str_contains($item['url'], (string) request('activity_id'));
-                    $itemDate = $item['date'] instanceof \Carbon\CarbonInterface ? $item['date']->format('Y-m-d H:i') : ($item['date'] ?: '-');
-                @endphp
-                <article class="returned-feedback-item returned-feedback-item--{{ $item['type'] ?? 'approval' }} {{ $isHighlighted ? 'is-highlighted' : '' }}">
+                <article class="returned-feedback-item returned-feedback-item--{{ $item['type'] ?? 'approval' }} {{ request('activity_id') && \Illuminate\Support\Str::contains($item['url'], (string) request('activity_id')) ? 'is-highlighted' : '' }}">
                     <div class="returned-feedback-item__icon"><i class="{{ $typeIcons[$item['type'] ?? 'approval'] ?? 'fas fa-message' }}" aria-hidden="true"></i></div>
                     <div>
                         <div class="returned-feedback-item__meta">
@@ -99,7 +95,7 @@
                     </div>
                     <div class="returned-feedback-item__side">
                         <span class="returned-feedback-status">{{ $item['status'] }}</span>
-                        <span class="returned-feedback-date"><i class="far fa-clock me-1" aria-hidden="true"></i>{{ $itemDate }}</span>
+                        <span class="returned-feedback-date"><i class="far fa-clock me-1" aria-hidden="true"></i>{{ $item['date'] instanceof \Carbon\CarbonInterface ? $item['date']->format('Y-m-d H:i') : ($item['date'] ?: '-') }}</span>
                         @if($item['url'] !== '#')
                             <a class="btn btn-primary btn-sm w-100" href="{{ $item['url'] }}">فتح الفرصة</a>
                         @endif
