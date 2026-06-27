@@ -19,6 +19,14 @@
         'post_execution' => ['label' => 'ما بعد التنفيذ', 'hint' => 'رفض أو طلب توضيح بعد التنفيذ', 'icon' => 'fas fa-rotate-left'],
     ];
     $typeIcons = collect($filterDefinitions)->mapWithKeys(fn ($definition, $key) => [$key => $definition['icon']]);
+    $statusLabels = [
+        'changes_requested' => 'مطلوب تعديل',
+        'rejected' => 'مرفوض',
+        'clarification' => 'مطلوب توضيح',
+        'not_secured' => 'لم يتم التأمين',
+        'pending' => 'قيد الانتظار',
+        'approved' => 'معتمد',
+    ];
     $totalReturned = $counts['all'] ?? $items->count();
 @endphp
 
@@ -94,7 +102,7 @@
                         <div class="returned-feedback-reason">{{ $item['reason'] ?: 'لم يتم تسجيل سبب تفصيلي.' }}</div>
                     </div>
                     <div class="returned-feedback-item__side">
-                        <span class="returned-feedback-status">{{ $item['status'] }}</span>
+                        <span class="returned-feedback-status">{{ $statusLabels[$item['status']] ?? $item['status'] }}</span>
                         <span class="returned-feedback-date"><i class="far fa-clock me-1" aria-hidden="true"></i>{{ $item['date'] instanceof \Carbon\CarbonInterface ? $item['date']->format('Y-m-d H:i') : ($item['date'] ?: '-') }}</span>
                         @if($item['url'] !== '#')
                             <a class="btn btn-primary btn-sm w-100" href="{{ $item['url'] }}">فتح الفرصة</a>
