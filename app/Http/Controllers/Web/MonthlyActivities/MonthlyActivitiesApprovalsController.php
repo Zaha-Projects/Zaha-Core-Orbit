@@ -20,6 +20,7 @@ use App\Services\PlanChangeRequestWorkflowService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use App\Models\User;
 
 class MonthlyActivitiesApprovalsController extends Controller
@@ -27,6 +28,11 @@ class MonthlyActivitiesApprovalsController extends Controller
     protected function abortIfProgramsManagerViewOnly(?User $user): void
     {
         abort_if($user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin'), 403);
+        abort_if(
+            $user?->hasRole('communication_head')
+            && ! $user?->hasAnyRole(['super_admin', 'relations_manager', 'relations_officer', 'supervisor', 'branch_coordinator', 'executive_manager']),
+            403
+        );
     }
 
     public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)
@@ -290,6 +296,7 @@ class MonthlyActivitiesApprovalsController extends Controller
         ];
 
         $status = $data['decision'] === 'clarification' ? 'changes_requested' : 'rejected';
+        $decisionComment = $data['comment'] ?? null;
 
         $monthlyActivity->update([
             'status' => $status,
@@ -300,7 +307,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'monthly_activity_id' => $monthlyActivity->id,
             'step' => 'post_execution_review',
             'decision' => $data['decision'],
-            'comment' => $data['comment'] ?? null,
+            'comment' => $decisionComment,
             'approved_by' => $viewer->id,
             'approved_at' => now(),
         ]);
@@ -550,6 +557,8 @@ class MonthlyActivitiesApprovalsController extends Controller
         $data = $request->validate([
             'decision' => ['nullable', 'string', 'in:approved,approved_final,approved_send_executive,changes_requested,rejected'],
             'comment' => ['nullable', 'string'],
+            'focus_areas' => ['nullable', 'array'],
+            'focus_areas.*' => ['string', Rule::in(array_keys($this->focusAreaLabels()))],
             'is_edit_request_implemented' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
             'coverage_status' => ['nullable', 'string', 'in:not_required,planned,in_progress,completed'],
@@ -581,6 +590,14 @@ class MonthlyActivitiesApprovalsController extends Controller
         $dynamicWorkflowService->assertPrerequisites($instance, $step);
 
         abort_if(empty($data['decision']), 422, __('app.roles.programs.monthly_activities.approvals.errors.decision_required'));
+
+        if (in_array($data['decision'], ['changes_requested', 'rejected'], true) && empty($data['focus_areas'])) {
+            return back()
+                ->withErrors(['focus_areas' => 'يرجى تحديد قسم واحد على الأقل يوضح مكان التعديل أو سبب الرفض.'])
+                ->withInput();
+        }
+
+        $decisionComment = $this->formatDecisionComment($data['comment'] ?? null, $data['focus_areas'] ?? []);
 
         $isRelationsManagerFinalStep = $this->isMonthlyRelationsManagerFinalStep($step->step_key);
         $isFinalApproval = $isRelationsManagerFinalStep && $data['decision'] === 'approved_final';
@@ -622,7 +639,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             'monthly_activity_id' => $monthlyActivity->id,
             'step' => $step->step_key,
             'decision' => $workflowDecision,
-            'comment' => $data['comment'] ?? null,
+            'comment' => $decisionComment,
             'approved_by' => $user->id,
             'approved_at' => now(),
             'is_edit_request_implemented' => (bool) ($data['is_edit_request_implemented'] ?? false),
@@ -630,9 +647,9 @@ class MonthlyActivitiesApprovalsController extends Controller
         ]);
 
         if ($isFinalApproval) {
-            $dynamicWorkflowService->recordFinalApproval($instance, $step, $user, $data['comment'] ?? null);
+            $dynamicWorkflowService->recordFinalApproval($instance, $step, $user, $decisionComment);
         } else {
-            $dynamicWorkflowService->recordDecision($instance, $step, $user, $workflowDecision, $data['comment'] ?? null);
+            $dynamicWorkflowService->recordDecision($instance, $step, $user, $workflowDecision, $decisionComment);
         }
 
         $instance = $instance->fresh();
@@ -652,7 +669,8 @@ class MonthlyActivitiesApprovalsController extends Controller
             $monthlyActivity->fresh('creator'),
             $user,
             $workflowDecision,
-            route('role.relations.activities.show', $monthlyActivity)
+            route('role.relations.activities.returned_feedback', ['activity_id' => $monthlyActivity->id]),
+            $decisionComment
         );
 
         WorkflowActionLog::create([
@@ -665,7 +683,8 @@ class MonthlyActivitiesApprovalsController extends Controller
             'meta' => [
                 'step' => $step->step_key,
                 'submitted_decision' => $data['decision'],
-                'comment' => $data['comment'] ?? null,
+                'comment' => $decisionComment,
+                'focus_areas' => $data['focus_areas'] ?? [],
                 'iteration' => $instance->edit_request_count,
                 'previous_status' => $instance->getOriginal('status'),
                 'new_status' => $instance->status,
@@ -683,9 +702,17 @@ class MonthlyActivitiesApprovalsController extends Controller
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
+            'focus_areas' => ['nullable', 'array'],
+            'focus_areas.*' => ['string', Rule::in(array_keys($this->focusAreaLabels()))],
         ]);
 
-        $changeRequests->decide($deleteRequest, 'monthly_activities', $request->user(), $data['decision'], $data['comment'] ?? null);
+        if ($data['decision'] === 'rejected' && empty($data['focus_areas'])) {
+            return back()->withErrors(['focus_areas' => 'يرجى تحديد القسم المرتبط بسبب الرفض.'])->withInput();
+        }
+
+        $comment = $this->formatDecisionComment($data['comment'] ?? null, $data['focus_areas'] ?? []);
+
+        $changeRequests->decide($deleteRequest, 'monthly_activities', $request->user(), $data['decision'], $comment);
 
         return redirect()->route('role.programs.approvals.index', ['tab' => 'delete'])->with('status', 'تم تحديث قرار طلب الحذف.');
     }
@@ -697,11 +724,45 @@ class MonthlyActivitiesApprovalsController extends Controller
         $data = $request->validate([
             'decision' => ['required', 'string', 'in:approved,rejected'],
             'comment' => ['nullable', 'string', 'required_if:decision,rejected'],
+            'focus_areas' => ['nullable', 'array'],
+            'focus_areas.*' => ['string', Rule::in(array_keys($this->focusAreaLabels()))],
         ]);
 
-        $changeRequests->decide($editRequest, 'monthly_activities', $request->user(), $data['decision'], $data['comment'] ?? null);
+        if ($data['decision'] === 'rejected' && empty($data['focus_areas'])) {
+            return back()->withErrors(['focus_areas' => 'يرجى تحديد القسم المرتبط بسبب الرفض.'])->withInput();
+        }
+
+        $comment = $this->formatDecisionComment($data['comment'] ?? null, $data['focus_areas'] ?? []);
+
+        $changeRequests->decide($editRequest, 'monthly_activities', $request->user(), $data['decision'], $comment);
 
         return redirect()->route('role.programs.approvals.index', ['tab' => 'edit'])->with('status', 'تم تحديث قرار طلب التعديل.');
+    }
+
+
+    protected function focusAreaLabels(): array
+    {
+        return (array) config('monthly_activity.decision_focus_areas', []);
+    }
+
+    protected function formatDecisionComment(?string $comment, array $focusAreas = []): ?string
+    {
+        $comment = trim((string) $comment);
+        $labels = collect($focusAreas)
+            ->map(fn ($area) => $this->focusAreaLabels()[$area] ?? null)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($labels->isEmpty()) {
+            return $comment !== '' ? $comment : null;
+        }
+
+        $prefix = 'الأقسام المحددة: '.$labels->implode('، ');
+
+        return $comment !== '' ? $prefix."
+
+السبب/التعديل المطلوب: ".$comment : $prefix;
     }
 
     protected function isMonthlyRelationsManagerFinalStep(string $stepKey): bool

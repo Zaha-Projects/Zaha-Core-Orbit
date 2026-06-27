@@ -462,7 +462,6 @@
 
                     <div class="agenda-calendar-weekdays" data-calendar-weekdays></div>
                     <div class="agenda-calendar-grid" data-calendar-grid></div>
-                    <div class="agenda-calendar-legend agenda-calendar-legend--bottom" data-calendar-legend-bottom></div>
                 </div>
             </div>
         </div>

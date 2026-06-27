@@ -57,6 +57,7 @@
 
     @php
         $activeApprovalTab = request('tab', 'approval');
+        $decisionFocusAreaLabels = (array) config('monthly_activity.decision_focus_areas', []);
         $monthlyEditFieldLabels = [
             'activity_date' => 'تاريخ النشاط',
             'proposed_date' => 'التاريخ المقترح',
@@ -297,8 +298,17 @@
                                                 <dt class="col-4">طالب الحذف</dt><dd class="col-8">{{ $deleteRequest->requester?->name ?? '-' }}</dd>
                                                 <dt class="col-4">الخطوة الحالية</dt><dd class="col-8">{{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</dd>
                                             </dl>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">الأقسام المرتبطة بالرفض <span class="text-danger">*</span></label>
+                                                <div class="row g-2">
+                                                    @foreach($decisionFocusAreaLabels as $areaKey => $areaLabel)
+                                                        <div class="col-12 col-md-6"><label class="border rounded-3 p-2 d-flex gap-2 h-100"><input class="form-check-input mt-1" type="checkbox" name="focus_areas[]" value="{{ $areaKey }}"><span>{{ $areaLabel }}</span></label></div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
                                             <label class="form-label fw-semibold">سبب الرفض <span class="text-danger">*</span></label>
-                                            <textarea name="comment" class="form-control" rows="4" required></textarea>
+                                            <textarea name="comment" class="form-control" rows="4" required placeholder="اكتب السبب أو التعديل المطلوب بوضوح"></textarea>
                                         </div>
                                         <div class="modal-footer border-0">
                                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
@@ -402,7 +412,13 @@
                         @if($editRequest->can_current_user_decide ?? false)
                             <form method="POST" action="{{ route('role.programs.approvals.edit_requests.update', $editRequest) }}" class="approval-decision-form">
                                 @csrf @method('PUT')
-                                <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة اختيارية">
+                                <div class="w-100 small fw-semibold text-muted">عند الرفض اختر الأقسام واكتب السبب:</div>
+                                <div class="d-flex flex-wrap gap-2 w-100">
+                                    @foreach($decisionFocusAreaLabels as $areaKey => $areaLabel)
+                                        <label class="border rounded-pill px-2 py-1 small"><input class="form-check-input me-1" type="checkbox" name="focus_areas[]" value="{{ $areaKey }}"> {{ $areaLabel }}</label>
+                                    @endforeach
+                                </div>
+                                <input name="comment" class="form-control form-control-sm" placeholder="ملاحظة أو سبب الرفض / التعديل المطلوب">
                                 <button name="decision" value="approved" class="btn btn-sm btn-success"><i class="fas fa-check me-1" aria-hidden="true"></i> اعتماد طلب التعديل</button>
                                 <button name="decision" value="rejected" class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1" aria-hidden="true"></i> رفض طلب التعديل</button>
                             </form>

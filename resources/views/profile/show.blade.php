@@ -113,6 +113,7 @@
     }
     .profile-stat-label { color: var(--profile-muted); font-size: .82rem; font-weight: 700; }
     .profile-stat-value { color: var(--profile-primary-dark); font-size: 1.85rem; font-weight: 800; }
+    .profile-stat-help { color: var(--profile-muted); font-size: .73rem; line-height: 1.65; margin-top: .35rem; }
     .profile-form-card {
         background:
             linear-gradient(180deg, rgba(255, 255, 255, .97), rgba(249, 252, 255, .97)),
@@ -254,10 +255,16 @@
 
         <div class="col-12 col-xl-8">
             <div class="row g-3 mb-4">
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة أنشأتها</div><div class="profile-stat-value">{{ $stats['created_monthly_activities'] }}</div></div></div>
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة فروعك</div><div class="profile-stat-value">{{ $stats['assigned_branch_activities'] }}</div></div></div>
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة مكتملة</div><div class="profile-stat-value">{{ $stats['completed_branch_activities'] }}</div></div></div>
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">إجراءات Workflow</div><div class="profile-stat-value">{{ $stats['workflow_actions'] }}</div></div></div>
+                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة أنشأتها</div><div class="profile-stat-value">{{ $stats['created_monthly_activities'] }}</div><div class="profile-stat-help">كل نشاط شهري كان حسابك هو منشئه، بغض النظر عن الفرع أو حالة الاعتماد.</div></div></div>
+                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة فروعك</div><div class="profile-stat-value">{{ $stats['assigned_branch_activities'] }}</div><div class="profile-stat-help">كل الأنشطة المرتبطة بالفروع المسندة لحسابك. قد تختلف عن شاشة الخطط لأنها تشمل كل الحالات والسجلات غير المعروضة بالفلاتر.</div></div></div>
+                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة مكتملة</div><div class="profile-stat-value">{{ $stats['completed_branch_activities'] }}</div><div class="profile-stat-help">من أنشطة فروعك فقط، وتُحسب عندما تكون حالة النشاط في قاعدة البيانات completed.</div></div></div>
+                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">إجراءات Workflow</div><div class="profile-stat-value">{{ $stats['workflow_actions'] }}</div><div class="profile-stat-help">عدد قرارات أو إجراءات الاعتماد التي نفذتها داخل مسارات Workflow.</div></div></div>
+            </div>
+
+
+            <div class="alert alert-info border-0 shadow-sm mb-4">
+                <strong>توضيح الأرقام:</strong>
+                أرقام الملف الشخصي هي مؤشرات إجمالية مباشرة من قاعدة البيانات. لذلك قد يظهر رقم <strong>أنشطة فروعك</strong> أكبر من شاشة الخطط الشهرية إذا كانت شاشة الخطط مفلترة حسب شهر/سنة/حالة، أو تستبعد بعض السجلات مثل المؤرشف أو النسخ القديمة أو الأنشطة غير الظاهرة في العرض الحالي.
             </div>
 
             <div class="card profile-card mb-4">

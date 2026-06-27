@@ -97,9 +97,9 @@ class WorkflowNotificationService
         );
     }
 
-    public function approvalDecision(WorkflowInstance $instance, Model $entity, User $actor, string $decision, string $url): void
+    public function approvalDecision(WorkflowInstance $instance, Model $entity, User $actor, string $decision, string $url, ?string $comment = null): void
     {
-        $this->notifyPreviousActorsAndCreator($instance, $entity, $actor, $decision, $url);
+        $this->notifyPreviousActorsAndCreator($instance, $entity, $actor, $decision, $url, $comment);
         $this->automaticApprovals($instance, $entity, $url);
 
         if ($this->isCompletedApproval($instance)) {
@@ -164,7 +164,7 @@ class WorkflowNotificationService
         return $fallbackUrl;
     }
 
-    protected function notifyPreviousActorsAndCreator(WorkflowInstance $instance, Model $entity, User $actor, string $decision, string $url): void
+    protected function notifyPreviousActorsAndCreator(WorkflowInstance $instance, Model $entity, User $actor, string $decision, string $url, ?string $comment = null): void
     {
         $recipients = $this->concernedUsers($entity, $this->previousActors($instance))
             ->reject(fn (User $user) => (int) $user->id === (int) $actor->id);
@@ -173,11 +173,12 @@ class WorkflowNotificationService
             $recipients,
             'approval_decision',
             $this->decisionTitle($decision),
-            __('app.workflow_notifications.decision.message', [
+            trim(__('app.workflow_notifications.decision.message', [
                 'item' => $this->entityTitle($entity),
                 'decision' => $this->decisionText($decision),
                 'actor' => $actor->name,
-            ]),
+            ]).($comment ? "
+".$comment : '')),
             $url,
             $this->withTranslationMeta(
                 $this->metaFor($instance, $entity) + ['decision' => $decision, 'actor_id' => $actor->id],
@@ -304,7 +305,7 @@ class WorkflowNotificationService
 
         return User::query()
             ->where('status', 'active')
-            ->role(['relations_officer', 'supervisor', 'branch_coordinator', 'volunteer_coordinator', 'communication_head'])
+            ->role(['relations_officer', 'supervisor', 'branch_coordinator', 'volunteer_coordinator'])
             ->where(function ($query) use ($branchId): void {
                 $query->whereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($branchId))
                     ->orWhere(function ($fallbackQuery) use ($branchId): void {

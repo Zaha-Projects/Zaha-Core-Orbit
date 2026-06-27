@@ -40,6 +40,17 @@ return [
         ],
     ],
 
+
+    'decision_focus_areas' => [
+        'basic_info' => 'المعلومات العامة ووصف الفرصة',
+        'schedule_location' => 'الموعد والمكان وبيانات التواصل',
+        'target_audience' => 'الفئة المستهدفة والحضور المتوقع',
+        'execution_needs' => 'احتياجات التنفيذ والتجهيزات',
+        'teams_volunteers' => 'الفرق والمتطوعون والتنظيم',
+        'external_coordination' => 'الشراكات والرعايات والمخاطبات الرسمية',
+        'attachments_followup' => 'المرفقات والمتابعة وما بعد التنفيذ',
+    ],
+
     'agenda_linked_edit' => [
         'enabled' => true,
 

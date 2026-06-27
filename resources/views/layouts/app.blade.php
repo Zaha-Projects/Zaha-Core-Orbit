@@ -26,6 +26,8 @@
             || app(\App\Services\DynamicWorkflowService::class)->userMayParticipateInWorkflow('monthly_activities', $user)
         )
     );
+    $isCommunicationHeadOnly = $user?->hasRole('communication_head')
+        && ! $user?->hasAnyRole(['super_admin', 'relations_manager', 'relations_officer', 'supervisor', 'branch_coordinator', 'executive_manager']);
     $canAccessAdminSidebar = $user && (
         $user->hasRole('super_admin')
         || $user->canAny(['users.view', 'roles.view', 'workflows.manage', 'branches.manage'])
@@ -268,6 +270,7 @@
                 <li class="side-item {{ request()->routeIs('role.super_admin.site_settings.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.site_settings.index') }}"><i class="fas fa-gear"></i><span>إعدادات الموقع</span></a></li>
             @endif
 
+            @if(! $isCommunicationHeadOnly)
             @can('agenda.view')
                 <li class="side-item {{ request()->routeIs('role.relations.agenda.*') ? 'selected' : '' }}"><a href="{{ route('role.relations.agenda.index') }}"><i class="fas fa-calendar-days"></i><span>{{ __('app.roles.relations.agenda.title') }}</span></a></li>
             @endcan
@@ -277,6 +280,9 @@
             @canany(['monthly_activities.view','monthly_plan.view'])
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
+            @if($user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
+                <li class="side-item {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.returned_feedback') }}"><i class="fas fa-reply-all"></i><span>طلبات راجعة للفرع</span></a></li>
+            @endif
             @if($user?->hasAnyRole(['volunteer_coordinator', 'super_admin']))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.post_execution_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.post_execution_feedback') }}"><i class="fas fa-clipboard-question"></i><span>ملاحظات ما بعد التنفيذ</span></a></li>
             @endif
@@ -286,6 +292,13 @@
             @endcan
             @if($canAccessMonthlyApprovals)
                 <li class="side-item {{ request()->routeIs('role.programs.approvals.*') ? 'selected' : '' }}"><a href="{{ route('role.programs.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('app.roles.programs.monthly_activities.approvals.title') }}</span></a></li>
+            @endif
+            @endif
+            @if($user?->hasAnyRole(['communication_head', 'super_admin']))
+                <li class="side-item {{ request()->routeIs('role.programs.communications_requests.index') ? 'selected' : '' }}"><a href="{{ route('role.programs.communications_requests.index') }}"><i class="fas fa-camera"></i><span>قرارات قسم الاتصال</span></a></li>
+            @endif
+            @if($user?->hasAnyRole(['communication_head', 'super_admin', 'executive_manager']) || $user?->can('departments.view'))
+                <li class="side-item {{ request()->routeIs('role.programs.communications_requests.board') ? 'selected' : '' }}"><a href="{{ route('role.programs.communications_requests.board') }}"><i class="fas fa-table-columns"></i><span>متابعة الاتصال</span></a></li>
             @endif
 
             @if ($user?->hasRole('finance_officer') || request()->routeIs('role.finance.*') || request()->routeIs('role.finance_officer.*'))
