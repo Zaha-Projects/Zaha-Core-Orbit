@@ -211,6 +211,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/programs/workshops-requests', [WorkshopsRequestsController::class, 'index'])->middleware('role:workshops_secretary|super_admin')->name('role.programs.workshops_requests.index');
     Route::put('/dashboard/programs/workshops-requests/{workshopsRequest}', [WorkshopsRequestsController::class, 'update'])->middleware('role:workshops_secretary|super_admin')->name('role.programs.workshops_requests.update');
     Route::get('/dashboard/programs/communications-requests', [CommunicationsRequestsController::class, 'index'])->middleware('role:communication_head|super_admin')->name('role.programs.communications_requests.index');
+    Route::get('/dashboard/programs/communications-requests/board', [CommunicationsRequestsController::class, 'board'])->middleware('role_or_permission:communication_head|super_admin|executive_manager|departments.view')->name('role.programs.communications_requests.board');
     Route::put('/dashboard/programs/communications-requests/{communicationsRequest}', [CommunicationsRequestsController::class, 'update'])->middleware('role:communication_head|super_admin')->name('role.programs.communications_requests.update');
 
     Route::put('/dashboard/programs/monthly-activities/approvals/{monthlyActivity}', [ProgramsMonthlyActivityApprovalsController::class, 'update'])->name('role.programs.approvals.update');

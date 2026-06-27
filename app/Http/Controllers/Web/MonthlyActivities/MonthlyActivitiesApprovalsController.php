@@ -28,6 +28,11 @@ class MonthlyActivitiesApprovalsController extends Controller
     protected function abortIfProgramsManagerViewOnly(?User $user): void
     {
         abort_if($user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin'), 403);
+        abort_if(
+            $user?->hasRole('communication_head')
+            && ! $user?->hasAnyRole(['super_admin', 'relations_manager', 'relations_officer', 'supervisor', 'branch_coordinator', 'executive_manager']),
+            403
+        );
     }
 
     public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService, MonthlyWorkflowPresenter $monthlyWorkflowPresenter, PlanChangeRequestWorkflowService $changeRequests)

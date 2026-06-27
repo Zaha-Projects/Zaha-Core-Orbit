@@ -305,7 +305,7 @@ class WorkflowNotificationService
 
         return User::query()
             ->where('status', 'active')
-            ->role(['relations_officer', 'supervisor', 'branch_coordinator', 'volunteer_coordinator', 'communication_head'])
+            ->role(['relations_officer', 'supervisor', 'branch_coordinator', 'volunteer_coordinator'])
             ->where(function ($query) use ($branchId): void {
                 $query->whereHas('assignedBranches', fn ($branchQuery) => $branchQuery->whereKey($branchId))
                     ->orWhere(function ($fallbackQuery) use ($branchId): void {

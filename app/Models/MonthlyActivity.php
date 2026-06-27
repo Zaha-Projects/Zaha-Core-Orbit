@@ -397,7 +397,21 @@ class MonthlyActivity extends Model
             }
 
             if ($activity->requires_communications || $activity->needs_media_coverage) {
-                CommunicationsRequest::firstOrCreate(['event_id' => $activity->id], ['status' => 'pending']);
+                $request = CommunicationsRequest::firstOrCreate(['event_id' => $activity->id], ['status' => 'pending']);
+
+                if ($request->wasRecentlyCreated) {
+                    $recipients = User::query()->where('status', 'active')->role('communication_head')->get();
+                    if ($recipients->isNotEmpty()) {
+                        app(\App\Services\NotificationService::class)->notifyUsers(
+                            $recipients,
+                            'communications_request_created',
+                            'احتياج تنفيذ لقسم الاتصال',
+                            'النشاط "'.$activity->title.'" بحاجة إلى: '.($activity->needs_media_coverage ? 'الحاجة لتغطية إعلامية.' : 'خدمة من قسم الاتصال.'),
+                            route('role.programs.communications_requests.index'),
+                            ['monthly_activity_id' => $activity->id, 'communications_request_id' => $request->id]
+                        );
+                    }
+                }
             }
         });
     }
