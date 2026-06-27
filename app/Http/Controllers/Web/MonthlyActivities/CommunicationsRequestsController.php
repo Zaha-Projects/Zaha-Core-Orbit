@@ -26,6 +26,12 @@ class CommunicationsRequestsController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $requests->getCollection()->transform(function (CommunicationsRequest $request) {
+            $request->computed_requirements = $this->requirementsFor($request->event);
+
+            return $request;
+        });
+
         $statusLabels = $this->statusLabels();
         $requirementLabels = $this->requirementLabels();
         $decisionCounts = $this->baseQuery()->whereIn('status', self::DECISION_STATUSES)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
