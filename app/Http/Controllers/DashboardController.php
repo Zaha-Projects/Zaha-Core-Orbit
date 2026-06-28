@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AgendaEvent;
 use App\Models\Branch;
+use App\Models\CommunicationsRequest;
 use App\Models\DepartmentUnit;
 use App\Models\MonthlyActivity;
 use Carbon\Carbon;
@@ -16,8 +17,54 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
+        $isCommunicationHeadViewOnly = $user?->hasRole('communication_head') && ! $user?->hasRole('super_admin');
 
-        $cards = collect([
+        if ($isCommunicationHeadViewOnly) {
+            $communicationCounts = CommunicationsRequest::query()
+                ->whereHas('event')
+                ->selectRaw('status, count(*) as total')
+                ->groupBy('status')
+                ->pluck('total', 'status');
+
+            $cards = collect([
+                [
+                    'title' => 'قرارات قسم الاتصال',
+                    'description' => 'طلبات تحتاج قرار قبول أو طلب تعديل أو رفض من رئيس قسم الاتصال.',
+                    'route' => 'role.programs.communications_requests.index',
+                    'params' => ['status' => 'pending'],
+                    'icon' => 'fas fa-camera-retro',
+                    'value' => (int) $communicationCounts->get('pending', 0),
+                ],
+                [
+                    'title' => 'متابعة الاتصال',
+                    'description' => 'لوحة Kanban وتقويم للطلبات المعتمدة ومراحل التحضير والتنفيذ.',
+                    'route' => 'role.programs.communications_requests.board',
+                    'icon' => 'fas fa-table-columns',
+                    'value' => (int) collect(['approved', 'preparing', 'ready', 'in_progress'])->sum(fn (string $status) => $communicationCounts->get($status, 0)),
+                ],
+                [
+                    'title' => 'قيد التحضير',
+                    'description' => 'طلبات مؤكدة تحتاج تجهيزات إعلامية أو بطاقات دعوة قبل التنفيذ.',
+                    'route' => 'role.programs.communications_requests.board',
+                    'params' => ['status' => 'preparing'],
+                    'icon' => 'fas fa-wand-magic-sparkles',
+                    'value' => (int) $communicationCounts->get('preparing', 0),
+                ],
+                [
+                    'title' => 'جاهزة أو قيد التنفيذ',
+                    'description' => 'طلبات تم تجهيزها أو يجري تنفيذها اليوم وتحتاج متابعة ميدانية.',
+                    'route' => 'role.programs.communications_requests.board',
+                    'params' => ['status' => 'all'],
+                    'icon' => 'fas fa-bullhorn',
+                    'value' => (int) ($communicationCounts->get('ready', 0) + $communicationCounts->get('in_progress', 0)),
+                ],
+            ])->map(function (array $card) {
+                $card['url'] = route($card['route'], $card['params'] ?? []);
+
+                return $card;
+            });
+        } else {
+            $cards = collect([
             ['permission' => 'agenda.view', 'title' => __('app.roles.relations.agenda.title'), 'description' => __('app.roles.relations.agenda.subtitle'), 'route' => 'role.relations.agenda.index', 'icon' => 'fas fa-calendar-days'],
             ['permission' => 'agenda.approve', 'workflow_module' => 'agenda', 'title' => __('app.roles.relations.approvals.title'), 'description' => __('app.roles.relations.approvals.subtitle'), 'route' => 'role.relations.approvals.index', 'icon' => 'fas fa-circle-check'],
             ['permission' => 'monthly_activities.view', 'title' => __('app.roles.programs.monthly_activities.title'), 'description' => __('app.roles.programs.monthly_activities.subtitle'), 'route' => 'role.relations.activities.index', 'icon' => 'fas fa-layer-group'],
@@ -45,6 +92,7 @@ class DashboardController extends Controller
                 return $card;
             })
             ->values();
+        }
 
         $branchesById = Branch::query()->pluck('name', 'id');
         $unitsById = DepartmentUnit::query()->pluck('name', 'id');
