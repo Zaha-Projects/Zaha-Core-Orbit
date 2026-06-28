@@ -27,7 +27,7 @@
                             <p class="kpi-label mb-0">{{ $card['title'] }}</p>
                             <span class="kpi-icon"><i class="{{ $card['icon'] }}"></i></span>
                         </div>
-                        <h3 class="kpi-value">{{ $loop->iteration }}</h3>
+                        <h3 class="kpi-value">{{ $card['value'] ?? $loop->iteration }}</h3>
                         <p class="kpi-delta">{{ $card['description'] }}</p>
                     </div>
                 </a>
