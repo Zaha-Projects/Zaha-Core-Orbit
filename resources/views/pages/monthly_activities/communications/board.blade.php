@@ -9,7 +9,7 @@
 @endpush
 
 @section('content')
-<div class="container-fluid py-4 comm-page" dir="rtl">
+<div class="container-fluid py-4 comm-page" dir="rtl" data-comm-board data-selected-year="{{ $filters['year'] }}" data-selected-month="{{ $filters['month'] }}">
     <section class="comm-board-hero p-4 mb-4">
         <div class="position-relative d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
@@ -28,13 +28,11 @@
             <label class="form-label fw-bold">اختر الفرع</label>
             <select class="form-select" name="branch_id"><option value="">كل الفروع</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected($filters['branch_id']===$branch->id)>{{ $branch->name }}</option>@endforeach</select>
         </div>
-        <div class="col-md-2">
-            <label class="form-label fw-bold">الشهر</label>
-            <select class="form-select" name="month">@for($m=1;$m<=12;$m++)<option value="{{ $m }}" @selected($filters['month']===$m)>{{ \Carbon\Carbon::create(null,$m,1)->locale('ar')->monthName }}</option>@endfor</select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label fw-bold">السنة</label>
-            <input class="form-control" type="number" name="year" value="{{ $filters['year'] }}">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">الشهر والسنة</label>
+            <input class="form-control" type="text" data-comm-board-filter-picker placeholder="اختر شهر" value="{{ $monthStart->format('Y-m') }}">
+            <input type="hidden" name="month" value="{{ $filters['month'] }}" data-comm-board-month>
+            <input type="hidden" name="year" value="{{ $filters['year'] }}" data-comm-board-year>
         </div>
         <div class="col-md-3">
             <label class="form-label fw-bold">الحالة</label>
@@ -65,6 +63,14 @@
         </div>
         <div class="tab-pane fade" id="comm-calendar">
             <div class="comm-panel p-3">
+                <div class="agenda-calendar-toolbar comm-calendar-toolbar mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-comm-calendar-nav="prev">السابق</button>
+                    <h2 class="h6 mb-0" data-comm-calendar-title>{{ $monthStart->copy()->locale('ar')->translatedFormat('F Y') }}</h2>
+                    <div class="d-flex align-items-center gap-2 calendar-picker-wrap">
+                        <input type="text" class="form-control form-control-sm" style="max-width: 140px;" data-comm-calendar-picker placeholder="اختر شهر" value="{{ $monthStart->format('Y-m') }}">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-comm-calendar-nav="next">التالي</button>
+                    </div>
+                </div>
                 <div class="comm-calendar">
                     @for($day=1;$day<=$daysInMonth;$day++)
                         @php($dateKey = $monthStart->copy()->day($day)->format('Y-m-d'))
@@ -81,3 +87,76 @@
     </div>
 </div>
 @endsection
+
+
+@push('scripts')
+<script>
+(function () {
+    const board = document.querySelector('[data-comm-board]');
+    if (!board) return;
+
+    const form = board.querySelector('form.comm-filter-card');
+    const monthInput = form?.querySelector('[data-comm-board-month]');
+    const yearInput = form?.querySelector('[data-comm-board-year]');
+    const calendarPicker = board.querySelector('[data-comm-calendar-picker]');
+    const filterPicker = board.querySelector('[data-comm-board-filter-picker]');
+    const title = board.querySelector('[data-comm-calendar-title]');
+    const selectedYear = Number.parseInt(board.dataset.selectedYear || '', 10) || new Date().getFullYear();
+    const selectedMonth = Number.parseInt(board.dataset.selectedMonth || '', 10) || (new Date().getMonth() + 1);
+    let currentDate = new Date(selectedYear, selectedMonth - 1, 1);
+
+    function localizedMonthTitle(date) {
+        return date.toLocaleDateString('ar-JO', { month: 'long', year: 'numeric' });
+    }
+
+    function setMonthAndSubmit(date) {
+        if (!form || !monthInput || !yearInput) return;
+        monthInput.value = String(date.getMonth() + 1);
+        yearInput.value = String(date.getFullYear());
+        form.submit();
+    }
+
+    function buildPickerConfig(onChange) {
+        const monthSelectPluginFactory = window.monthSelectPlugin || window.flatpickr?.monthSelectPlugin;
+        const config = {
+            dateFormat: 'Y-m',
+            altInput: true,
+            altFormat: 'F Y',
+            altInputClass: 'form-control form-control-sm calendar-month-input',
+            defaultDate: currentDate,
+            disableMobile: true,
+            onChange(selectedDates) {
+                const selectedDate = selectedDates?.[0];
+                if (!selectedDate) return;
+                onChange(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+            },
+        };
+
+        if (typeof monthSelectPluginFactory === 'function') {
+            config.plugins = [monthSelectPluginFactory({
+                shorthand: false,
+                dateFormat: 'Y-m',
+                altFormat: 'F Y',
+                theme: 'light',
+            })];
+        }
+
+        return config;
+    }
+
+    board.querySelectorAll('[data-comm-calendar-nav]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const delta = button.dataset.commCalendarNav === 'next' ? 1 : -1;
+            currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1);
+            if (title) title.textContent = localizedMonthTitle(currentDate);
+            setMonthAndSubmit(currentDate);
+        });
+    });
+
+    if (typeof window.flatpickr === 'function') {
+        if (calendarPicker) window.flatpickr(calendarPicker, buildPickerConfig(setMonthAndSubmit));
+        if (filterPicker) window.flatpickr(filterPicker, buildPickerConfig(setMonthAndSubmit));
+    }
+})();
+</script>
+@endpush
