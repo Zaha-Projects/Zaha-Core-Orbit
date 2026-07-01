@@ -170,6 +170,14 @@
             <a class="btn btn-sm btn-outline-primary" href="{{ route('role.programs.approvals.index') }}">الانتقال إلى صفحة الاعتمادات</a>
         </div>
     @endif
+    @if ($isPostMode)
+        <div class="card event-card mb-4">
+            <div class="card-body">
+                <div class="text-muted small mb-1">اسم الفعالية</div>
+                <div class="h5 mb-0">{{ $monthlyActivity->title }}</div>
+            </div>
+        </div>
+    @endif
 
     @if (! $isPostMode)
     <div class="card event-card mb-4">
