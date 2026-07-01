@@ -39,12 +39,12 @@
                 <p>{{ __('app.roles.relations.approvals.subtitle') }}</p>
             </div>
             <div class="agenda-approvals-stats">
-                @foreach($approvalStats as $stat)
+                @php foreach ($approvalStats as $stat) { @endphp
                     <div class="agenda-approval-stat agenda-approval-stat--{{ $stat['tone'] }}">
                         <span>{{ $stat['label'] }}</span>
                         <strong>{{ $stat['value'] }}</strong>
                     </div>
-                @endforeach
+                @php } @endphp
             </div>
         </section>
 
@@ -67,7 +67,7 @@
                 <thead><tr><th>الأجندة</th><th>الفرع</th><th>طالب الحذف</th><th>سبب الحذف</th><th>الحالة</th><th>الإجراء</th></tr></thead>
                 <tbody>
                 @if(!empty($deleteRequests) && count($deleteRequests) > 0)
-                    @foreach($deleteRequests ?? [] as $deleteRequest)
+                    @php foreach (($deleteRequests ?? []) as $deleteRequest) { @endphp
                     <tr>
                         <td>{{ $deleteRequest->agendaEvent?->event_name ?? '#' . $deleteRequest->entity_id }}</td>
                         <td>{{ $deleteRequest->agendaEvent?->department?->name ?? '-' }}</td>
@@ -82,7 +82,7 @@
                             </form>
                         @endif</td>
                     </tr>
-                @endforeach
+                @php } @endphp
                 @else
                     <tr><td colspan="6" class="text-center text-muted">لا توجد طلبات حذف.</td></tr>
                 @endif
@@ -97,7 +97,7 @@
                 <thead><tr><th>الأجندة</th><th>طالب التعديل</th><th>التغييرات</th><th>الحالة</th><th>الإجراء</th></tr></thead>
                 <tbody>
                 @if(!empty($editRequests) && count($editRequests) > 0)
-                    @foreach($editRequests ?? [] as $editRequest)
+                    @php foreach (($editRequests ?? []) as $editRequest) { @endphp
                     <tr>
                         <td>{{ $editRequest->agendaEvent?->event_name ?? '#' . $editRequest->entity_id }}</td>
                         <td>{{ $editRequest->requester?->name ?? '-' }}<br><small>{{ optional($editRequest->requested_at)->format('Y-m-d H:i') }}</small></td>
@@ -113,13 +113,13 @@
                                     </thead>
                                     <tbody>
                                         @if(!empty($editRequest->changed_values))
-                                            @foreach($editRequest->changed_values as $field => $change)
+                                            @php foreach ($editRequest->changed_values as $field => $change) { @endphp
                                             <tr>
                                                 <td>{{ $field }}</td>
                                                 <td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td>
                                                 <td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td>
                                             </tr>
-                                        @endforeach
+                                        @php } @endphp
                                         @else
                                             <tr>
                                                 <td colspan="3" class="text-center text-muted">لا توجد تغييرات مسجلة.</td>
@@ -138,7 +138,7 @@
                             </form>
                         @endif</td>
                     </tr>
-                @endforeach
+                @php } @endphp
                 @else
                     <tr><td colspan="5" class="text-center text-muted">لا توجد طلبات تعديل.</td></tr>
                 @endif
@@ -176,7 +176,7 @@
 
         <div class="d-flex flex-column gap-3">
             @if(count($events) > 0)
-            @foreach ($events as $event)
+            @php foreach ($events as $event) { @endphp
                 @php
                     $workflowSummary = $event->workflow_summary ?? [];
                     $statusKey = (($workflowSummary['status_key'] ?? '') ?: (($workflowSummary['workflow_state'] ?? '') ?: 'pending'));
@@ -242,7 +242,7 @@
                                                         <span class="wf-kv">{{ $currentRoleLabel }}</span>
                                                     </div>
                                                     <div class="wf-state-stack">
-                                                        @foreach($workflowSummary['steps'] ?? [] as $step)
+                                                        @php foreach (($workflowSummary['steps'] ?? []) as $step) { @endphp
                                                             <div class="wf-state-card wf-state-card--{{ $step['state'] }} {{ !empty($step['is_current']) ? 'is-current' : '' }}">
                                                                 <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                                     <div>
@@ -260,7 +260,7 @@
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                        @endforeach
+                                                        @php } @endphp
                                                     </div>
                                                 </div>
                                             </div>
@@ -284,7 +284,7 @@
                                                         <summary class="fw-semibold" style="cursor:pointer;">{{ __('workflow_ui.approvals.workflow_history') }}</summary>
                                                         <div class="wf-state-stack mt-3">
                                                             @if(count($timeline) > 0)
-                                                            @foreach($timeline as $entry)
+                                                            @php foreach ($timeline as $entry) { @endphp
                                                                 <div class="wf-state-card wf-state-card--{{ $entry['action'] }}">
                                                                     <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                                         <div>
@@ -298,7 +298,7 @@
                                                                         </span>
                                                                     </div>
                                                                 </div>
-                                                            @endforeach
+                                                            @php } @endphp
                                                             @else
                                                                 <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
                                                             @endif
@@ -340,7 +340,7 @@
                         </div>
                     </div>
                 </div>
-            @endforeach
+            @php } @endphp
             @else
                 <div class="wf-card card">
                     <div class="card-body">
