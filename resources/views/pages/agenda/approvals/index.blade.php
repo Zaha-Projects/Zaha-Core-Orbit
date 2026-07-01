@@ -81,7 +81,9 @@
                             </form>
                         @endif</td>
                     </tr>
-                @empty<tr><td colspan="6" class="text-center text-muted">لا توجد طلبات حذف.</td></tr>@endforelse
+                @empty
+                    <tr><td colspan="6" class="text-center text-muted">لا توجد طلبات حذف.</td></tr>
+                @endforelse
                 </tbody>
             </table></div>{{ ($deleteRequests ?? null)?->links() }}</div></div>
     @endif
@@ -106,7 +108,9 @@
                             </form>
                         @endif</td>
                     </tr>
-                @empty<tr><td colspan="5" class="text-center text-muted">لا توجد طلبات تعديل.</td></tr>@endforelse
+                @empty
+                    <tr><td colspan="5" class="text-center text-muted">لا توجد طلبات تعديل.</td></tr>
+                @endforelse
                 </tbody>
             </table></div>{{ ($editRequests ?? null)?->links() }}</div></div>
     @endif
