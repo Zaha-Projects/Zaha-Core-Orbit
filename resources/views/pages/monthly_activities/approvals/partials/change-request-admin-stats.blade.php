@@ -12,8 +12,8 @@
             @endforeach
         </div>
         <div class="row g-3">
-            <div class="col-lg-6"><h3 class="h6">أحدث طلبات الحذف</h3><ul class="list-group">@forelse(($stats['recent_delete'] ?? []) as $item)<li class="list-group-item d-flex justify-content-between"><span>#{{ $item->id }} — {{ $item->requester?->name ?? '-' }}</span><span>{{ $item->status }}</span></li>@empty<li class="list-group-item text-muted">لا توجد بيانات</li>@endforelse</ul></div>
-            <div class="col-lg-6"><h3 class="h6">أحدث طلبات التعديل</h3><ul class="list-group">@forelse(($stats['recent_edit'] ?? []) as $item)<li class="list-group-item d-flex justify-content-between"><span>#{{ $item->id }} — {{ $item->requester?->name ?? '-' }}</span><span>{{ $item->status }}</span></li>@empty<li class="list-group-item text-muted">لا توجد بيانات</li>@endforelse</ul></div>
+            <div class="col-lg-6"><h3 class="h6">أحدث طلبات الحذف</h3><ul class="list-group">@forelse(($stats['recent_delete'] ?? []) as $item)<li class="list-group-item d-flex justify-content-between"><span>#{{ $item->id }} — {{ $item->requester?->name ?? '-' }}</span><span>{{ $item->status }}</span></li>@empty <li class="list-group-item text-muted">لا توجد بيانات</li>@endforelse</ul></div>
+            <div class="col-lg-6"><h3 class="h6">أحدث طلبات التعديل</h3><ul class="list-group">@forelse(($stats['recent_edit'] ?? []) as $item)<li class="list-group-item d-flex justify-content-between"><span>#{{ $item->id }} — {{ $item->requester?->name ?? '-' }}</span><span>{{ $item->status }}</span></li>@empty <li class="list-group-item text-muted">لا توجد بيانات</li>@endforelse</ul></div>
         </div>
     </div>
     <div class="card-footer approvals-card-footer small text-muted">تتأثر الإحصائيات بالفلاتر الحالية: الفرع، نوع الطلب عبر التبويب، الحالة، والخطوة والتاريخ.</div>

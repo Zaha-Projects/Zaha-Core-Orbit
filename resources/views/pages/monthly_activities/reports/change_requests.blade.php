@@ -39,7 +39,7 @@
 
     <div class="row g-3">
         @foreach(['طلبات حسب الفرع' => $requestsByBranch, 'طلبات حسب الحالة' => $requestsByStatus, 'طلبات حسب الخطوة/المعتمد الحالي' => $requestsByStep] as $title => $items)
-            <div class="col-12 col-lg-4"><div class="card h-100"><div class="card-header fw-semibold">{{ $title }}</div><div class="table-responsive"><table class="table mb-0"><tbody>@forelse($items as $name => $count)<tr><td>{{ $name }}</td><td class="text-end fw-semibold">{{ $count }}</td></tr>@empty<tr><td class="text-muted">لا توجد بيانات.</td></tr>@endforelse</tbody></table></div></div></div>
+            <div class="col-12 col-lg-4"><div class="card h-100"><div class="card-header fw-semibold">{{ $title }}</div><div class="table-responsive"><table class="table mb-0"><tbody>@forelse($items as $name => $count)<tr><td>{{ $name }}</td><td class="text-end fw-semibold">{{ $count }}</td></tr>@empty <tr><td class="text-muted">لا توجد بيانات.</td></tr>@endforelse</tbody></table></div></div></div>
         @endforeach
     </div>
 </div>
