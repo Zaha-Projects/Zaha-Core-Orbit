@@ -1,5 +1,6 @@
 @php
     $user = auth()->user();
+    $isRelationsManagerSidebar = $user?->hasRole('relations_manager') && ! $user?->hasRole('super_admin');
     $isCommunicationHeadOnly = $user?->hasRole('communication_head')
         && ! $user?->hasAnyRole(['super_admin', 'relations_manager', 'relations_officer', 'supervisor', 'branch_coordinator', 'executive_manager']);
     $canAccessMonthlyApprovals = $user
@@ -19,7 +20,7 @@
         </a>
     </li>
     @endcanany
-    @if($user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
+    @if(! $isRelationsManagerSidebar && $user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
     <li class="nxl-item">
         <a class="nxl-link {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'active' : '' }}" href="{{ route('role.relations.activities.returned_feedback') }}">
             <span class="nxl-micon"><i class="feather-corner-down-left"></i></span>

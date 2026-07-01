@@ -11,6 +11,7 @@
     $user = auth()->user();
     $displayName = $user?->name ?? config('app.name', __('app.common.app_name'));
     $currentRoute = request()->route()?->getName();
+    $isRelationsManagerSidebar = $user?->hasRole('relations_manager') && ! $user?->hasRole('super_admin');
     $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
     $canAccessAgendaApprovals = $user && (
         ! $isProgramsManagerViewOnly
@@ -280,7 +281,7 @@
             @canany(['monthly_activities.view','monthly_plan.view'])
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
-            @if($user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
+            @if(! $isRelationsManagerSidebar && $user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.returned_feedback') }}"><i class="fas fa-reply-all"></i><span>طلبات راجعة للفرع</span></a></li>
             @endif
             @if($user?->hasAnyRole(['volunteer_coordinator', 'super_admin']))
@@ -320,7 +321,7 @@
                 <li class="side-item {{ request()->routeIs('role.transport.movements.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.movements.index') }}"><i class="fas fa-map-location-dot"></i><span>{{ __('app.roles.transport.movements.title') }}</span></a></li>
             @endif
 
-            @if ($canAccessReportsSidebar)
+            @if ($canAccessReportsSidebar && ! $isRelationsManagerSidebar)
                 @if($canAccessReportPages)
                     <li class="side-item {{ request()->routeIs('role.reports.index') ? 'selected' : '' }}"><a href="{{ route('role.reports.index') }}"><i class="fas fa-chart-simple"></i><span>{{ __('app.roles.reports.title') }}</span></a></li>
                     <li class="side-item {{ request()->routeIs('role.reports.agenda.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.agenda.index') }}"><i class="fas fa-calendar-check"></i><span>{{ __('app.roles.reports.agenda.title') }}</span></a></li>
