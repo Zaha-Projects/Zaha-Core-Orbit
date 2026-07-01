@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @push('styles')
 <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
@@ -98,7 +98,32 @@
                     <tr>
                         <td>{{ $editRequest->agendaEvent?->event_name ?? '#' . $editRequest->entity_id }}</td>
                         <td>{{ $editRequest->requester?->name ?? '-' }}<br><small>{{ optional($editRequest->requested_at)->format('Y-m-d H:i') }}</small></td>
-                        <td><div class="table-responsive"><table class="table table-bordered table-xs mb-0"><thead><tr><th>الحقل</th><th>القيمة القديمة</th><th>القيمة الجديدة</th></tr></thead><tbody>@foreach(($editRequest->changed_values ?? []) as $field => $change)<tr><td>{{ $field }}</td><td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td><td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td></tr>@endforeach</tbody></table></div></td>
+                        <td>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-xs mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>الحقل</th>
+                                            <th>القيمة القديمة</th>
+                                            <th>القيمة الجديدة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse(($editRequest->changed_values ?? []) as $field => $change)
+                                            <tr>
+                                                <td>{{ $field }}</td>
+                                                <td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td>
+                                                <td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted">لا توجد تغييرات مسجلة.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
                         <td><span class="badge bg-secondary">{{ $editRequest->status }}</span><br><small>{{ $editRequest->workflowInstance?->currentStep?->name_ar }}</small></td>
                         <td>@if(in_array($editRequest->status, ['pending','in_progress','changes_requested'], true))
                             <form method="POST" action="{{ route('role.relations.approvals.edit_requests.update', $editRequest) }}" class="d-flex gap-1 flex-wrap">@csrf @method('PUT')
