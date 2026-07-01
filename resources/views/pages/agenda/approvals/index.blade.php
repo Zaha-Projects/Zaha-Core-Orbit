@@ -66,7 +66,8 @@
             <div class="table-responsive"><table class="table table-sm align-middle">
                 <thead><tr><th>الأجندة</th><th>الفرع</th><th>طالب الحذف</th><th>سبب الحذف</th><th>الحالة</th><th>الإجراء</th></tr></thead>
                 <tbody>
-                @forelse($deleteRequests ?? [] as $deleteRequest)
+                @if(!empty($deleteRequests) && count($deleteRequests) > 0)
+                    @foreach($deleteRequests ?? [] as $deleteRequest)
                     <tr>
                         <td>{{ $deleteRequest->agendaEvent?->event_name ?? '#' . $deleteRequest->entity_id }}</td>
                         <td>{{ $deleteRequest->agendaEvent?->department?->name ?? '-' }}</td>
@@ -81,9 +82,10 @@
                             </form>
                         @endif</td>
                     </tr>
-                @empty
+                @endforeach
+                @else
                     <tr><td colspan="6" class="text-center text-muted">لا توجد طلبات حذف.</td></tr>
-                @endforelse
+                @endif
                 </tbody>
             </table></div>{{ ($deleteRequests ?? null)?->links() }}</div></div>
     @endif
@@ -94,7 +96,8 @@
             <div class="table-responsive"><table class="table table-sm align-middle">
                 <thead><tr><th>الأجندة</th><th>طالب التعديل</th><th>التغييرات</th><th>الحالة</th><th>الإجراء</th></tr></thead>
                 <tbody>
-                @forelse($editRequests ?? [] as $editRequest)
+                @if(!empty($editRequests) && count($editRequests) > 0)
+                    @foreach($editRequests ?? [] as $editRequest)
                     <tr>
                         <td>{{ $editRequest->agendaEvent?->event_name ?? '#' . $editRequest->entity_id }}</td>
                         <td>{{ $editRequest->requester?->name ?? '-' }}<br><small>{{ optional($editRequest->requested_at)->format('Y-m-d H:i') }}</small></td>
@@ -109,17 +112,19 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse(($editRequest->changed_values ?? []) as $field => $change)
+                                        @if(!empty($editRequest->changed_values))
+                                            @foreach($editRequest->changed_values as $field => $change)
                                             <tr>
                                                 <td>{{ $field }}</td>
                                                 <td>{{ is_array($change['old'] ?? null) ? json_encode($change['old'], JSON_UNESCAPED_UNICODE) : ($change['old'] ?? '-') }}</td>
                                                 <td>{{ is_array($change['new'] ?? null) ? json_encode($change['new'], JSON_UNESCAPED_UNICODE) : ($change['new'] ?? '-') }}</td>
                                             </tr>
-                                        @empty
+                                        @endforeach
+                                        @else
                                             <tr>
                                                 <td colspan="3" class="text-center text-muted">لا توجد تغييرات مسجلة.</td>
                                             </tr>
-                                        @endforelse
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>
@@ -133,9 +138,10 @@
                             </form>
                         @endif</td>
                     </tr>
-                @empty
+                @endforeach
+                @else
                     <tr><td colspan="5" class="text-center text-muted">لا توجد طلبات تعديل.</td></tr>
-                @endforelse
+                @endif
                 </tbody>
             </table></div>{{ ($editRequests ?? null)?->links() }}</div></div>
     @endif
@@ -169,7 +175,8 @@
         </div>
 
         <div class="d-flex flex-column gap-3">
-            @forelse ($events as $event)
+            @if(count($events) > 0)
+            @foreach ($events as $event)
                 @php
                     $workflowSummary = $event->workflow_summary ?? [];
                     $statusKey = (($workflowSummary['status_key'] ?? '') ?: (($workflowSummary['workflow_state'] ?? '') ?: 'pending'));
@@ -276,7 +283,8 @@
                                                     <details>
                                                         <summary class="fw-semibold" style="cursor:pointer;">{{ __('workflow_ui.approvals.workflow_history') }}</summary>
                                                         <div class="wf-state-stack mt-3">
-                                                            @forelse($timeline as $entry)
+                                                            @if(count($timeline) > 0)
+                                                            @foreach($timeline as $entry)
                                                                 <div class="wf-state-card wf-state-card--{{ $entry['action'] }}">
                                                                     <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                                         <div>
@@ -290,9 +298,10 @@
                                                                         </span>
                                                                     </div>
                                                                 </div>
-                                                            @empty
+                                                            @endforeach
+                                                            @else
                                                                 <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
-                                                            @endforelse
+                                                            @endif
                                                         </div>
                                                     </details>
                                                 </div>
@@ -331,13 +340,14 @@
                         </div>
                     </div>
                 </div>
-            @empty
+            @endforeach
+            @else
                 <div class="wf-card card">
                     <div class="card-body">
                         <p class="wf-muted mb-0">{{ __('app.roles.relations.approvals.table.empty') }}</p>
                     </div>
                 </div>
-            @endforelse
+            @endif
         </div>
     </div>
     @endif
