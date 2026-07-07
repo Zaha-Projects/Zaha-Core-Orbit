@@ -33,7 +33,7 @@
         ];
     @endphp
 
-    <div class="workflow-ui agenda-approvals-page">
+    <div class="workflow-ui agenda-approvals-page relations-agenda-approvals-page">
         @include('pages.agenda.approvals.partials.hero', ['approvalStats' => $approvalStats])
 
         @if (session('status'))

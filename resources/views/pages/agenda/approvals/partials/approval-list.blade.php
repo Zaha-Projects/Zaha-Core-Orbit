@@ -52,5 +52,5 @@
     @endforelse
 </div>
 @if(method_exists($events, 'links'))
-    <div class="mt-3 approvals-pagination-wrap agenda-approvals-pagination-wrap">{{ $events->links() }}</div>
+    <div class="mt-3 approvals-pagination-wrap agenda-approvals-pagination-wrap">{{ $events->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
 @endif
