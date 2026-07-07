@@ -15,6 +15,7 @@ use App\Services\WorkflowNotificationService;
 use App\Services\PlanChangeRequestWorkflowService;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AgendaApprovalsController extends Controller
 {
@@ -109,6 +110,8 @@ class AgendaApprovalsController extends Controller
                 ->filter(fn (AgendaEvent $event): bool => (string) data_get($event, 'workflow_summary.current_step_key') === (string) $filters['current_step'])
                 ->values();
         }
+
+        $events = $this->paginateEvents($events, $request);
 
         $deleteRequests = AnnualAgendaDeleteRequest::query()
             ->with(['requester', 'agendaEvent', 'workflowInstance.currentStep.role'])
@@ -222,6 +225,25 @@ class AgendaApprovalsController extends Controller
         $changeRequests->decide($editRequest, 'agenda', $request->user(), $data['decision'], $data['comment'] ?? null);
 
         return redirect()->route('role.relations.approvals.index', ['tab' => 'edit'])->with('status', 'تم تحديث قرار طلب تعديل الأجندة.');
+    }
+
+    protected function paginateEvents(Collection $events, Request $request): LengthAwarePaginator
+    {
+        $perPage = 10;
+        $page = LengthAwarePaginator::resolveCurrentPage('page');
+        $items = $events->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $items,
+            $events->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'pageName' => 'page',
+                'query' => $request->query(),
+            ]
+        );
     }
 
     protected function buildStatusFilterOptions(): Collection
