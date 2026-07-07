@@ -35,6 +35,7 @@ class AgendaApprovalsController extends Controller
         $filters = $request->validate([
             'approval_status' => ['nullable', 'string'],
             'current_step' => ['nullable', 'string'],
+            'my_pending' => ['nullable', 'boolean'],
         ]);
 
         $events = AgendaEvent::query()
@@ -90,6 +91,12 @@ class AgendaApprovalsController extends Controller
         $workflow?->loadMissing('steps.role', 'steps.permission');
         $statusOptions = $this->buildStatusFilterOptions();
         $currentStepOptions = $this->buildCurrentStepOptions(collect($workflow?->steps ?? []));
+
+        if (! empty($filters['my_pending'])) {
+            $events = $events
+                ->filter(fn (AgendaEvent $event): bool => (bool) data_get($event, 'workflow_summary.can_current_user_decide', $event->can_current_user_decide ?? false))
+                ->values();
+        }
 
         if (! empty($filters['approval_status'])) {
             $events = $events
@@ -220,18 +227,13 @@ class AgendaApprovalsController extends Controller
     protected function buildStatusFilterOptions(): Collection
     {
         return collect([
-            [
-                'value' => 'draft',
-                'label' => __('app.roles.relations.agenda.status_labels.draft'),
-            ],
-            [
-                'value' => 'submitted',
-                'label' => __('app.roles.relations.agenda.status_labels.submitted'),
-            ],
-            [
-                'value' => 'published',
-                'label' => __('app.roles.relations.agenda.status_labels.published'),
-            ],
+            ['value' => 'draft', 'label' => __('app.roles.relations.agenda.status_labels.draft')],
+            ['value' => 'pending', 'label' => __('workflow_ui.approvals.status_labels.pending')],
+            ['value' => 'in_progress', 'label' => __('workflow_ui.approvals.status_labels.in_progress')],
+            ['value' => 'changes_requested', 'label' => __('workflow_ui.approvals.status_labels.changes_requested')],
+            ['value' => 'approved', 'label' => __('workflow_ui.approvals.status_labels.approved')],
+            ['value' => 'published', 'label' => __('app.roles.relations.agenda.status_labels.published')],
+            ['value' => 'rejected', 'label' => __('workflow_ui.approvals.status_labels.rejected')],
         ]);
     }
 
@@ -256,11 +258,20 @@ class AgendaApprovalsController extends Controller
     protected function resolveStatusFilterValue(AgendaEvent $event): string
     {
         $status = (string) data_get($event, 'workflow_summary.status_key', $event->status ?? 'draft');
+        $workflowState = (string) data_get($event, 'workflow_summary.workflow_state', $event->workflow_state ?? 'pending');
 
-        return match ($status) {
-            'draft' => 'draft',
-            'published' => 'published',
-            default => 'submitted',
-        };
+        if (in_array($status, ['published', 'relations_approved'], true)) {
+            return 'published';
+        }
+
+        if ($status === 'draft') {
+            return 'draft';
+        }
+
+        if (in_array($workflowState, ['pending', 'in_progress', 'changes_requested', 'approved', 'rejected'], true)) {
+            return $workflowState;
+        }
+
+        return in_array($status, ['approved', 'rejected', 'changes_requested'], true) ? $status : 'in_progress';
     }
 }
