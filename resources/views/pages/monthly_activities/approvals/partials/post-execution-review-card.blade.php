@@ -112,7 +112,7 @@
                         <article class="post-execution-team-card">
                             <strong>{{ $team['team_name'] ?? '-' }}</strong>
                             <span>المهام المنجزة: {{ $team['accomplished_tasks'] ?? 'لا توجد ملاحظات.' }}</span>
-                            <div class="approvals-status-progress"><span style="width: {{ $completion }}%"></span></div>
+                            <div class="approvals-status-progress"><span data-approval-progress="{{ $completion }}"></span></div>
                             <small>نسبة الإنجاز / الحضور: {{ $completion }}%</small>
                         </article>
                     @empty

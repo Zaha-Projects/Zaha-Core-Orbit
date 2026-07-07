@@ -43,7 +43,7 @@
 
         <div class="border rounded-3 p-3 mb-3">
             <details>
-                <summary class="fw-semibold" style="cursor:pointer;">{{ __('workflow_ui.approvals.workflow_history') }}</summary>
+                <summary class="fw-semibold workflow-summary-toggle">{{ __('workflow_ui.approvals.workflow_history') }}</summary>
                 <div class="d-flex flex-column gap-2 mt-3">
                     @forelse($card['logs'] as $entry)
                         <div class="border rounded p-2">

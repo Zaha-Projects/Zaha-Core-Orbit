@@ -7,15 +7,8 @@
 <head>
     <meta charset="utf-8">
     <title>{{ __('app.enterprise.printable.title') }}</title>
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/theme/css/Theme.css') }}">
-    <style>
-        body { font-family: Arial, 'Tajawal', sans-serif; margin: 20px; background: var(--page-bg); color: var(--text-color); }
-        h2 { margin-top: 1.2rem; margin-bottom: 0.6rem; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 18px; background: var(--surface-bg); }
-        td, th { border: 1px solid var(--border-color); padding: 6px; text-align: {{ $isRtl ? 'right' : 'left' }}; }
-        thead th { background: var(--surface-soft); }
-        @media print { body { background: #fff; color: #111827; } }
-    </style>
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/theme/css/Theme.min.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/pages-reports-enterprise-printable.min.css') }}">
 </head>
 <body>
 <h2>{{ __('app.roles.reports.agenda.title') }}</h2>

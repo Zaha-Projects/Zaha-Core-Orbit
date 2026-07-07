@@ -93,56 +93,6 @@
 @endphp
 
 @push('scripts')
-<script>
-    (() => {
-        const wrapper = document.getElementById('trips-wrapper');
-        const template = document.getElementById('trip-template');
-        const addBtn = document.getElementById('add-trip');
-        const trips = @json($initialTrips);
-
-        const reindexTrips = () => {
-            wrapper.querySelectorAll('.trip-item').forEach((item, index) => {
-                item.querySelectorAll('[data-name]').forEach((field) => {
-                    const key = field.getAttribute('data-name');
-                    field.name = `trips[${index}][${key}]`;
-                });
-            });
-        };
-
-        const addTripRow = (trip = {}) => {
-            const node = template.content.cloneNode(true);
-            const item = node.querySelector('.trip-item');
-
-            item.querySelectorAll('[data-name]').forEach((field) => {
-                const key = field.getAttribute('data-name');
-                if (trip[key] !== undefined && trip[key] !== null) {
-                    field.value = trip[key];
-                }
-            });
-
-            item.querySelector('.remove-trip').addEventListener('click', () => {
-                item.remove();
-                if (!wrapper.querySelector('.trip-item')) {
-                    addTripRow();
-                    return;
-                }
-
-                reindexTrips();
-            });
-
-            wrapper.appendChild(node);
-            reindexTrips();
-        };
-
-        addBtn.addEventListener('click', () => addTripRow());
-
-        const normalizedTrips = Array.isArray(trips) ? trips : Object.values(trips || {});
-
-        if (normalizedTrips.length) {
-            normalizedTrips.forEach((trip) => addTripRow(trip));
-        } else {
-            addTripRow();
-        }
-    })();
-</script>
+    <script type="application/json" id="transport-movement-trips-json">@json($initialTrips)</script>
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/pages/pages-transport-movements-form.min.js') }}"></script>
 @endpush

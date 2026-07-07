@@ -10,6 +10,18 @@
         this.bindDecisionForms();
         this.bindDetailsLazyLoading();
         this.bindActivitySummaryModal();
+        this.bindProgressBars();
+    };
+
+    MonthlyApprovalsPage.prototype.bindProgressBars = function () {
+        document.querySelectorAll('[data-approval-progress]').forEach(function (bar) {
+            var value = parseFloat(bar.getAttribute('data-approval-progress') || '0');
+            if (!Number.isFinite(value)) {
+                value = 0;
+            }
+            value = Math.max(0, Math.min(100, value));
+            bar.style.width = value + '%';
+        });
     };
 
     MonthlyApprovalsPage.prototype.bindDecisionForms = function () {

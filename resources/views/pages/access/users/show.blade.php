@@ -16,22 +16,7 @@
 @endphp
 
 @push('styles')
-<style>
-    .admin-user-profile { --profile-primary:#1667d9; --profile-accent:#12b8a6; --profile-ink:#172033; --profile-muted:#6b7890; --profile-border:rgba(22,103,217,.13); color:var(--profile-ink); }
-    .admin-user-profile .profile-hero { position:relative; overflow:hidden; border:0; border-radius:26px; background:linear-gradient(135deg, rgba(22,103,217,.14), rgba(18,184,166,.1)); box-shadow:0 22px 60px rgba(15,23,42,.08); }
-    .admin-user-profile .profile-avatar { width:76px; height:76px; border-radius:24px; display:grid; place-items:center; background:#fff; color:var(--profile-primary); font-size:2rem; font-weight:900; box-shadow:0 14px 34px rgba(22,103,217,.18); }
-    .admin-user-profile .profile-chip { display:inline-flex; align-items:center; gap:.4rem; padding:.42rem .7rem; border-radius:999px; background:rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.85); color:#334155; font-size:.84rem; font-weight:700; }
-    .admin-user-profile .profile-card { border:1px solid var(--profile-border); border-radius:22px; box-shadow:0 18px 46px rgba(15,23,42,.06); }
-    .admin-user-profile .profile-stat { position:relative; overflow:hidden; min-height:110px; padding:1rem 1rem 1rem 1.25rem; border:1px solid var(--profile-border); border-radius:20px; background:#fff; box-shadow:0 12px 30px rgba(15,23,42,.045); }
-    .admin-user-profile .profile-stat::before { content:''; position:absolute; inset-block:0; inset-inline-start:0; width:5px; background:linear-gradient(180deg, var(--profile-primary), var(--profile-accent)); }
-    .admin-user-profile .profile-stat-label { color:var(--profile-muted); font-size:.82rem; font-weight:800; }
-    .admin-user-profile .profile-stat-value { color:#0f4fa9; font-size:1.75rem; font-weight:900; }
-    .admin-user-profile dt { color:var(--profile-muted); font-size:.83rem; font-weight:800; }
-    .admin-user-profile dd { margin-bottom:1rem; font-weight:700; }
-    .admin-user-profile .status-dot { display:inline-flex; align-items:center; gap:.45rem; font-weight:800; }
-    .admin-user-profile .status-dot::before { content:''; width:.75rem; height:.75rem; border-radius:999px; background:#dc2626; box-shadow:0 0 0 4px rgba(220,38,38,.14); }
-    .admin-user-profile .status-dot.is-active::before { background:#16a34a; box-shadow:0 0 0 4px rgba(22,163,74,.14); }
-</style>
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/pages-access-users-show.min.css') }}">
 @endpush
 
 @section('content')

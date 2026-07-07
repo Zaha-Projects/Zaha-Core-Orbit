@@ -2,9 +2,9 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.css') }}">
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/agenda-event-show.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.min.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.min.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/agenda-event-show.min.css') }}">
 @endpush
 
 @php
@@ -81,7 +81,7 @@
                     <span>{{ __('app.roles.relations.agenda.fields_ext.department') }}</span>
                     <strong>
                         @if($ownerDepartment?->color_hex)
-                            <span class="agenda-show-color-dot" style="background:{{ $ownerDepartment->color_hex }}"></span>
+                            <span class="agenda-show-color-dot" data-dot-color="{{ $ownerDepartment->color_hex }}"></span>
                         @endif
                         {{ $ownerDepartment?->icon ?? '' }} {{ $ownerDepartment?->name ?? '-' }}
                     </strong>
@@ -262,7 +262,7 @@
                                         @forelse($branchParticipations as $branch)
                                             <tr>
                                                 <td>
-                                                    <span class="agenda-show-color-dot" style="background:{{ $branch['color_hex'] ?? '#94a3b8' }}"></span>
+                                                    <span class="agenda-show-color-dot" data-dot-color="{{ $branch['color_hex'] ?? '#94a3b8' }}"></span>
                                                     {{ $branch['icon'] ?? '' }} {{ $branch['name'] }}
                                                 </td>
                                                 <td><span class="event-status status-{{ $branch['status'] ?? 'unspecified' }}">{{ __('app.roles.relations.agenda.participation.' . ($branch['status'] ?? 'unspecified')) }}</span></td>
@@ -282,3 +282,7 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script src="{{ \App\Support\AssetVersion::url('assets/js/pages/dynamic-colors.min.js') }}"></script>
+@endpush

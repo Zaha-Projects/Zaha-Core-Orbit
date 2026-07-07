@@ -100,8 +100,8 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-edit.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.min.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-edit.min.css') }}">
 @endpush
 
 
@@ -977,7 +977,7 @@
 <script type="application/json" id="monthly-edit-old-partners-json">@json($oldPartners)</script>
 <script type="application/json" id="monthly-edit-old-supplies-json">@json($oldSupplies)</script>
 <script type="application/json" id="monthly-edit-old-team-groups-json">@json($oldTeamGroups)</script>
-<script src="{{ \App\Support\AssetVersion::url('assets/js/monthly-activity-edit.js') }}"></script>
+<script src="{{ \App\Support\AssetVersion::url('assets/js/monthly-activity-edit.min.js') }}"></script>
 @endpush
 
 @endsection

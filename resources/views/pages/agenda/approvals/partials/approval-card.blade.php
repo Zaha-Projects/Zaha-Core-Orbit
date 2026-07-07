@@ -47,7 +47,7 @@
                 <span><i class="fas fa-route" aria-hidden="true"></i>{{ $currentStepLabel }}</span>
             </div>
 
-            <div class="agenda-approval-progress mt-3" style="--approval-progress: {{ $progressPercent }}%;">
+            <div class="agenda-approval-progress mt-3" data-approval-progress="{{ $progressPercent }}">
                 <div class="agenda-approval-progress__head">
                     <span>{{ __('workflow_ui.common.current_step') }}: {{ $currentStepLabel }}</span>
                     <strong>{{ $progressCurrent }}/{{ $progressTotal }}</strong>

@@ -2,7 +2,7 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.min.css') }}">
 @endpush
 
 @php

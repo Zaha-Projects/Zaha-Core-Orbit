@@ -22,9 +22,9 @@
     <link rel="stylesheet" href="{{ $versionedAsset('assets/css/bootstrap.min.css') }}" />
     <link rel="stylesheet" href="{{ $versionedAsset('assets/vendors/css/vendors.min.css') }}" />
     <link rel="stylesheet" href="{{ $versionedAsset('assets/css/theme.min.css') }}" />
-    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/zaha-duralux-overrides.css') }}" />
-    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/zaha-theme.css') }}" />
-    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/auth-arabic-login.css') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/zaha-duralux-overrides.min.css') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/zaha-theme.min.css') }}" />
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/auth-arabic-login.min.css') }}" />
     @stack('styles')
 </head>
 <body class="{{ $theme === 'dark' ? 'app-skin-dark' : 'app-skin-light' }} guest-page-body auth-shell" data-locale="{{ $locale }}">
@@ -48,17 +48,7 @@
 
 <script src="{{ $versionedAsset('assets/vendors/js/vendors.min.js') }}"></script>
 <script src="{{ $versionedAsset('assets/js/common-init.min.js') }}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.js-locale-switch').forEach(function (form) {
-            form.addEventListener('submit', function () {
-                var locale = form.dataset.locale;
-                document.documentElement.setAttribute('lang', locale);
-                document.documentElement.setAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
-            });
-        });
-    });
-</script>
+<script src="{{ \App\Support\AssetVersion::url('assets/js/pages/layouts-auth-cover.min.js') }}"></script>
 @stack('scripts')
 </body>
 </html>

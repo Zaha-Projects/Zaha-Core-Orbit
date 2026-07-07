@@ -128,5 +128,5 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/reports-kpis.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/reports-kpis.min.css') }}">
 @endpush

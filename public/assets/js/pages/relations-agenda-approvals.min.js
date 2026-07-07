@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-approval-progress]').forEach(function(el){var value=parseFloat(el.getAttribute('data-approval-progress')||'0');if(!Number.isFinite(value)){value=0;}value=Math.max(0,Math.min(100,value));el.style.setProperty('--approval-progress',value+'%');});});

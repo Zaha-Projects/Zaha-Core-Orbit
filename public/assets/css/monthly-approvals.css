@@ -517,3 +517,6 @@
     .post-execution-attachment-card__actions { justify-content: stretch; }
     .post-execution-attachment-card__actions .btn { width: 100%; }
 }
+
+.workflow-summary-toggle{cursor:pointer;}
+.calendar-month-input{max-width:140px;}

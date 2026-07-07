@@ -1,10 +1,6 @@
 @once
     @push('styles')
-        <style>
-            .monthly-delete-modal { border: 0; border-radius: 1.25rem; box-shadow: 0 28px 80px rgba(15, 23, 42, .2); }
-            .monthly-delete-modal__icon { align-items: center; background: #fee2e2; border-radius: 1rem; color: #dc2626; display: inline-flex; height: 48px; justify-content: center; width: 48px; }
-            [data-theme="dark"] .monthly-delete-modal { background: var(--surface-bg); color: var(--text-color); }
-        </style>
+        <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/pages-monthly_activities-activities-partials-delete-reason-modal.min.css') }}">
     @endpush
 @endonce
 
@@ -37,65 +33,6 @@
 
 @once
     @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const modalElement = document.getElementById('monthlyActivityDeleteReasonModal');
-                if (!modalElement || typeof bootstrap === 'undefined') {
-                    return;
-                }
-
-                const modal = new bootstrap.Modal(modalElement);
-                const input = document.getElementById('monthlyActivityDeleteReasonInput');
-                const error = document.getElementById('monthlyActivityDeleteReasonError');
-                const confirmButton = document.getElementById('monthlyActivityDeleteReasonConfirm');
-                const label = confirmButton.querySelector('.monthly-delete-submit-label');
-                const loading = confirmButton.querySelector('.monthly-delete-submit-loading');
-                let activeForm = null;
-
-                document.querySelectorAll('[data-delete-reason-form="monthly-activity"]').forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        const hiddenInput = form.querySelector('input[name="delete_reason"]');
-                        if (hiddenInput && hiddenInput.value.trim() !== '') {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        activeForm = form;
-                        input.value = '';
-                        input.classList.remove('is-invalid');
-                        error.classList.add('d-none');
-                        confirmButton.disabled = false;
-                        label.classList.remove('d-none');
-                        loading.classList.add('d-none');
-                        modal.show();
-                        setTimeout(function () { input.focus(); }, 250);
-                    });
-                });
-
-                confirmButton.addEventListener('click', function () {
-                    const reason = input.value.trim();
-                    if (!reason) {
-                        input.classList.add('is-invalid');
-                        error.classList.remove('d-none');
-                        input.focus();
-                        return;
-                    }
-
-                    if (!activeForm) {
-                        return;
-                    }
-
-                    const hiddenInput = activeForm.querySelector('input[name="delete_reason"]');
-                    if (hiddenInput) {
-                        hiddenInput.value = reason;
-                    }
-
-                    confirmButton.disabled = true;
-                    label.classList.add('d-none');
-                    loading.classList.remove('d-none');
-                    activeForm.submit();
-                });
-            });
-        </script>
+        <script src="{{ \App\Support\AssetVersion::url('assets/js/pages/pages-monthly_activities-activities-partials-delete-reason-modal.min.js') }}"></script>
     @endpush
 @endonce

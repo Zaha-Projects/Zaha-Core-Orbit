@@ -1,0 +1,9 @@
+document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.js-locale-switch').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                var locale = form.dataset.locale;
+                document.documentElement.setAttribute('lang', locale);
+                document.documentElement.setAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
+            });
+        });
+    });

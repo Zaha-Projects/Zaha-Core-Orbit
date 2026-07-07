@@ -3,7 +3,7 @@
 
 @push('styles')
 @php
-    $workflowUiCssPath = public_path('assets/css/workflow-ui.css');
+    $workflowUiCssPath = public_path('assets/css/workflow-ui.min.css');
     $versionedAsset = static function (string $path): string {
         $absolutePath = public_path($path);
         $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
@@ -12,10 +12,10 @@
     };
 @endphp
 @if (file_exists($workflowUiCssPath))
-<link rel="stylesheet" href="{{ $versionedAsset('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/workflow-ui.min.css') }}">
 @endif
-<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-approvals.css') }}">
-<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-change-values.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-approvals.min.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-change-values.min.css') }}">
 @endpush
 
 @section('content')
@@ -221,7 +221,7 @@
                             <span><i class="fas fa-user-check" aria-hidden="true"></i> المعتمد الحالي: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
                             <strong>{{ $approvedCount }}/{{ $totalSteps }}</strong>
                         </div>
-                        <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
+                        <div class="approvals-status-progress"><span data-approval-progress="{{ $progress }}"></span></div>
                     </section>
 
                     @if(!empty($deleteRequest->workflow_timeline))
@@ -370,7 +370,7 @@
                             <span><i class="fas fa-user-check" aria-hidden="true"></i> المعتمد الحالي: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
                             <strong>{{ $approvedCount }}/{{ $totalSteps }}</strong>
                         </div>
-                        <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
+                        <div class="approvals-status-progress"><span data-approval-progress="{{ $progress }}"></span></div>
                     </section>
 
                     @if(!empty($editRequest->workflow_timeline))
@@ -502,5 +502,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ $versionedAsset('assets/js/monthly-approvals.js') }}"></script>
+<script src="{{ $versionedAsset('assets/js/monthly-approvals.min.js') }}"></script>
 @endpush
