@@ -1,0 +1,14 @@
+.users-admin-page .users-hero { border: 0; border-radius: 22px; background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(20,184,166,.08)); }
+    .users-admin-page .user-status-dot { display: inline-flex; align-items: center; gap: .45rem; font-weight: 700; }
+    .users-admin-page .user-status-dot::before { content: ''; width: .72rem; height: .72rem; border-radius: 999px; box-shadow: 0 0 0 4px rgba(148,163,184,.14); }
+    .users-admin-page .user-status-dot.is-active::before { background: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,.14); }
+    .users-admin-page .user-status-dot.is-inactive::before { background: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,.14); }
+    .users-admin-page .user-role-badge { border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+    .users-admin-page .assigned-branches { color: #64748b; font-size: .82rem; line-height: 1.7; }
+    .users-admin-page .table thead th { background: #f8fafc; color: #0f172a; font-weight: 800; white-space: nowrap; }
+    .users-admin-page .table td { vertical-align: middle; }
+    .users-admin-page .password-input-group .btn { border-color: #d7dee8; }
+    .users-admin-page .modal-content { border: 0; border-radius: 22px; box-shadow: 0 24px 70px rgba(15,23,42,.16); }
+    .users-admin-page .modal-header { background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%); border-bottom: 1px solid #e2e8f0; }
+    .users-admin-page .form-select, .users-admin-page .form-control { min-height: 42px; }
+    .users-admin-page .permission-scroll { max-height: 300px; overflow: auto; }

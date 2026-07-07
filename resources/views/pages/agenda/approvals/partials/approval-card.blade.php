@@ -10,6 +10,7 @@
     $progressCurrent = (int) ($workflowSummary['completed_steps_count'] ?? 0);
     $progressTotal = max((int) ($workflowSummary['total_steps_count'] ?? 0), 1);
     $progressPercent = min(100, round(($progressCurrent / $progressTotal) * 100));
+    $previewSteps = collect($workflowSummary['steps'] ?? [])->where('applies', true)->take(4);
 @endphp
 
 <div class="wf-card card agenda-approval-card agenda-approval-card--{{ $statusKey }}">
@@ -32,15 +33,35 @@
                         @endif
                     </div>
                 </div>
-                <span class="wf-status-badge {{ $statusClass }}">{{ $workflowSummary['status_label'] ?? __('app.common.na') }}</span>
+                <div class="agenda-approval-card__status-stack">
+                    @if($canDecide)
+                        <span class="agenda-approval-card__action-needed"><i class="fas fa-bell" aria-hidden="true"></i> المعلقة لدي</span>
+                    @endif
+                    <span class="wf-status-badge {{ $statusClass }}">{{ $workflowSummary['status_label'] ?? __('app.common.na') }}</span>
+                </div>
             </div>
 
-            <div class="agenda-approval-progress mt-3" style="--approval-progress: {{ $progressPercent }}%;">
+            <div class="agenda-approval-card__chips" aria-label="ملخص النشاط">
+                <span><i class="fas fa-calendar-day" aria-hidden="true"></i>{{ optional($event->event_date)->format('d/m/Y') ?? sprintf('%02d/%02d', $event->day, $event->month) }}</span>
+                <span><i class="fas fa-building" aria-hidden="true"></i>{{ $event->ownerDepartment?->name ?? __('app.common.na') }}</span>
+                <span><i class="fas fa-route" aria-hidden="true"></i>{{ $currentStepLabel }}</span>
+            </div>
+
+            <div class="agenda-approval-progress mt-3" data-approval-progress="{{ $progressPercent }}">
                 <div class="agenda-approval-progress__head">
                     <span>{{ __('workflow_ui.common.current_step') }}: {{ $currentStepLabel }}</span>
                     <strong>{{ $progressCurrent }}/{{ $progressTotal }}</strong>
                 </div>
                 <div class="agenda-approval-progress__bar"><span></span></div>
+            </div>
+
+            <div class="agenda-approval-step-preview">
+                @foreach($previewSteps as $step)
+                    <span class="agenda-approval-step-preview__item agenda-approval-step-preview__item--{{ $step['state'] }} {{ !empty($step['is_current']) ? 'is-current' : '' }}">
+                        <small>{{ $step['role_label'] }}</small>
+                        <strong>{{ $step['state_label'] }}</strong>
+                    </span>
+                @endforeach
             </div>
         </div>
 

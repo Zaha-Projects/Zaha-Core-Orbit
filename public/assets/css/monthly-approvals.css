@@ -517,3 +517,183 @@
     .post-execution-attachment-card__actions { justify-content: stretch; }
     .post-execution-attachment-card__actions .btn { width: 100%; }
 }
+
+.workflow-summary-toggle{cursor:pointer;}
+.calendar-month-input{max-width:140px;}
+
+.approvals-pagination-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem !important;
+}
+
+.approvals-pagination-wrap nav {
+    width: 100%;
+}
+
+.approvals-pagination-wrap .pagination {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .45rem;
+    justify-content: center;
+    margin-bottom: 0;
+}
+
+.approvals-pagination-wrap .page-link {
+    align-items: center;
+    border: 1px solid #dbe7f5;
+    border-radius: 999px !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+    color: #1f4ba6;
+    display: inline-flex;
+    font-size: .86rem;
+    font-weight: 800;
+    justify-content: center;
+    min-height: 2.35rem;
+    min-width: 2.35rem;
+    padding: .45rem .8rem;
+}
+
+.approvals-pagination-wrap .page-item.active .page-link {
+    background: linear-gradient(135deg, #1f4ba6, #00a9c4);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(31, 75, 166, .22);
+}
+
+.approvals-pagination-wrap .page-item.disabled .page-link {
+    background: #f8fafc;
+    color: #94a3b8;
+    box-shadow: none;
+}
+
+.approvals-pagination-wrap .page-link:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #0f3d91;
+}
+
+[data-theme="dark"] .approvals-pagination-wrap .page-link {
+    background: var(--surface-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .approvals-pagination-wrap .page-item.disabled .page-link {
+    background: var(--surface-soft);
+    color: var(--muted-color);
+}
+
+.monthly-approvals-page .approvals-pagination-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0 0 !important;
+    overflow-x: auto;
+    padding: .35rem .25rem .65rem;
+}
+
+.monthly-approvals-page .approvals-pagination-wrap nav[role="navigation"],
+.monthly-approvals-page .approvals-pagination-wrap nav {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.monthly-approvals-page .approvals-pagination-wrap .pagination {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+.monthly-approvals-page .approvals-pagination-wrap .page-item,
+.monthly-approvals-page .approvals-pagination-wrap .pagination > li {
+    display: inline-flex;
+    margin: 0;
+}
+
+.monthly-approvals-page .approvals-pagination-wrap .page-link,
+.monthly-approvals-page .approvals-pagination-wrap .pagination a,
+.monthly-approvals-page .approvals-pagination-wrap .pagination span {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #dbe7f5;
+    border-radius: 999px !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+    color: #1f4ba6;
+    display: inline-flex;
+    font-size: .86rem;
+    font-weight: 800;
+    gap: .25rem;
+    height: 2.35rem;
+    justify-content: center;
+    line-height: 1;
+    min-width: 2.35rem;
+    padding: .45rem .8rem;
+    text-decoration: none;
+}
+
+.monthly-approvals-page .approvals-pagination-wrap .page-link svg,
+.monthly-approvals-page .approvals-pagination-wrap .pagination svg,
+.monthly-approvals-page .approvals-pagination-wrap nav[role="navigation"] svg {
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 16px !important;
+    max-height: 16px !important;
+    max-width: 16px !important;
+    width: 16px !important;
+}
+
+.monthly-approvals-page .approvals-pagination-wrap .page-item.active .page-link,
+.monthly-approvals-page .approvals-pagination-wrap .pagination .active > a,
+.monthly-approvals-page .approvals-pagination-wrap .pagination .active > span {
+    background: linear-gradient(135deg, #1f4ba6, #00a9c4);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(31, 75, 166, .22);
+}
+
+.monthly-approvals-page .approvals-pagination-wrap .page-item.disabled .page-link,
+.monthly-approvals-page .approvals-pagination-wrap .pagination .disabled > a,
+.monthly-approvals-page .approvals-pagination-wrap .pagination .disabled > span {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.monthly-approvals-page .approvals-pagination-wrap .page-link:hover,
+.monthly-approvals-page .approvals-pagination-wrap .pagination a:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #0f3d91;
+}
+
+[data-theme="dark"] .monthly-approvals-page .approvals-pagination-wrap .page-link,
+[data-theme="dark"] .monthly-approvals-page .approvals-pagination-wrap .pagination a,
+[data-theme="dark"] .monthly-approvals-page .approvals-pagination-wrap .pagination span {
+    background: var(--surface-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .monthly-approvals-page .approvals-pagination-wrap .page-item.active .page-link,
+[data-theme="dark"] .monthly-approvals-page .approvals-pagination-wrap .pagination .active > a,
+[data-theme="dark"] .monthly-approvals-page .approvals-pagination-wrap .pagination .active > span {
+    color: #fff;
+}
+
+@media (max-width: 575.98px) {
+    .monthly-approvals-page .approvals-pagination-wrap .page-link,
+    .monthly-approvals-page .approvals-pagination-wrap .pagination a,
+    .monthly-approvals-page .approvals-pagination-wrap .pagination span {
+        height: 2.15rem;
+        min-width: 2.15rem;
+        padding: .35rem .65rem;
+    }
+}

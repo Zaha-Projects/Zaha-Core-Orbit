@@ -2,10 +2,10 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.css') }}">
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-show.css') }}">
-<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-change-values.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.min.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.min.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-show.min.css') }}">
+<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-change-values.min.css') }}">
 @endpush
 
 @php

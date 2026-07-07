@@ -373,11 +373,20 @@
         }
     }
 
+    function updateMonthQueryAndReload(date) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('year', String(date.getFullYear()));
+        params.set('month', String(date.getMonth() + 1));
+        params.delete('page');
+        params.delete('per_page');
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+
     module.querySelectorAll('[data-calendar-nav]').forEach((button) => {
         button.addEventListener('click', () => {
             const delta = button.dataset.calendarNav === 'next' ? 1 : -1;
             currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1);
-            renderCalendar();
+            updateMonthQueryAndReload(currentDate);
         });
     });
 
@@ -394,7 +403,7 @@
                 const selectedDate = selectedDates?.[0];
                 if (!selectedDate) return;
                 currentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-                renderCalendar();
+                updateMonthQueryAndReload(currentDate);
             },
         };
 

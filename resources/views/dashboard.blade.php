@@ -89,5 +89,5 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/dashboard-calendar.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/dashboard-calendar.min.css') }}">
 @endpush

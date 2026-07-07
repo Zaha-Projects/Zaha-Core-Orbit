@@ -1,6 +1,6 @@
 <div class="agenda-approval-panel agenda-approval-panel--history mb-3">
     <details>
-        <summary class="fw-semibold" style="cursor:pointer;">{{ __('workflow_ui.approvals.workflow_history') }}</summary>
+        <summary class="fw-semibold workflow-summary-toggle">{{ __('workflow_ui.approvals.workflow_history') }}</summary>
         <div class="wf-state-stack mt-3">
             @forelse($timeline as $entry)
                 <div class="wf-state-card wf-state-card--{{ $entry['action'] }}">

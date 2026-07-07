@@ -62,6 +62,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-3">{{ ($editRequests ?? null)?->links() }}</div>
+        <div class="mt-3 approvals-pagination-wrap agenda-approvals-pagination-wrap">{{ ($editRequests ?? null)?->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
     </div>
 </div>

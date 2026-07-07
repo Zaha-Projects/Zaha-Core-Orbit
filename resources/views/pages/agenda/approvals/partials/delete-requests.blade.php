@@ -47,6 +47,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-3">{{ ($deleteRequests ?? null)?->links() }}</div>
+        <div class="mt-3 approvals-pagination-wrap agenda-approvals-pagination-wrap">{{ ($deleteRequests ?? null)?->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
     </div>
 </div>

@@ -283,3 +283,147 @@
         flex-direction: column;
     }
 }
+
+.agenda-approval-quickfilters {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    border: 1px solid #dbe7f5;
+    border-radius: 999px;
+    padding: .35rem;
+    background: rgba(255, 255, 255, .82);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+.agenda-approval-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    border-radius: 999px;
+    padding: .48rem .85rem;
+    color: #475569;
+    font-size: .84rem;
+    font-weight: 850;
+    text-decoration: none;
+    transition: .18s ease;
+}
+
+.agenda-approval-filter-pill:hover,
+.agenda-approval-filter-pill.active {
+    background: linear-gradient(135deg, #00a9c4, #0ea5e9);
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(14, 165, 233, .22);
+}
+
+.agenda-approval-card__status-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .5rem;
+}
+
+.agenda-approval-card__action-needed {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border-radius: 999px;
+    padding: .28rem .7rem;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: .76rem;
+    font-weight: 900;
+    box-shadow: 0 8px 16px rgba(194, 65, 12, .12);
+}
+
+.agenda-approval-card__chips,
+.agenda-approval-step-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin-top: .8rem;
+}
+
+.agenda-approval-card__chips span {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: .35rem .7rem;
+    background: rgba(255, 255, 255, .76);
+    color: #334155;
+    font-size: .8rem;
+    font-weight: 800;
+}
+
+.agenda-approval-step-preview__item {
+    min-width: 150px;
+    flex: 1 1 150px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: .65rem .75rem;
+    background: rgba(255, 255, 255, .72);
+}
+
+.agenda-approval-step-preview__item small,
+.agenda-approval-step-preview__item strong {
+    display: block;
+}
+
+.agenda-approval-step-preview__item small {
+    color: var(--approval-muted);
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.agenda-approval-step-preview__item strong {
+    margin-top: .15rem;
+    color: var(--approval-ink);
+    font-size: .86rem;
+    font-weight: 900;
+}
+
+.agenda-approval-step-preview__item.is-current {
+    border-color: #38bdf8;
+    background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.agenda-approval-step-preview__item--approved,
+.agenda-approval-step-preview__item--submitted {
+    border-color: #bbf7d0;
+    background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.agenda-approval-step-preview__item--changes_requested,
+.agenda-approval-step-preview__item--awaiting_resubmission {
+    border-color: #fed7aa;
+    background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+}
+
+.agenda-approval-step-preview__item--rejected {
+    border-color: #fecaca;
+    background: linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+[data-theme="dark"] .agenda-approval-quickfilters,
+[data-theme="dark"] .agenda-approval-card__chips span,
+[data-theme="dark"] .agenda-approval-step-preview__item {
+    background: var(--surface-bg);
+    border-color: var(--border-color);
+}
+
+@media (max-width: 767.98px) {
+    .agenda-approval-quickfilters {
+        width: 100%;
+        border-radius: 18px;
+    }
+
+    .agenda-approval-filter-pill {
+        flex: 1 1 130px;
+        justify-content: center;
+    }
+
+    .agenda-approval-card__status-stack {
+        align-items: flex-start;
+    }
+}

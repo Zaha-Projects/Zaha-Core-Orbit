@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.css') }}">
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/agenda-approvals.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.min.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.min.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/relations-agenda-approvals.min.css') }}">
 @endpush
 
 @section('content')
@@ -33,7 +33,7 @@
         ];
     @endphp
 
-    <div class="workflow-ui agenda-approvals-page">
+    <div class="workflow-ui agenda-approvals-page relations-agenda-approvals-page">
         @include('pages.agenda.approvals.partials.hero', ['approvalStats' => $approvalStats])
 
         @if (session('status'))
@@ -59,3 +59,7 @@
         @endswitch
     </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/pages/relations-agenda-approvals.min.js') }}"></script>
+@endpush

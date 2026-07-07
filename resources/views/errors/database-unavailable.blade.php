@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/bootstrap.min.css') }}" />
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/vendors/css/vendors.min.css') }}" />
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/theme.min.css') }}" />
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/zaha-duralux-overrides.css') }}" />
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/zaha-duralux-overrides.min.css') }}" />
 </head>
 <body class="{{ $theme === 'dark' ? 'app-skin-dark' : 'app-skin-light' }}">
     <main class="auth-minimal-wrapper">

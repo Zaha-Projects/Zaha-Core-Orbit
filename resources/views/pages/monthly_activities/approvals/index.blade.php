@@ -3,7 +3,7 @@
 
 @push('styles')
 @php
-    $workflowUiCssPath = public_path('assets/css/workflow-ui.css');
+    $workflowUiCssPath = public_path('assets/css/workflow-ui.min.css');
     $versionedAsset = static function (string $path): string {
         $absolutePath = public_path($path);
         $version = is_file($absolutePath) ? filemtime($absolutePath) : time();
@@ -12,14 +12,14 @@
     };
 @endphp
 @if (file_exists($workflowUiCssPath))
-<link rel="stylesheet" href="{{ $versionedAsset('assets/css/workflow-ui.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/workflow-ui.min.css') }}">
 @endif
-<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-approvals.css') }}">
-<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-change-values.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-approvals.min.css') }}">
+<link rel="stylesheet" href="{{ $versionedAsset('assets/css/monthly-change-values.min.css') }}">
 @endpush
 
 @section('content')
-<div class="workflow-ui">
+<div class="workflow-ui monthly-approvals-page">
     <div class="wf-card card mb-4">
         <div class="card-header approvals-card-header">
             <h1 class="wf-page-title mb-1">{{ __('workflow_ui.approvals.title') }}</h1>
@@ -221,7 +221,7 @@
                             <span><i class="fas fa-user-check" aria-hidden="true"></i> المعتمد الحالي: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
                             <strong>{{ $approvedCount }}/{{ $totalSteps }}</strong>
                         </div>
-                        <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
+                        <div class="approvals-status-progress"><span data-approval-progress="{{ $progress }}"></span></div>
                     </section>
 
                     @if(!empty($deleteRequest->workflow_timeline))
@@ -331,7 +331,7 @@
                 <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد طلبات حذف.</div></div>
             @endforelse
         </div>
-        <div class="mt-3 approvals-pagination-wrap">{{ ($deleteRequests ?? null)?->links() }}</div>
+        <div class="mt-3 approvals-pagination-wrap">{{ ($deleteRequests ?? null)?->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
     @endif
 
     @if($activeApprovalTab === 'edit')
@@ -370,7 +370,7 @@
                             <span><i class="fas fa-user-check" aria-hidden="true"></i> المعتمد الحالي: {{ $currentStep?->name_ar ?? $currentStep?->name_en ?? '-' }}</span>
                             <strong>{{ $approvedCount }}/{{ $totalSteps }}</strong>
                         </div>
-                        <div class="approvals-status-progress"><span style="width: {{ $progress }}%"></span></div>
+                        <div class="approvals-status-progress"><span data-approval-progress="{{ $progress }}"></span></div>
                     </section>
 
                     @if(!empty($editRequest->workflow_timeline))
@@ -436,7 +436,7 @@
                 <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد طلبات تعديل.</div></div>
             @endforelse
         </div>
-        <div class="mt-3 approvals-pagination-wrap">{{ ($editRequests ?? null)?->links() }}</div>
+        <div class="mt-3 approvals-pagination-wrap">{{ ($editRequests ?? null)?->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
     @endif
 
     @if($activeApprovalTab === 'post_execution')
@@ -447,7 +447,7 @@
                 <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد اعتمادات ما بعد التنفيذ.</div></div>
             @endforelse
         </div>
-        <div class="mt-3 approvals-pagination-wrap">{{ ($postExecutionApprovals ?? null)?->links() }}</div>
+        <div class="mt-3 approvals-pagination-wrap">{{ ($postExecutionApprovals ?? null)?->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
     @endif
 
     @if($activeApprovalTab === 'execution_needs')
@@ -462,7 +462,7 @@
                 </article>
                 @endforeach
             @empty <div class="wf-card card"><div class="card-body text-center text-muted">لا توجد قرارات احتياجات تنفيذ.</div></div> @endforelse
-        </div><div class="mt-3 approvals-pagination-wrap">{{ ($executionNeedsDecisions ?? null)?->links() }}</div>
+        </div><div class="mt-3 approvals-pagination-wrap">{{ ($executionNeedsDecisions ?? null)?->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
     @endif
 
 
@@ -475,7 +475,7 @@
         @endforelse
     </div>
 
-    <div class="mt-3 approvals-pagination-wrap">{{ $activities->links() }}</div>
+    <div class="mt-3 approvals-pagination-wrap">{{ $activities->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
 
 
 
@@ -502,5 +502,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ $versionedAsset('assets/js/monthly-approvals.js') }}"></script>
+<script src="{{ $versionedAsset('assets/js/monthly-approvals.min.js') }}"></script>
 @endpush

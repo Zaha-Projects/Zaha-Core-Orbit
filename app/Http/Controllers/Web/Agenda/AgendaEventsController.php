@@ -505,18 +505,33 @@ class AgendaEventsController extends Controller
 
     public function index(Request $request, AgendaWorkflowPresenter $agendaWorkflowPresenter)
     {
-        $allowedPerPage = [8, 16, 24, 50, 100];
-        $perPage = (int) $request->input('per_page', 8);
-        if (! in_array($perPage, $allowedPerPage, true)) {
-            $perPage = 8;
+        $selectedYear = (int) $request->input('year', now()->year);
+        $selectedMonth = (int) $request->input('month', now()->month);
+
+        if ($selectedYear < 2000 || $selectedYear > 2100) {
+            $selectedYear = now()->year;
         }
+
+        if ($selectedMonth < 1 || $selectedMonth > 12) {
+            $selectedMonth = now()->month;
+        }
+
+        if (! $request->filled('year') || ! $request->filled('month')) {
+            return redirect()->route('role.relations.agenda.index', array_merge(
+                $request->except(['page', 'per_page']),
+                ['year' => $selectedYear, 'month' => $selectedMonth]
+            ));
+        }
+
         $selectedStatus = trim((string) $request->input('status', ''));
 
         $filteredBranchId = $this->canUserFilterAgendaBranches($request->user())
             ? $request->input('branch_id')
             : null;
-        $agendaFilters = array_merge($request->except('status'), [
+        $agendaFilters = array_merge($request->except(['status', 'page', 'per_page']), [
             'branch_id' => $filteredBranchId,
+            'year' => $selectedYear,
+            'month' => $selectedMonth,
         ]);
 
         $eventsQuery = AgendaEvent::with([
@@ -541,7 +556,7 @@ class AgendaEventsController extends Controller
 
         $events = $eventsQuery
             ->orderBy('event_date')->orderBy('month')->orderBy('day')
-            ->paginate($perPage)
+            ->paginate(16)
             ->withQueryString();
 
         $events->getCollection()->transform(function (AgendaEvent $event) use ($agendaWorkflowPresenter, $request) {
@@ -567,7 +582,6 @@ class AgendaEventsController extends Controller
 
         $filters = array_merge($agendaFilters, [
             'status' => $selectedStatus,
-            'per_page' => $perPage,
         ]);
 
         $agendaStatusOptions = $this->agendaPageStatusOptions();

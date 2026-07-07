@@ -522,3 +522,6 @@
 .calendar-picker-wrap .flatpickr-input[type="hidden"] {
     display: none;
 }
+
+.workflow-summary-toggle{cursor:pointer;}
+.calendar-month-input{max-width:140px;}

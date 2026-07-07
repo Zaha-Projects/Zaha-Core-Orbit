@@ -1,4 +1,6 @@
 (function () {
+  const currentScriptSrc = document.currentScript?.src || '';
+  const themeAssetBase = currentScriptSrc ? new URL('../', currentScriptSrc).toString() : `${window.location.origin}/assets/theme/`;
   const fallbackDictionaries = {
     ar: {
       theme_dark: 'الوضع الداكن',
@@ -120,7 +122,7 @@
     let dict = fallbackDictionaries[locale] || fallbackDictionaries.ar;
 
     try {
-      const response = await fetch(`/assets/theme/locales/${locale}/common.json`, { cache: 'no-store' });
+      const response = await fetch(`${themeAssetBase}locales/${locale}/common.json`, { cache: 'no-store' });
       if (response.ok) dict = await response.json();
     } catch (error) {
       console.warn('Locale fetch fallback:', error);

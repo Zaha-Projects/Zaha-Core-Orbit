@@ -2,6 +2,20 @@
     <div class="card-body">
         <form method="GET" action="{{ route('role.relations.approvals.index') }}" class="row g-3 align-items-end">
             <input type="hidden" name="tab" value="approval">
+            <div class="col-12">
+                <div class="agenda-approval-quickfilters" role="group" aria-label="فلاتر سريعة">
+                    <a class="agenda-approval-filter-pill {{ !empty($filters['my_pending']) ? 'active' : '' }}"
+                       href="{{ route('role.relations.approvals.index', array_merge(request()->except(['page', 'my_pending']), ['tab' => 'approval', 'my_pending' => 1])) }}">
+                        <i class="fas fa-user-clock" aria-hidden="true"></i>
+                        <span>المعلقة لدي</span>
+                    </a>
+                    <a class="agenda-approval-filter-pill {{ empty($filters['my_pending']) ? 'active' : '' }}"
+                       href="{{ route('role.relations.approvals.index', array_merge(request()->except(['page', 'my_pending']), ['tab' => 'approval'])) }}">
+                        <i class="fas fa-layer-group" aria-hidden="true"></i>
+                        <span>كل الطلبات</span>
+                    </a>
+                </div>
+            </div>
             @include('pages.shared.filters.workflow-status-and-step', [
                 'statusFieldName' => 'approval_status',
                 'statusFieldId' => 'approval_status',
@@ -18,7 +32,7 @@
             ])
             <div class="col-auto d-flex gap-2">
                 <button class="btn btn-primary" type="submit">{{ __('app.roles.relations.approvals.filters.apply') }}</button>
-                @if(!empty($filters['approval_status']) || !empty($filters['current_step']))
+                @if(!empty($filters['approval_status']) || !empty($filters['current_step']) || !empty($filters['my_pending']))
                     <a class="btn btn-outline-secondary" href="{{ route('role.relations.approvals.index', ['tab' => 'approval']) }}">{{ __('app.roles.relations.approvals.filters.reset') }}</a>
                 @endif
             </div>
@@ -37,3 +51,6 @@
         </div>
     @endforelse
 </div>
+@if(method_exists($events, 'links'))
+    <div class="mt-3 approvals-pagination-wrap agenda-approvals-pagination-wrap">{{ $events->onEachSide(1)->links('pagination::bootstrap-5') }}</div>
+@endif

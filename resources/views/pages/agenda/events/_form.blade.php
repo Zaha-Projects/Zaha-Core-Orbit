@@ -247,70 +247,11 @@
 
 
 @push('styles')
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/agenda-events-form.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.min.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/agenda-events-form.min.css') }}">
 @endpush
 
 @push('scripts')
-    <script src="{{ \App\Support\AssetVersion::url('assets/js/agenda-events-form.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('form.agenda-form');
-            if (!form) return;
-            const planType = form.querySelector('.js-plan-type');
-            const unifiedSection = document.querySelector('.js-unified-template-section');
-            const modalEl = document.getElementById('unifiedTemplateModal');
-            const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
-            const requiredError = document.getElementById('tpl_required_error');
-            const map = ['title','proposed_date','description','execution_time','time_from','time_to'];
-            const hidden = (k) => form.querySelector(`input[name="monthly_template_${k}"]`);
-            const field = (k) => document.getElementById(`tpl_${k}`);
-            const syncUnified = () => unifiedSection?.classList.toggle('d-none', planType?.value !== 'unified');
-            const syncFromEvent = () => {
-                const eventName = form.querySelector('input[name="event_name"]')?.value || '';
-                const eventDate = form.querySelector('input[name="event_date"]')?.value || '';
-                const notes = form.querySelector('textarea[name="notes"]')?.value || '';
-                if (field('title')) field('title').value = eventName;
-                if (field('proposed_date')) field('proposed_date').value = eventDate;
-                if (field('description')) field('description').value = notes;
-                if (hidden('title')) hidden('title').value = eventName;
-                if (hidden('proposed_date')) hidden('proposed_date').value = eventDate;
-                if (hidden('description')) hidden('description').value = notes;
-            };
-            syncUnified();
-            planType?.addEventListener('change', syncUnified);
-            map.forEach((k) => { if (field(k) && hidden(k)) field(k).value = hidden(k).value || ''; });
-            const initialTargetGroups = (form.querySelector('input[name="monthly_template_target_group_ids"]')?.value || '').split(',').map((v) => v.trim()).filter(Boolean);
-            document.querySelectorAll('[data-template-target-group]').forEach((checkbox) => { checkbox.checked = initialTargetGroups.includes(checkbox.value); });
-            syncFromEvent();
-            form.querySelector('input[name="event_name"]')?.addEventListener('input', syncFromEvent);
-            form.querySelector('input[name="event_date"]')?.addEventListener('input', syncFromEvent);
-            form.querySelector('textarea[name="notes"]')?.addEventListener('input', syncFromEvent);
-            document.getElementById('openUnifiedTemplateModal')?.addEventListener('click', () => modal?.show());
-            document.getElementById('saveUnifiedTemplate')?.addEventListener('click', () => {
-                const timeFrom = field('time_from')?.value || '';
-                const timeTo = field('time_to')?.value || '';
-                const selectedTargetGroups = Array.from(document.querySelectorAll('[data-template-target-group]:checked')).map((el) => el.value);
-                const ok = ['title','proposed_date','description'].every((k) => (field(k)?.value || '').trim() !== '') && selectedTargetGroups.length > 0 && timeFrom !== '' && timeTo !== '';
-                requiredError?.classList.toggle('d-none', ok);
-                if (!ok) return;
-                if (hidden('execution_time')) hidden('execution_time').value = `${timeFrom} - ${timeTo}`;
-                if (hidden('time_from')) hidden('time_from').value = timeFrom;
-                if (hidden('time_to')) hidden('time_to').value = timeTo;
-                map.forEach((k) => { if (['execution_time','time_from','time_to'].includes(k)) return; if (hidden(k)) hidden(k).value = field(k)?.value || ''; });
-                const hiddenTargetGroups = form.querySelector('input[name="monthly_template_target_group_ids"]');
-                if (hiddenTargetGroups) hiddenTargetGroups.value = selectedTargetGroups.join(',');
-                modal?.hide();
-            });
-            form.addEventListener('submit', function (e) {
-                if (e.submitter?.value !== 'submit' || planType?.value !== 'unified') return;
-                const hiddenTargetGroups = form.querySelector('input[name="monthly_template_target_group_ids"]')?.value || '';
-                const ok = ['title','proposed_date','description','execution_time'].every((k) => (hidden(k)?.value || '').trim() !== '') && hiddenTargetGroups.trim() !== '';
-                if (!ok) {
-                    e.preventDefault();
-                    modal?.show();
-                }
-            });
-        });
-    </script>
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/agenda-events-form.min.js') }}"></script>
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/pages/pages-agenda-events-_form.min.js') }}"></script>
 @endpush

@@ -303,7 +303,7 @@
                         @foreach ($selectedTargetGroupIds as $targetGroupId)
                             <input type="hidden" name="target_group_ids[]" value="{{ $targetGroupId }}">
                         @endforeach
-                        <div class="form-control" readonly style="min-height: 44px; background-color: #f8f9fa;">
+                        <div class="form-control monthly-readonly-display" readonly>
                             {{ $selectedTargetGroupNames !== [] ? implode('، ', $selectedTargetGroupNames) : '—' }}
                         </div>
                     @else
@@ -325,7 +325,7 @@
                     <label class="form-label">أخرى (توضيح)</label>
                     @if ($isLockedField('target_group_ids'))
                         <input type="hidden" name="target_group_other" value="{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) }}">
-                        <div class="form-control" readonly style="min-height: 44px; background-color: #f8f9fa;">{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) ?: '—' }}</div>
+                        <div class="form-control monthly-readonly-display" readonly>{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) ?: '—' }}</div>
                     @else
                         <input class="form-control" name="target_group_other" value="{{ old('target_group_other', $existingMonthlyActivity?->target_group_other) }}">
                     @endif
@@ -644,7 +644,7 @@
                             <h3 class="h6 mb-0">بيانات الرعاة الرسميين</h3>
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0">عدد الرعاة</label>
-                                <input class="form-control form-control-sm js-sponsors-count" type="number" min="1" max="10" value="{{ old('sponsors_count', $sponsorsCount) }}" style="width: 90px;">
+                                <input class="form-control form-control-sm monthly-count-input js-sponsors-count" type="number" min="1" max="10" value="{{ old('sponsors_count', $sponsorsCount) }}">
                             </div>
                         </div>
                         <div class="row g-3">
@@ -660,7 +660,7 @@
                             <h3 class="h6 mb-0">الشركاء</h3>
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0">عدد الشركاء</label>
-                                <input class="form-control form-control-sm js-partners-count" type="number" min="1" max="10" value="{{ old('partners_count', $partnersCount) }}" style="width: 90px;">
+                                <input class="form-control form-control-sm monthly-count-input js-partners-count" type="number" min="1" max="10" value="{{ old('partners_count', $partnersCount) }}">
                             </div>
                         </div>
                         <div class="row g-3 mb-1">
@@ -820,7 +820,7 @@
                             <h3 class="h6 mb-0">المستلزمات</h3>
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0">عدد البنود</label>
-                                <input class="form-control form-control-sm js-supplies-count" type="number" min="1" max="20" value="{{ old('supplies_count', $suppliesCount) }}" style="width: 90px;">
+                                <input class="form-control form-control-sm monthly-count-input js-supplies-count" type="number" min="1" max="20" value="{{ old('supplies_count', $suppliesCount) }}">
                             </div>
                         </div>
                         <div class="row g-3 mb-1">
@@ -836,7 +836,7 @@
                             <h3 class="h6 mb-0">فريق العمل</h3>
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0">عدد الفرق</label>
-                                <input class="form-control form-control-sm js-team-groups-count" type="number" min="1" max="10" value="{{ old('team_groups_count', $teamGroupsCount) }}" style="width: 90px;">
+                                <input class="form-control form-control-sm monthly-count-input js-team-groups-count" type="number" min="1" max="10" value="{{ old('team_groups_count', $teamGroupsCount) }}">
                             </div>
                         </div>
                         <div class="js-team-groups-container"></div>
@@ -861,8 +861,8 @@
 
 
 @push('styles')
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.css') }}">
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-form.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.min.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/monthly-activity-form.min.css') }}">
 @endpush
 
 @push('scripts')
@@ -871,5 +871,5 @@
     <script type="application/json" id="monthly-form-old-partners-json">@json($oldPartners)</script>
     <script type="application/json" id="monthly-form-old-supplies-json">@json($oldSupplies)</script>
     <script type="application/json" id="monthly-form-old-team-groups-json">@json($oldTeamGroups)</script>
-    <script src="{{ \App\Support\AssetVersion::url('assets/js/monthly-activity-form.js') }}"></script>
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/monthly-activity-form.min.js') }}"></script>
 @endpush

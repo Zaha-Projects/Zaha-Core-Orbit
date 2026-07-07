@@ -30,7 +30,7 @@
                 <strong>{{ $card['approved_steps_count'] }}/{{ $card['workflow_steps_count'] }}</strong>
             </div>
             <div class="approvals-status-progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $card['workflow_steps_count'] }}" aria-valuenow="{{ $card['approved_steps_count'] }}">
-                <span style="width: {{ $card['progress_percentage'] }}%"></span>
+                <span data-approval-progress="{{ $card['progress_percentage'] }}"></span>
             </div>
             <div class="approvals-status-grid mt-3">
                 @forelse($card['workflow_steps'] as $step)

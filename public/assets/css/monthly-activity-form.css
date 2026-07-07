@@ -252,3 +252,6 @@
         width: 100%;
     }
 }
+
+.monthly-readonly-display{min-height:44px;background-color:#f8f9fa;}
+.monthly-count-input{width:90px;}

@@ -26,22 +26,7 @@
 @endphp
 
 @push('styles')
-<style>
-    .users-admin-page .users-hero { border: 0; border-radius: 22px; background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(20,184,166,.08)); }
-    .users-admin-page .user-status-dot { display: inline-flex; align-items: center; gap: .45rem; font-weight: 700; }
-    .users-admin-page .user-status-dot::before { content: ''; width: .72rem; height: .72rem; border-radius: 999px; box-shadow: 0 0 0 4px rgba(148,163,184,.14); }
-    .users-admin-page .user-status-dot.is-active::before { background: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,.14); }
-    .users-admin-page .user-status-dot.is-inactive::before { background: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,.14); }
-    .users-admin-page .user-role-badge { border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; }
-    .users-admin-page .assigned-branches { color: #64748b; font-size: .82rem; line-height: 1.7; }
-    .users-admin-page .table thead th { background: #f8fafc; color: #0f172a; font-weight: 800; white-space: nowrap; }
-    .users-admin-page .table td { vertical-align: middle; }
-    .users-admin-page .password-input-group .btn { border-color: #d7dee8; }
-    .users-admin-page .modal-content { border: 0; border-radius: 22px; box-shadow: 0 24px 70px rgba(15,23,42,.16); }
-    .users-admin-page .modal-header { background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%); border-bottom: 1px solid #e2e8f0; }
-    .users-admin-page .form-select, .users-admin-page .form-control { min-height: 42px; }
-    .users-admin-page .permission-scroll { max-height: 300px; overflow: auto; }
-</style>
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/pages-access-users-index.min.css') }}">
 @endpush
 
 @section('content')
@@ -254,40 +239,6 @@
 @endsection
 
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const assignmentRoles = @json($assignmentRoles);
-    document.querySelectorAll('[data-user-role-select]').forEach((select) => {
-        const form = select.closest('form');
-        const wrapper = form?.querySelector('[data-branch-assignment-wrapper]');
-        const toggle = () => {
-            if (!wrapper) return;
-            const show = assignmentRoles.includes(select.value);
-            wrapper.hidden = !show;
-            wrapper.querySelectorAll('input').forEach((input) => { input.disabled = !show; });
-        };
-        select.addEventListener('change', toggle);
-        toggle();
-    });
-    const randomPassword = () => {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
-        return Array.from({length: 14}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    };
-    document.querySelectorAll('[data-password-tools]').forEach((group) => {
-        const input = group.querySelector('input');
-        group.querySelector('[data-password-toggle]')?.addEventListener('click', () => {
-            input.type = input.type === 'password' ? 'text' : 'password';
-            group.querySelector('[data-password-toggle] i')?.classList.toggle('fa-eye-slash', input.type === 'text');
-        });
-        group.querySelector('[data-password-generate]')?.addEventListener('click', () => {
-            input.value = randomPassword();
-            input.type = 'text';
-            input.dispatchEvent(new Event('input', {bubbles: true}));
-        });
-    });
-    @if($errors->any())
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('createUserModal'))?.show();
-    @endif
-});
-</script>
+    <script type="application/json" id="access-users-assignment-roles-json">@json($assignmentRoles)</script>
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/pages/pages-access-users-index.min.js') }}" data-show-create-modal="{{ $errors->any() ? '1' : '0' }}"></script>
 @endpush

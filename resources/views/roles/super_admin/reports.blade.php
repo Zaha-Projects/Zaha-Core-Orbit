@@ -454,15 +454,12 @@
 @endsection
 
 @push('scripts')
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ startOnLoad: true });
-    </script>
+    <script type="module" src="{{ \App\Support\AssetVersion::url('assets/js/pages/roles-super_admin-reports.min.js') }}"></script>
 @endpush
 
 
 @push('styles')
-    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/enterprise-dashboard.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/enterprise-dashboard.min.css') }}">
 @endpush
 
 @include('pages.enterprise.partials.charts-scripts')
