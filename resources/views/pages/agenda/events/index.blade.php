@@ -40,11 +40,6 @@
         ['value' => 'unified', 'label' => __('app.roles.relations.agenda.plans.unified')],
         ['value' => 'non_unified', 'label' => __('app.roles.relations.agenda.plans.non_unified')],
     ];
-    $perPageFilterOptions = collect([8, 16, 24, 50, 100])
-        ->map(fn (int $size): array => [
-            'value' => (string) $size,
-            'label' => __('app.roles.relations.agenda.filters.show_count', ['count' => $size]),
-        ]);
 
     $branchesById = \App\Models\Branch::query()
         ->get()
@@ -160,8 +155,8 @@
         class="event-module agenda-module"
         data-rtl="{{ $isRtl ? '1' : '0' }}"
         data-week-start="{{ $isRtl ? '6' : '0' }}"
-        data-selected-year="{{ (int) request('year', 0) }}"
-        data-selected-month="{{ (int) request('month', 0) }}"
+        data-selected-year="{{ (int) ($filters['year'] ?? now()->year) }}"
+        data-selected-month="{{ (int) ($filters['month'] ?? now()->month) }}"
         data-create-url="{{ $canManageAgenda ? route('role.relations.agenda.create') : '' }}"
         data-branch-interact="{{ $canBranchInteract ? '1' : '0' }}"
         data-initial-view="{{ $isBranchCalendarOnly ? 'calendar' : 'table' }}"
@@ -189,8 +184,8 @@
                 @include('pages.shared.filters.month-and-year-select', [
                     'monthColumnClass' => 'col-md-2',
                     'yearColumnClass' => 'col-md-2',
-                    'selectedMonth' => request('month'),
-                    'selectedYear' => request('year'),
+                    'selectedMonth' => $filters['month'] ?? now()->month,
+                    'selectedYear' => $filters['year'] ?? now()->year,
                 ])
                 @include('pages.shared.filters.status-select', [
                     'columnClass' => 'col-md-2',
@@ -223,12 +218,6 @@
                     'placeholder' => __('app.roles.relations.agenda.filters.all_plan_types'),
                     'options' => $planTypeFilterOptions,
                     'selectedValue' => request('plan_type'),
-                ])
-                @include('pages.shared.filters.select-field', [
-                    'columnClass' => 'col-md-2',
-                    'fieldName' => 'per_page',
-                    'options' => $perPageFilterOptions,
-                    'selectedValue' => request('per_page', 8),
                 ])
                 <div class="col-md-2"><button class="btn btn-outline-primary w-100">{{ __('app.common.filter') }}</button></div>
             </div>
