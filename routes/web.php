@@ -63,6 +63,9 @@ use App\Http\Controllers\Web\Enterprise\EnterpriseReportsController;
 use App\Http\Controllers\Web\Enterprise\NotificationsController;
 use App\Http\Controllers\Web\Enterprise\ArchiveController;
 use App\Http\Controllers\Web\WorkflowAutoApprovalPreferenceController;
+use App\Http\Controllers\Web\Evaluation\ActivityEvaluationsController;
+use App\Http\Controllers\Web\Evaluation\EvaluationDashboardController;
+use App\Http\Controllers\Web\Evaluation\EvaluationFormsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,6 +108,19 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard/evaluation-workflow', EvaluationDashboardController::class)->middleware('permission:evaluation.view_branch|evaluation.view_all')->name('evaluations.dashboard');
+    Route::get('/dashboard/evaluations', [ActivityEvaluationsController::class, 'index'])->middleware('permission:evaluation.view_branch|evaluation.view_all')->name('evaluations.index');
+    Route::get('/dashboard/evaluations/activities/{monthlyActivity}/verification', [ActivityEvaluationsController::class, 'review'])->name('evaluations.verification.review');
+    Route::put('/dashboard/evaluations/activities/{monthlyActivity}/verification', [ActivityEvaluationsController::class, 'verify'])->name('evaluations.verification.update');
+    Route::get('/dashboard/evaluations/activities/{monthlyActivity}/create', [ActivityEvaluationsController::class, 'create'])->name('evaluations.create');
+    Route::post('/dashboard/evaluations/activities/{monthlyActivity}', [ActivityEvaluationsController::class, 'store'])->name('evaluations.store');
+    Route::get('/dashboard/evaluations/{activityEvaluation}', [ActivityEvaluationsController::class, 'show'])->name('evaluations.show');
+    Route::patch('/dashboard/evaluations/{activityEvaluation}/visibility', [ActivityEvaluationsController::class, 'updateVisibility'])->name('evaluations.visibility.update');
+    Route::get('/dashboard/evaluation-forms', [EvaluationFormsController::class, 'index'])->middleware('permission:evaluation.forms.manage')->name('evaluation.forms.index');
+    Route::post('/dashboard/evaluation-forms', [EvaluationFormsController::class, 'store'])->middleware('permission:evaluation.forms.manage')->name('evaluation.forms.store');
+    Route::put('/dashboard/evaluation-forms/{evaluationForm}', [EvaluationFormsController::class, 'update'])->middleware('permission:evaluation.forms.manage')->name('evaluation.forms.update');
+    Route::post('/dashboard/evaluation-forms/{evaluationForm}/questions', [EvaluationFormsController::class, 'storeQuestion'])->middleware('permission:evaluation.questions.manage')->name('evaluation.forms.questions.store');
+    Route::put('/dashboard/evaluation-questions/{evaluationQuestion}', [EvaluationFormsController::class, 'updateQuestion'])->middleware('permission:evaluation.questions.manage')->name('evaluation.questions.update');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::patch('/workflow-auto-approval-preference', [WorkflowAutoApprovalPreferenceController::class, 'update'])->name('workflow_auto_approval.update');
 

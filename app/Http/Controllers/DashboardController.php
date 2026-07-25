@@ -16,6 +16,9 @@ class DashboardController extends Controller
     public function index(Request $request, DynamicWorkflowService $dynamicWorkflowService)
     {
         $user = $request->user();
+        if ($user?->hasAnyRole(['followup_officer', 'evaluation_officer'])) {
+            return redirect()->route('evaluations.dashboard');
+        }
         $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
         $isCommunicationHeadViewOnly = $user?->hasRole('communication_head') && ! $user?->hasRole('super_admin');
 

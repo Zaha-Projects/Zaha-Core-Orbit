@@ -1,0 +1,8 @@
+@extends('layouts.app')
+@section('title', __('evaluation.post_execution'))
+@section('content')
+<div class="container-fluid"><h1>{{ $activity->title }}</h1><p>{{ $activity->branch?->name }}</p>
+<form method="POST" action="{{ route('evaluations.verification.update',$activity) }}">@csrf @method('PUT')
+@foreach($activity->postExecutionVerifications as $item)<div class="card mb-3"><div class="card-body"><strong>{{ $item->field_label }}</strong><div class="alert alert-light">{{ __('evaluation.submitted_value') }}: {{ is_array(data_get($item->original_value,'value')) ? json_encode(data_get($item->original_value,'value'), JSON_UNESCAPED_UNICODE) : data_get($item->original_value,'value') }}</div><div class="row"><div class="col-md-3"><select class="form-select" name="items[{{ $item->id }}][status]" required><option value="correct" @selected($item->status==='correct')>{{ __('evaluation.statuses.correct') }}</option><option value="incorrect" @selected($item->status==='incorrect')>{{ __('evaluation.statuses.incorrect') }}</option></select></div><div class="col-md-4"><input class="form-control" name="items[{{ $item->id }}][corrected_value]" value="{{ data_get($item->corrected_value,'value') }}" placeholder="{{ __('evaluation.corrected_value') }}"></div><div class="col-md-5"><input class="form-control" name="items[{{ $item->id }}][note]" value="{{ $item->note }}" placeholder="{{ __('app.common.notes') ?? 'Notes' }}"></div></div></div></div>@endforeach
+<button class="btn btn-primary">{{ __('app.common.save') ?? 'Save' }}</button> <a class="btn btn-success" href="{{ route('evaluations.create',$activity) }}">{{ __('evaluation.title') }}</a></form></div>
+@endsection

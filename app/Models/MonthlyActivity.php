@@ -595,6 +595,16 @@ class MonthlyActivity extends Model
         return $this->hasMany(MonthlyActivityFollowup::class);
     }
 
+    public function postExecutionVerifications()
+    {
+        return $this->hasMany(PostExecutionVerification::class);
+    }
+
+    public function activityEvaluation()
+    {
+        return $this->hasOne(ActivityEvaluation::class);
+    }
+
     public function donations()
     {
         return $this->hasMany(DonationCash::class);

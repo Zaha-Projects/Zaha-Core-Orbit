@@ -2,6 +2,8 @@
 
 منصة تشغيل داخلية مبنية على **Laravel 8** لإدارة الأعمال المؤسسية في زها، وتشمل: الأجندة السنوية، الأنشطة الشهرية، المالية، الصيانة، النقل، والتقارير الموحدة مع صلاحيات حسب الأدوار.
 
+> توثيق سير عمل مسؤول المتابعة ومسؤول التقييم والتحقق من ما بعد التنفيذ متاح في [docs/evaluation-workflow.md](docs/evaluation-workflow.md).
+
 ---
 
 ## المحتوى
@@ -195,4 +197,3 @@ php artisan view:cache
 
 - Laravel Documentation: https://laravel.com/docs/8.x
 - Spatie Permission: https://spatie.be/docs/laravel-permission
-

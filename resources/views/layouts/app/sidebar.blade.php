@@ -31,6 +31,12 @@
                 @include('pages.agenda.partials.sidebar')
                 @include('pages.monthly_activities.partials.sidebar')
                 @include('pages.reports.partials.sidebar')
+                @canany(['evaluation.view_branch', 'evaluation.view_all'])
+                    <li class="nxl-item"><a class="nxl-link {{ request()->routeIs('evaluations.*') ? 'active' : '' }}" href="{{ route('evaluations.dashboard') }}"><span class="nxl-micon"><i class="feather-check-square"></i></span><span class="nxl-mtext">{{ __('evaluation.title') }}</span></a></li>
+                @endcanany
+                @can('evaluation.forms.manage')
+                    <li class="nxl-item"><a class="nxl-link" href="{{ route('evaluation.forms.index') }}"><span class="nxl-micon"><i class="feather-list"></i></span><span class="nxl-mtext">{{ __('evaluation.forms') }}</span></a></li>
+                @endcan
 
                 @if (request()->routeIs('role.finance.*') || request()->routeIs('role.finance_officer.*'))
                     @include('pages.finance.partials.sidebar')

@@ -1,0 +1,5 @@
+@extends('layouts.app')
+@section('title', $form->name_ar)
+@section('content')
+<div class="container-fluid"><h1>{{ app()->isLocale('ar') ? $form->name_ar : $form->name_en }}</h1><h5>{{ $monthlyActivity->title }}</h5><form method="POST" action="{{ route('evaluations.store',$monthlyActivity) }}">@csrf<input type="hidden" name="evaluation_form_id" value="{{ $form->id }}">@foreach($form->questions as $question)<div class="card mb-3"><div class="card-body"><label class="form-label fw-bold">{{ app()->isLocale('ar') ? $question->question_ar : $question->question_en }}</label><input type="number" class="form-control" name="answers[{{ $question->id }}][score]" min="{{ $question->minimum_score }}" max="{{ $question->maximum_score }}" step="0.01" required><textarea class="form-control mt-2" name="answers[{{ $question->id }}][note]" placeholder="{{ __('app.common.notes') ?? 'Notes' }}"></textarea></div></div>@endforeach<textarea class="form-control mb-3" name="notes"></textarea><button class="btn btn-primary">{{ __('app.common.submit') ?? 'Submit' }}</button></form></div>
+@endsection
