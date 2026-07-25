@@ -11,6 +11,7 @@ use App\Services\ActivityEvaluationService;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\EvaluationWorkflowPermissionSeeder;
+use Database\Seeders\EvaluationOfficerUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -71,5 +72,25 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $service->synchronizeVerificationFields($activity);
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         $service->verify($activity, $user, [$activity->postExecutionVerifications()->first()->id => ['status' => 'incorrect']]);
+    }
+
+    public function test_new_seeders_do_not_overwrite_changes_made_after_their_first_run(): void
+    {
+        $this->seed(EvaluationOfficerUsersSeeder::class);
+        $officer = User::query()->where('email', 'evaluation.officer.1@zaha.local')->firstOrFail();
+        $officer->update(['name' => 'Manually changed name', 'status' => 'inactive']);
+        $officer->removeRole('evaluation_officer');
+
+        $relationsRole = \App\Models\Role::query()->where('name', 'relations_manager')->firstOrFail();
+        $relationsRole->revokePermissionTo('evaluation.forms.manage');
+
+        $this->seed(EvaluationOfficerUsersSeeder::class);
+        $this->seed(EvaluationWorkflowPermissionSeeder::class);
+
+        $officer->refresh();
+        $this->assertSame('Manually changed name', $officer->name);
+        $this->assertSame('inactive', $officer->status);
+        $this->assertFalse($officer->hasRole('evaluation_officer'));
+        $this->assertFalse($relationsRole->fresh()->hasPermissionTo('evaluation.forms.manage'));
     }
 }

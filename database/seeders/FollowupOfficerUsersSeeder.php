@@ -15,11 +15,20 @@ class FollowupOfficerUsersSeeder extends Seeder
 
     public function run(): void
     {
-        User::role('followup_officer')->get()->each->removeRole('followup_officer');
-
         Branch::query()->each(function (Branch $branch) {
+            $alreadyAssigned = User::role('followup_officer')
+                ->where(function ($query) use ($branch) {
+                    $query->where('branch_id', $branch->id)
+                        ->orWhereHas('assignedBranches', fn ($assigned) => $assigned->where('branches.id', $branch->id));
+                })
+                ->exists();
+
+            if ($alreadyAssigned) {
+                return;
+            }
+
             $slug = Str::slug($branch->name) ?: (string) $branch->id;
-            $user = User::query()->updateOrCreate(
+            $user = User::query()->firstOrCreate(
                 ['email' => "followup.branch.{$slug}@zaha.local"],
                 [
                     'name' => "مسؤول متابعة - {$branch->name}",
@@ -28,8 +37,10 @@ class FollowupOfficerUsersSeeder extends Seeder
                     'password' => Hash::make(self::DEVELOPMENT_PASSWORD),
                 ]
             );
-            $user->syncRoles(['followup_officer']);
-            $user->assignedBranches()->sync([$branch->id]);
+            if ($user->wasRecentlyCreated) {
+                $user->assignRole('followup_officer');
+                $user->assignedBranches()->syncWithoutDetaching([$branch->id]);
+            }
         });
     }
 }

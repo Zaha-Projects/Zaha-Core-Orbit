@@ -10,7 +10,7 @@ class ActivityEvaluationFormSeeder extends Seeder
 {
     public function run(): void
     {
-        $form = EvaluationForm::query()->updateOrCreate(
+        $form = EvaluationForm::query()->firstOrCreate(
             ['name_en' => 'Activity Evaluation Form'],
             [
                 'name_ar' => 'نموذج تقييم الفعالية',
@@ -34,7 +34,7 @@ class ActivityEvaluationFormSeeder extends Seeder
         ];
 
         foreach ($questions as $index => $labels) {
-            EvaluationQuestion::query()->updateOrCreate(
+            EvaluationQuestion::query()->firstOrCreate(
                 ['evaluation_form_id' => $form->id, 'question_ar' => $labels[0]],
                 [
                     'question' => $labels[0],

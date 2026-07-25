@@ -23,13 +23,13 @@ Each score is normalized to 1–10 using its configured minimum/maximum. The fin
 
 ## Setup and development accounts
 
-Run `php artisan migrate`, then run the independent seeders in order:
+The new seeders are intentionally **not** registered in `DatabaseSeeder`. Running the legacy `php artisan db:seed` therefore keeps the previous seeding flow unchanged. After `php artisan migrate`, run only the independent evaluation seeders in order:
 
 1. `php artisan db:seed --class=EvaluationWorkflowPermissionSeeder`
 2. `php artisan db:seed --class=FollowupOfficerUsersSeeder`
 3. `php artisan db:seed --class=EvaluationOfficerUsersSeeder`
 4. `php artisan db:seed --class=ActivityEvaluationFormSeeder`
 
-The user seeders create one `followup.branch.{branch-slug}@zaha.local` account per branch and `evaluation.officer.1@zaha.local` through `.3`. Local password: `Password123!`; rotate or disable these accounts outside development. Each concern has its own idempotent seeder and can be rerun independently.
+The seeders are additive and non-destructive: they use `firstOrCreate` and only assign roles, permissions, or branches when the corresponding record was created in that same run. They never call `updateOrCreate`, `syncRoles`, `syncPermissions`, detach assignments, remove roles, or overwrite an existing record. Re-running them therefore preserves manual edits made after the first run, including changed user fields and removed role/permission assignments. Existing follow-up branch assignments are detected and left untouched. The user seeders create only missing `followup.branch.{branch-slug}@zaha.local` accounts and `evaluation.officer.1@zaha.local` through `.3`. Local password: `Password123!`; rotate or disable these accounts outside development.
 
 Run the suite with `php artisan test`. Existing JSON completion data is synchronized lazily into verification records, avoiding a destructive production backfill and preserving legacy screens.

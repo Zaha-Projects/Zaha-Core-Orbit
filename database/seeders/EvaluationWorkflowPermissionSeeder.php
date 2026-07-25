@@ -22,17 +22,21 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
             ['name' => 'post_execution.verify_branch', 'module' => 'post_execution', 'action' => 'verify', 'name_ar' => 'التحقق من ما بعد التنفيذ للفرع', 'name_en' => 'Verify branch post-execution'],
         ];
 
+        $newPermissionNames = [];
         foreach ($permissions as $permission) {
-            Permission::query()->updateOrCreate(
+            $model = Permission::query()->firstOrCreate(
                 ['name' => $permission['name'], 'guard_name' => 'web'],
-                $permission + ['guard_name' => 'web']
+                $permission
             );
+            if ($model->wasRecentlyCreated) {
+                $newPermissionNames[] = $model->name;
+            }
         }
 
-        $this->syncRolePermissions();
+        $this->assignNewPermissions($newPermissionNames);
     }
 
-    private function syncRolePermissions(): void
+    private function assignNewPermissions(array $newPermissionNames): void
     {
         $map = [
             'followup_officer' => [
@@ -52,16 +56,17 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
         ];
 
         foreach ($map as $roleName => $permissionNames) {
+            $permissionNames = array_values(array_intersect($permissionNames, $newPermissionNames));
+            if ($permissionNames === []) {
+                continue;
+            }
+
             $role = Role::query()->where('name', $roleName)->where('guard_name', 'web')->first();
             if (! $role) {
                 continue;
             }
 
-            if ($roleName === 'followup_officer' || $roleName === 'evaluation_officer') {
-                $role->syncPermissions($permissionNames);
-            } else {
-                $role->givePermissionTo($permissionNames);
-            }
+            $role->givePermissionTo($permissionNames);
         }
     }
 }

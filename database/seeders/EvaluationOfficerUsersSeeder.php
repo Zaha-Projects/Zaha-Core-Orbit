@@ -14,7 +14,7 @@ class EvaluationOfficerUsersSeeder extends Seeder
     public function run(): void
     {
         foreach (range(1, 3) as $number) {
-            $user = User::query()->updateOrCreate(
+            $user = User::query()->firstOrCreate(
                 ['email' => "evaluation.officer.{$number}@zaha.local"],
                 [
                     'name' => "مسؤول التقييم {$number}",
@@ -23,8 +23,9 @@ class EvaluationOfficerUsersSeeder extends Seeder
                     'password' => Hash::make(self::DEVELOPMENT_PASSWORD),
                 ]
             );
-            $user->syncRoles(['evaluation_officer']);
-            $user->assignedBranches()->sync([]);
+            if ($user->wasRecentlyCreated) {
+                $user->assignRole('evaluation_officer');
+            }
         }
     }
 }
