@@ -23,6 +23,13 @@ Each score is normalized to 1–10 using its configured minimum/maximum. The fin
 
 ## Setup and development accounts
 
-Run `php artisan migrate` and `php artisan db:seed --class=EvaluationWorkflowSeeder`. The idempotent seeder creates one `followup.branch.{branch-slug}@zaha.local` account per branch and `evaluation.officer.1@zaha.local` through `.3`. Local password: `Password123!`; rotate or disable these accounts outside development.
+Run `php artisan migrate`, then run the independent seeders in order:
+
+1. `php artisan db:seed --class=EvaluationWorkflowPermissionSeeder`
+2. `php artisan db:seed --class=FollowupOfficerUsersSeeder`
+3. `php artisan db:seed --class=EvaluationOfficerUsersSeeder`
+4. `php artisan db:seed --class=ActivityEvaluationFormSeeder`
+
+The user seeders create one `followup.branch.{branch-slug}@zaha.local` account per branch and `evaluation.officer.1@zaha.local` through `.3`. Local password: `Password123!`; rotate or disable these accounts outside development. Each concern has its own idempotent seeder and can be rerun independently.
 
 Run the suite with `php artisan test`. Existing JSON completion data is synchronized lazily into verification records, avoiding a destructive production backfill and preserving legacy screens.

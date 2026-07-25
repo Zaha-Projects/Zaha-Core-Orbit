@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\ActivityEvaluationService;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
+use Database\Seeders\EvaluationWorkflowPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -22,6 +23,7 @@ class ActivityEvaluationWorkflowTest extends TestCase
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
         $this->seed(RolesSeeder::class);
+        $this->seed(EvaluationWorkflowPermissionSeeder::class);
     }
 
     public function test_followup_officer_is_restricted_to_exactly_the_assigned_branch(): void
