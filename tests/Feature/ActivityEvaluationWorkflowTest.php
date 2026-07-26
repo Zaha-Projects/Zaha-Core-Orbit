@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\EvaluationForm;
 use App\Models\EvaluationQuestion;
 use App\Models\MonthlyActivity;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\ActivityEvaluationService;
 use Database\Seeders\RolePermissionSeeder;
@@ -14,6 +15,8 @@ use Database\Seeders\EvaluationWorkflowPermissionSeeder;
 use Database\Seeders\EvaluationOfficerUsersSeeder;
 use Database\Seeders\FollowupOfficerUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class ActivityEvaluationWorkflowTest extends TestCase
@@ -26,6 +29,23 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $this->seed(RolePermissionSeeder::class);
         $this->seed(RolesSeeder::class);
         $this->seed(EvaluationWorkflowPermissionSeeder::class);
+    }
+
+    public function test_permission_seeder_assigns_new_permissions_after_the_cache_was_warmed(): void
+    {
+        $role = Role::query()->where('name', 'followup_officer')->firstOrFail();
+        Permission::query()->where('name', 'followup.dashboard.view')->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $role->getAllPermissions();
+
+        $this->seed(EvaluationWorkflowPermissionSeeder::class);
+
+        $this->assertDatabaseHas('permissions', [
+            'name' => 'followup.dashboard.view',
+            'guard_name' => 'web',
+        ]);
+        $this->assertTrue($role->fresh()->hasPermissionTo('followup.dashboard.view'));
     }
 
     public function test_followup_officer_is_restricted_to_exactly_the_assigned_branch(): void

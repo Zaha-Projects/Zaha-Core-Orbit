@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         // $this->call(ExecutionNeedTypeSeeder::class);
         // $this->call(EventStatusLookupSeeder::class);
 
-        // $this->call(RolePermissionSeeder::class);
+        $this->call(RolePermissionSeeder::class);
         // $this->call(RolesSeeder::class);
         // $this->call(UsersSeeder::class);
         // $this->call(BranchCoordinatorSeeder::class);
