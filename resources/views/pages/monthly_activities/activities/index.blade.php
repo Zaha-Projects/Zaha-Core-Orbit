@@ -57,7 +57,7 @@
     $canViewDeletedMonthlyActivities = $authUser?->hasAnyRole(['relations_manager', 'relations_officer', 'supervisor', 'branch_coordinator', 'volunteer_coordinator', 'super_admin']) ?? false;
     $monthlyActivityEditRoles = $monthlyActivityEditRoles ?? [];
     $monthlyActivityChangeRequestRoles = $monthlyActivityChangeRequestRoles ?? config('monthly_activity.change_requests.allowed_roles', ['relations_officer']);
-    $isBranchCalendarOnly = $authUser?->isBranchScopedPlanningUser() ?? false;
+    $isBranchCalendarOnly = request()->routeIs('followup.*') || ($authUser?->isBranchScopedPlanningUser() ?? false);
     $calendarCreateBranchId = filled($branchFilterSelected)
         ? (int) $branchFilterSelected
         : ($authUser && method_exists($authUser, 'primaryScopedBranchId')
@@ -69,6 +69,9 @@
 
         return asset($path) . '?v=' . $version;
     };
+    $monthlyIndexRoute = request()->routeIs('followup.*')
+        ? 'followup.monthly-plans'
+        : 'role.relations.activities.index';
 @endphp
 
 
@@ -131,7 +134,7 @@
                         ->all();
                 @endphp
                 <a
-                    href="{{ route('role.relations.activities.index', $summaryQuery) }}"
+                    href="{{ route($monthlyIndexRoute, $summaryQuery) }}"
                     class="event-kpi-card d-block text-decoration-none text-reset {{ $isActiveSummaryCard ? 'border-primary shadow-sm' : '' }}"
                 >
                     <div class="text-muted small">{{ $card['label'] }}</div>
@@ -145,7 +148,7 @@
         <div class="card event-card mb-4">
             <div class="card-body">
                 <h2 class="event-section-title">{{ __('app.common.filter') }}</h2>
-                <form method="GET" action="{{ route('role.relations.activities.index') }}" class="row event-form-grid">
+                <form method="GET" action="{{ route($monthlyIndexRoute) }}" class="row event-form-grid">
                     @if (($viewScope ?? 'default') === 'all_branches')
                         <input type="hidden" name="scope" value="all_branches">
                     @endif
@@ -212,9 +215,9 @@
                         <div>
                             <h2 class="event-section-title mb-1">{{ !empty($showDeleted) ? 'الأنشطة الشهرية المحذوفة' : __('app.roles.programs.monthly_activities.list_title') }}</h2>
                             <div class="d-flex align-items-center flex-wrap gap-2">
-                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.index', $previousMonthQuery) }}">السابق</a>
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ route($monthlyIndexRoute, $previousMonthQuery) }}">السابق</a>
                                 <span class="badge bg-light text-dark border">{{ optional($selectedMonthDate ?? null)->translatedFormat('F Y') }}</span>
-                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.relations.activities.index', $nextMonthQuery) }}">التالي</a>
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ route($monthlyIndexRoute, $nextMonthQuery) }}">التالي</a>
                             </div>
                         </div>
                         <span class="text-muted small">عرض {{ $activities->total() }} {{ !empty($showDeleted) ? 'نشاط محذوف' : 'نشاط لهذا الشهر' }}</span>

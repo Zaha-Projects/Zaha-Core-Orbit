@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Roles\FollowupOfficer;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityEvaluation;
 use App\Models\EvaluationForm;
-use App\Models\EventType;
 use App\Models\MonthlyActivity;
 use App\Models\PostExecutionVerification;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController;
 use Illuminate\Http\Request;
 
 class FollowupWorkspaceController extends Controller
@@ -57,26 +55,7 @@ class FollowupWorkspaceController extends Controller
 
     public function monthlyPlans(Request $request)
     {
-        $filters = $request->validate([
-            'month' => ['nullable', 'integer', 'between:1,12'], 'year' => ['nullable', 'integer', 'between:2020,2100'],
-            'status' => ['nullable', 'string', 'max:50'], 'event_type_id' => ['nullable', 'integer', 'exists:event_types,id'],
-            'has_post_execution' => ['nullable', 'in:yes,no'], 'has_evaluation' => ['nullable', 'in:yes,no'],
-        ]);
-        $month = (int) ($filters['month'] ?? now()->month);
-        $year = (int) ($filters['year'] ?? now()->year);
-        $query = MonthlyActivity::query()->notArchived()->forFollowupOfficer($request->user())
-            ->with(['branch', 'eventType', 'creator', 'activityEvaluation'])
-            ->whereYear('proposed_date', $year)->whereMonth('proposed_date', $month);
-        $this->applyActivityFilters($query, $filters);
-        $activities = $query->orderBy('proposed_date')->orderBy('time_from')->get();
-        $events = $activities->map(fn (MonthlyActivity $activity) => [
-            'title' => $activity->title,
-            'start' => optional($activity->proposed_date)->toDateString(),
-            'url' => route('followup.monthly-plans.show', $activity),
-            'className' => 'followup-status-'.($activity->status ?: 'draft'),
-            'extendedProps' => ['status' => $activity->status, 'time' => optional($activity->time_from)->format('H:i')],
-        ])->values();
-        return view('roles.followup_officer.monthly-plans', compact('activities', 'events', 'filters', 'month', 'year') + ['eventTypes' => EventType::orderBy('name')->get()]);
+        return app(MonthlyActivitiesController::class)->index($request);
     }
 
     public function showPlan(Request $request, MonthlyActivity $monthlyActivity)
@@ -121,16 +100,6 @@ class FollowupWorkspaceController extends Controller
             ->when($filters['form_id'] ?? null, fn ($q, $value) => $q->where('evaluation_form_id', $value))
             ->when($filters['visibility'] ?? null, fn ($q, $value) => $q->where('visibility', $value));
         return view('roles.followup_officer.evaluations', ['evaluations' => $query->latest('submitted_at')->paginate(15)->withQueryString(), 'filters' => $filters, 'forms' => EvaluationForm::orderBy('name_ar')->get()]);
-    }
-
-    private function applyActivityFilters(Builder $query, array $filters): void
-    {
-        $query->when($filters['status'] ?? null, fn ($q, $value) => $q->where('status', $value))
-            ->when($filters['event_type_id'] ?? null, fn ($q, $value) => $q->where('event_type_id', $value))
-            ->when(($filters['has_post_execution'] ?? null) === 'yes', fn ($q) => $q->hasPostExecution())
-            ->when(($filters['has_post_execution'] ?? null) === 'no', fn ($q) => $q->whereNull('post_execution_payload'))
-            ->when(($filters['has_evaluation'] ?? null) === 'yes', fn ($q) => $q->evaluated())
-            ->when(($filters['has_evaluation'] ?? null) === 'no', fn ($q) => $q->doesntHave('activityEvaluation'));
     }
 
     private function branchIds($user): array

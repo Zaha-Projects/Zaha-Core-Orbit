@@ -1,0 +1,66 @@
+:root {
+    --zaha-evaluation-primary: #00a9c4;
+    --zaha-evaluation-secondary: #2fc9e2;
+    --zaha-evaluation-soft: #e9fbfe;
+    --zaha-evaluation-dark: #007f94;
+}
+
+body.evaluation-visual-identity .btn-primary,
+body.evaluation-visual-identity .progress-bar {
+    background: linear-gradient(135deg, var(--zaha-evaluation-primary), var(--zaha-evaluation-secondary));
+    border-color: var(--zaha-evaluation-primary);
+}
+
+body.evaluation-visual-identity .btn-outline-primary {
+    color: var(--zaha-evaluation-dark);
+    border-color: var(--zaha-evaluation-primary);
+}
+
+body.evaluation-visual-identity .btn-outline-primary:hover,
+body.evaluation-visual-identity .btn-outline-primary.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--zaha-evaluation-primary), var(--zaha-evaluation-secondary));
+    border-color: var(--zaha-evaluation-primary);
+}
+
+body.evaluation-visual-identity .text-primary,
+body.evaluation-visual-identity a:not(.btn):not(.side-item a) {
+    color: var(--zaha-evaluation-dark) !important;
+}
+
+body.evaluation-visual-identity .bg-primary,
+body.evaluation-visual-identity .badge.bg-primary {
+    background-color: var(--zaha-evaluation-primary) !important;
+}
+
+body.evaluation-visual-identity .event-module > .event-card:first-child,
+body.evaluation-visual-identity .evaluation-page-hero {
+    color: #fff;
+    border: 0;
+    background: linear-gradient(135deg, var(--zaha-evaluation-primary), var(--zaha-evaluation-secondary));
+    box-shadow: 0 14px 34px rgba(0, 169, 196, .18);
+}
+
+body.evaluation-visual-identity .event-module > .event-card:first-child .text-muted {
+    color: rgba(255, 255, 255, .82) !important;
+}
+
+body.evaluation-visual-identity .event-card,
+body.evaluation-visual-identity .card.shadow-sm {
+    border-color: rgba(0, 169, 196, .12);
+}
+
+body.evaluation-visual-identity .fc .fc-button-primary {
+    background-color: var(--zaha-evaluation-primary);
+    border-color: var(--zaha-evaluation-primary);
+}
+
+body.evaluation-visual-identity .fc .fc-button-primary:hover,
+body.evaluation-visual-identity .fc .fc-button-primary:not(:disabled).fc-button-active {
+    background-color: var(--zaha-evaluation-dark);
+    border-color: var(--zaha-evaluation-dark);
+}
+
+body.evaluation-visual-identity .fc .fc-day-today {
+    background: var(--zaha-evaluation-soft) !important;
+}

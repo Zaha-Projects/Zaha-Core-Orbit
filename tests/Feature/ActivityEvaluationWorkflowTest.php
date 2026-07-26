@@ -124,4 +124,21 @@ class ActivityEvaluationWorkflowTest extends TestCase
 
         $this->actingAs($officer)->get(route('followup.monthly-plans'))->assertOk()->assertSee('خطة فرعي')->assertDontSee('خطة فرع آخر');
     }
+
+    public function test_followup_and_evaluation_officers_use_the_existing_monthly_plans_calendar(): void
+    {
+        $branch = Branch::factory()->create();
+        MonthlyActivity::factory()->create(['branch_id' => $branch->id, 'title' => 'خطة التقويم الموحد', 'proposed_date' => now()]);
+
+        $followup = User::factory()->create(['branch_id' => $branch->id]);
+        $followup->syncRoles(['followup_officer']);
+        $followup->assignedBranches()->sync([$branch->id]);
+        $this->actingAs($followup)->get(route('followup.monthly-plans'))
+            ->assertOk()->assertSee('monthly-activities-module')->assertSee('خطة التقويم الموحد');
+
+        $evaluationOfficer = User::factory()->create();
+        $evaluationOfficer->syncRoles(['evaluation_officer']);
+        $this->actingAs($evaluationOfficer)->get(route('followup.monthly-plans'))
+            ->assertOk()->assertSee('monthly-activities-module')->assertSee('خطة التقويم الموحد');
+    }
 }

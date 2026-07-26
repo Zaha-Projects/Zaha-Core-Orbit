@@ -96,3 +96,9 @@ The branch-scoped workspace uses reusable `MonthlyActivity` scopes for follow-up
 - `profile.view`
 
 The “My Relationship” filter uses the existing activity ownership data (`created_by` and `responsible_party`) rather than introducing a duplicate relationship table.
+
+## Visual identity and unified calendar
+
+All follow-up and evaluation routes load the shared evaluation visual-identity stylesheet. The primary surface and action gradient is `linear-gradient(135deg, #00a9c4, #2fc9e2)`, with matching accessible dark and soft cyan tokens.
+
+`followup.monthly-plans` now delegates to the production monthly-plans index used by `role.relations.activities.index`. This guarantees the same FullCalendar implementation, navigation, filters, status rendering, assets, and data-loading behavior instead of maintaining a duplicate calendar. Follow-up officers remain branch-scoped by the existing branch visibility service; evaluation officers use their global monthly-plan permission. Filters and previous/next navigation preserve the follow-up URL.

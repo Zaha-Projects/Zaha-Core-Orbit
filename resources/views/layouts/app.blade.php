@@ -73,9 +73,12 @@
     <link rel="stylesheet" href="{{ $versionedAsset('assets/theme/css/Theme.min.css') }}">
     <link rel="stylesheet" href="{{ $versionedAsset('assets/theme/css/Style.min.css') }}">
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/layouts-app.min.css') }}">
+    @if(request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*'))
+        <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/evaluation-visual-identity.css') }}">
+    @endif
     @stack('styles')
 </head>
-<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }}">
+<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }} {{ request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*') ? 'evaluation-visual-identity' : '' }}">
 <div class="layout-shell">
     <aside id="appSidebar" class="sidebar-original">
         <div class="sidebar-brand">

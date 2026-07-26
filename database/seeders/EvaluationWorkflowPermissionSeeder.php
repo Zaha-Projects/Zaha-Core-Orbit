@@ -58,6 +58,7 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
             'evaluation_officer' => [
                 'agenda.view', 'monthly_activities.view', 'monthly_activities.view_other_branches',
                 'evaluation.view', 'evaluation.view_all', 'post_execution.view_all', 'branches.view.all',
+                'followup.monthly_plans.view',
             ],
             'relations_officer' => ['evaluation.view_branch', 'evaluation.visibility.manage'],
             'relations_manager' => [
@@ -67,11 +68,6 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
         ];
 
         foreach ($map as $roleName => $permissionNames) {
-            $permissionNames = array_values(array_intersect($permissionNames, $newPermissionNames));
-            if ($permissionNames === []) {
-                continue;
-            }
-
             $role = Role::query()->where('name', $roleName)->where('guard_name', 'web')->first();
             if (! $role) {
                 continue;
