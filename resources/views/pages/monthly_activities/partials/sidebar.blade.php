@@ -29,6 +29,7 @@
     </li>
     @endif
     @can('monthly_activities.view_other_branches')
+    @unless($user?->hasRole('evaluation_officer'))
     <li class="nxl-item">
         <a class="nxl-link {{ request()->routeIs('role.relations.activities.*') && request('scope') === 'all_branches' ? 'active' : '' }}" href="{{ route('role.relations.activities.index', ['scope' => 'all_branches']) }}">
             <span class="nxl-micon"><i class="feather-grid"></i></span>
@@ -36,6 +37,7 @@
             <span class="nxl-mtext">{{ $otherBranchesLabel !== 'app.acl.permissions.monthly_activities_view_other_branches' ? $otherBranchesLabel : 'عرض الخطط الشهرية للفروع الأخرى' }}</span>
         </a>
     </li>
+    @endunless
     @endcan
     @if($canAccessMonthlyApprovals)
     <li class="nxl-item">

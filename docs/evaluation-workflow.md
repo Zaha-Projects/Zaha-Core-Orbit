@@ -102,3 +102,9 @@ The “My Relationship” filter uses the existing activity ownership data (`cre
 All follow-up and evaluation routes load the shared evaluation visual-identity stylesheet. The primary surface and action gradient is `linear-gradient(135deg, #00a9c4, #2fc9e2)`, with matching accessible dark and soft cyan tokens.
 
 `followup.monthly-plans` now delegates to the production monthly-plans index used by `role.relations.activities.index`. This guarantees the same FullCalendar implementation, navigation, filters, status rendering, assets, and data-loading behavior instead of maintaining a duplicate calendar. Follow-up officers remain branch-scoped by the existing branch visibility service; evaluation officers use their global monthly-plan permission. Filters and previous/next navigation preserve the follow-up URL.
+
+## Evaluation officer dashboard and navigation
+
+The evaluation dashboard now presents global, real-data KPIs, verification distribution, evaluation completion rate, latest and low-scoring evaluations, branch performance, monthly score trends, and pending evaluations by branch. Aggregate queries remain branch-scoped automatically when the viewer does not hold `evaluation.view_all`.
+
+For `evaluation_officer`, the sidebar keeps the standard monthly-plans link (`/dashboard/relations/monthly-activities`) and suppresses only the duplicate `?scope=all_branches` link. The underlying global read permission is unchanged; this is a navigation cleanup rather than a reduction in authorized evaluation visibility.

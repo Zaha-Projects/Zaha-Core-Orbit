@@ -141,4 +141,15 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $this->actingAs($evaluationOfficer)->get(route('followup.monthly-plans'))
             ->assertOk()->assertSee('monthly-activities-module')->assertSee('خطة التقويم الموحد');
     }
+
+    public function test_evaluation_officer_sidebar_keeps_monthly_plans_and_hides_all_branches_duplicate(): void
+    {
+        $officer = User::factory()->create();
+        $officer->syncRoles(['evaluation_officer']);
+
+        $this->actingAs($officer)->get(route('evaluations.dashboard'))
+            ->assertOk()
+            ->assertSee(route('role.relations.activities.index'), false)
+            ->assertDontSee(route('role.relations.activities.index', ['scope' => 'all_branches']), false);
+    }
 }
