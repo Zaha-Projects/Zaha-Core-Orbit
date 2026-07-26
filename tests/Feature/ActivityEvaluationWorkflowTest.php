@@ -99,6 +99,20 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $this->actingAs($user)->get(route('evaluations.verification.review', $foreign))->assertForbidden();
     }
 
+    public function test_followup_officer_can_render_monthly_plan_details(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles(['followup_officer']);
+        $user->assignedBranches()->sync([$branch->id]);
+        $activity = MonthlyActivity::factory()->create(['branch_id' => $branch->id]);
+
+        $this->actingAs($user)
+            ->get(route('followup.monthly-plans.show', $activity))
+            ->assertOk()
+            ->assertSee($activity->title);
+    }
+
     public function test_verification_preserves_original_and_weighted_evaluation_updates_status(): void
     {
         $branch = Branch::factory()->create();
