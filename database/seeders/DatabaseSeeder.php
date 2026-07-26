@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         // $this->call(ExecutionNeedTypeSeeder::class);
         // $this->call(EventStatusLookupSeeder::class);
 
-        $this->call(RolePermissionSeeder::class);
+        // $this->call(RolePermissionSeeder::class);
         // $this->call(RolesSeeder::class);
         // $this->call(UsersSeeder::class);
         // $this->call(BranchCoordinatorSeeder::class);
@@ -36,9 +36,11 @@ class DatabaseSeeder extends Seeder
         // $this->call(MonthlyKpiSeeder::class);
         // $this->call(EventTypeSeeder::class);
 
-        $this->call(EvaluationWorkflowPermissionSeeder::class);
-        $this->call(FollowupOfficerUsersSeeder::class);
-        $this->call(EvaluationOfficerUsersSeeder::class);
-        $this->call(ActivityEvaluationFormSeeder::class);
+        // $this->call(EvaluationWorkflowPermissionSeeder::class);
+        // $this->call(FollowupOfficerUsersSeeder::class);
+        // $this->call(EvaluationOfficerUsersSeeder::class);
+        // $this->call(ActivityEvaluationFormSeeder::class);
+
+        $this->call(EvaluationWorkflowAccessSeeder::class);
     }
 }

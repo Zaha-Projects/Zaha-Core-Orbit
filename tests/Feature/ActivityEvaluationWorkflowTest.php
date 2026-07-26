@@ -12,6 +12,7 @@ use App\Services\ActivityEvaluationService;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\EvaluationWorkflowPermissionSeeder;
+use Database\Seeders\EvaluationWorkflowAccessSeeder;
 use Database\Seeders\EvaluationOfficerUsersSeeder;
 use Database\Seeders\FollowupOfficerUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,13 +40,28 @@ class ActivityEvaluationWorkflowTest extends TestCase
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $role->getAllPermissions();
 
-        $this->seed(EvaluationWorkflowPermissionSeeder::class);
+        $this->seed(EvaluationWorkflowAccessSeeder::class);
 
         $this->assertDatabaseHas('permissions', [
             'name' => 'followup.dashboard.view',
             'guard_name' => 'web',
         ]);
         $this->assertTrue($role->fresh()->hasPermissionTo('followup.dashboard.view'));
+    }
+
+    public function test_access_seeder_provisions_complete_permissions_for_the_new_officer_accounts(): void
+    {
+        $this->seed(EvaluationWorkflowAccessSeeder::class);
+
+        $followupRole = Role::findByName('followup_officer', 'web');
+        $evaluationRole = Role::findByName('evaluation_officer', 'web');
+
+        $this->assertTrue($followupRole->hasPermissionTo('followup.dashboard.view'));
+        $this->assertTrue($followupRole->hasPermissionTo('followup.post_execution.verify'));
+        $this->assertTrue($followupRole->hasPermissionTo('evaluation.submit_branch'));
+        $this->assertTrue($evaluationRole->hasPermissionTo('evaluation.view_all'));
+        $this->assertTrue($evaluationRole->hasPermissionTo('post_execution.view_all'));
+        $this->assertTrue($evaluationRole->hasPermissionTo('followup.monthly_plans.view'));
     }
 
     public function test_followup_officer_is_restricted_to_exactly_the_assigned_branch(): void
