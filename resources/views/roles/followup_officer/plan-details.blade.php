@@ -1,3 +1,106 @@
 @extends('layouts.app')
+
 @section('title', $activity->title)
-@section('content')<div class="container-fluid py-4"><div class="d-flex justify-content-between align-items-start mb-4"><div><span class="badge bg-primary-subtle text-primary mb-2">{{ $activity->status }}</span><h1 class="h3 fw-bold">{{ $activity->title }}</h1><p class="text-muted">{{ $activity->branch?->name }}</p></div><a class="btn btn-outline-secondary" href="{{ url()->previous() }}">{{ __('app.common.back') ?? 'Back' }}</a></div><div class="row g-4"><div class="col-xl-8"><div class="card border-0 shadow-sm mb-4"><div class="card-header bg-transparent fw-bold">{{ __('evaluation.followup.view_details') }}</div><div class="card-body"><div class="row g-4"><div class="col-md-4"><small class="text-muted">{{ __('evaluation.followup.date') }}</small><div>{{ optional($activity->proposed_date)->translatedFormat('d M Y') }}</div></div><div class="col-md-4"><small class="text-muted">Type</small><div>{{ $activity->eventType?->name ?: '—' }}</div></div><div class="col-md-4"><small class="text-muted">Time</small><div>{{ optional($activity->time_from)->format('H:i') ?: '—' }}</div></div><div class="col-md-4"><small class="text-muted">Location</small><div>{{ $activity->location_details ?: $activity->internal_location ?: $activity->outside_place_name ?: '—' }}</div></div><div class="col-md-4"><small class="text-muted">Target</small><div>{{ $activity->targetGroup?->name ?? $activity->target_group ?? '—' }}</div></div><div class="col-md-4"><small class="text-muted">Expected attendance</small><div>{{ $activity->expected_attendance_range_label }}</div></div><div class="col-12"><small class="text-muted">Description</small><p>{{ $activity->description ?: $activity->short_description ?: '—' }}</p></div></div></div></div><div class="card border-0 shadow-sm"><div class="card-header bg-transparent fw-bold">{{ __('evaluation.post_execution') }}</div><div class="card-body"><div class="row g-3">@forelse($activity->postExecutionVerifications as $item)<div class="col-md-6"><div class="border rounded-3 p-3"><strong>{{ $item->field_label }}</strong><div class="small text-muted">{{ json_encode(data_get($item->original_value,'value'),JSON_UNESCAPED_UNICODE) }}</div><span class="badge mt-2 {{ $item->status==='correct'?'bg-success':($item->status==='incorrect'?'bg-danger':'bg-warning') }}">{{ __('evaluation.statuses.'.$item->status) }}</span></div></div>@empty<div class="text-muted">{{ __('evaluation.followup.no_results') }}</div>@endforelse</div></div></div></div><div class="col-xl-4"><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h5 fw-bold">{{ __('evaluation.followup.relationship') }}</h2><p>{{ $activity->responsible_party ?: $activity->agendaEvent?->department?->name ?: '—' }}</p><hr><h2 class="h5 fw-bold">Attachments</h2>@forelse($activity->attachments as $attachment)<div>{{ $attachment->file_name ?? basename($attachment->file_path) }}</div>@empty<p class="text-muted">—</p>@endforelse@if($activity->activityEvaluation)<a class="btn btn-primary w-100 mt-3" href="{{ route('evaluations.show',$activity->activityEvaluation) }}">{{ __('evaluation.followup.view_form') }}</a>@endif</div></div></div></div></div>@endsection
+
+@section('content')
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <span class="badge bg-primary-subtle text-primary mb-2">{{ $activity->status }}</span>
+                <h1 class="h3 fw-bold">{{ $activity->title }}</h1>
+                <p class="text-muted">{{ $activity->branch?->name }}</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="{{ url()->previous() }}">
+                {{ __('app.common.back') ?? 'Back' }}
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent fw-bold">
+                        {{ __('evaluation.followup.view_details') }}
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <small class="text-muted">{{ __('evaluation.followup.date') }}</small>
+                                <div>{{ optional($activity->proposed_date)->translatedFormat('d M Y') }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Type</small>
+                                <div>{{ $activity->eventType?->name ?: '—' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Time</small>
+                                <div>{{ optional($activity->time_from)->format('H:i') ?: '—' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Location</small>
+                                <div>{{ $activity->location_details ?: $activity->internal_location ?: $activity->outside_place_name ?: '—' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Target</small>
+                                <div>{{ $activity->targetGroup?->name ?? $activity->target_group ?? '—' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Expected attendance</small>
+                                <div>{{ $activity->expected_attendance_range_label }}</div>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-muted">Description</small>
+                                <p>{{ $activity->description ?: $activity->short_description ?: '—' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent fw-bold">{{ __('evaluation.post_execution') }}</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            @forelse ($activity->postExecutionVerifications as $item)
+                                <div class="col-md-6">
+                                    <div class="border rounded-3 p-3">
+                                        <strong>{{ $item->field_label }}</strong>
+                                        <div class="small text-muted">
+                                            {{ json_encode(data_get($item->original_value, 'value'), JSON_UNESCAPED_UNICODE) }}
+                                        </div>
+                                        <span class="badge mt-2 {{ $item->status === 'correct' ? 'bg-success' : ($item->status === 'incorrect' ? 'bg-danger' : 'bg-warning') }}">
+                                            {{ __('evaluation.statuses.' . $item->status) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-muted">{{ __('evaluation.followup.no_results') }}</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h5 fw-bold">{{ __('evaluation.followup.relationship') }}</h2>
+                        <p>{{ $activity->responsible_party ?: $activity->agendaEvent?->department?->name ?: '—' }}</p>
+                        <hr>
+                        <h2 class="h5 fw-bold">Attachments</h2>
+
+                        @forelse ($activity->attachments as $attachment)
+                            <div>{{ $attachment->file_name ?? basename($attachment->file_path) }}</div>
+                        @empty
+                            <p class="text-muted">—</p>
+                        @endforelse
+
+                        @if ($activity->activityEvaluation)
+                            <a class="btn btn-primary w-100 mt-3" href="{{ route('evaluations.show', $activity->activityEvaluation) }}">
+                                {{ __('evaluation.followup.view_form') }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection

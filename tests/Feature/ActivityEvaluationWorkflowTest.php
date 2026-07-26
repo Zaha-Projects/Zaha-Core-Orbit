@@ -6,14 +6,20 @@ use App\Models\Branch;
 use App\Models\EvaluationForm;
 use App\Models\EvaluationQuestion;
 use App\Models\MonthlyActivity;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\ActivityEvaluationService;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\EvaluationWorkflowPermissionSeeder;
+use Database\Seeders\EvaluationWorkflowAccessSeeder;
+use Database\Seeders\CompleteRolePermissionSeeder;
 use Database\Seeders\EvaluationOfficerUsersSeeder;
 use Database\Seeders\FollowupOfficerUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class ActivityEvaluationWorkflowTest extends TestCase
@@ -28,6 +34,58 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $this->seed(EvaluationWorkflowPermissionSeeder::class);
     }
 
+    public function test_permission_seeder_assigns_new_permissions_after_the_cache_was_warmed(): void
+    {
+        $role = Role::query()->where('name', 'followup_officer')->firstOrFail();
+        Permission::query()->where('name', 'followup.dashboard.view')->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $role->getAllPermissions();
+
+        $this->seed(EvaluationWorkflowAccessSeeder::class);
+
+        $this->assertDatabaseHas('permissions', [
+            'name' => 'followup.dashboard.view',
+            'guard_name' => 'web',
+        ]);
+        $this->assertTrue($role->fresh()->hasPermissionTo('followup.dashboard.view'));
+    }
+
+    public function test_access_seeder_provisions_complete_permissions_for_the_new_officer_accounts(): void
+    {
+        $this->seed(EvaluationWorkflowAccessSeeder::class);
+
+        $followupRole = Role::findByName('followup_officer', 'web');
+        $evaluationRole = Role::findByName('evaluation_officer', 'web');
+
+        $this->assertTrue($followupRole->hasPermissionTo('followup.dashboard.view'));
+        $this->assertTrue($followupRole->hasPermissionTo('followup.post_execution.verify'));
+        $this->assertTrue($followupRole->hasPermissionTo('evaluation.submit_branch'));
+        $this->assertTrue($evaluationRole->hasPermissionTo('evaluation.view_all'));
+        $this->assertTrue($evaluationRole->hasPermissionTo('post_execution.view_all'));
+        $this->assertTrue($evaluationRole->hasPermissionTo('followup.monthly_plans.view'));
+    }
+
+    public function test_complete_access_seeder_is_additive_and_allows_seeded_officers_through_middleware(): void
+    {
+        $customPermission = Permission::create(['name' => 'custom.permission', 'guard_name' => 'web']);
+        $role = Role::findByName('followup_officer', 'web');
+        $role->givePermissionTo($customPermission);
+
+        $this->seed(CompleteRolePermissionSeeder::class);
+
+        $role = $role->fresh();
+        $this->assertTrue($role->hasPermissionTo('custom.permission'));
+        $this->assertTrue($role->hasPermissionTo('followup.dashboard.view'));
+
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles([$role]);
+        $user->assignedBranches()->sync([$branch->id]);
+
+        $this->actingAs($user)->get(route('followup.dashboard'))->assertOk();
+    }
+
     public function test_followup_officer_is_restricted_to_exactly_the_assigned_branch(): void
     {
         $branch = Branch::factory()->create();
@@ -40,6 +98,55 @@ class ActivityEvaluationWorkflowTest extends TestCase
 
         $this->actingAs($user)->get(route('evaluations.verification.review', $own))->assertOk();
         $this->actingAs($user)->get(route('evaluations.verification.review', $foreign))->assertForbidden();
+    }
+
+    public function test_followup_officer_can_render_monthly_plan_details(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles(['followup_officer']);
+        $user->assignedBranches()->sync([$branch->id]);
+        $activity = MonthlyActivity::factory()->create(['branch_id' => $branch->id]);
+
+        $this->actingAs($user)
+            ->get(route('followup.monthly-plans.show', $activity))
+            ->assertOk()
+            ->assertSee($activity->title);
+    }
+
+    public function test_evaluation_submission_uses_laravel_eight_compatible_request_access(): void
+    {
+        $this->assertTrue(Schema::hasColumn('activity_evaluation_answers', 'question_sort_order'));
+
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles(['followup_officer']);
+        $user->assignedBranches()->sync([$branch->id]);
+        $activity = MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'status' => 'post_execution_submitted',
+            'post_execution_payload' => ['attendance' => 25],
+        ]);
+        $form = EvaluationForm::create(['name_ar' => 'نموذج', 'name_en' => 'Form', 'is_active' => true]);
+        $question = EvaluationQuestion::create([
+            'evaluation_form_id' => $form->id, 'question' => 'Quality', 'question_ar' => 'الجودة',
+            'question_en' => 'Quality', 'answer_type' => 'score_10', 'minimum_score' => 1,
+            'maximum_score' => 10, 'weight' => 1, 'is_required' => true, 'is_active' => true,
+        ]);
+        $service = app(ActivityEvaluationService::class);
+        $service->synchronizeVerificationFields($activity);
+        $activity->postExecutionVerifications()->update(['status' => 'correct']);
+
+        $this->actingAs($user)->post(route('evaluations.store', $activity), [
+            'evaluation_form_id' => (string) $form->id,
+            'answers' => [$question->id => ['score' => 8]],
+            'notes' => 'تقييم مكتمل',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('activity_evaluations', [
+            'monthly_activity_id' => $activity->id,
+            'evaluation_form_id' => $form->id,
+        ]);
     }
 
     public function test_verification_preserves_original_and_weighted_evaluation_updates_status(): void

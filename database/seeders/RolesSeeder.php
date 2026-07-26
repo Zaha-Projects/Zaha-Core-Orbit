@@ -40,7 +40,7 @@ class RolesSeeder extends Seeder
             }
 
             if ($permissionNames === ['*']) {
-                $role->syncPermissions($allPermissions);
+                $role->givePermissionTo($allPermissions);
 
                 continue;
             }
@@ -50,7 +50,9 @@ class RolesSeeder extends Seeder
                 ->whereIn('name', $permissionNames)
                 ->get();
 
-            $role->syncPermissions($permissions);
+            // Seeders are additive: never revoke permissions managed manually or by
+            // another module merely because they are absent from this catalogue.
+            $role->givePermissionTo($permissions);
         }
     }
 

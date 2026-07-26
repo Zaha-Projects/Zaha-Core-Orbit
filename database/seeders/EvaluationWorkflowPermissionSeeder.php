@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -34,15 +35,19 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
             ['name' => 'profile.view', 'module' => 'profile', 'action' => 'view', 'name_ar' => 'عرض الملف الشخصي', 'name_en' => 'View profile'],
         ];
 
-        $newPermissionNames = [];
+        $createdPermissions = collect();
         foreach ($permissions as $permission) {
-            $model = Permission::query()->firstOrCreate(
+            $model = Permission::query()->updateOrCreate(
                 ['name' => $permission['name'], 'guard_name' => 'web'],
-                $permission
+                [
+                    'module' => $permission['module'],
+                    'action' => $permission['action'],
+                    'name_ar' => $permission['name_ar'],
+                    'name_en' => $permission['name_en'],
+                ]
             );
-            if ($model->wasRecentlyCreated) {
-                $newPermissionNames[] = $model->name;
-            }
+
+            $createdPermissions->put($model->name, $model);
         }
 
         // Permission names are resolved from Spatie's cache when they are granted to
@@ -50,10 +55,10 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
         // immediately available, while keeping all existing permissions untouched.
         $permissionRegistrar->forgetCachedPermissions();
 
-        $this->assignNewPermissions($newPermissionNames);
+        $this->assignPermissions($createdPermissions);
     }
 
-    private function assignNewPermissions(array $newPermissionNames): void
+    private function assignPermissions(Collection $workflowPermissions): void
     {
         $map = [
             'followup_officer' => [
@@ -82,7 +87,15 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
                 continue;
             }
 
-            $role->givePermissionTo($permissionNames);
+            // Pass persisted models for permissions created by this seeder. Resolving
+            // their names through Spatie here can still read a stale in-memory cache
+            // in long-running/production processes, even after the cache is cleared.
+            $permissions = collect($permissionNames)->map(function (string $permissionName) use ($workflowPermissions) {
+                return $workflowPermissions->get($permissionName)
+                    ?? Permission::findByName($permissionName, 'web');
+            });
+
+            $role->givePermissionTo($permissions);
         }
     }
 }

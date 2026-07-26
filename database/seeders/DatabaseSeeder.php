@@ -36,9 +36,11 @@ class DatabaseSeeder extends Seeder
         // $this->call(MonthlyKpiSeeder::class);
         // $this->call(EventTypeSeeder::class);
 
-        $this->call(EvaluationWorkflowPermissionSeeder::class);
-        $this->call(FollowupOfficerUsersSeeder::class);
-        $this->call(EvaluationOfficerUsersSeeder::class);
-        $this->call(ActivityEvaluationFormSeeder::class);
+        // $this->call(EvaluationWorkflowPermissionSeeder::class);
+        // $this->call(FollowupOfficerUsersSeeder::class);
+        // $this->call(EvaluationOfficerUsersSeeder::class);
+        // $this->call(ActivityEvaluationFormSeeder::class);
+
+        $this->call(CompleteRolePermissionSeeder::class);
     }
 }
