@@ -5,11 +5,15 @@ namespace Database\Seeders;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class EvaluationWorkflowPermissionSeeder extends Seeder
 {
     public function run(): void
     {
+        $permissionRegistrar = app(PermissionRegistrar::class);
+        $permissionRegistrar->forgetCachedPermissions();
+
         $permissions = [
             ['name' => 'evaluation.view_branch', 'module' => 'evaluation', 'action' => 'view', 'name_ar' => 'عرض تقييمات الفرع', 'name_en' => 'View branch evaluations'],
             ['name' => 'evaluation.view_all', 'module' => 'evaluation', 'action' => 'view_all', 'name_ar' => 'عرض جميع التقييمات', 'name_en' => 'View all evaluations'],
@@ -40,6 +44,11 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
                 $newPermissionNames[] = $model->name;
             }
         }
+
+        // Permission names are resolved from Spatie's cache when they are granted to
+        // roles. Refresh it after firstOrCreate so permissions added by this run are
+        // immediately available, while keeping all existing permissions untouched.
+        $permissionRegistrar->forgetCachedPermissions();
 
         $this->assignNewPermissions($newPermissionNames);
     }
