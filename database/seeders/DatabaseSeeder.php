@@ -11,29 +11,34 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(SettingSeeder::class);
-        $this->call(BranchSeeder::class);
-        $this->call(DepartmentSeeder::class);
-        $this->call(DepartmentUnitSeeder::class);
-        $this->call(VisualIdentitySeeder::class);
-        $this->call(EventCategorySeeder::class);
-        $this->call(TargetGroupSeeder::class);
-        $this->call(EvaluationQuestionSeeder::class);
-        $this->call(ZahaTimeOptionSeeder::class);
-        $this->call(ExecutionNeedTypeSeeder::class);
-        $this->call(EventStatusLookupSeeder::class);
+        // $this->call(SettingSeeder::class);
+        // $this->call(BranchSeeder::class);
+        // $this->call(DepartmentSeeder::class);
+        // $this->call(DepartmentUnitSeeder::class);
+        // $this->call(VisualIdentitySeeder::class);
+        // $this->call(EventCategorySeeder::class);
+        // $this->call(TargetGroupSeeder::class);
+        // $this->call(EvaluationQuestionSeeder::class);
+        // $this->call(ZahaTimeOptionSeeder::class);
+        // $this->call(ExecutionNeedTypeSeeder::class);
+        // $this->call(EventStatusLookupSeeder::class);
 
-        $this->call(RolePermissionSeeder::class);
-        $this->call(RolesSeeder::class);
-        $this->call(UsersSeeder::class);
-        $this->call(BranchCoordinatorSeeder::class);
-        $this->call(BranchStaffUsersSeeder::class);
-        $this->call(WorkflowSeeder::class);
+        // $this->call(RolePermissionSeeder::class);
+        // $this->call(RolesSeeder::class);
+        // $this->call(UsersSeeder::class);
+        // $this->call(BranchCoordinatorSeeder::class);
+        // $this->call(BranchStaffUsersSeeder::class);
+        // $this->call(WorkflowSeeder::class);
         // $this->call(WorkflowShowcaseSeeder::class);
         // $this->call(PostExecutionShowcaseSeeder::class);
 
-        $this->call(MovementSeeder::class);
-        $this->call(MonthlyKpiSeeder::class);
-        $this->call(EventTypeSeeder::class);
+        // $this->call(MovementSeeder::class);
+        // $this->call(MonthlyKpiSeeder::class);
+        // $this->call(EventTypeSeeder::class);
+
+        $this->call(EvaluationWorkflowPermissionSeeder::class);
+        $this->call(FollowupOfficerUsersSeeder::class);
+        $this->call(EvaluationOfficerUsersSeeder::class);
+        $this->call(ActivityEvaluationFormSeeder::class);
     }
 }

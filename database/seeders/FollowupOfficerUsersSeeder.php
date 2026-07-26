@@ -6,41 +6,29 @@ use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class FollowupOfficerUsersSeeder extends Seeder
 {
-    // Development-only credential; override seeded accounts in deployed environments.
-    public const DEVELOPMENT_PASSWORD = 'Password123!';
+    public const DEVELOPMENT_PASSWORD = 'password';
 
     public function run(): void
     {
-        Branch::query()->each(function (Branch $branch) {
-            $alreadyAssigned = User::role('followup_officer')
-                ->where(function ($query) use ($branch) {
-                    $query->where('branch_id', $branch->id)
-                        ->orWhereHas('assignedBranches', fn ($assigned) => $assigned->where('branches.id', $branch->id));
-                })
-                ->exists();
+        $branches = Branch::query()->orderBy('id')->get();
 
-            if ($alreadyAssigned) {
-                return;
-            }
+        foreach ($branches as $index => $branch) {
+            $sequence = $index + 1;
 
-            $slug = Str::slug($branch->name) ?: (string) $branch->id;
-            $user = User::query()->firstOrCreate(
-                ['email' => "followup.branch.{$slug}@zaha.local"],
+            $followupOfficer = User::query()->updateOrCreate(
+                ['email' => sprintf('followup-officer.branch%02d@zaha.test', $sequence)],
                 [
-                    'name' => "مسؤول متابعة - {$branch->name}",
-                    'branch_id' => $branch->id,
+                    'name' => sprintf('مسؤول متابعة - %s', $branch->city ?: $branch->name),
+                    'phone' => sprintf('077220%04d', $sequence),
                     'status' => 'active',
+                    'branch_id' => $branch->id,
                     'password' => Hash::make(self::DEVELOPMENT_PASSWORD),
                 ]
             );
-            if ($user->wasRecentlyCreated) {
-                $user->assignRole('followup_officer');
-                $user->assignedBranches()->syncWithoutDetaching([$branch->id]);
-            }
-        });
+            $followupOfficer->syncRoles(['followup_officer']);
+        }
     }
 }

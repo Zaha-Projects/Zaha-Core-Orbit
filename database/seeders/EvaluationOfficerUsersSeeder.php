@@ -8,24 +8,22 @@ use Illuminate\Support\Facades\Hash;
 
 class EvaluationOfficerUsersSeeder extends Seeder
 {
-    // Development-only credential; override seeded accounts in deployed environments.
-    public const DEVELOPMENT_PASSWORD = 'Password123!';
+    public const DEVELOPMENT_PASSWORD = 'password';
 
     public function run(): void
     {
-        foreach (range(1, 3) as $number) {
-            $user = User::query()->firstOrCreate(
-                ['email' => "evaluation.officer.{$number}@zaha.local"],
+        foreach (range(1, 3) as $index) {
+            $evaluationOfficer = User::query()->updateOrCreate(
+                ['email' => sprintf('evaluation-officer%02d@zaha.test', $index)],
                 [
-                    'name' => "مسؤول التقييم {$number}",
-                    'branch_id' => null,
+                    'name' => sprintf('مسؤول التقييم %02d', $index),
+                    'phone' => sprintf('076220%04d', $index),
                     'status' => 'active',
+                    'branch_id' => null,
                     'password' => Hash::make(self::DEVELOPMENT_PASSWORD),
                 ]
             );
-            if ($user->wasRecentlyCreated) {
-                $user->assignRole('evaluation_officer');
-            }
+            $evaluationOfficer->syncRoles(['evaluation_officer']);
         }
     }
 }
