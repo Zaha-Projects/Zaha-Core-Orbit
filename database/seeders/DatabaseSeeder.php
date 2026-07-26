@@ -41,6 +41,6 @@ class DatabaseSeeder extends Seeder
         // $this->call(EvaluationOfficerUsersSeeder::class);
         // $this->call(ActivityEvaluationFormSeeder::class);
 
-        $this->call(EvaluationWorkflowAccessSeeder::class);
+        $this->call(CompleteRolePermissionSeeder::class);
     }
 }

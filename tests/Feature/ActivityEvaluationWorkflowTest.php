@@ -13,6 +13,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\EvaluationWorkflowPermissionSeeder;
 use Database\Seeders\EvaluationWorkflowAccessSeeder;
+use Database\Seeders\CompleteRolePermissionSeeder;
 use Database\Seeders\EvaluationOfficerUsersSeeder;
 use Database\Seeders\FollowupOfficerUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -62,6 +63,26 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $this->assertTrue($evaluationRole->hasPermissionTo('evaluation.view_all'));
         $this->assertTrue($evaluationRole->hasPermissionTo('post_execution.view_all'));
         $this->assertTrue($evaluationRole->hasPermissionTo('followup.monthly_plans.view'));
+    }
+
+    public function test_complete_access_seeder_is_additive_and_allows_seeded_officers_through_middleware(): void
+    {
+        $customPermission = Permission::create(['name' => 'custom.permission', 'guard_name' => 'web']);
+        $role = Role::findByName('followup_officer', 'web');
+        $role->givePermissionTo($customPermission);
+
+        $this->seed(CompleteRolePermissionSeeder::class);
+
+        $role = $role->fresh();
+        $this->assertTrue($role->hasPermissionTo('custom.permission'));
+        $this->assertTrue($role->hasPermissionTo('followup.dashboard.view'));
+
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles([$role]);
+        $user->assignedBranches()->sync([$branch->id]);
+
+        $this->actingAs($user)->get(route('followup.dashboard'))->assertOk();
     }
 
     public function test_followup_officer_is_restricted_to_exactly_the_assigned_branch(): void

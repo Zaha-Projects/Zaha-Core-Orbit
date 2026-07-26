@@ -31,7 +31,9 @@ class EvaluationWorkflowAccessSeeder extends Seeder
                     ['name_ar' => $definition['name_ar'], 'name_en' => $definition['name_en']]
                 );
 
-                $role->syncPermissions(
+                // Add the workflow permissions without revoking any permission that
+                // was granted previously or is owned by another application module.
+                $role->givePermissionTo(
                     collect($definition['permissions'])->map(fn (string $name) => $permissions->get($name))
                 );
             }
@@ -53,6 +55,9 @@ class EvaluationWorkflowAccessSeeder extends Seeder
             'evaluation.view_branch' => $this->permission('evaluation', 'view', 'عرض تقييمات الفرع', 'View branch evaluations'),
             'evaluation.view_all' => $this->permission('evaluation', 'view_all', 'عرض جميع التقييمات', 'View all evaluations'),
             'evaluation.submit_branch' => $this->permission('evaluation', 'submit', 'تقييم نشاط الفرع', 'Submit branch activity evaluation'),
+            'evaluation.forms.manage' => $this->permission('evaluation', 'manage', 'إدارة نماذج التقييم', 'Manage evaluation forms'),
+            'evaluation.questions.manage' => $this->permission('evaluation', 'manage', 'إدارة أسئلة التقييم', 'Manage evaluation questions'),
+            'evaluation.visibility.manage' => $this->permission('evaluation', 'manage', 'إدارة ظهور التقييم', 'Manage evaluation visibility'),
             'post_execution.view_branch' => $this->permission('post_execution', 'view', 'عرض إكمال ما بعد التنفيذ للفرع', 'View branch post-execution'),
             'post_execution.view_all' => $this->permission('post_execution', 'view_all', 'عرض جميع بيانات ما بعد التنفيذ', 'View all post-execution'),
             'post_execution.verify_branch' => $this->permission('post_execution', 'verify', 'التحقق من ما بعد التنفيذ للفرع', 'Verify branch post-execution'),
@@ -89,6 +94,19 @@ class EvaluationWorkflowAccessSeeder extends Seeder
                     'agenda.view', 'monthly_activities.view', 'monthly_activities.view_other_branches',
                     'branches.view.all', 'evaluation.view', 'evaluation.view_all', 'post_execution.view_all',
                     'followup.monthly_plans.view', 'users.directory.view', 'profile.view',
+                ],
+            ],
+            'relations_officer' => [
+                'name_ar' => 'مسؤول العلاقات',
+                'name_en' => 'Relations Officer',
+                'permissions' => ['evaluation.view_branch', 'evaluation.visibility.manage'],
+            ],
+            'relations_manager' => [
+                'name_ar' => 'مدير علاقات رئيسي',
+                'name_en' => 'Primary Relations Manager',
+                'permissions' => [
+                    'evaluation.view_all', 'evaluation.forms.manage', 'evaluation.questions.manage',
+                    'evaluation.visibility.manage', 'post_execution.view_all',
                 ],
             ],
         ];
