@@ -17,6 +17,7 @@ use Database\Seeders\CompleteRolePermissionSeeder;
 use Database\Seeders\EvaluationOfficerUsersSeeder;
 use Database\Seeders\FollowupOfficerUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -115,6 +116,8 @@ class ActivityEvaluationWorkflowTest extends TestCase
 
     public function test_evaluation_submission_uses_laravel_eight_compatible_request_access(): void
     {
+        $this->assertTrue(Schema::hasColumn('activity_evaluation_answers', 'question_sort_order'));
+
         $branch = Branch::factory()->create();
         $user = User::factory()->create(['branch_id' => $branch->id]);
         $user->syncRoles(['followup_officer']);
