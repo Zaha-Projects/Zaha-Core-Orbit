@@ -49,8 +49,9 @@ class ActivityEvaluationsController extends Controller
 
     public function store(SubmitActivityEvaluationRequest $request, MonthlyActivity $monthlyActivity, ActivityEvaluationService $service)
     {
-        $form = EvaluationForm::query()->where('is_active', true)->findOrFail($request->integer('evaluation_form_id'));
-        $evaluation = $service->submit($monthlyActivity, $form, $request->user(), $request->validated()['answers'], $request->validated()['notes'] ?? null);
+        $validated = $request->validated();
+        $form = EvaluationForm::query()->where('is_active', true)->findOrFail((int) $validated['evaluation_form_id']);
+        $evaluation = $service->submit($monthlyActivity, $form, $request->user(), $validated['answers'], $validated['notes'] ?? null);
         return redirect()->route('evaluations.show', $evaluation)->with('success', __('evaluation.messages.submitted'));
     }
 

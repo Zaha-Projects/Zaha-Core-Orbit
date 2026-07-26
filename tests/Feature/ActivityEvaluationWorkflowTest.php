@@ -113,6 +113,39 @@ class ActivityEvaluationWorkflowTest extends TestCase
             ->assertSee($activity->title);
     }
 
+    public function test_evaluation_submission_uses_laravel_eight_compatible_request_access(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles(['followup_officer']);
+        $user->assignedBranches()->sync([$branch->id]);
+        $activity = MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'status' => 'post_execution_submitted',
+            'post_execution_payload' => ['attendance' => 25],
+        ]);
+        $form = EvaluationForm::create(['name_ar' => 'نموذج', 'name_en' => 'Form', 'is_active' => true]);
+        $question = EvaluationQuestion::create([
+            'evaluation_form_id' => $form->id, 'question' => 'Quality', 'question_ar' => 'الجودة',
+            'question_en' => 'Quality', 'answer_type' => 'score_10', 'minimum_score' => 1,
+            'maximum_score' => 10, 'weight' => 1, 'is_required' => true, 'is_active' => true,
+        ]);
+        $service = app(ActivityEvaluationService::class);
+        $service->synchronizeVerificationFields($activity);
+        $activity->postExecutionVerifications()->update(['status' => 'correct']);
+
+        $this->actingAs($user)->post(route('evaluations.store', $activity), [
+            'evaluation_form_id' => (string) $form->id,
+            'answers' => [$question->id => ['score' => 8]],
+            'notes' => 'تقييم مكتمل',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('activity_evaluations', [
+            'monthly_activity_id' => $activity->id,
+            'evaluation_form_id' => $form->id,
+        ]);
+    }
+
     public function test_verification_preserves_original_and_weighted_evaluation_updates_status(): void
     {
         $branch = Branch::factory()->create();
