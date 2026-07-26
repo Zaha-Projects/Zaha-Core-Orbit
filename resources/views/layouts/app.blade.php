@@ -11,6 +11,7 @@
     $user = auth()->user();
     $displayName = $user?->name ?? config('app.name', __('app.common.app_name'));
     $currentRoute = request()->route()?->getName();
+    $isFollowupOfficer = $user?->hasRole('followup_officer') && ! $user?->hasRole('super_admin');
     $isRelationsManagerSidebar = $user?->hasRole('relations_manager') && ! $user?->hasRole('super_admin');
     $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
     $canAccessAgendaApprovals = $user && (
@@ -84,6 +85,14 @@
         <p class="side-comment" data-i18n="quick_menu">{{ __('app.common.dashboard') }}</p>
 
         <ul class="side-list">
+            @if($isFollowupOfficer)
+            <li class="side-item {{ request()->routeIs('followup.dashboard') ? 'selected' : '' }}"><a href="{{ route('followup.dashboard') }}"><i class="fas fa-gauge-high"></i><span>{{ __('evaluation.followup.sidebar.dashboard') }}</span></a></li>
+            <li class="side-item {{ request()->routeIs('followup.monthly-plans*') ? 'selected' : '' }}"><a href="{{ route('followup.monthly-plans') }}"><i class="fas fa-calendar-days"></i><span>{{ __('evaluation.followup.sidebar.monthly_plans') }}</span></a></li>
+            <li class="side-item {{ request()->routeIs('followup.awaiting-evaluation') || request()->routeIs('evaluations.verification.*') || request()->routeIs('evaluations.create') ? 'selected' : '' }}"><a href="{{ route('followup.awaiting-evaluation') }}"><i class="fas fa-hourglass-half"></i><span>{{ __('evaluation.followup.sidebar.awaiting_evaluation') }}</span></a></li>
+            <li class="side-item {{ request()->routeIs('followup.evaluations.*') || request()->routeIs('evaluations.show') ? 'selected' : '' }}"><a href="{{ route('followup.evaluations.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('evaluation.followup.sidebar.previous_evaluations') }}</span></a></li>
+            <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}"><a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>{{ __('evaluation.followup.sidebar.user_directory') }}</span></a></li>
+            <li class="side-item {{ request()->routeIs('profile.*') ? 'selected' : '' }}"><a href="{{ route('profile.show') }}"><i class="fas fa-user"></i><span>{{ __('evaluation.followup.sidebar.profile') }}</span></a></li>
+            @else
             <li class="side-item {{ $currentRoute === 'dashboard' ? 'selected' : '' }}">
                 <a href="{{ route('dashboard') }}"><i class="fas fa-gauge-high"></i><span data-i18n="menu_dashboard">{{ __('app.common.dashboard') }}</span></a>
             </li>
@@ -173,6 +182,7 @@
             @endif
 
             @include('layouts.app.partials.workflow-auto-approval-toggle', ['variant' => 'original'])
+            @endif
         </ul>
 
         <p class="side-comment" data-i18n="language">{{ __('app.layout.language_switch') }}</p>

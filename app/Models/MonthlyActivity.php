@@ -439,6 +439,34 @@ class MonthlyActivity extends Model
         return $query->where('is_archived', false);
     }
 
+    public function scopeForFollowupOfficer($query, User $user)
+    {
+        return $query->whereIn('branch_id', $user->scopedBranchIds());
+    }
+
+    public function scopeHasPostExecution($query)
+    {
+        return $query->whereNotNull('post_execution_payload')->where('post_execution_payload', '!=', '[]');
+    }
+
+    public function scopeAwaitingEvaluation($query)
+    {
+        return $query->hasPostExecution()->doesntHave('activityEvaluation')->whereNotIn('status', ['cancelled', 'rejected']);
+    }
+
+    public function scopeEvaluated($query)
+    {
+        return $query->whereHas('activityEvaluation');
+    }
+
+    public function scopeForUserRelationship($query, User $user)
+    {
+        return $query->where(function ($relationshipQuery) use ($user) {
+            $relationshipQuery->where('created_by', $user->id)
+                ->orWhere('responsible_party', $user->name);
+        });
+    }
+
     public function scopeEnterpriseFilter($query, array $filters)
     {
         return $query

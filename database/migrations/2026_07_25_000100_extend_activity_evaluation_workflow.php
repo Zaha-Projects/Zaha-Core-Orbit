@@ -82,6 +82,7 @@ return new class extends Migration
             $table->decimal('weight', 8, 3);
             $table->decimal('score', 5, 2);
             $table->decimal('weighted_score', 12, 4);
+            $table->unsignedInteger('question_sort_order')->default(0);
             $table->text('note')->nullable();
             $table->timestamps();
             $table->unique(['activity_evaluation_id', 'evaluation_question_id'], 'activity_evaluation_question_unique');

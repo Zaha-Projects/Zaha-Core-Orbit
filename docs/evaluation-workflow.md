@@ -30,6 +30,69 @@ All previously executed seeders are commented out in `DatabaseSeeder`, and only 
 3. `php artisan db:seed --class=EvaluationOfficerUsersSeeder`
 4. `php artisan db:seed --class=ActivityEvaluationFormSeeder`
 
-The user seeders follow the existing `BranchStaffUsersSeeder` convention: deterministic `@zaha.test` emails, sequential phone numbers, `updateOrCreate`, and `syncRoles`. Follow-up accounts use `followup-officer.branch01@zaha.test` and continue sequentially per branch; evaluation accounts use `evaluation-officer01@zaha.test` through `evaluation-officer03@zaha.test`. All new seeded users share the development password `password`; rotate or disable these accounts outside development.
+The user seeders follow the existing `BranchStaffUsersSeeder` convention: deterministic `@zaha.test` emails, sequential phone numbers, `updateOrCreate`, and `syncRoles`. Follow-up accounts use `followup-officer.branch01@zaha.test` and continue sequentially per branch; evaluation accounts use `evaluation-officer01@zaha.test` through `evaluation-officer03@zaha.test`. Development credentials are intentionally omitted from this technical log.
 
 Run the suite with `php artisan test`. Existing JSON completion data is synchronized lazily into verification records, avoiding a destructive production backfill and preserving legacy screens.
+
+## Seeded user log
+
+The seeders print this table after execution via Symfony Console. The rows below are generated from the configured branch records in `config/branches.php`; evaluation officers are global.
+
+| Name | Email | Branch | Role Code | Role Name |
+|---|---|---|---|---|
+| مسؤول متابعة - المنصورة | followup-officer.branch01@zaha.test | مركز زها الثقافي - المنصورة | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - اربد طارق | followup-officer.branch02@zaha.test | مركز زها الثقافي - اربد طارق | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - عجلون | followup-officer.branch03@zaha.test | مركز زها الثقافي - عجلون | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - جرش | followup-officer.branch04@zaha.test | مركز زها الثقافي - جرش | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - المفرق | followup-officer.branch05@zaha.test | مركز زها الثقافي - المفرق | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - الرمثا | followup-officer.branch06@zaha.test | مركز زها الثقافي - الرمثا | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - المشارع | followup-officer.branch07@zaha.test | مركز زها الثقافي - المشارع | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - الرصيفة | followup-officer.branch08@zaha.test | مركز زها الثقافي - الرصيفة | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - الهاشمية | followup-officer.branch09@zaha.test | مركز زها الثقافي - الهاشمية | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - مأدبا | followup-officer.branch10@zaha.test | مركز زها الثقافي - مأدبا | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - ماعين | followup-officer.branch11@zaha.test | مركز زها الثقافي - ماعين | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - دير علا | followup-officer.branch12@zaha.test | مركز زها الثقافي - دير علا | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - الكرك | followup-officer.branch13@zaha.test | مركز زها الثقافي - الكرك | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - الطفيلة | followup-officer.branch14@zaha.test | مركز زها الثقافي - الطفيلة | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - معان | followup-officer.branch15@zaha.test | مركز زها الثقافي - معان | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - العقبة | followup-officer.branch16@zaha.test | مركز زها الثقافي - العقبة | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - غور الصافي | followup-officer.branch17@zaha.test | مركز زها الثقافي - غور الصافي | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - خلدا | followup-officer.branch18@zaha.test | مركز زها الثقافي - خلدا | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - أم عمر الفيصل | followup-officer.branch19@zaha.test | مركز زها الثقافي - أم عمر الفيصل | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - باب الواد | followup-officer.branch20@zaha.test | مركز زها الثقافي - باب الواد | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - طارق | followup-officer.branch21@zaha.test | مركز زها الثقافي - طارق | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - المستندة | followup-officer.branch22@zaha.test | مركز زها الثقافي - المستندة | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - الزهور | followup-officer.branch23@zaha.test | مركز زها الثقافي - الزهور | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - أبو علندا | followup-officer.branch24@zaha.test | مركز زها الثقافي - أبو علندا | followup_officer | مسؤول المتابعة |
+| مسؤول متابعة - التقوى | followup-officer.branch25@zaha.test | مركز زها الثقافي - التقوى | followup_officer | مسؤول المتابعة |
+| مسؤول التقييم 01 | evaluation-officer01@zaha.test | جميع الفروع | evaluation_officer | مسؤول التقييم |
+| مسؤول التقييم 02 | evaluation-officer02@zaha.test | جميع الفروع | evaluation_officer | مسؤول التقييم |
+| مسؤول التقييم 03 | evaluation-officer03@zaha.test | جميع الفروع | evaluation_officer | مسؤول التقييم |
+
+## Follow-up workspace interface
+
+The `followup_officer` sidebar is intentionally isolated from the shared role menu. Its final order is: Dashboard, Monthly Plans, Awaiting Evaluation, Previous Evaluations, User Directory, Profile. Other roles continue to use the existing shared sidebar.
+
+The branch-scoped workspace uses reusable `MonthlyActivity` scopes for follow-up branch ownership, completed post-execution payloads, pending evaluations, completed evaluations, and the authenticated user's responsible relationship. The dashboard includes current-month statistics, workflow counts, urgent review actions, upcoming plans, recent evaluations, branch performance, and verification totals. No cross-branch comparison is shown.
+
+### Follow-up routes
+
+- `followup.dashboard`
+- `followup.monthly-plans`
+- `followup.monthly-plans.show`
+- `followup.awaiting-evaluation`
+- `followup.evaluations.index`
+- Existing protected workflow routes remain in use for verification, evaluation creation, and historical evaluation details.
+
+### Follow-up permissions
+
+- `followup.dashboard.view`
+- `followup.monthly_plans.view`
+- `followup.post_execution.view`
+- `followup.post_execution.verify`
+- `followup.evaluations.create`
+- `followup.evaluations.view`
+- `users.directory.view`
+- `profile.view`
+
+The “My Relationship” filter uses the existing activity ownership data (`created_by` and `responsible_party`) rather than introducing a duplicate relationship table.

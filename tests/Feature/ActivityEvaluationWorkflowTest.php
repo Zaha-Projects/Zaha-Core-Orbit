@@ -12,6 +12,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\EvaluationWorkflowPermissionSeeder;
 use Database\Seeders\EvaluationOfficerUsersSeeder;
+use Database\Seeders\FollowupOfficerUsersSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -83,5 +84,44 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $this->assertSame('0762200001', $officer->phone);
         $this->assertTrue($officer->hasRole('evaluation_officer'));
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('password', $officer->password));
+    }
+
+    public function test_followup_seeder_assigns_primary_and_assigned_branch(): void
+    {
+        $branch = Branch::factory()->create(['city' => 'فرع اختباري']);
+        $this->seed(FollowupOfficerUsersSeeder::class);
+        $officer = User::query()->where('email', 'followup-officer.branch01@zaha.test')->firstOrFail();
+
+        $this->assertSame($branch->id, $officer->branch_id);
+        $this->assertTrue($officer->assignedBranches()->whereKey($branch->id)->exists());
+        $this->assertTrue($officer->hasRole('followup_officer'));
+    }
+
+    public function test_followup_sidebar_contains_only_the_six_workspace_links(): void
+    {
+        $branch = Branch::factory()->create();
+        $officer = User::factory()->create(['branch_id' => $branch->id]);
+        $officer->syncRoles(['followup_officer']);
+        $officer->assignedBranches()->sync([$branch->id]);
+
+        $response = $this->actingAs($officer)->get(route('followup.dashboard'));
+        $response->assertOk();
+        foreach (['لوحة التحكم', 'الخطط الشهرية', 'بانتظار التقييم', 'التقييمات السابقة', 'دليل المستخدمين', 'الملف الشخصي'] as $label) {
+            $response->assertSee($label);
+        }
+        $response->assertDontSee('تقارير الإدارة')->assertDontSee('إعدادات الموقع')->assertDontSee('الأجندة السنوية');
+    }
+
+    public function test_followup_monthly_calendar_is_branch_scoped(): void
+    {
+        $branch = Branch::factory()->create();
+        $otherBranch = Branch::factory()->create();
+        $officer = User::factory()->create(['branch_id' => $branch->id]);
+        $officer->syncRoles(['followup_officer']);
+        $officer->assignedBranches()->sync([$branch->id]);
+        MonthlyActivity::factory()->create(['branch_id' => $branch->id, 'title' => 'خطة فرعي', 'proposed_date' => now()]);
+        MonthlyActivity::factory()->create(['branch_id' => $otherBranch->id, 'title' => 'خطة فرع آخر', 'proposed_date' => now()]);
+
+        $this->actingAs($officer)->get(route('followup.monthly-plans'))->assertOk()->assertSee('خطة فرعي')->assertDontSee('خطة فرع آخر');
     }
 }

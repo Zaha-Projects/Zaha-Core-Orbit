@@ -14,6 +14,7 @@ class FollowupOfficerUsersSeeder extends Seeder
     public function run(): void
     {
         $branches = Branch::query()->orderBy('id')->get();
+        $logRows = [];
 
         foreach ($branches as $index => $branch) {
             $sequence = $index + 1;
@@ -29,6 +30,10 @@ class FollowupOfficerUsersSeeder extends Seeder
                 ]
             );
             $followupOfficer->syncRoles(['followup_officer']);
+            $followupOfficer->assignedBranches()->sync([$branch->id]);
+            $logRows[] = [$followupOfficer->name, $followupOfficer->email, $branch->name, 'followup_officer', 'مسؤول المتابعة'];
         }
+
+        $this->command?->table(['Name', 'Email', 'Branch', 'Role Code', 'Role Name'], $logRows);
     }
 }

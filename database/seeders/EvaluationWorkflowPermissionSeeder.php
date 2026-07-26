@@ -20,6 +20,14 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
             ['name' => 'post_execution.view_branch', 'module' => 'post_execution', 'action' => 'view', 'name_ar' => 'عرض إكمال ما بعد التنفيذ للفرع', 'name_en' => 'View branch post-execution'],
             ['name' => 'post_execution.view_all', 'module' => 'post_execution', 'action' => 'view_all', 'name_ar' => 'عرض جميع بيانات ما بعد التنفيذ', 'name_en' => 'View all post-execution'],
             ['name' => 'post_execution.verify_branch', 'module' => 'post_execution', 'action' => 'verify', 'name_ar' => 'التحقق من ما بعد التنفيذ للفرع', 'name_en' => 'Verify branch post-execution'],
+            ['name' => 'followup.dashboard.view', 'module' => 'followup', 'action' => 'view', 'name_ar' => 'عرض لوحة مسؤول المتابعة', 'name_en' => 'View follow-up dashboard'],
+            ['name' => 'followup.monthly_plans.view', 'module' => 'followup', 'action' => 'view', 'name_ar' => 'عرض خطط فرع المتابعة', 'name_en' => 'View follow-up branch plans'],
+            ['name' => 'followup.post_execution.view', 'module' => 'followup', 'action' => 'view', 'name_ar' => 'عرض ما بعد التنفيذ للمتابعة', 'name_en' => 'View follow-up post-execution'],
+            ['name' => 'followup.post_execution.verify', 'module' => 'followup', 'action' => 'verify', 'name_ar' => 'مراجعة ما بعد التنفيذ', 'name_en' => 'Verify follow-up post-execution'],
+            ['name' => 'followup.evaluations.create', 'module' => 'followup', 'action' => 'create', 'name_ar' => 'إنشاء تقييم نشاط', 'name_en' => 'Create follow-up evaluation'],
+            ['name' => 'followup.evaluations.view', 'module' => 'followup', 'action' => 'view', 'name_ar' => 'عرض تقييمات الفرع', 'name_en' => 'View follow-up evaluations'],
+            ['name' => 'users.directory.view', 'module' => 'directory', 'action' => 'view', 'name_ar' => 'عرض دليل المستخدمين', 'name_en' => 'View user directory'],
+            ['name' => 'profile.view', 'module' => 'profile', 'action' => 'view', 'name_ar' => 'عرض الملف الشخصي', 'name_en' => 'View profile'],
         ];
 
         $newPermissionNames = [];
@@ -43,6 +51,9 @@ class EvaluationWorkflowPermissionSeeder extends Seeder
                 'agenda.view', 'monthly_activities.view', 'branches.view.own', 'evaluation.view',
                 'evaluation.submit', 'evaluation.view_branch', 'evaluation.submit_branch',
                 'post_execution.view_branch', 'post_execution.verify_branch',
+                'followup.dashboard.view', 'followup.monthly_plans.view', 'followup.post_execution.view',
+                'followup.post_execution.verify', 'followup.evaluations.create', 'followup.evaluations.view',
+                'users.directory.view', 'profile.view',
             ],
             'evaluation_officer' => [
                 'agenda.view', 'monthly_activities.view', 'monthly_activities.view_other_branches',

@@ -12,6 +12,7 @@ class EvaluationOfficerUsersSeeder extends Seeder
 
     public function run(): void
     {
+        $logRows = [];
         foreach (range(1, 3) as $index) {
             $evaluationOfficer = User::query()->updateOrCreate(
                 ['email' => sprintf('evaluation-officer%02d@zaha.test', $index)],
@@ -24,6 +25,9 @@ class EvaluationOfficerUsersSeeder extends Seeder
                 ]
             );
             $evaluationOfficer->syncRoles(['evaluation_officer']);
+            $logRows[] = [$evaluationOfficer->name, $evaluationOfficer->email, 'جميع الفروع', 'evaluation_officer', 'مسؤول التقييم'];
         }
+
+        $this->command?->table(['Name', 'Email', 'Branch', 'Role Code', 'Role Name'], $logRows);
     }
 }

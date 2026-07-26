@@ -16,5 +16,5 @@ class ActivityEvaluation extends Model
     public function form() { return $this->belongsTo(EvaluationForm::class, 'evaluation_form_id'); }
     public function branch() { return $this->belongsTo(Branch::class); }
     public function evaluator() { return $this->belongsTo(User::class, 'evaluated_by'); }
-    public function answers() { return $this->hasMany(ActivityEvaluationAnswer::class); }
+    public function answers() { return $this->hasMany(ActivityEvaluationAnswer::class)->orderBy('question_sort_order'); }
 }

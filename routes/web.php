@@ -66,6 +66,7 @@ use App\Http\Controllers\Web\WorkflowAutoApprovalPreferenceController;
 use App\Http\Controllers\Web\Evaluation\ActivityEvaluationsController;
 use App\Http\Controllers\Web\Evaluation\EvaluationDashboardController;
 use App\Http\Controllers\Web\Evaluation\EvaluationFormsController;
+use App\Http\Controllers\Roles\FollowupOfficer\FollowupWorkspaceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +109,13 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::prefix('dashboard/followup')->middleware('role:followup_officer')->name('followup.')->group(function () {
+        Route::get('/', [FollowupWorkspaceController::class, 'dashboard'])->middleware('permission:followup.dashboard.view')->name('dashboard');
+        Route::get('/monthly-plans', [FollowupWorkspaceController::class, 'monthlyPlans'])->middleware('permission:followup.monthly_plans.view')->name('monthly-plans');
+        Route::get('/monthly-plans/{monthlyActivity}', [FollowupWorkspaceController::class, 'showPlan'])->middleware('permission:followup.monthly_plans.view')->name('monthly-plans.show');
+        Route::get('/awaiting-evaluation', [FollowupWorkspaceController::class, 'awaitingEvaluation'])->middleware('permission:followup.post_execution.view')->name('awaiting-evaluation');
+        Route::get('/evaluations', [FollowupWorkspaceController::class, 'evaluations'])->middleware('permission:followup.evaluations.view')->name('evaluations.index');
+    });
     Route::get('/dashboard/evaluation-workflow', EvaluationDashboardController::class)->middleware('permission:evaluation.view_branch|evaluation.view_all')->name('evaluations.dashboard');
     Route::get('/dashboard/evaluations', [ActivityEvaluationsController::class, 'index'])->middleware('permission:evaluation.view_branch|evaluation.view_all')->name('evaluations.index');
     Route::get('/dashboard/evaluations/activities/{monthlyActivity}/verification', [ActivityEvaluationsController::class, 'review'])->name('evaluations.verification.review');
