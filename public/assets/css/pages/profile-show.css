@@ -10,10 +10,7 @@
         color: var(--profile-ink);
     }
     .profile-hero {
-        background:
-            radial-gradient(circle at 12% 10%, rgba(18, 184, 166, .24), transparent 34%),
-            radial-gradient(circle at 86% 2%, rgba(246, 183, 60, .22), transparent 30%),
-            linear-gradient(135deg, #0f4fa9 0%, #1667d9 52%, #24b7b2 100%);
+        background: linear-gradient(135deg, #00a9c4, #2fc9e2);
         border: 0;
         border-radius: 28px;
         box-shadow: 0 24px 70px rgba(15, 79, 169, .22);

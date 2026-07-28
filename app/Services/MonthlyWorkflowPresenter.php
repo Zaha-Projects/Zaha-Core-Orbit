@@ -111,8 +111,12 @@ class MonthlyWorkflowPresenter
             'current_step_label' => $currentStep?->name_ar ?: ($currentStep?->name_en ?: __('workflow_ui.common.unknown_step')),
             'current_role_label' => $currentStep?->role?->display_name
                 ?: ($currentStep?->permission?->name ? $this->fallbackLabel($currentStep->permission->name) : __('workflow_ui.common.none_option')),
-            'completed_steps_count' => $presentedSteps->whereIn('state', ['submitted', DynamicWorkflowService::DECISION_APPROVED])->count(),
-            'total_steps_count' => $presentedSteps->where('applies', true)->count(),
+            'completed_steps_count' => $presentedSteps->whereIn('state', [
+                'submitted',
+                DynamicWorkflowService::DECISION_APPROVED,
+                'skipped',
+            ])->count(),
+            'total_steps_count' => $presentedSteps->count(),
             'steps' => $presentedSteps->all(),
             'submitted_by_name' => $submitLog?->actor?->name,
             'submitted_at' => $submitLog?->acted_at?->format('Y-m-d H:i'),
