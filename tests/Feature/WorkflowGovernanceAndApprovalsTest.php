@@ -632,6 +632,32 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
         $this->assertSame('changes_requested', $summary['status_key']);
     }
 
+    public function test_monthly_edit_mirror_displays_the_attached_workflow_summary(): void
+    {
+        [$activity, $actors] = $this->seedMonthlyBranchApprovalFlow();
+
+        WorkflowStep::query()
+            ->where('step_key', 'monthly_branch_relations_manager_review')
+            ->update(['name_ar' => 'اعتماد رئيس الفرع']);
+
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $workflowService->forModel('monthly_activities', $activity);
+        $submitStep = $workflowService->currentStepForUser($instance->fresh(), $actors['creator']);
+        $workflowService->recordDecision(
+            $instance->fresh(),
+            $submitStep,
+            $actors['creator'],
+            DynamicWorkflowService::DECISION_APPROVED
+        );
+
+        $this->actingAs($actors['creator'])
+            ->get(route('role.relations.activities.edit', $activity))
+            ->assertOk()
+            ->assertSee('اعتماد رئيس الفرع')
+            ->assertSee('0/5')
+            ->assertSee('Submitted');
+    }
+
     private function seedApprovalSetup(bool $withActivity = false, bool $withTwoSteps = false): array
     {
         $relationsRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
