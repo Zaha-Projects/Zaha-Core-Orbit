@@ -5,12 +5,16 @@ namespace Tests\Feature;
 use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
+use App\Models\MonthlyPlanDeleteRequest;
+use App\Models\MonthlyPlanEditRequest;
+use App\Models\InAppNotification;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Services\DynamicWorkflowService;
 use App\Services\MonthlyWorkflowPresenter;
+use App\Services\PlanChangeRequestWorkflowService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -712,6 +716,72 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
         $this->assertSame(5, $summary['completed_steps_count']);
         $this->assertSame(5, $summary['total_steps_count']);
         $this->assertSame('skipped', collect($summary['steps'])->last()['state']);
+    }
+
+    public function test_completed_monthly_change_request_notifications_link_to_requester_accessible_pages(): void
+    {
+        $branch = Branch::factory()->create();
+        $relationsOfficerRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
+        $requester = User::factory()->create(['branch_id' => $branch->id]);
+        $requester->assignRole($relationsOfficerRole);
+        $actor = User::factory()->create();
+        $source = MonthlyActivity::factory()->create(['created_by' => $requester->id, 'branch_id' => $branch->id]);
+        $approvedVersion = MonthlyActivity::factory()->create(['created_by' => $requester->id, 'branch_id' => $branch->id]);
+        $instance = new \App\Models\WorkflowInstance(['status' => DynamicWorkflowService::DECISION_APPROVED]);
+        $service = app(PlanChangeRequestWorkflowService::class);
+        $notifyDecisionResult = new \ReflectionMethod($service, 'notifyDecisionResult');
+        $notifyDecisionResult->setAccessible(true);
+
+        $deleteRequest = new MonthlyPlanDeleteRequest([
+            'requester_id' => $requester->id,
+            'request_type' => 'delete',
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $source->id,
+        ]);
+        $deleteRequest->setRelation('requester', $requester);
+        $notifyDecisionResult->invoke(
+            $service,
+            $deleteRequest,
+            $instance,
+            $actor,
+            DynamicWorkflowService::DECISION_APPROVED,
+            route('role.programs.approvals.index')
+        );
+
+        $editRequest = new MonthlyPlanEditRequest([
+            'requester_id' => $requester->id,
+            'request_type' => 'edit',
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $source->id,
+            'approved_version_id' => $approvedVersion->id,
+        ]);
+        $editRequest->setRelation('requester', $requester);
+        $notifyDecisionResult->invoke(
+            $service,
+            $editRequest,
+            $instance,
+            $actor,
+            DynamicWorkflowService::DECISION_APPROVED,
+            route('role.programs.approvals.index')
+        );
+
+        $urls = InAppNotification::query()
+            ->where('user_id', $requester->id)
+            ->where('type', 'plan_change_request_completed')
+            ->orderBy('id')
+            ->pluck('action_url')
+            ->all();
+
+        $this->assertSame([
+            route('role.relations.activities.index'),
+            route('role.relations.activities.show', $approvedVersion),
+        ], $urls);
+
+        $this->actingAs($requester)
+            ->get($urls[0])
+            ->assertOk();
+        $this->get($urls[1])
+            ->assertOk();
     }
 
     private function seedApprovalSetup(bool $withActivity = false, bool $withTwoSteps = false): array
