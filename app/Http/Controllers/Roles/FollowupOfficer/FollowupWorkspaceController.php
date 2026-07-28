@@ -61,7 +61,7 @@ class FollowupWorkspaceController extends Controller
     public function showPlan(Request $request, MonthlyActivity $monthlyActivity)
     {
         $this->authorize('viewActivity', $monthlyActivity);
-        return view('roles.followup_officer.plan-details', ['activity' => $monthlyActivity->load(['branch', 'eventType', 'creator', 'agendaEvent.department', 'team', 'attachments', 'approvals.approver', 'postExecutionVerifications.verifier', 'activityEvaluation'])]);
+        return view('roles.followup_officer.plan-details', ['activity' => $monthlyActivity->load(['branch', 'eventType', 'targetGroup', 'creator', 'agendaEvent.department', 'team', 'attachments.uploader', 'approvals.approver', 'postExecutionVerifications.verifier', 'activityEvaluation'])]);
     }
 
     public function awaitingEvaluation(Request $request)

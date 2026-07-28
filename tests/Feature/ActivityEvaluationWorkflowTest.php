@@ -106,12 +106,49 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $user = User::factory()->create(['branch_id' => $branch->id]);
         $user->syncRoles(['followup_officer']);
         $user->assignedBranches()->sync([$branch->id]);
-        $activity = MonthlyActivity::factory()->create(['branch_id' => $branch->id]);
+        $activity = MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'actual_attendance' => 42,
+            'post_execution_payload' => [
+                'schema_version' => 1,
+                'completed_at' => '2026-07-02 11:12:39',
+                'teams' => [[
+                    'team_name' => 'فريق العلاقات العامة',
+                    'planned_members_count' => 3,
+                    'actual_attendance_count' => 2,
+                    'all_members_attended' => false,
+                    'accomplished_tasks' => 'متابعة تنفيذ الخطة.',
+                ]],
+                'ceremony_items' => [],
+            ],
+        ]);
+        $activity->attachments()->create([
+            'file_type' => 'post_execution',
+            'title' => 'صورة التنفيذ',
+            'file_path' => 'monthly-activities/test.jpg',
+            'uploaded_by' => $user->id,
+        ]);
+        app(ActivityEvaluationService::class)->synchronizeVerificationFields($activity);
 
         $this->actingAs($user)
             ->get(route('followup.monthly-plans.show', $activity))
             ->assertOk()
-            ->assertSee($activity->title);
+            ->assertSee($activity->title)
+            ->assertSee('عدد الحضور المتوقع')
+            ->assertSee('عدد الحضور الفعلي')
+            ->assertSee('42')
+            ->assertSee('صورة التنفيذ')
+            ->assertSee('تنزيل')
+            ->assertSee('المهام المنجزة — الفريق رقم 1');
+
+        $this->actingAs($user)
+            ->get(route('evaluations.verification.review', $activity))
+            ->assertOk()
+            ->assertSee('تاريخ ووقت إكمال ما بعد التنفيذ')
+            ->assertSee('إصدار نموذج ما بعد التنفيذ')
+            ->assertSee('اسم الفريق — الفريق رقم 1')
+            ->assertSee('عدد الحضور الفعلي — الفريق رقم 1')
+            ->assertDontSee('teams 0 actual attendance count');
     }
 
     public function test_evaluation_submission_uses_laravel_eight_compatible_request_access(): void

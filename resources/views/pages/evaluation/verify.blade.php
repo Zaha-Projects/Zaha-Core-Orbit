@@ -46,8 +46,7 @@
             @foreach ($activity->postExecutionVerifications as $item)
                 @php
                     $selectedStatus = old("items.{$item->id}.status", $item->status === 'incorrect' ? 'incorrect' : 'correct');
-                    $fieldKey = 'evaluation.fields.' . $item->field_key;
-                    $fieldLabel = __($fieldKey) === $fieldKey ? $item->field_label : __($fieldKey);
+                    $fieldLabel = \App\Support\PostExecutionFieldPresenter::label($item->field_key, $item->field_label);
                     $submittedValue = data_get($item->original_value, 'value');
                 @endphp
                 <article class="verification-card {{ $selectedStatus === 'incorrect' ? 'is-incorrect' : 'is-correct' }}" data-verification-item>
@@ -59,7 +58,7 @@
                         </div>
                     </div>
                     <div class="submitted-value">
-                        {{ is_array($submittedValue) ? json_encode($submittedValue, JSON_UNESCAPED_UNICODE) : ($submittedValue ?? '—') }}
+                        {{ \App\Support\PostExecutionFieldPresenter::value($item->field_key, $submittedValue) }}
                     </div>
                     <div class="row g-3 align-items-end mt-1">
                         <div class="col-lg-4">
