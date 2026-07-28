@@ -5,12 +5,16 @@ namespace Tests\Feature;
 use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
+use App\Models\MonthlyPlanDeleteRequest;
+use App\Models\MonthlyPlanEditRequest;
+use App\Models\InAppNotification;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Services\DynamicWorkflowService;
 use App\Services\MonthlyWorkflowPresenter;
+use App\Services\PlanChangeRequestWorkflowService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -630,6 +634,154 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
 
         $this->assertSame('awaiting_resubmission', $submitState['state'] ?? null);
         $this->assertSame('changes_requested', $summary['status_key']);
+    }
+
+    public function test_monthly_edit_mirror_displays_the_attached_workflow_summary(): void
+    {
+        [$activity, $actors] = $this->seedMonthlyBranchApprovalFlow();
+
+        WorkflowStep::query()
+            ->where('step_key', 'monthly_branch_relations_manager_review')
+            ->update(['name_ar' => 'اعتماد رئيس الفرع']);
+
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $workflowService->forModel('monthly_activities', $activity);
+        $submitStep = $workflowService->currentStepForUser($instance->fresh(), $actors['creator']);
+        $workflowService->recordDecision(
+            $instance->fresh(),
+            $submitStep,
+            $actors['creator'],
+            DynamicWorkflowService::DECISION_APPROVED
+        );
+
+        $this->actingAs($actors['creator'])
+            ->get(route('role.relations.activities.edit', $activity))
+            ->assertOk()
+            ->assertSee('اعتماد رئيس الفرع')
+            ->assertSee('1/5')
+            ->assertSee('Submitted');
+    }
+
+    public function test_monthly_show_displays_the_same_attached_workflow_summary(): void
+    {
+        [$activity, $actors] = $this->seedMonthlyBranchApprovalFlow();
+
+        WorkflowStep::query()
+            ->where('step_key', 'monthly_branch_relations_manager_review')
+            ->update(['name_ar' => 'اعتماد رئيس الفرع']);
+
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $workflowService->forModel('monthly_activities', $activity);
+        $submitStep = $workflowService->currentStepForUser($instance->fresh(), $actors['creator']);
+        $workflowService->recordDecision(
+            $instance->fresh(),
+            $submitStep,
+            $actors['creator'],
+            DynamicWorkflowService::DECISION_APPROVED
+        );
+
+        $this->actingAs($actors['creator'])
+            ->get(route('role.relations.activities.show', $activity))
+            ->assertOk()
+            ->assertSee('اعتماد رئيس الفرع')
+            ->assertSee('1/5')
+            ->assertSee('Submitted');
+    }
+
+    public function test_monthly_progress_counts_submitted_and_skipped_steps_as_completed(): void
+    {
+        [$activity, $actors] = $this->seedMonthlyBranchApprovalFlow();
+        $activity->update([
+            'monthly_created_by_branch_relations' => true,
+            'monthly_branch_coordinator_required' => true,
+            'executive_review_required' => false,
+        ]);
+
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $workflowService->forModel('monthly_activities', $activity->fresh());
+
+        foreach (['creator', 'branch_manager', 'branch_coordinator', 'relations_manager'] as $actorKey) {
+            $step = $workflowService->currentStepForUser($instance->fresh(), $actors[$actorKey]);
+            $this->assertNotNull($step);
+            $workflowService->recordDecision(
+                $instance->fresh(),
+                $step,
+                $actors[$actorKey],
+                DynamicWorkflowService::DECISION_APPROVED
+            );
+        }
+
+        $summary = app(MonthlyWorkflowPresenter::class)->present($activity->fresh());
+
+        $this->assertSame(5, $summary['completed_steps_count']);
+        $this->assertSame(5, $summary['total_steps_count']);
+        $this->assertSame('skipped', collect($summary['steps'])->last()['state']);
+    }
+
+    public function test_completed_monthly_change_request_notifications_link_to_requester_accessible_pages(): void
+    {
+        $branch = Branch::factory()->create();
+        $relationsOfficerRole = Role::query()->firstOrCreate(['name' => 'relations_officer', 'guard_name' => 'web']);
+        $requester = User::factory()->create(['branch_id' => $branch->id]);
+        $requester->assignRole($relationsOfficerRole);
+        $actor = User::factory()->create();
+        $source = MonthlyActivity::factory()->create(['created_by' => $requester->id, 'branch_id' => $branch->id]);
+        $approvedVersion = MonthlyActivity::factory()->create(['created_by' => $requester->id, 'branch_id' => $branch->id]);
+        $instance = new \App\Models\WorkflowInstance(['status' => DynamicWorkflowService::DECISION_APPROVED]);
+        $service = app(PlanChangeRequestWorkflowService::class);
+        $notifyDecisionResult = new \ReflectionMethod($service, 'notifyDecisionResult');
+        $notifyDecisionResult->setAccessible(true);
+
+        $deleteRequest = new MonthlyPlanDeleteRequest([
+            'requester_id' => $requester->id,
+            'request_type' => 'delete',
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $source->id,
+        ]);
+        $deleteRequest->setRelation('requester', $requester);
+        $notifyDecisionResult->invoke(
+            $service,
+            $deleteRequest,
+            $instance,
+            $actor,
+            DynamicWorkflowService::DECISION_APPROVED,
+            route('role.programs.approvals.index')
+        );
+
+        $editRequest = new MonthlyPlanEditRequest([
+            'requester_id' => $requester->id,
+            'request_type' => 'edit',
+            'entity_type' => MonthlyActivity::class,
+            'entity_id' => $source->id,
+            'approved_version_id' => $approvedVersion->id,
+        ]);
+        $editRequest->setRelation('requester', $requester);
+        $notifyDecisionResult->invoke(
+            $service,
+            $editRequest,
+            $instance,
+            $actor,
+            DynamicWorkflowService::DECISION_APPROVED,
+            route('role.programs.approvals.index')
+        );
+
+        $urls = InAppNotification::query()
+            ->where('user_id', $requester->id)
+            ->where('type', 'plan_change_request_completed')
+            ->orderBy('id')
+            ->pluck('action_url')
+            ->all();
+
+        $this->assertSame([
+            route('role.relations.activities.index'),
+            route('role.relations.activities.show', $approvedVersion),
+        ], $urls);
+
+        $this->actingAs($requester)
+            ->get($urls[0])
+            ->assertOk();
+        $this->get($urls[1])
+            ->assertOk();
     }
 
     private function seedApprovalSetup(bool $withActivity = false, bool $withTwoSteps = false): array

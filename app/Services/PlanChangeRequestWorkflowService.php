@@ -478,7 +478,7 @@ class PlanChangeRequestWorkflowService
     protected function notifyCurrentApprover(Model $request, WorkflowInstance $instance, string $url): void
     {
         if ($instance->status === DynamicWorkflowService::DECISION_APPROVED) {
-            $this->notifyRequester($request, 'تمت الموافقة على الطلب', $this->completionMessage($request), $url, 'plan_change_request_completed');
+            $this->notifyRequester($request, 'تمت الموافقة على الطلب', $this->completionMessage($request), $this->requesterActionUrl($request), 'plan_change_request_completed');
             return;
         }
 
@@ -495,17 +495,30 @@ class PlanChangeRequestWorkflowService
     protected function notifyDecisionResult(Model $request, WorkflowInstance $instance, User $actor, string $decision, string $url): void
     {
         if ($instance->status === DynamicWorkflowService::DECISION_REJECTED || $decision === DynamicWorkflowService::DECISION_REJECTED) {
-            $this->notifyRequester($request, 'تم رفض الطلب', 'تم رفض ' . $this->requestLabel($request) . ' بواسطة ' . $actor->name . '.', $url, 'plan_change_request_rejected');
+            $this->notifyRequester($request, 'تم رفض الطلب', 'تم رفض ' . $this->requestLabel($request) . ' بواسطة ' . $actor->name . '.', $this->requesterActionUrl($request), 'plan_change_request_rejected');
             return;
         }
 
         if ($instance->status === DynamicWorkflowService::DECISION_APPROVED) {
-            $this->notifyRequester($request, 'تمت الموافقة على الطلب', $this->completionMessage($request), $url, 'plan_change_request_completed');
+            $this->notifyRequester($request, 'تمت الموافقة على الطلب', $this->completionMessage($request), $this->requesterActionUrl($request), 'plan_change_request_completed');
             return;
         }
 
-        $this->notifyRequester($request, 'تم اعتماد خطوة في الطلب', 'وافق ' . $actor->name . ' على ' . $this->requestLabel($request) . ' وتم تحويله للمعتمد التالي.', $url, 'plan_change_request_step_approved');
+        $this->notifyRequester($request, 'تم اعتماد خطوة في الطلب', 'وافق ' . $actor->name . ' على ' . $this->requestLabel($request) . ' وتم تحويله للمعتمد التالي.', $this->requesterActionUrl($request), 'plan_change_request_step_approved');
         $this->notifyCurrentApprover($request, $instance, $url);
+    }
+
+    protected function requesterActionUrl(Model $request): string
+    {
+        return match (true) {
+            $request instanceof MonthlyPlanDeleteRequest => route('role.relations.activities.index'),
+            $request instanceof MonthlyPlanEditRequest && $request->approved_version_id => route('role.relations.activities.show', $request->approved_version_id),
+            $request instanceof MonthlyPlanEditRequest => route('role.relations.activities.show', $request->entity_id),
+            $request instanceof AnnualAgendaDeleteRequest => route('role.relations.agenda.index'),
+            $request instanceof AnnualAgendaEditRequest && $request->approved_version_id => route('role.relations.agenda.show', $request->approved_version_id),
+            $request instanceof AnnualAgendaEditRequest => route('role.relations.agenda.show', $request->entity_id),
+            default => route('dashboard'),
+        };
     }
 
     protected function notifyRequester(Model $request, string $title, string $message, string $url, string $type): void
