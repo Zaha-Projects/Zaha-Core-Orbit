@@ -2709,23 +2709,7 @@ class MonthlyActivitiesController extends Controller
         $hasActiveChangeRequest = $activeChangeRequestData['hasActiveChangeRequest'];
 
         if (! request()->boolean('form') && request('mode') !== 'post') {
-            $monthlyActivity->load([
-                'branch',
-                'creator',
-                'agendaEvent',
-                'sponsors',
-                'partners',
-                'supplies',
-                'team',
-                'targetGroups',
-                'workflowInstance.workflow.steps.role',
-                'workflowInstance.workflow.steps.permission',
-                'workflowInstance.currentStep.role',
-                'workflowInstance.currentStep.permission',
-                'workflowInstance.logs.step.role',
-                'workflowInstance.logs.step.permission',
-                'workflowInstance.logs.actor',
-            ])
+            $monthlyActivity->load($this->monthlyActivityWorkflowViewRelations())
                 ->loadCount('newerVersions');
             $monthlyWorkflowPresenter->attach($monthlyActivity, request()->user());
 
@@ -2819,23 +2803,10 @@ class MonthlyActivitiesController extends Controller
 
         $this->ensureActivityVisibleToUser($monthlyActivity, request()->user());
 
-        $monthlyActivity->load([
-            'branch',
-            'creator',
-            'agendaEvent',
-            'sponsors',
-            'partners',
-            'supplies',
-            'team',
-            'targetGroups',
-            'attachments.uploader',
-            'workflowInstance.workflow.steps.role',
-            'workflowInstance.currentStep.role',
-            'workflowInstance.currentStep.permission',
-            'workflowInstance.logs.step.role',
-            'workflowInstance.logs.step.permission',
-            'workflowInstance.logs.actor',
-        ])
+        $monthlyActivity->load(array_merge(
+            $this->monthlyActivityWorkflowViewRelations(),
+            ['attachments.uploader']
+        ))
             ->loadCount('newerVersions');
         $monthlyWorkflowPresenter->attach($monthlyActivity, request()->user());
         $monthlyStatusLabels = $this->statusLookupOptions('monthly_activities', [], (string) $monthlyActivity->status)
@@ -2855,6 +2826,32 @@ class MonthlyActivitiesController extends Controller
             compact('monthlyActivity', 'monthlyStatusLabels', 'executionStatusLabels', 'archivedVersions'),
             $activeChangeRequestData
         ));
+    }
+
+    /**
+     * Relations required to render the same approval path on the show and edit-mirror pages.
+     *
+     * @return array<int, string>
+     */
+    protected function monthlyActivityWorkflowViewRelations(): array
+    {
+        return [
+            'branch',
+            'creator',
+            'agendaEvent',
+            'sponsors',
+            'partners',
+            'supplies',
+            'team',
+            'targetGroups',
+            'workflowInstance.workflow.steps.role',
+            'workflowInstance.workflow.steps.permission',
+            'workflowInstance.currentStep.role',
+            'workflowInstance.currentStep.permission',
+            'workflowInstance.logs.step.role',
+            'workflowInstance.logs.step.permission',
+            'workflowInstance.logs.actor',
+        ];
     }
 
     /**
