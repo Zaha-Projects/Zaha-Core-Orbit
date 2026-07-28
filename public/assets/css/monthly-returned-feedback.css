@@ -1,6 +1,6 @@
 .returned-feedback-page { direction: rtl; }
 .returned-feedback-hero {
-    background: radial-gradient(circle at top right, rgba(59, 130, 246, .24), transparent 34%), linear-gradient(135deg, #0f172a 0%, #1d4ed8 58%, #0891b2 100%);
+    background: linear-gradient(135deg, #00a9c4, #2fc9e2);
     border: 0;
     border-radius: 1.35rem;
     box-shadow: 0 22px 55px rgba(15, 23, 42, .18);
