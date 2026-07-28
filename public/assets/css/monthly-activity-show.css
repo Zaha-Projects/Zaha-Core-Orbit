@@ -356,3 +356,101 @@
         width: 100%;
     }
 }
+
+.monthly-workflow-path {
+    border: 1px solid #dbe5f0;
+    border-radius: 18px;
+    background: #fff;
+    padding: 1rem;
+}
+
+.monthly-workflow-path__head {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.monthly-workflow-path__title {
+    color: #243b5a;
+    font-size: .98rem;
+    font-weight: 900;
+    margin: 0;
+}
+
+.monthly-workflow-path__count {
+    color: #0f172a;
+    direction: ltr;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.monthly-workflow-path__progress {
+    background: #eaf0f7;
+    border-radius: 999px;
+    height: .45rem;
+    margin-top: .75rem;
+    overflow: hidden;
+}
+
+.monthly-workflow-path__progress span {
+    background: linear-gradient(90deg, #1f4ba6 0%, #22a06b 100%);
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+    transition: width .25s ease;
+}
+
+.monthly-workflow-path__steps {
+    display: grid;
+    gap: .55rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    margin-top: 1rem;
+}
+
+.monthly-workflow-step {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    display: flex;
+    gap: .65rem;
+    justify-content: space-between;
+    min-width: 0;
+    padding: .7rem .75rem;
+}
+
+.monthly-workflow-step.is-current {
+    background: #eef5ff;
+    border-color: #a9caff;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .08);
+}
+
+.monthly-workflow-step__role {
+    color: #334155;
+    font-size: .86rem;
+    font-weight: 800;
+}
+
+.monthly-workflow-step small {
+    color: #64748b;
+    display: block;
+    line-height: 1.45;
+    margin-top: .1rem;
+}
+
+[data-theme="dark"] .monthly-workflow-path,
+[data-theme="dark"] .monthly-workflow-step {
+    background: var(--surface-bg);
+    border-color: var(--border-color);
+}
+
+@media (max-width: 575.98px) {
+    .monthly-workflow-path__head {
+        flex-direction: column;
+    }
+
+    .monthly-workflow-path__steps {
+        grid-template-columns: 1fr;
+    }
+}

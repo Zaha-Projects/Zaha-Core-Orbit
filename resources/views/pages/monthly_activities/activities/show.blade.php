@@ -209,51 +209,64 @@
         <div class="workflow-ui mb-4">
             <div class="wf-card card">
                 <div class="card-body">
-                    <div class="wf-summary">
-                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    @php
+                        $workflowCompleted = (int) ($workflowSummary['completed_steps_count'] ?? 0);
+                        $workflowTotal = (int) ($workflowSummary['total_steps_count'] ?? 0);
+                        $workflowProgress = $workflowTotal > 0 ? min(100, (int) round(($workflowCompleted / $workflowTotal) * 100)) : 0;
+                    @endphp
+                    <section class="monthly-workflow-path" aria-labelledby="monthly-workflow-title">
+                        <div class="monthly-workflow-path__head">
                             <div>
-                                <h2 class="h6 mb-1">مسار الاعتماد</h2>
-                                <div class="wf-kv">
+                                <h2 id="monthly-workflow-title" class="monthly-workflow-path__title">
+                                    <i class="fas fa-user-check" aria-hidden="true"></i>
+                                    المعتمد الحالي: {{ $workflowSummary['current_role_label'] ?? '-' }} — {{ $workflowSummary['current_step_label'] ?? '-' }}
+                                </h2>
+                                <div class="wf-kv mt-1">
                                     {{ __('workflow_ui.common.submitted_by') }}: {{ $workflowSummary['submitted_by_name'] ?? '-' }}
                                     @if(!empty($workflowSummary['submitted_at']))
                                         | {{ __('workflow_ui.common.submitted_at') }}: {{ $workflowSummary['submitted_at'] }}
                                     @endif
                                 </div>
                             </div>
-                            <span class="wf-status-badge wf-status-{{ $workflowSummary['status_key'] ?? 'draft' }}">
-                                {{ $workflowSummary['status_label'] ?? $statusLabel($monthlyActivity->status) }}
-                            </span>
+                            <strong class="monthly-workflow-path__count">{{ $workflowCompleted }}/{{ $workflowTotal }}</strong>
                         </div>
-
-                        <div class="wf-chip-row mt-3">
-                            <span class="wf-chip wf-chip-primary">{{ __('workflow_ui.common.current_step') }}: {{ $workflowSummary['current_step_label'] ?? '-' }}</span>
-                            <span class="wf-chip wf-chip-soft">التقدم: {{ $workflowSummary['completed_steps_count'] ?? 0 }}/{{ $workflowSummary['total_steps_count'] ?? 0 }}</span>
+                        <div class="monthly-workflow-path__progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $workflowTotal }}" aria-valuenow="{{ $workflowCompleted }}">
+                            <span style="width: {{ $workflowProgress }}%"></span>
                         </div>
-                    </div>
+                        <div class="monthly-workflow-path__steps">
+                            @forelse($workflowSummary['steps'] ?? [] as $step)
+                                <article class="monthly-workflow-step {{ !empty($step['is_current']) ? 'is-current' : '' }}">
+                                    <div>
+                                        <div class="monthly-workflow-step__role">{{ $step['role_label'] }}</div>
+                                        <small>{{ $step['label'] }}</small>
+                                    </div>
+                                    <span class="wf-status-badge wf-status-{{ $step['state'] }}">{{ $step['state_label'] }}</span>
+                                </article>
+                            @empty
+                                <div class="wf-kv">لا توجد خطوات اعتماد معروضة حالياً.</div>
+                            @endforelse
+                        </div>
+                    </section>
 
                     <details class="wf-advanced-box mt-3">
-                        <summary>عرض حالات الاعتماد</summary>
+                        <summary>عرض سجل الاعتماد والتغييرات</summary>
                         <div class="row g-3 mt-1">
                             <div class="col-lg-7">
                                 <div class="d-flex flex-column gap-2">
-                                    @forelse($workflowSummary['steps'] ?? [] as $step)
-                                        <div class="border rounded-3 p-3 {{ !empty($step['is_current']) ? 'border-primary-subtle bg-light-subtle' : '' }}">
+                                    @forelse($workflowSummary['timeline'] ?? [] as $entry)
+                                        <div class="border rounded-3 p-3">
                                             <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                                                 <div>
-                                                    <div class="fw-semibold">{{ $step['label'] }}</div>
-                                                    <div class="wf-kv">{{ $step['role_label'] }}</div>
-                                                    @if(!empty($step['actor_name']) || !empty($step['acted_at']))
-                                                        <div class="wf-kv">{{ $step['actor_name'] ?? '-' }} @if(!empty($step['acted_at'])) | {{ $step['acted_at'] }} @endif</div>
-                                                    @endif
-                                                    @if(!empty($step['comment']))
-                                                        <div class="wf-kv mt-1">{{ $step['comment'] }}</div>
-                                                    @endif
+                                                    <div class="fw-semibold">{{ $entry['step_label'] }}</div>
+                                                    <div class="wf-kv">{{ $entry['role_label'] }}</div>
+                                                    <div class="wf-kv">{{ $entry['actor_name'] }} | {{ $entry['acted_at'] ?? '-' }}</div>
+                                                    @if(!empty($entry['comment']))<div class="wf-kv mt-1">{{ $entry['comment'] }}</div>@endif
                                                 </div>
-                                                <span class="wf-status-badge wf-status-{{ $step['state'] }}">{{ $step['state_label'] }}</span>
+                                                <span class="wf-status-badge wf-status-{{ $entry['action'] }}">{{ $entry['action_label'] }}</span>
                                             </div>
                                         </div>
                                     @empty
-                                        <div class="wf-kv">لا توجد خطوات اعتماد معروضة حالياً.</div>
+                                        <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
                                     @endforelse
                                 </div>
                             </div>
@@ -270,27 +283,6 @@
                                         <div class="wf-kv">{{ __('workflow_ui.approvals.change_request_empty') }}</div>
                                     @endif
                                 </div>
-
-                                <details class="wf-advanced-box">
-                                    <summary>{{ __('workflow_ui.approvals.workflow_history') }}</summary>
-                                    <div class="d-flex flex-column gap-2 mt-3">
-                                        @forelse($workflowSummary['timeline'] ?? [] as $entry)
-                                            <div class="border rounded-3 p-3">
-                                                <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                                                    <div>
-                                                        <div class="fw-semibold">{{ $entry['step_label'] }}</div>
-                                                        <div class="wf-kv">{{ $entry['role_label'] }}</div>
-                                                        <div class="wf-kv">{{ $entry['actor_name'] }} | {{ $entry['acted_at'] ?? '-' }}</div>
-                                                        <div class="wf-kv">{{ $entry['comment'] ?: '-' }}</div>
-                                                    </div>
-                                                    <span class="wf-status-badge wf-status-{{ $entry['action'] }}">{{ $entry['action_label'] }}</span>
-                                                </div>
-                                            </div>
-                                        @empty
-                                            <div class="wf-kv">{{ __('workflow_ui.approvals.timeline.empty') }}</div>
-                                        @endforelse
-                                    </div>
-                                </details>
                             </div>
                         </div>
                     </details>

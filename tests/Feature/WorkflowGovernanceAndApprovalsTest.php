@@ -654,7 +654,7 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
             ->get(route('role.relations.activities.edit', $activity))
             ->assertOk()
             ->assertSee('اعتماد رئيس الفرع')
-            ->assertSee('0/5')
+            ->assertSee('1/5')
             ->assertSee('Submitted');
     }
 
@@ -680,8 +680,38 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
             ->get(route('role.relations.activities.show', $activity))
             ->assertOk()
             ->assertSee('اعتماد رئيس الفرع')
-            ->assertSee('0/5')
+            ->assertSee('1/5')
             ->assertSee('Submitted');
+    }
+
+    public function test_monthly_progress_counts_submitted_and_skipped_steps_as_completed(): void
+    {
+        [$activity, $actors] = $this->seedMonthlyBranchApprovalFlow();
+        $activity->update([
+            'monthly_created_by_branch_relations' => true,
+            'monthly_branch_coordinator_required' => true,
+            'executive_review_required' => false,
+        ]);
+
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $workflowService->forModel('monthly_activities', $activity->fresh());
+
+        foreach (['creator', 'branch_manager', 'branch_coordinator', 'relations_manager'] as $actorKey) {
+            $step = $workflowService->currentStepForUser($instance->fresh(), $actors[$actorKey]);
+            $this->assertNotNull($step);
+            $workflowService->recordDecision(
+                $instance->fresh(),
+                $step,
+                $actors[$actorKey],
+                DynamicWorkflowService::DECISION_APPROVED
+            );
+        }
+
+        $summary = app(MonthlyWorkflowPresenter::class)->present($activity->fresh());
+
+        $this->assertSame(5, $summary['completed_steps_count']);
+        $this->assertSame(5, $summary['total_steps_count']);
+        $this->assertSame('skipped', collect($summary['steps'])->last()['state']);
     }
 
     private function seedApprovalSetup(bool $withActivity = false, bool $withTwoSteps = false): array
