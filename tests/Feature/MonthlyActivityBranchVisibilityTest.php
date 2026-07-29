@@ -14,6 +14,27 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_monthly_activities_index_requires_authentication(): void
+    {
+        $this->get(route('role.relations.activities.index'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_user_without_other_branches_permission_cannot_request_all_branches_scope(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.activities.index', ['scope' => 'all_branches']))
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->getJson(route('role.relations.activities.calendar', ['scope' => 'all_branches']))
+            ->assertForbidden();
+    }
+
     public function test_khelda_helper_detects_hq_branch(): void
     {
         $branch = Branch::factory()->create(['name' => 'Khalda HQ', 'city' => 'Amman']);
@@ -178,6 +199,31 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
             ->assertSee('In review filtered activity')
             ->assertDontSee('Draft excluded by submitted filter')
             ->assertDontSee('Different month activity');
+    }
+
+    public function test_monthly_activities_index_preserves_supported_pagination_size(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        MonthlyActivity::factory()->count(9)->create([
+            'status' => 'submitted',
+            'proposed_date' => '2026-03-08',
+            'month' => 3,
+            'day' => 8,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('role.relations.activities.index', [
+                'year' => 2026,
+                'month' => 3,
+                'per_page' => 8,
+            ]))
+            ->assertOk();
+
+        $this->assertSame(8, $response->viewData('activities')->perPage());
+        $this->assertSame(9, $response->viewData('activities')->total());
     }
 
     public function test_monthly_activities_calendar_filters_by_status(): void

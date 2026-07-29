@@ -25,6 +25,10 @@ use App\Models\Setting;
 use App\Models\WorkflowActionLog;
 use App\Models\ZahaTimeOption;
 use App\Models\User;
+use App\Modules\ActivityPlanning\MonthlyActivities\Queries\MonthlyActivitiesCalendarQuery;
+use App\Modules\ActivityPlanning\MonthlyActivities\Queries\MonthlyActivitiesIndexQuery;
+use App\Modules\ActivityPlanning\MonthlyActivities\Queries\MonthlyActivityListFilters;
+use App\Modules\ActivityPlanning\MonthlyActivities\Queries\MonthlyActivityVisibilityQuery;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Services\ConflictDetectionService;
@@ -1601,71 +1605,32 @@ class MonthlyActivitiesController extends Controller
         }
     }
 
-    public function index(Request $request)
+    public function index(
+        Request $request,
+        MonthlyActivitiesIndexQuery $indexQuery,
+        MonthlyActivityVisibilityQuery $visibilityQuery
+    )
     {
         $user = $request->user();
-        $viewScope = $request->input('scope', 'default');
-        $selectedStatus = trim((string) $request->input('status', ''));
-        $selectedBranchId = filter_var($request->input('branch_id'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]) ?: null;
-        $selectedSummaryFilter = trim((string) $request->input('summary_filter', ''));
-        $selectedYear = $this->normalizeMonthlyIndexYear($request->input('year'));
-        $selectedMonth = $this->normalizeMonthlyIndexMonth($request->input('month'));
-        $showDeleted = $request->boolean('deleted');
-
-        if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
-            abort(403);
-        }
-
-        $activitiesBaseQuery = MonthlyActivity::query()
-            ->when($showDeleted, fn ($query) => $query->onlyTrashed())
-            ->withCount('newerVersions')
-            ->whereDoesntHave('newerVersions')
-            ->enterpriseFilter($request->except(['status', 'year', 'month', 'per_page', 'branch_id']))
-            ->notArchived();
-
-        $this->applyMonthlyPageMonthFilter($activitiesBaseQuery, $selectedYear, $selectedMonth);
-        if ($selectedBranchId) {
-            $activitiesBaseQuery->where('branch_id', $selectedBranchId);
-        }
-
-        if ($viewScope !== 'all_branches') {
-            $this->applyBranchVisibilityScope($activitiesBaseQuery, $user);
-        }
-        $this->applyDraftVisibilityScope($activitiesBaseQuery, $user);
-        $this->applyVolunteerCoordinatorVisibilityScope($activitiesBaseQuery, $user);
-        $this->applyMonthlyPageStatusFilter($activitiesBaseQuery, $selectedStatus);
-
-        if ($viewScope === 'all_branches') {
-            $this->applyOtherBranchesScope($activitiesBaseQuery, $user);
-
-            $activitiesBaseQuery
-                ->where('status', 'approved')
-                ->where(function ($query) {
-                    $query->where('executive_approval_status', 'approved')
-                        ->orWhereIn('lifecycle_status', ['Exec Director Approved', 'Approved', 'Published'])
-                        ->orWhereHas('workflowInstance', fn ($workflowQuery) => $workflowQuery->where('status', 'approved'));
-                });
-        }
+        $queryFilters = MonthlyActivityListFilters::fromRequest($request);
+        $viewScope = $queryFilters->viewScope;
+        $selectedStatus = $queryFilters->status;
+        $selectedBranchId = $queryFilters->branchId;
+        $selectedSummaryFilter = $queryFilters->summaryFilter;
+        $selectedYear = $queryFilters->year;
+        $selectedMonth = $queryFilters->month;
+        $showDeleted = $queryFilters->showDeleted;
+        $activitiesBaseQuery = $indexQuery->build($request, $queryFilters);
 
         $deletedActivitiesCount = (clone $activitiesBaseQuery)->toBase()->cloneWithout(['orders', 'limit', 'offset'])->count();
         if (! $showDeleted) {
-            $deletedCountQuery = MonthlyActivity::query()->onlyTrashed()->whereDoesntHave('newerVersions')->notArchived();
-            $this->applyMonthlyPageMonthFilter($deletedCountQuery, $selectedYear, $selectedMonth);
-            if ($selectedBranchId) { $deletedCountQuery->where('branch_id', $selectedBranchId); }
-            if ($viewScope !== 'all_branches') { $this->applyBranchVisibilityScope($deletedCountQuery, $user); }
-            $deletedActivitiesCount = $deletedCountQuery->count();
+            $deletedActivitiesCount = $indexQuery->buildDeletedCount($queryFilters, $user)->count();
         }
 
         $summaryCards = $showDeleted ? collect() : $this->buildMonthlyIndexSummaryCards($activitiesBaseQuery);
         $this->applyMonthlyIndexSummaryFilter($activitiesBaseQuery, $selectedSummaryFilter);
 
-        $allowedPerPage = [8, 16, 24, 50, 100];
-        $perPage = (int) $request->input('per_page', 8);
-        if (! in_array($perPage, $allowedPerPage, true)) {
-            $perPage = 8;
-        }
+        $perPage = $queryFilters->perPage;
 
         $activities = (clone $activitiesBaseQuery)
             ->with([
@@ -1679,8 +1644,8 @@ class MonthlyActivitiesController extends Controller
             ->withQueryString();
 
         $branches = Branch::query()->orderBy('name');
-        $scopedBranchIds = $this->scopedBranchIds($user);
-        $ownBranchId = $this->ownBranchId($user);
+        $scopedBranchIds = $visibilityQuery->scopedBranchIds($user);
+        $ownBranchId = $visibilityQuery->ownBranchId($user);
         if ($scopedBranchIds !== [] && $viewScope !== 'all_branches') {
             $branches->where('id', $ownBranchId);
         }
@@ -1708,7 +1673,7 @@ class MonthlyActivitiesController extends Controller
             ->put('month', $selectedMonthDate->copy()->addMonthNoOverflow()->month)
             ->all();
         $canFilterBranches = $viewScope === 'all_branches'
-            ? $this->canViewOtherBranches($user)
+            ? $visibilityQuery->canViewOtherBranches($user)
             : ($scopedBranchIds === []);
 
         $monthlyStatusOptions = $this->monthlyPageStatusOptions();
@@ -4011,63 +3976,13 @@ class MonthlyActivitiesController extends Controller
         return view('pages.monthly_activities.activities.post-execution-feedback', compact('activities'));
     }
 
-    public function calendar(Request $request)
+    public function calendar(Request $request, MonthlyActivitiesCalendarQuery $calendarQuery)
     {
-        $year = $this->normalizeMonthlyIndexYear($request->input('year'));
-        $month = $this->normalizeMonthlyIndexMonth($request->input('month'));
-        $viewScope = $request->input('scope', 'default');
-        $selectedStatus = trim((string) $request->input('status', ''));
-        $selectedBranchId = filter_var($request->input('branch_id'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]) ?: null;
-
-        if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($request->user())) {
-            abort(403);
-        }
-
-        $query = MonthlyActivity::query()
-            ->with(['branch', 'agendaEvent'])
-            ->whereDoesntHave('newerVersions')
-            ->notArchived();
-
-        $query->where(function ($dateQuery) use ($year, $month) {
-            $dateQuery
-                ->where(function ($proposedDateQuery) use ($year, $month) {
-                    $proposedDateQuery
-                        ->whereNotNull('proposed_date')
-                        ->whereYear('proposed_date', $year)
-                        ->whereMonth('proposed_date', $month);
-                })
-                ->orWhere(function ($fallbackMonthQuery) use ($month) {
-                    $fallbackMonthQuery
-                        ->whereNull('proposed_date')
-                        ->where('month', $month);
-                });
-        });
-
-        if ($selectedBranchId) {
-            $query->where('branch_id', $selectedBranchId);
-        }
-
-        if ($viewScope !== 'all_branches') {
-            $this->applyBranchVisibilityScope($query, $request->user());
-        }
-        $this->applyDraftVisibilityScope($query, $request->user());
-        $this->applyVolunteerCoordinatorVisibilityScope($query, $request->user());
-        $this->applyMonthlyPageStatusFilter($query, $selectedStatus);
-
-        if ($viewScope === 'all_branches') {
-            $this->applyOtherBranchesScope($query, $request->user());
-
-            $query
-                ->where('status', 'approved')
-                ->where(function ($approvalQuery) {
-                    $approvalQuery
-                        ->where('executive_approval_status', 'approved')
-                        ->orWhereIn('lifecycle_status', ['Exec Director Approved', 'Approved', 'Published'])
-                        ->orWhereHas('workflowInstance', fn ($workflowQuery) => $workflowQuery->where('status', 'approved'));
-                });
-        }
+        $queryFilters = MonthlyActivityListFilters::fromRequest($request);
+        $year = $queryFilters->year;
+        $month = $queryFilters->month;
+        $viewScope = $queryFilters->viewScope;
+        $query = $calendarQuery->build($request, $queryFilters);
 
         $items = $query->orderBy('month')
             ->orderBy('day')
