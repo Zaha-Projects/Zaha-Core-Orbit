@@ -14,6 +14,27 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_monthly_activities_index_requires_authentication(): void
+    {
+        $this->get(route('role.relations.activities.index'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_user_without_other_branches_permission_cannot_request_all_branches_scope(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        $this->actingAs($user)
+            ->get(route('role.relations.activities.index', ['scope' => 'all_branches']))
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->getJson(route('role.relations.activities.calendar', ['scope' => 'all_branches']))
+            ->assertForbidden();
+    }
+
     public function test_khelda_helper_detects_hq_branch(): void
     {
         $branch = Branch::factory()->create(['name' => 'Khalda HQ', 'city' => 'Amman']);
@@ -180,6 +201,31 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
             ->assertDontSee('Different month activity');
     }
 
+    public function test_monthly_activities_index_preserves_supported_pagination_size(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        MonthlyActivity::factory()->count(9)->create([
+            'status' => 'submitted',
+            'proposed_date' => '2026-03-08',
+            'month' => 3,
+            'day' => 8,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('role.relations.activities.index', [
+                'year' => 2026,
+                'month' => 3,
+                'per_page' => 8,
+            ]))
+            ->assertOk();
+
+        $this->assertSame(8, $response->viewData('activities')->perPage());
+        $this->assertSame(9, $response->viewData('activities')->total());
+    }
+
     public function test_monthly_activities_calendar_filters_by_status(): void
     {
         $role = Role::findOrCreate('relations_officer', 'web');
@@ -207,6 +253,70 @@ class MonthlyActivityBranchVisibilityTest extends TestCase
             ->assertOk()
             ->assertJsonFragment(['id' => $inReviewActivity->id])
             ->assertJsonMissing(['id' => $draftActivity->id]);
+    }
+
+    public function test_monthly_activities_calendar_preserves_json_contract_and_order(): void
+    {
+        $role = Role::findOrCreate('relations_officer', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        $laterActivity = MonthlyActivity::factory()->create([
+            'title' => 'Later calendar activity',
+            'status' => 'submitted',
+            'created_by' => $user->id,
+            'proposed_date' => '2026-03-12',
+            'month' => 3,
+            'day' => 12,
+        ]);
+        $earlierActivity = MonthlyActivity::factory()->create([
+            'title' => 'Earlier calendar activity',
+            'status' => 'submitted',
+            'created_by' => $user->id,
+            'proposed_date' => '2026-03-05',
+            'month' => 3,
+            'day' => 5,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('role.relations.activities.calendar', ['year' => 2026, 'month' => 3]))
+            ->assertOk()
+            ->assertJsonStructure([
+                'year',
+                'month',
+                'items' => [[
+                    'id',
+                    'title',
+                    'date',
+                    'branch',
+                    'status',
+                    'source_label',
+                    'event_type',
+                    'event_type_label',
+                    'plan_type',
+                    'plan_type_label',
+                    'plan_version',
+                    'requires_workshops',
+                    'requires_communications',
+                    'edit_url',
+                    'post_execution_url',
+                    'can_complete_after_execution',
+                    'open_url',
+                    'read_only_unified',
+                ]],
+            ])
+            ->assertJsonPath('year', 2026)
+            ->assertJsonPath('month', 3)
+            ->assertJsonPath('items.0.id', $earlierActivity->id)
+            ->assertJsonPath('items.1.id', $laterActivity->id)
+            ->assertJsonPath('items.0.date', '2026-03-05')
+            ->assertJsonPath('items.0.plan_version', 1)
+            ->assertJsonPath('items.0.requires_workshops', false)
+            ->assertJsonPath('items.0.requires_communications', false)
+            ->assertJsonPath('items.0.can_complete_after_execution', true)
+            ->assertJsonPath('items.0.read_only_unified', false);
+
+        $this->assertCount(18, $response->json('items.0'));
     }
 
     public function test_volunteer_coordinator_cannot_open_activity_that_does_not_need_volunteers(): void

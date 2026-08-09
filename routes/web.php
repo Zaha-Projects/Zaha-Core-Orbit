@@ -67,6 +67,8 @@ use App\Http\Controllers\Web\Evaluation\ActivityEvaluationsController;
 use App\Http\Controllers\Web\Evaluation\EvaluationDashboardController;
 use App\Http\Controllers\Web\Evaluation\EvaluationFormsController;
 use App\Http\Controllers\Roles\FollowupOfficer\FollowupWorkspaceController;
+use App\Modules\ActivityPlanning\MonthlyActivities\Http\Controllers\MonthlyActivitiesBrowseController;
+use App\Modules\ActivityPlanning\MonthlyActivities\Http\Controllers\MonthlyActivityCalendarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -203,8 +205,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/relations/agenda/{agendaEvent}', [RelationsAgendaEventsController::class, 'show'])->middleware('role_or_permission:relations_manager|relations_officer|executive_manager|programs_manager|super_admin|agenda.view')->middleware('branch.isolation')->whereNumber('agendaEvent')->name('role.relations.agenda.show');
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
-    Route::get('/dashboard/relations/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.index');
-    Route::get('/dashboard/relations/monthly-activities/calendar', [ProgramsMonthlyActivitiesController::class, 'calendar'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.calendar');
+    Route::get('/dashboard/relations/monthly-activities', [MonthlyActivitiesBrowseController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.index');
+    Route::get('/dashboard/relations/monthly-activities/calendar', [MonthlyActivityCalendarController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.calendar');
     Route::get('/dashboard/relations/monthly-activities/trash', [ProgramsMonthlyActivitiesController::class, 'trash'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|volunteer_coordinator|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.trash');
     Route::get('/dashboard/relations/monthly-activities/returned-feedback', [ProgramsMonthlyActivitiesController::class, 'returnedFeedback'])->middleware('role:relations_manager|relations_officer|super_admin')->middleware('branch.isolation')->name('role.relations.activities.returned_feedback');
     Route::get('/dashboard/relations/monthly-activities/post-execution-feedback', [ProgramsMonthlyActivitiesController::class, 'postExecutionFeedback'])->middleware('role:volunteer_coordinator|super_admin')->middleware('branch.isolation')->name('role.relations.activities.post_execution_feedback');
