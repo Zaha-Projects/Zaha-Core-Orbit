@@ -13,5 +13,16 @@ return [
     'followup' => [
         'sidebar' => ['dashboard'=>'Dashboard','monthly_plans'=>'Monthly Plans','awaiting_evaluation'=>'Awaiting Evaluation','previous_evaluations'=>'Previous Evaluations','user_directory'=>'User Directory','profile'=>'Profile'],
         'welcome'=>'Welcome, :name','role_branch'=>'Follow-up Officer — :branch Branch','summary'=>'A focused workspace for reviewing post-execution data and completing branch plan evaluations.','all_branch_plans'=>'All Branch Plans','all_plans'=>'All Branch Plans','awaiting_post_review'=>'Post-Execution Completed (Awaiting Post-Execution Review)','awaiting_evaluation'=>'Post-Execution Reviewed (Awaiting Evaluation)','evaluated'=>'Evaluated','awaiting_review'=>'Awaiting Verification','ready_evaluation'=>'Ready for Evaluation','needs_action'=>'Needs Action','recent_evaluations'=>'Recent Evaluations','branch_performance'=>'Branch Performance','view_full_calendar'=>'View Full Calendar','my_relationship'=>'My Relationship','all_relationships'=>'All','evaluation_result'=>'Evaluation Result','view_form'=>'View Evaluation Form','monthly_plans'=>'Monthly Plans','previous_evaluations'=>'Previous Evaluations','workflow'=>'Evaluation Workflow','activity'=>'Activity','date'=>'Date','stage'=>'Stage','action'=>'Action','verification_progress'=>'Verification Progress','relationship'=>'Relationship / Owner','all'=>'All','filters'=>'Filters','no_results'=>'No matching data in your branch.','view_details'=>'View Details','review'=>'Review Data','start_evaluation'=>'Start Evaluation','score'=>'Score','visibility'=>'Visibility','evaluator'=>'Evaluator','form'=>'Form','current_date'=>'Today',
+        'guide' => [
+            'title' => 'Post-Execution Review and Evaluation Guide',
+            'intro' => 'The branch team enters this data after the activity is delivered. Your role is to verify its accuracy first, then evaluate activity quality using the approved form.',
+            'steps' => [
+                'review' => ['title' => 'Open post-execution data', 'description' => 'Review the actual date, attendance, teams, completed tasks, and attachments against the delivered activity and available evidence.'],
+                'verify' => ['title' => 'Verify every value', 'description' => 'Mark each valid value as Correct. If a value is wrong, mark it Incorrect, enter the corrected value, and explain the correction in a note.'],
+                'evaluate' => ['title' => 'Evaluate after review', 'description' => 'Once every field is verified, the plan becomes ready for evaluation. Score each criterion within its allowed range, add notes, and submit the evaluation.'],
+            ],
+            'note_title' => 'Important:',
+            'note' => 'Do not start the evaluation until all post-execution data is reviewed. The system retains the submitted value and records every correction and note for a clear audit trail.',
+        ],
     ],
 ];

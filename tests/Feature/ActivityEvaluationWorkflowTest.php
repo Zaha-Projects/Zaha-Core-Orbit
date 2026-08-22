@@ -271,11 +271,23 @@ class ActivityEvaluationWorkflowTest extends TestCase
 
         $response->assertOk()
             ->assertSeeInOrder(['data-stat-key="all_plans"', '>2</div>', 'جميع خطط الفرع'], false)
+            ->assertSee('دليل مراجعة بيانات ما بعد التنفيذ والتقييم')
+            ->assertSee('تحقق من كل قيمة')
+            ->assertSee('ابدأ التقييم بعد اكتمال المراجعة')
             ->assertSee('تم إكمال ما بعد التنفيذ (بانتظار مراجعة ما بعد التنفيذ)')
             ->assertSee('تمت مراجعة ما بعد التنفيذ (بانتظار التقييم)')
             ->assertSee('تم التقييم')
             ->assertDontSee('خطط هذا الشهر')
             ->assertDontSee('متوسط تقييم الفرع');
+
+        $this->actingAs($officer)
+            ->get(route('followup.awaiting-evaluation'))
+            ->assertOk()
+            ->assertSee('دليل مراجعة بيانات ما بعد التنفيذ والتقييم')
+            ->assertSee('هذه البيانات يُدخلها فريق الفرع بعد تنفيذ النشاط فعليًا')
+            ->assertSee('fa-clipboard-list', false)
+            ->assertSee('fa-search', false)
+            ->assertSee('fa-star', false);
     }
 
     public function test_followup_monthly_calendar_is_branch_scoped(): void
