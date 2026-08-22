@@ -280,5 +280,11 @@ class ProgramsManagerViewOnlyAccessTest extends TestCase
             ->get(route('role.relations.activities.show', $monthlyActivity))
             ->assertOk()
             ->assertDontSee('need_decision', false);
+
+        $this->actingAs($this->userWithRole('followup_officer', $branch))
+            ->get(route('role.relations.activities.show', $monthlyActivity))
+            ->assertOk()
+            ->assertDontSee('تحديث قرار الاحتياج')
+            ->assertDontSee('need_decision', false);
     }
 }

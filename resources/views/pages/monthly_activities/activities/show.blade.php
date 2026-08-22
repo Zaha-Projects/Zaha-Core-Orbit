@@ -42,6 +42,7 @@
         );
     $canOpenPlanningForm = $canManageMonthlyActivityChangeRequest;
     $isProgramsManagerViewOnly = $viewer?->hasRole('programs_manager') && ! $viewer?->hasRole('super_admin');
+    $isFollowupOfficer = $viewer?->hasRole('followup_officer') && ! $viewer?->hasRole('super_admin');
     $canBranchPartialEditUnified = $isReadOnlyUnified
         && (bool) config('monthly_activity.unified_branch_edit.enabled', true)
         && $viewer
@@ -97,7 +98,7 @@
                     @elseif($canOpenPlanningForm)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'form' => 1]) }}"><i class="fas fa-pencil-alt me-1" aria-hidden="true"></i>تعديل النشاط</a>
                     @else
-                        @unless($isProgramsManagerViewOnly)
+                        @unless($isProgramsManagerViewOnly || $isFollowupOfficer)
                         <a class="btn btn-primary" href="{{ route('role.relations.activities.edit', ['monthlyActivity' => $monthlyActivity, 'mode' => 'post', 'need_decision' => 1]) }}#execution-needs-decisions">تحديث قرار الاحتياج</a>
                         @endunless
                     @endif
