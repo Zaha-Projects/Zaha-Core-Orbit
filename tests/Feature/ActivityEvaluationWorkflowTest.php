@@ -240,6 +240,8 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $this->actingAs($user)
             ->get(route('evaluations.verification.review', $activity))
             ->assertOk()
+            ->assertSee('تقدم مراجعة البيانات')
+            ->assertSee('verification-overview', false)
             ->assertSee('attendance sheet');
     }
 
