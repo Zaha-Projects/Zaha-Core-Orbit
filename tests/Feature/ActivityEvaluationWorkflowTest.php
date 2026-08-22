@@ -219,6 +219,30 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $service->verify($activity, $user, [$activity->postExecutionVerifications()->first()->id => ['status' => 'incorrect']]);
     }
 
+    public function test_verification_page_renders_legacy_array_correction_values(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles(['followup_officer']);
+        $user->assignedBranches()->sync([$branch->id]);
+        $activity = MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'status' => 'post_execution_submitted',
+            'post_execution_payload' => ['attendance' => 45],
+        ]);
+
+        app(ActivityEvaluationService::class)->synchronizeVerificationFields($activity);
+        $activity->postExecutionVerifications()->firstOrFail()->update([
+            'status' => 'incorrect',
+            'corrected_value' => ['value' => ['attendance' => 40, 'source' => 'attendance sheet']],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('evaluations.verification.review', $activity))
+            ->assertOk()
+            ->assertSee('attendance sheet');
+    }
+
     public function test_evaluation_officer_seeder_follows_the_existing_user_seeder_convention(): void
     {
         $this->seed(EvaluationOfficerUsersSeeder::class);

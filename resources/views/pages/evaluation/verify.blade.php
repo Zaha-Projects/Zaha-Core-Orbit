@@ -48,6 +48,7 @@
                     $selectedStatus = old("items.{$item->id}.status", $item->status === 'incorrect' ? 'incorrect' : 'correct');
                     $fieldLabel = \App\Support\PostExecutionFieldPresenter::label($item->field_key, $item->field_label);
                     $submittedValue = data_get($item->original_value, 'value');
+                    $correctedValue = old("items.{$item->id}.corrected_value", data_get($item->corrected_value, 'value'));
                 @endphp
                 <article class="verification-card {{ $selectedStatus === 'incorrect' ? 'is-incorrect' : 'is-correct' }}" data-verification-item>
                     <div class="verification-card__heading">
@@ -70,7 +71,7 @@
                         </div>
                         <div class="col-lg-4" data-correction-field>
                             <label class="form-label" for="corrected-value-{{ $item->id }}">{{ __('evaluation.corrected_value') }}</label>
-                            <input id="corrected-value-{{ $item->id }}" class="form-control" name="items[{{ $item->id }}][corrected_value]" value="{{ old("items.{$item->id}.corrected_value", data_get($item->corrected_value, 'value')) }}" placeholder="{{ __('evaluation.verification.corrected_placeholder') }}">
+                            <input id="corrected-value-{{ $item->id }}" class="form-control" name="items[{{ $item->id }}][corrected_value]" value="{{ \App\Support\PostExecutionFieldPresenter::inputValue($correctedValue) }}" placeholder="{{ __('evaluation.verification.corrected_placeholder') }}">
                         </div>
                         <div class="col-lg-4" data-correction-field>
                             <label class="form-label" for="verification-note-{{ $item->id }}">{{ __('evaluation.notes') }}</label>
