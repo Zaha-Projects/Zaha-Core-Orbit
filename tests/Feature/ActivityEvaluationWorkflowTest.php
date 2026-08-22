@@ -285,10 +285,16 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $officer = User::factory()->create(['branch_id' => $branch->id]);
         $officer->syncRoles(['followup_officer']);
         $officer->assignedBranches()->sync([$branch->id]);
+        $officer->givePermissionTo(Permission::findOrCreate('branches.view.all', 'web'));
         MonthlyActivity::factory()->create(['branch_id' => $branch->id, 'title' => 'خطة فرعي', 'proposed_date' => now()]);
         MonthlyActivity::factory()->create(['branch_id' => $otherBranch->id, 'title' => 'خطة فرع آخر', 'proposed_date' => now()]);
 
-        $this->actingAs($officer)->get(route('followup.monthly-plans'))->assertOk()->assertSee('خطة فرعي')->assertDontSee('خطة فرع آخر');
+        $this->actingAs($officer)
+            ->get(route('followup.monthly-plans', ['branch_id' => $otherBranch->id, 'scope' => 'all_branches']))
+            ->assertOk()
+            ->assertSee('خطة فرعي')
+            ->assertDontSee('خطة فرع آخر')
+            ->assertDontSee('name="branch_id"', false);
     }
 
     public function test_followup_and_evaluation_officers_use_the_existing_monthly_plans_calendar(): void

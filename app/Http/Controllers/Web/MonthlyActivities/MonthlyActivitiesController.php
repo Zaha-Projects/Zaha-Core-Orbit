@@ -1707,9 +1707,10 @@ class MonthlyActivitiesController extends Controller
             ->put('year', $selectedMonthDate->copy()->addMonthNoOverflow()->year)
             ->put('month', $selectedMonthDate->copy()->addMonthNoOverflow()->month)
             ->all();
-        $canFilterBranches = $viewScope === 'all_branches'
-            ? $this->canViewOtherBranches($user)
-            : ($scopedBranchIds === []);
+        $canFilterBranches = ! $request->routeIs('followup.monthly-plans')
+            && ($viewScope === 'all_branches'
+                ? $this->canViewOtherBranches($user)
+                : ($scopedBranchIds === []));
 
         $monthlyStatusOptions = $this->monthlyPageStatusOptions();
         $monthlyActivityEditRoles = self::MONTHLY_ACTIVITY_EDIT_ROLES;
