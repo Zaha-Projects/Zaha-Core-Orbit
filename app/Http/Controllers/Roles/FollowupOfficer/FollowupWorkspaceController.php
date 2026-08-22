@@ -19,25 +19,18 @@ class FollowupWorkspaceController extends Controller
         $activities = MonthlyActivity::query()->notArchived()->whereIn('branch_id', $branchIds);
         $evaluations = ActivityEvaluation::query()->whereIn('branch_id', $branchIds);
         $verifications = PostExecutionVerification::query()->whereIn('branch_id', $branchIds);
-        $monthStart = now()->startOfMonth();
-        $monthEnd = now()->endOfMonth();
-
         $stats = [
-            'month_plans' => (clone $activities)->whereBetween('proposed_date', [$monthStart, $monthEnd])->count(),
-            'post_completed' => (clone $activities)->hasPostExecution()->count(),
-            'awaiting_verification' => (clone $verifications)->where('status', 'pending')->distinct()->count('monthly_activity_id'),
-            'ready_evaluation' => (clone $activities)->awaitingEvaluation()->whereHas('postExecutionVerifications')->whereDoesntHave('postExecutionVerifications', fn ($q) => $q->where('status', 'pending'))->count(),
-            'evaluated_month' => (clone $evaluations)->whereBetween('submitted_at', [$monthStart, $monthEnd])->count(),
-            'branch_average' => round((float) (clone $evaluations)->avg('normalized_score'), 2),
+            'all_plans' => (clone $activities)->count(),
+            'awaiting_post_review' => (clone $verifications)->where('status', 'pending')->distinct()->count('monthly_activity_id'),
+            'awaiting_evaluation' => (clone $activities)->awaitingEvaluation()->whereHas('postExecutionVerifications')->whereDoesntHave('postExecutionVerifications', fn ($q) => $q->where('status', 'pending'))->count(),
+            'evaluated' => (clone $evaluations)->count(),
         ];
 
         $workflow = [
-            'planned' => (clone $activities)->count(),
-            'executed' => (clone $activities)->where(fn ($q) => $q->where('execution_status', 'executed')->orWhereNotNull('actual_date'))->count(),
-            'post_completed' => $stats['post_completed'],
-            'awaiting_review' => $stats['awaiting_verification'],
-            'ready' => $stats['ready_evaluation'],
-            'evaluated' => (clone $evaluations)->count(),
+            'all_plans' => $stats['all_plans'],
+            'awaiting_post_review' => $stats['awaiting_post_review'],
+            'awaiting_evaluation' => $stats['awaiting_evaluation'],
+            'evaluated' => $stats['evaluated'],
         ];
 
         $urgent = (clone $activities)->awaitingEvaluation()

@@ -66,6 +66,21 @@ class PostExecutionFieldPresenter
         return filled($value) || $value === 0 || $value === '0' ? (string) $value : '—';
     }
 
+    public static function inputValue(mixed $value): string
+    {
+        if (is_array($value)) {
+            return $value === []
+                ? ''
+                : (json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '');
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        return $value === null ? '' : (string) $value;
+    }
+
     protected static function humanize(string $key): string
     {
         return (string) Str::of($key)->replace(['.', '_'], ' ')->title();

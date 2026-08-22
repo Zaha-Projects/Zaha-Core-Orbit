@@ -174,6 +174,13 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $service->synchronizeVerificationFields($activity);
         $activity->postExecutionVerifications()->update(['status' => 'correct']);
 
+        $this->actingAs($user)
+            ->get(route('evaluations.create', $activity))
+            ->assertOk()
+            ->assertSee('قبل اعتماد التقييم')
+            ->assertSee('evaluation-form-overview', false)
+            ->assertSee('data-answered-count', false);
+
         $this->actingAs($user)->post(route('evaluations.store', $activity), [
             'evaluation_form_id' => (string) $form->id,
             'answers' => [$question->id => ['score' => 8]],
@@ -219,6 +226,32 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $service->verify($activity, $user, [$activity->postExecutionVerifications()->first()->id => ['status' => 'incorrect']]);
     }
 
+    public function test_verification_page_renders_legacy_array_correction_values(): void
+    {
+        $branch = Branch::factory()->create();
+        $user = User::factory()->create(['branch_id' => $branch->id]);
+        $user->syncRoles(['followup_officer']);
+        $user->assignedBranches()->sync([$branch->id]);
+        $activity = MonthlyActivity::factory()->create([
+            'branch_id' => $branch->id,
+            'status' => 'post_execution_submitted',
+            'post_execution_payload' => ['attendance' => 45],
+        ]);
+
+        app(ActivityEvaluationService::class)->synchronizeVerificationFields($activity);
+        $activity->postExecutionVerifications()->firstOrFail()->update([
+            'status' => 'incorrect',
+            'corrected_value' => ['value' => ['attendance' => 40, 'source' => 'attendance sheet']],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('evaluations.verification.review', $activity))
+            ->assertOk()
+            ->assertSee('تقدم مراجعة البيانات')
+            ->assertSee('verification-overview', false)
+            ->assertSee('attendance sheet');
+    }
+
     public function test_evaluation_officer_seeder_follows_the_existing_user_seeder_convention(): void
     {
         $this->seed(EvaluationOfficerUsersSeeder::class);
@@ -256,6 +289,40 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $response->assertDontSee('تقارير الإدارة')->assertDontSee('إعدادات الموقع')->assertDontSee('الأجندة السنوية');
     }
 
+    public function test_followup_dashboard_uses_clear_branch_lifecycle_statistics(): void
+    {
+        $branch = Branch::factory()->create();
+        $otherBranch = Branch::factory()->create();
+        $officer = User::factory()->create(['branch_id' => $branch->id]);
+        $officer->syncRoles(['followup_officer']);
+        $officer->assignedBranches()->sync([$branch->id]);
+
+        MonthlyActivity::factory()->count(2)->create(['branch_id' => $branch->id]);
+        MonthlyActivity::factory()->create(['branch_id' => $otherBranch->id]);
+
+        $response = $this->actingAs($officer)->get(route('followup.dashboard'));
+
+        $response->assertOk()
+            ->assertSeeInOrder(['data-stat-key="all_plans"', '>2</div>', 'جميع خطط الفرع'], false)
+            ->assertSee('دليل مراجعة بيانات ما بعد التنفيذ والتقييم')
+            ->assertSee('تحقق من كل قيمة')
+            ->assertSee('ابدأ التقييم بعد اكتمال المراجعة')
+            ->assertSee('تم إكمال ما بعد التنفيذ (بانتظار مراجعة ما بعد التنفيذ)')
+            ->assertSee('تمت مراجعة ما بعد التنفيذ (بانتظار التقييم)')
+            ->assertSee('تم التقييم')
+            ->assertDontSee('خطط هذا الشهر')
+            ->assertDontSee('متوسط تقييم الفرع');
+
+        $this->actingAs($officer)
+            ->get(route('followup.awaiting-evaluation'))
+            ->assertOk()
+            ->assertSee('دليل مراجعة بيانات ما بعد التنفيذ والتقييم')
+            ->assertSee('هذه البيانات يُدخلها فريق الفرع بعد تنفيذ النشاط فعليًا')
+            ->assertSee('fa-clipboard-list', false)
+            ->assertSee('fa-search', false)
+            ->assertSee('fa-star', false);
+    }
+
     public function test_followup_monthly_calendar_is_branch_scoped(): void
     {
         $branch = Branch::factory()->create();
@@ -263,10 +330,27 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $officer = User::factory()->create(['branch_id' => $branch->id]);
         $officer->syncRoles(['followup_officer']);
         $officer->assignedBranches()->sync([$branch->id]);
+        $officer->givePermissionTo(Permission::findOrCreate('branches.view.all', 'web'));
         MonthlyActivity::factory()->create(['branch_id' => $branch->id, 'title' => 'خطة فرعي', 'proposed_date' => now()]);
         MonthlyActivity::factory()->create(['branch_id' => $otherBranch->id, 'title' => 'خطة فرع آخر', 'proposed_date' => now()]);
 
-        $this->actingAs($officer)->get(route('followup.monthly-plans'))->assertOk()->assertSee('خطة فرعي')->assertDontSee('خطة فرع آخر');
+        $this->actingAs($officer)
+            ->get(route('followup.monthly-plans', ['branch_id' => $otherBranch->id, 'scope' => 'all_branches']))
+            ->assertOk()
+            ->assertSee('خطة فرعي')
+            ->assertDontSee('خطة فرع آخر')
+            ->assertDontSee('name="branch_id"', false);
+
+        $this->actingAs($officer)
+            ->getJson(route('role.relations.activities.calendar', [
+                'year' => now()->year,
+                'month' => now()->month,
+                'branch_id' => $otherBranch->id,
+                'scope' => 'all_branches',
+            ]))
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'خطة فرعي'])
+            ->assertJsonMissing(['title' => 'خطة فرع آخر']);
     }
 
     public function test_followup_and_evaluation_officers_use_the_existing_monthly_plans_calendar(): void
