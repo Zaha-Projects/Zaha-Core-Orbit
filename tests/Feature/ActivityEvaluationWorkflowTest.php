@@ -256,6 +256,28 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $response->assertDontSee('تقارير الإدارة')->assertDontSee('إعدادات الموقع')->assertDontSee('الأجندة السنوية');
     }
 
+    public function test_followup_dashboard_uses_clear_branch_lifecycle_statistics(): void
+    {
+        $branch = Branch::factory()->create();
+        $otherBranch = Branch::factory()->create();
+        $officer = User::factory()->create(['branch_id' => $branch->id]);
+        $officer->syncRoles(['followup_officer']);
+        $officer->assignedBranches()->sync([$branch->id]);
+
+        MonthlyActivity::factory()->count(2)->create(['branch_id' => $branch->id]);
+        MonthlyActivity::factory()->create(['branch_id' => $otherBranch->id]);
+
+        $response = $this->actingAs($officer)->get(route('followup.dashboard'));
+
+        $response->assertOk()
+            ->assertSeeInOrder(['data-stat-key="all_plans"', '>2</div>', 'جميع خطط الفرع'], false)
+            ->assertSee('تم إكمال ما بعد التنفيذ (بانتظار مراجعة ما بعد التنفيذ)')
+            ->assertSee('تمت مراجعة ما بعد التنفيذ (بانتظار التقييم)')
+            ->assertSee('تم التقييم')
+            ->assertDontSee('خطط هذا الشهر')
+            ->assertDontSee('متوسط تقييم الفرع');
+    }
+
     public function test_followup_monthly_calendar_is_branch_scoped(): void
     {
         $branch = Branch::factory()->create();
