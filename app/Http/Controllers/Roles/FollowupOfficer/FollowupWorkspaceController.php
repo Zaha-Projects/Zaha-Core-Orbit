@@ -48,12 +48,6 @@ class FollowupWorkspaceController extends Controller
 
     public function monthlyPlans(Request $request)
     {
-        $branchId = $this->branchIds($request->user())[0];
-        $request->merge([
-            'branch_id' => $branchId,
-            'scope' => 'default',
-        ]);
-
         return app(MonthlyActivitiesController::class)->index($request);
     }
 

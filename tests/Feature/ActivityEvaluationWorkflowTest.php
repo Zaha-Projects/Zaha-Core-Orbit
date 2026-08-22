@@ -307,6 +307,17 @@ class ActivityEvaluationWorkflowTest extends TestCase
             ->assertSee('خطة فرعي')
             ->assertDontSee('خطة فرع آخر')
             ->assertDontSee('name="branch_id"', false);
+
+        $this->actingAs($officer)
+            ->getJson(route('role.relations.activities.calendar', [
+                'year' => now()->year,
+                'month' => now()->month,
+                'branch_id' => $otherBranch->id,
+                'scope' => 'all_branches',
+            ]))
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'خطة فرعي'])
+            ->assertJsonMissing(['title' => 'خطة فرع آخر']);
     }
 
     public function test_followup_and_evaluation_officers_use_the_existing_monthly_plans_calendar(): void

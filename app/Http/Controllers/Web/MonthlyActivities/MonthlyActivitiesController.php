@@ -103,6 +103,18 @@ class MonthlyActivitiesController extends Controller
         return filled($user?->branch_id) ? (int) $user->branch_id : null;
     }
 
+    protected function followupOfficerBranchId(?User $user): ?int
+    {
+        if (! $user?->hasRole('followup_officer')) {
+            return null;
+        }
+
+        $branchIds = $user->scopedBranchIds();
+        abort_if(count($branchIds) !== 1, 403, __('evaluation.validation.single_branch'));
+
+        return $branchIds[0];
+    }
+
     /**
      * @return array<int, int>
      */
@@ -1613,6 +1625,11 @@ class MonthlyActivitiesController extends Controller
         $selectedYear = $this->normalizeMonthlyIndexYear($request->input('year'));
         $selectedMonth = $this->normalizeMonthlyIndexMonth($request->input('month'));
         $showDeleted = $request->boolean('deleted');
+
+        if ($request->routeIs('followup.monthly-plans')) {
+            $selectedBranchId = $this->followupOfficerBranchId($user);
+            $viewScope = 'default';
+        }
 
         if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);
@@ -4014,6 +4031,7 @@ class MonthlyActivitiesController extends Controller
 
     public function calendar(Request $request)
     {
+        $user = $request->user();
         $year = $this->normalizeMonthlyIndexYear($request->input('year'));
         $month = $this->normalizeMonthlyIndexMonth($request->input('month'));
         $viewScope = $request->input('scope', 'default');
@@ -4022,7 +4040,12 @@ class MonthlyActivitiesController extends Controller
             'options' => ['min_range' => 1],
         ]) ?: null;
 
-        if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($request->user())) {
+        if ($followupBranchId = $this->followupOfficerBranchId($user)) {
+            $selectedBranchId = $followupBranchId;
+            $viewScope = 'default';
+        }
+
+        if ($viewScope === 'all_branches' && ! $this->canViewOtherBranches($user)) {
             abort(403);
         }
 
@@ -4051,14 +4074,14 @@ class MonthlyActivitiesController extends Controller
         }
 
         if ($viewScope !== 'all_branches') {
-            $this->applyBranchVisibilityScope($query, $request->user());
+            $this->applyBranchVisibilityScope($query, $user);
         }
-        $this->applyDraftVisibilityScope($query, $request->user());
-        $this->applyVolunteerCoordinatorVisibilityScope($query, $request->user());
+        $this->applyDraftVisibilityScope($query, $user);
+        $this->applyVolunteerCoordinatorVisibilityScope($query, $user);
         $this->applyMonthlyPageStatusFilter($query, $selectedStatus);
 
         if ($viewScope === 'all_branches') {
-            $this->applyOtherBranchesScope($query, $request->user());
+            $this->applyOtherBranchesScope($query, $user);
 
             $query
                 ->where('status', 'approved')
