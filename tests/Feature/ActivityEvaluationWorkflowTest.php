@@ -174,6 +174,13 @@ class ActivityEvaluationWorkflowTest extends TestCase
         $service->synchronizeVerificationFields($activity);
         $activity->postExecutionVerifications()->update(['status' => 'correct']);
 
+        $this->actingAs($user)
+            ->get(route('evaluations.create', $activity))
+            ->assertOk()
+            ->assertSee('قبل اعتماد التقييم')
+            ->assertSee('evaluation-form-overview', false)
+            ->assertSee('data-answered-count', false);
+
         $this->actingAs($user)->post(route('evaluations.store', $activity), [
             'evaluation_form_id' => (string) $form->id,
             'answers' => [$question->id => ['score' => 8]],

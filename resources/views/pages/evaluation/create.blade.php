@@ -3,7 +3,7 @@
 @section('title', app()->isLocale('ar') ? $form->name_ar : $form->name_en)
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/evaluation-workflow-forms.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/evaluation-workflow-forms.css') }}">
 @endpush
 
 @section('content')
@@ -21,6 +21,15 @@
         </div>
     </header>
 
+    <section class="evaluation-form-overview mb-4" aria-labelledby="evaluation-form-guide-title">
+        <div class="evaluation-form-overview__heading"><span><i class="fas fa-lightbulb" aria-hidden="true"></i></span><div><h2 id="evaluation-form-guide-title">{{ __('evaluation.form.guide_title') }}</h2><p>{{ __('evaluation.form.guide_help') }}</p></div></div>
+        <div class="evaluation-form-overview__items">
+            <div><i class="fas fa-list-check" aria-hidden="true"></i><span><strong>{{ $form->questions->count() }}</strong>{{ __('evaluation.form.criteria') }}</span></div>
+            <div><i class="fas fa-check-double" aria-hidden="true"></i><span><strong data-answered-count>0</strong>{{ __('evaluation.form.answered') }}</span></div>
+            <div><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>{{ __('evaluation.form.range_help') }}</span></div>
+        </div>
+    </section>
+
     @if ($errors->any())
         <div class="alert alert-danger shadow-sm"><strong>{{ __('evaluation.validation.fix_errors') }}</strong><ul class="mb-0 mt-2">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
@@ -29,14 +38,14 @@
         @csrf
         <input type="hidden" name="evaluation_form_id" value="{{ $form->id }}">
 
-        <div class="evaluation-progress mb-4">
-            <div class="d-flex justify-content-between mb-2"><span>{{ __('evaluation.form.completion') }}</span><strong data-progress-label>0%</strong></div>
+        <div class="evaluation-progress evaluation-progress--prominent mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2"><span><i class="fas fa-chart-line me-1" aria-hidden="true"></i> {{ __('evaluation.form.completion') }}</span><strong data-progress-label>0%</strong></div>
             <div class="progress"><div class="progress-bar" data-progress-bar style="width: 0%"></div></div>
         </div>
 
         <div class="evaluation-questions">
             @foreach ($form->questions as $question)
-                <article class="evaluation-question-card">
+                <article class="evaluation-question-card" data-question-card>
                     <div class="question-number">{{ $loop->iteration }}</div>
                     <div class="question-content">
                         <div class="d-flex flex-wrap justify-content-between gap-2">
@@ -46,7 +55,7 @@
                                     <p class="question-description">{{ app()->isLocale('ar') ? $question->description_ar : $question->description_en }}</p>
                                 @endif
                             </div>
-                            <span class="score-range">{{ __('evaluation.form.allowed_range', ['min' => $question->minimum_score, 'max' => $question->maximum_score]) }}</span>
+                            <div class="d-flex align-items-center gap-2">@if($question->is_required)<span class="question-required">{{ __('evaluation.form.required') }}</span>@endif<span class="score-range"><i class="fas fa-gauge-high" aria-hidden="true"></i> {{ __('evaluation.form.allowed_range', ['min' => $question->minimum_score, 'max' => $question->maximum_score]) }}</span></div>
                         </div>
                         <div class="row g-3 mt-1">
                             <div class="col-md-4">
@@ -64,10 +73,11 @@
             @endforeach
         </div>
 
-        <div class="card border-0 shadow-sm mt-4"><div class="card-body p-4"><label class="form-label fw-bold" for="evaluation-notes">{{ __('evaluation.form.general_notes') }}</label><textarea id="evaluation-notes" class="form-control" rows="4" name="notes" placeholder="{{ __('evaluation.form.general_notes_placeholder') }}">{{ old('notes') }}</textarea></div></div>
+        <section class="evaluation-notes-card mt-4"><div class="evaluation-notes-card__icon"><i class="fas fa-message" aria-hidden="true"></i></div><div class="flex-grow-1"><label class="form-label fw-bold" for="evaluation-notes">{{ __('evaluation.form.general_notes') }}</label><p class="small text-muted mb-2">{{ __('evaluation.form.general_notes_help') }}</p><textarea id="evaluation-notes" class="form-control" rows="4" name="notes" placeholder="{{ __('evaluation.form.general_notes_placeholder') }}">{{ old('notes') }}</textarea></div></section>
 
         <div class="evaluation-actions mt-4">
             <a class="btn btn-light" href="{{ route('followup.awaiting-evaluation') }}"><i class="fas fa-arrow-right"></i> {{ __('app.common.back') }}</a>
+            <div class="evaluation-actions__status"><i class="fas fa-shield-alt" aria-hidden="true"></i><span>{{ __('evaluation.form.submit_help') }}</span></div>
             <button class="btn btn-primary btn-lg px-5" type="submit"><i class="fas fa-paper-plane"></i> {{ __('evaluation.form.submit') }}</button>
         </div>
     </form>
@@ -75,5 +85,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/evaluation-form.js') }}" defer></script>
+    <script src="{{ \App\Support\AssetVersion::url('assets/js/evaluation-form.js') }}" defer></script>
 @endpush
