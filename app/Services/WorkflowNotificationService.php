@@ -36,7 +36,15 @@ class WorkflowNotificationService
             return;
         }
 
+        $url = $this->approvalReviewUrl($entity, $url);
         $recipients = $this->workflows->eligibleUsersForStep($instance);
+        $alreadyNotifiedUserIds = InAppNotification::query()
+            ->where('type', 'approval_requested')
+            ->whereIn('user_id', $recipients->pluck('id'))
+            ->where('meta', 'like', '%"workflow_instance_id":'.$instance->id.'%')
+            ->where('meta', 'like', '%"current_step_id":'.$instance->current_step_id.'%')
+            ->pluck('user_id');
+        $recipients = $recipients->whereNotIn('id', $alreadyNotifiedUserIds);
 
         $this->notifications->notifyUsers(
             $recipients,
@@ -50,6 +58,15 @@ class WorkflowNotificationService
                 'item' => $this->entityTitle($entity),
             ])
         );
+    }
+
+    protected function approvalReviewUrl(Model $entity, string $fallbackUrl): string
+    {
+        if ($entity instanceof MonthlyActivity) {
+            return route('role.programs.approvals.details', $entity);
+        }
+
+        return $fallbackUrl;
     }
 
     public function created(Model $entity, User $actor, string $url): void
@@ -410,12 +427,25 @@ class WorkflowNotificationService
 
     protected function metaFor(WorkflowInstance $instance, Model $entity): array
     {
-        return [
+        $meta = [
             'workflow_instance_id' => $instance->id,
             'workflow_id' => $instance->workflow_id,
             'current_step_id' => $instance->current_step_id,
             'entity_type' => get_class($entity),
             'entity_id' => $entity->getKey(),
         ];
+
+        if ($entity instanceof MonthlyActivity) {
+            $meta += [
+                'item_title' => $entity->title,
+                'branch_id' => $entity->branch_id,
+                'branch_name' => $entity->branch?->name,
+                'requester_id' => $entity->created_by,
+                'requester_name' => $entity->creator?->name,
+                'submitted_at' => optional($instance->started_at)->toIso8601String(),
+            ];
+        }
+
+        return $meta;
     }
 }

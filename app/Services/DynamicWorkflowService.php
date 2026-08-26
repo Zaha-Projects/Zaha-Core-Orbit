@@ -312,7 +312,7 @@ class DynamicWorkflowService
             }
         }
 
-        return $query->get();
+        return $query->where('status', 'active')->get();
     }
 
     public function autoApproveReadySteps(WorkflowInstance $instance): void

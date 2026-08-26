@@ -20,6 +20,7 @@ use App\Services\PlanChangeRequestWorkflowService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use App\Models\User;
 
@@ -58,7 +59,7 @@ class MonthlyActivitiesApprovalsController extends Controller
             abort(403);
         }
 
-        $activities = MonthlyActivity::query()
+        $activitiesQuery = MonthlyActivity::query()
             ->with(['approvals.approver', 'creator', 'branch', 'agendaEvent', 'notes.user', 'attachments.uploader', 'workflowInstance.currentStep.role', 'workflowInstance.currentStep.permission', 'workflowInstance.logs.step', 'workflowInstance.logs.actor'])
             ->whereDoesntHave('newerVersions')
             ->where(function ($query) {
@@ -78,9 +79,23 @@ class MonthlyActivitiesApprovalsController extends Controller
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
             ->when($filters['date_from'] ?? null, fn ($q, $dateFrom) => $q->whereDate('proposed_date', '>=', $dateFrom))
             ->when($filters['date_to'] ?? null, fn ($q, $dateTo) => $q->whereDate('proposed_date', '<=', $dateTo))
+            ->when($viewer->hasRole('workshops_secretary'), fn ($query) => $query->where('requires_workshops', true))
+            ->when($viewer->hasRole('communication_head'), fn ($query) => $query->where('requires_communications', true));
+
+        $this->applyWorkflowApprovalFilters($activitiesQuery, $filters, $viewer);
+
+        $activities = $activitiesQuery
             ->orderByDesc('proposed_date')
+            ->orderByDesc('id')
             ->paginate(15)
             ->withQueryString();
+
+        if ($activities->total() > 0 && $activities->currentPage() > $activities->lastPage()) {
+            return redirect()->route('role.programs.approvals.index', array_merge(
+                $request->except('page'),
+                ['page' => $activities->lastPage()]
+            ));
+        }
 
         $activities->getCollection()->transform(function (MonthlyActivity $activity) use ($dynamicWorkflowService) {
             $instance = $dynamicWorkflowService->forModel('monthly_activities', $activity);
@@ -105,39 +120,11 @@ class MonthlyActivitiesApprovalsController extends Controller
         });
 
         $collection = $activities->getCollection();
-        if ($viewer->hasRole('workshops_secretary')) {
-            $collection = $collection->where('requires_workshops', true)->values();
-        }
-
-        if ($viewer->hasRole('communication_head')) {
-            $collection = $collection->where('requires_communications', true)->values();
-        }
 
         $workflow = $dynamicWorkflowService->findActiveWorkflow('monthly_activities');
         $workflow?->loadMissing('steps.role', 'steps.permission');
         $statusOptions = $this->buildStatusFilterOptions();
         $currentStepOptions = $this->buildCurrentStepOptions(collect($workflow?->steps ?? []));
-
-        if (! empty($filters['approval_status'])) {
-            $collection = $collection->filter(function (MonthlyActivity $activity) use ($filters) {
-                return $this->resolveStatusFilterValue($activity) === (string) $filters['approval_status'];
-            })->values();
-        }
-
-        if (! empty($filters['current_step'])) {
-            $collection = $collection->filter(fn (MonthlyActivity $activity) => optional(optional($activity->workflowInstance)->currentStep)->step_key === $filters['current_step'])->values();
-        }
-
-        if (! empty($filters['my_pending'])) {
-            $collection = $collection->filter(function (MonthlyActivity $activity) use ($dynamicWorkflowService, $viewer) {
-                $instance = $activity->workflowInstance;
-                if (! $instance || ! $dynamicWorkflowService->canDecide($instance)) {
-                    return false;
-                }
-
-                return $dynamicWorkflowService->currentStepForUser($instance, $viewer) !== null;
-            })->values();
-        }
 
         $activities->setCollection($collection);
 
@@ -862,6 +849,55 @@ class MonthlyActivitiesApprovalsController extends Controller
         return method_exists($user, 'approvalBranchIds')
             ? $user->approvalBranchIds()
             : (filled($user->branch_id) ? [(int) $user->branch_id] : []);
+    }
+
+    /** Apply filters that depend on the workflow before pagination and its count query. */
+    protected function applyWorkflowApprovalFilters(Builder $query, array $filters, User $viewer): void
+    {
+        if (! empty($filters['approval_status'])) {
+            $status = (string) $filters['approval_status'];
+            $query->where(function (Builder $statusQuery) use ($status): void {
+                if ($status === 'approved') {
+                    $statusQuery->whereHas('workflowInstance', fn (Builder $instance) => $instance->where('status', 'approved'));
+                } elseif ($status === 'draft') {
+                    $statusQuery->where('status', 'draft')
+                        ->whereDoesntHave('workflowInstance', fn (Builder $instance) => $instance->where('status', 'approved'));
+                } else {
+                    $statusQuery->whereHas('workflowInstance', fn (Builder $instance) => $instance->whereNotIn('status', ['approved', 'rejected']))
+                        ->orWhere(function (Builder $activity): void {
+                            $activity->where('status', '!=', 'draft')->whereDoesntHave('workflowInstance');
+                        });
+                }
+            });
+        }
+
+        if (! empty($filters['current_step'])) {
+            $query->whereHas('workflowInstance.currentStep', fn (Builder $step) => $step->where('step_key', $filters['current_step']));
+        }
+
+        if (empty($filters['my_pending'])) {
+            return;
+        }
+
+        $query->whereHas('workflowInstance', function (Builder $instance) use ($viewer): void {
+            $instance->whereIn('status', ['pending', 'in_progress', 'changes_requested'])
+                ->whereNotNull('current_step_id');
+
+            if ($viewer->hasRole('super_admin')) {
+                return;
+            }
+
+            $roleIds = $viewer->roles()->pluck('roles.id');
+            $permissionIds = $viewer->getAllPermissions()
+                ->filter(fn ($permission) => $viewer->can($permission->name))
+                ->pluck('id');
+            $instance->whereHas('currentStep', function (Builder $step) use ($roleIds, $permissionIds): void {
+                $step->where(function (Builder $assignment) use ($roleIds, $permissionIds): void {
+                    $assignment->whereIn('role_id', $roleIds)
+                        ->orWhereIn('permission_id', $permissionIds);
+                });
+            });
+        });
     }
 
     protected function buildStatusFilterOptions(): Collection
