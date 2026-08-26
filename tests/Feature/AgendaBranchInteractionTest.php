@@ -92,7 +92,8 @@ class AgendaBranchInteractionTest extends TestCase
             ->assertSee('عرض تفاصيل الأجندة')
             ->assertSee(route('role.relations.agenda.show', $event), false)
             ->assertSee('id="agendaDetailsModal"', false)
-            ->assertSee('data-agenda-details-frame', false);
+            ->assertSee('data-agenda-details-body', false)
+            ->assertSee('assets/css/agenda-event-show.min.css', false);
     }
 
     protected function createBranchCoordinator(Branch $branch): User

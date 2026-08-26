@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/event-ui-shared.min.css') }}">
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/workflow-ui.min.css') }}">
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/relations-agenda-approvals.min.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/agenda-event-show.min.css') }}">
 @endpush
 
 @section('content')
@@ -67,11 +68,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
                 </div>
                 <div class="modal-body p-0">
-                    <div class="agenda-details-modal__loading" data-agenda-details-loading>جاري تحميل تفاصيل الأجندة...</div>
-                    <iframe class="agenda-details-modal__frame"
-                            data-agenda-details-frame
-                            title="تفاصيل الأجندة"
-                            loading="lazy"></iframe>
+                    <div class="agenda-details-modal__body" data-agenda-details-body>
+                        <div class="agenda-details-modal__loading">جاري تحميل تفاصيل الأجندة...</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <a class="btn btn-outline-primary" data-agenda-details-open href="#" target="_blank" rel="noopener">فتح في صفحة مستقلة</a>

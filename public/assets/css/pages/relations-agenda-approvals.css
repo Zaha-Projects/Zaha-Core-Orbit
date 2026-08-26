@@ -595,9 +595,12 @@
     min-height: 65vh;
 }
 
-.agenda-details-modal__frame {
-    border: 0;
-    display: block;
-    height: 72vh;
-    width: 100%;
+.agenda-details-modal__body {
+    max-height: 72vh;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.agenda-details-modal__body .agenda-show-page {
+    margin: 0 auto;
 }
