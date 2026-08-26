@@ -8,6 +8,8 @@ use App\Models\Branch;
 use App\Models\Department;
 use App\Models\MonthlyActivity;
 use App\Models\User;
+use App\Models\Workflow;
+use App\Models\WorkflowStep;
 use App\Services\WorkflowNotificationService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -53,6 +55,44 @@ class AgendaBranchInteractionTest extends TestCase
         $user->assignRole($role);
 
         return $user;
+    }
+
+    public function test_agenda_approval_card_opens_the_event_details_in_a_modal(): void
+    {
+        $role = Role::findOrCreate('relations_manager', 'web');
+        $workflow = Workflow::create([
+            'code' => 'agenda_details_modal',
+            'module' => 'agenda',
+            'is_active' => true,
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $workflow->id,
+            'step_order' => 1,
+            'approval_level' => 1,
+            'step_key' => 'relations_manager_review',
+            'step_type' => 'main',
+            'role_id' => $role->id,
+        ]);
+        $manager = User::factory()->create(['status' => 'active']);
+        $manager->assignRole($role);
+        $event = AgendaEvent::create([
+            'event_date' => '2026-08-27',
+            'month' => 8,
+            'day' => 27,
+            'event_name' => 'Agenda modal details event',
+            'event_type' => 'optional',
+            'plan_type' => 'non_unified',
+            'status' => 'submitted',
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('role.relations.approvals.index'))
+            ->assertOk()
+            ->assertSee('عرض تفاصيل الأجندة')
+            ->assertSee(route('role.relations.agenda.show', $event), false)
+            ->assertSee('id="agendaDetailsModal"', false)
+            ->assertSee('data-agenda-details-frame', false);
     }
 
     protected function createBranchCoordinator(Branch $branch): User

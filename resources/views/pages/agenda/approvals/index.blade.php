@@ -58,6 +58,28 @@
                 @include('pages.agenda.approvals.partials.approval-list')
         @endswitch
     </div>
+
+    <div class="modal fade" id="agendaDetailsModal" tabindex="-1" aria-labelledby="agendaDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content agenda-details-modal__content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="agendaDetailsModalLabel">تفاصيل الأجندة</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="agenda-details-modal__loading" data-agenda-details-loading>جاري تحميل تفاصيل الأجندة...</div>
+                    <iframe class="agenda-details-modal__frame"
+                            data-agenda-details-frame
+                            title="تفاصيل الأجندة"
+                            loading="lazy"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-outline-primary" data-agenda-details-open href="#" target="_blank" rel="noopener">فتح في صفحة مستقلة</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')

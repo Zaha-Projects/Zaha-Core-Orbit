@@ -580,3 +580,24 @@
         padding: .35rem .65rem;
     }
 }
+
+.agenda-details-modal__content {
+    min-height: min(88vh, 900px);
+    overflow: hidden;
+}
+
+.agenda-details-modal__loading {
+    align-items: center;
+    color: #64748b;
+    display: flex;
+    font-weight: 700;
+    justify-content: center;
+    min-height: 65vh;
+}
+
+.agenda-details-modal__frame {
+    border: 0;
+    display: block;
+    height: 72vh;
+    width: 100%;
+}

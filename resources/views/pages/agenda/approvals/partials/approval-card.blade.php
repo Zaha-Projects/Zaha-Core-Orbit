@@ -38,6 +38,15 @@
                         <span class="agenda-approval-card__action-needed"><i class="fas fa-bell" aria-hidden="true"></i> المعلقة لدي</span>
                     @endif
                     <span class="wf-status-badge {{ $statusClass }}">{{ $workflowSummary['status_label'] ?? __('app.common.na') }}</span>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary agenda-details-trigger"
+                            data-agenda-details-url="{{ route('role.relations.agenda.show', $event) }}"
+                            data-agenda-title="{{ $event->event_name }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#agendaDetailsModal">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
+                        عرض تفاصيل الأجندة
+                    </button>
                 </div>
             </div>
 
