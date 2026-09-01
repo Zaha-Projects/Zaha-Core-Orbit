@@ -1563,6 +1563,24 @@ class MonthlyActivitiesController extends Controller
         return $request->input('submit_action') === 'submit';
     }
 
+    protected function statusAfterPlanningEdit(MonthlyActivity $monthlyActivity, Request $request): string
+    {
+        if ($this->shouldSubmitFromRequest($request)) {
+            return (string) $monthlyActivity->status;
+        }
+
+        // A save during a correction cycle must not turn the item back into a new
+        // draft. The workflow instance is still waiting for resubmission, and the
+        // activity must keep that state until the explicit submit action advances it.
+        if ((string) $monthlyActivity->status === DynamicWorkflowService::DECISION_CHANGES_REQUESTED) {
+            return DynamicWorkflowService::DECISION_CHANGES_REQUESTED;
+        }
+
+        return $this->canSubmitActivityForApproval($monthlyActivity, $request->user())
+            ? 'draft'
+            : (string) $monthlyActivity->status;
+    }
+
     protected function submitActivityForApproval(
         MonthlyActivity $monthlyActivity,
         User $actor,
@@ -3292,9 +3310,7 @@ class MonthlyActivitiesController extends Controller
             );
         $nextStage = (int) ($monthlyActivity->plan_stage ?: 1);
         $nextVersion = (int) ($monthlyActivity->plan_version ?: 1);
-        $newStatus = $this->shouldSubmitFromRequest($request)
-            ? $monthlyActivity->status
-            : ($this->canSubmitActivityForApproval($monthlyActivity, $request->user()) ? 'draft' : $monthlyActivity->status);
+        $newStatus = $this->statusAfterPlanningEdit($monthlyActivity, $request);
         $newLifecycleStatus = $monthlyActivity->lifecycle_status ?: 'Draft';
         $startsNewVersion = false;
 

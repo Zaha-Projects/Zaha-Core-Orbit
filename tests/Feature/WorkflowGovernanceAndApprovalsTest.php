@@ -69,7 +69,50 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
                 'decision' => 'changes_requested',
                 'comment' => '',
             ])
-            ->assertStatus(422);
+            ->assertSessionHasErrors(['comment', 'focus_areas']);
+    }
+
+    public function test_saving_requested_corrections_does_not_turn_activity_back_into_draft(): void
+    {
+        [$approver, $activity] = $this->seedApprovalSetup(withActivity: true);
+        $activity->forceFill(['status' => 'changes_requested'])->save();
+
+        $request = \Illuminate\Http\Request::create('/monthly-activities/'.$activity->id, 'PUT', [
+            'submit_action' => 'draft',
+        ]);
+        $request->setUserResolver(fn () => $activity->creator);
+        $controller = app(\App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController::class);
+        $method = new \ReflectionMethod($controller, 'statusAfterPlanningEdit');
+        $method->setAccessible(true);
+
+        $this->assertSame('changes_requested', $method->invoke($controller, $activity->fresh(), $request));
+
+        $request->merge(['submit_action' => 'submit']);
+        $this->assertSame('changes_requested', $method->invoke($controller, $activity->fresh(), $request));
+    }
+
+    public function test_corrected_branch_activity_is_resubmitted_to_branch_manager(): void
+    {
+        [$activity, $actors] = $this->seedMonthlyBranchApprovalFlow();
+        $workflowService = app(DynamicWorkflowService::class);
+        $instance = $workflowService->forModel('monthly_activities', $activity);
+
+        $submitStep = $workflowService->currentStepForUser($instance->fresh(), $actors['creator']);
+        $workflowService->recordDecision($instance->fresh(), $submitStep, $actors['creator'], DynamicWorkflowService::DECISION_APPROVED);
+        $managerStep = $workflowService->currentStepForUser($instance->fresh(), $actors['branch_manager']);
+        $workflowService->recordDecision($instance->fresh(), $managerStep, $actors['branch_manager'], DynamicWorkflowService::DECISION_CHANGES_REQUESTED, 'Correct the activity details.');
+        $activity->forceFill(['status' => 'changes_requested'])->save();
+
+        $this->actingAs($actors['creator'])
+            ->patch(route('role.relations.activities.submit', $activity))
+            ->assertRedirect(route('role.relations.activities.index'));
+
+        $activity->refresh();
+        $instance = $instance->fresh('currentStep');
+        $this->assertSame('submitted', $activity->status);
+        $this->assertSame('in_progress', $instance->status);
+        $this->assertSame('monthly_branch_relations_manager_review', $instance->currentStep?->step_key);
+        $this->assertNotNull($workflowService->currentStepForUser($instance, $actors['branch_manager']));
     }
 
     public function test_approve_sequential_flow_and_changes_then_resubmit(): void
