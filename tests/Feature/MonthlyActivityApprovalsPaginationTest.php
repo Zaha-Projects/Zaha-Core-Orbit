@@ -54,6 +54,53 @@ class MonthlyActivityApprovalsPaginationTest extends TestCase
             ->assertRedirect(route('role.programs.approvals.index', ['my_pending' => 1, 'page' => 1]));
     }
 
+    public function test_rejection_persists_and_returns_to_the_filtered_approvals_page(): void
+    {
+        [$approver, , $workflow, $myStep] = $this->approvalSetup();
+        $activity = $this->activityWithStep($workflow, $myStep, 'Activity to reject', '2026-08-20');
+        $returnUrl = route('role.programs.approvals.index', ['branch_id' => $activity->branch_id, 'my_pending' => 1]);
+
+        $this->actingAs($approver)
+            ->put(route('role.programs.approvals.update', $activity), [
+                'decision' => 'rejected',
+                'comment' => 'The activity cannot be approved in its current form.',
+                'focus_areas' => ['basic_info'],
+                'return_url' => $returnUrl,
+            ])
+            ->assertRedirect($returnUrl);
+
+        $this->assertSame('rejected', $activity->fresh()->status);
+        $this->assertSame('rejected', $activity->workflowInstance->fresh()->status);
+        $this->assertDatabaseHas('monthly_activity_approvals', [
+            'monthly_activity_id' => $activity->id,
+            'step' => $myStep->step_key,
+            'decision' => 'rejected',
+            'approved_by' => $approver->id,
+        ]);
+
+        $this->actingAs($approver)
+            ->get($returnUrl)
+            ->assertOk()
+            ->assertDontSee('Activity to reject');
+    }
+
+    public function test_rejection_requires_reason_and_focus_area_before_writing_a_decision(): void
+    {
+        [$approver, , $workflow, $myStep] = $this->approvalSetup();
+        $activity = $this->activityWithStep($workflow, $myStep, 'Invalid rejection', '2026-08-20');
+
+        $this->actingAs($approver)
+            ->from(route('role.programs.approvals.index', ['my_pending' => 1]))
+            ->put(route('role.programs.approvals.update', $activity), ['decision' => 'rejected'])
+            ->assertSessionHasErrors(['comment', 'focus_areas']);
+
+        $this->assertSame('in_progress', $activity->workflowInstance->fresh()->status);
+        $this->assertDatabaseMissing('monthly_activity_approvals', [
+            'monthly_activity_id' => $activity->id,
+            'decision' => 'rejected',
+        ]);
+    }
+
     public function test_relationship_manager_notification_is_active_authorized_deduplicated_and_record_specific(): void
     {
         [$manager, , $workflow, $managerStep] = $this->approvalSetup();

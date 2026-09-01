@@ -35,7 +35,7 @@
 
             if (!self.validateDecisionComment(form)) {
                 event.preventDefault();
-                alert(form.dataset.commentRequired || 'يرجى إدخال التعليق المطلوب.');
+                alert(form.dataset.validationError || form.dataset.commentRequired || 'يرجى إدخال التعليق المطلوب.');
                 return;
             }
 
@@ -53,7 +53,16 @@
         }
 
         var requiresComment = select.value === 'changes_requested' || select.value === 'rejected';
-        return !requiresComment || comment.value.trim().length > 0;
+        if (requiresComment && comment.value.trim().length === 0) {
+            delete form.dataset.validationError;
+            return false;
+        }
+        if (requiresComment && !form.querySelector('input[name="focus_areas[]"]:checked')) {
+            form.dataset.validationError = form.dataset.focusAreaRequired || 'يرجى تحديد قسم واحد على الأقل يوضح سبب الرفض أو مكان التعديل.';
+            return false;
+        }
+        delete form.dataset.validationError;
+        return true;
     };
 
     MonthlyApprovalsPage.prototype.submitWithConfirmation = function (form) {
@@ -71,6 +80,15 @@
 
         this.pendingDecisionForm = form;
         this.isSubmitting = true;
+
+        var returnUrl = form.querySelector('input[name="return_url"]');
+        if (!returnUrl) {
+            returnUrl = document.createElement('input');
+            returnUrl.type = 'hidden';
+            returnUrl.name = 'return_url';
+            form.appendChild(returnUrl);
+        }
+        returnUrl.value = window.location.href;
 
         var submitButton = form.querySelector('button[type="submit"], .btn[type="submit"], .btn-primary');
         if (submitButton) {

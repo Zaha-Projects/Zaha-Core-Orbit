@@ -83,7 +83,7 @@
         @endif
 
         @if($card['permissions']['can_decide'] || $card['permissions']['can_add_department_note'])
-            <form method="POST" action="{{ $card['update_url'] }}" enctype="multipart/form-data" class="decision-form" data-confirm-title="{{ __('workflow_ui.approvals.confirm_action') }}" data-confirm-body="{{ __('workflow_ui.approvals.confirm_action_body') }}" data-comment-required="{{ __('workflow_ui.approvals.comment_required') }}">
+            <form method="POST" action="{{ $card['update_url'] }}" enctype="multipart/form-data" class="decision-form" data-confirm-title="{{ __('workflow_ui.approvals.confirm_action') }}" data-confirm-body="{{ __('workflow_ui.approvals.confirm_action_body') }}" data-comment-required="{{ __('workflow_ui.approvals.comment_required') }}" data-focus-area-required="يرجى تحديد قسم واحد على الأقل يوضح سبب الرفض أو مكان التعديل.">
                 @csrf
                 @method('PUT')
 

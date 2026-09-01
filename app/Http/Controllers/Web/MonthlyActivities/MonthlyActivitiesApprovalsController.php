@@ -543,9 +543,10 @@ class MonthlyActivitiesApprovalsController extends Controller
 
         $data = $request->validate([
             'decision' => ['nullable', 'string', 'in:approved,approved_final,approved_send_executive,changes_requested,rejected'],
-            'comment' => ['nullable', 'string'],
-            'focus_areas' => ['nullable', 'array'],
+            'comment' => ['nullable', 'string', 'max:2000', 'required_if:decision,changes_requested,rejected'],
+            'focus_areas' => ['nullable', 'array', 'required_if:decision,changes_requested,rejected', 'min:1'],
             'focus_areas.*' => ['string', Rule::in(array_keys($this->focusAreaLabels()))],
+            'return_url' => ['nullable', 'url'],
             'is_edit_request_implemented' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
             'coverage_status' => ['nullable', 'string', 'in:not_required,planned,in_progress,completed'],
@@ -577,12 +578,6 @@ class MonthlyActivitiesApprovalsController extends Controller
         $dynamicWorkflowService->assertPrerequisites($instance, $step);
 
         abort_if(empty($data['decision']), 422, __('app.roles.programs.monthly_activities.approvals.errors.decision_required'));
-
-        if (in_array($data['decision'], ['changes_requested', 'rejected'], true) && empty($data['focus_areas'])) {
-            return back()
-                ->withErrors(['focus_areas' => 'يرجى تحديد قسم واحد على الأقل يوضح مكان التعديل أو سبب الرفض.'])
-                ->withInput();
-        }
 
         $decisionComment = $this->formatDecisionComment($data['comment'] ?? null, $data['focus_areas'] ?? []);
 
@@ -679,7 +674,28 @@ class MonthlyActivitiesApprovalsController extends Controller
             'performed_at' => now(),
         ]);
 
-        return redirect()->route('role.programs.approvals.index')->with('status', __('app.roles.programs.monthly_activities.approvals.updated', ['activity' => $monthlyActivity->title]));
+        return redirect()->to($this->approvalsReturnUrl($data['return_url'] ?? null))
+            ->with('status', __('app.roles.programs.monthly_activities.approvals.updated', ['activity' => $monthlyActivity->title]));
+    }
+
+    protected function approvalsReturnUrl(?string $returnUrl): string
+    {
+        $fallback = route('role.programs.approvals.index');
+        if (! $returnUrl) {
+            return $fallback;
+        }
+
+        $expected = parse_url($fallback);
+        $candidate = parse_url($returnUrl);
+        if (
+            $candidate === false
+            || ($candidate['host'] ?? null) !== ($expected['host'] ?? null)
+            || ($candidate['path'] ?? null) !== ($expected['path'] ?? null)
+        ) {
+            return $fallback;
+        }
+
+        return $returnUrl;
     }
 
     public function decideDeleteRequest(Request $request, MonthlyPlanDeleteRequest $deleteRequest, PlanChangeRequestWorkflowService $changeRequests)
