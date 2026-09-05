@@ -401,3 +401,301 @@ lookup_applicabilities
 8. هل تقييم الوجبة درجة واحدة أم نموذج أسئلة متعدد؟
 9. هل الموافقة التنفيذية إلزامية لكل إفطار أم مشروطة؟
 10. هل يراد ترحيل الأنشطة الشهرية فوراً إلى الجداول المشتركة، أم تستخدم الجداول المشتركة للإفطارات أولاً ثم يرحل القديم في مرحلة لاحقة؟
+
+## 13. موديول الأجندة والفعاليات المستقل
+
+### 13.1 حدود الموديول
+
+ينشأ موديول أعمال مستقل باسم `Events` (أو `AgendaEvents` إن كان الاسم أوضح للفريق)، ويكون هو الحد الأعلى الذي يجمع الأنواع من دون دمج منطقها:
+
+```text
+app/Modules/Events/
+├── Agenda/
+├── MonthlyPlans/
+├── RamadanIftars/
+├── Bazaars/                 # يضاف لاحقاً، من دون كود وهمي الآن
+└── Common/
+```
+
+- `Agenda`: تعريف الأجندة السنوية والنشر والمشاركة والاشتراك.
+- `MonthlyPlans`: كل ما يخص الخطط الشهرية فقط.
+- `RamadanIftars`: إنشاء الإفطار، تفاصيله الخاصة، تنفيذه ومتابعته.
+- `Bazaars`: حد مستقل لاحقاً، ولا يرث Controller الإفطار أو الخطة الشهرية.
+- `Common`: عقود وخدمات وجداول التفاصيل المشتركة فقط؛ لا يحتوي شروطاً من نوع `if Ramadan... else monthly...` داخل Controllers.
+
+لا يعني وجود الأنواع تحت موديول واحد أن لها Controller أو Model أباً ضخماً. المشاركة تكون عبر interfaces وخدمات صغيرة مثل `HasTargetGroups`, `HasExecutionNeeds`, `HasExecutionTeams`، وعبر معرف `subject_type/subject_id`.
+
+### 13.2 هيكل الملفات المقترح
+
+```text
+app/Modules/Events/
+├── Agenda/
+│   ├── Http/Controllers/
+│   │   ├── AgendaListController.php
+│   │   ├── AgendaEntryController.php
+│   │   ├── AgendaSubmissionController.php
+│   │   └── AgendaParticipationController.php
+│   ├── Http/Requests/
+│   ├── Actions/
+│   ├── Queries/
+│   ├── Policies/
+│   └── Models/AgendaEvent.php
+├── MonthlyPlans/
+│   ├── Http/Controllers/
+│   ├── Http/Requests/
+│   ├── Actions/
+│   ├── Queries/
+│   ├── Data/
+│   ├── Policies/
+│   └── Models/MonthlyActivity.php
+├── RamadanIftars/
+│   ├── Http/Controllers/
+│   │   ├── RamadanIftarListController.php
+│   │   ├── RamadanIftarController.php
+│   │   ├── RamadanIftarSubmissionController.php
+│   │   ├── RamadanIftarExecutionController.php
+│   │   └── RamadanIftarMonitoringController.php
+│   ├── Http/Requests/
+│   ├── Actions/
+│   ├── Queries/
+│   ├── Policies/
+│   └── Models/
+└── Common/
+    ├── Contracts/
+    ├── Enums/
+    ├── Http/Controllers/
+    ├── Http/Requests/
+    ├── Actions/
+    ├── Services/
+    ├── Policies/
+    └── Models/
+```
+
+يمكن إبقاء Models في `app/Models` أثناء أول مراحل النقل لتقليل المخاطر، ثم نقلها بعد تثبيت namespaces وmorph map. الأهم أولاً هو فصل Controllers ومنطق الأعمال، لا تغيير كل المسارات في commit واحد.
+
+### 13.3 قواعد الاعتماد بين الأجزاء
+
+- `Agenda` لا يعتمد على `MonthlyPlans` أو `RamadanIftars` مباشرة؛ ينشر domain event مثل `AgendaEntryPublished`، ويتولى كل نوع إنشاء سجله إن كان ذلك مطلوباً.
+- `MonthlyPlans` و`RamadanIftars` يمكنهما القراءة من `Agenda` عبر Query/Contract، لا عبر استدعاء Controller.
+- الأجزاء المتخصصة تعتمد على `Common`، لكن `Common` لا يعتمد عليها.
+- Controllers لا تستدعي Controllers أخرى، ولا تحتوي استعلامات تقارير طويلة أو مزامنة علاقات متعددة.
+- كل عملية كتابة ذات معنى تمثل Action واحدة قابلة للاختبار، مثل `CreateMonthlyPlan`, `SubmitMonthlyPlan`, `SyncTargetGroups`, `RecordIftarExecution`.
+- الـ workflow يبقى بنية تحتية مشتركة، لكن إعداد workflow وحالات العرض الخاصة بكل نوع توضع في Presenter/Adapter لذلك النوع.
+
+## 14. تفكيك Controller الأنشطة الشهرية
+
+### 14.1 المشكلة الحالية
+
+`MonthlyActivitiesController` الحالي يجمع في ملف واحد عمليات القائمة والتقويم والمهملات والإنشاء والتعديل والمزامنة من الأجندة والتقديم والإغلاق وما بعد التنفيذ، إضافة إلى التحقق والتطبيع والصلاحيات والإشعارات والاستعلامات. كما أن Controller الموافقات يجمع قائمة الموافقات وقرار workflow واحتياجات التنفيذ وطلبات التعديل والحذف ومراجعة ما بعد التنفيذ.
+
+الهدف ليس تقسيم الملف حسب عدد الأسطر فقط؛ بل فصل كل **سبب للتغيير** في Controller وAction/Query مستقلين.
+
+### 14.2 Controllers المقترحة للخطط الشهرية
+
+| Controller | العمليات فقط | ما ينقل خارجه |
+|---|---|---|
+| `MonthlyPlanListController` | `index` | الفلاتر والبطاقات إلى `MonthlyPlanIndexQuery` و`MonthlyPlanSummaryQuery` |
+| `MonthlyPlanCalendarController` | `index` (بديل `calendar`) | تجميع بيانات التقويم إلى Query |
+| `MonthlyPlanController` | `create`, `store`, `show`, `edit`, `update` | التحقق إلى Form Requests والكتابة إلى Actions |
+| `MonthlyPlanAgendaSyncController` | `store` (بديل `syncFromAgenda`) | المزامنة إلى `SyncMonthlyPlansFromAgenda` |
+| `MonthlyPlanSubmissionController` | `store` أو `update` للتقديم | `SubmitMonthlyPlan` والـ workflow notification |
+| `MonthlyPlanClosureController` | `store` للإغلاق | `CloseMonthlyPlan` وقواعد دورة الحياة |
+| `MonthlyPlanTrashController` | `index`, `show`, `destroy`, `restore` | الحذف/الاستعادة إلى Actions وPolicy |
+| `MonthlyPlanReturnedFeedbackController` | `index` | الاستعلام إلى Query مخصص |
+| `MonthlyPlanPostExecutionController` | `edit`, `update` | التطبيع والتسجيل إلى `RecordMonthlyPlanExecution` |
+| `MonthlyPlanPostExecutionFeedbackController` | `index` | الاستعلام إلى Query مخصص |
+| `MonthlyPlanApprovalQueueController` | `index`, `show` | بطاقات وفلاتر الموافقات إلى Query/Presenter |
+| `MonthlyPlanApprovalDecisionController` | `update` | القرار إلى `DecideMonthlyPlanApproval` |
+| `MonthlyPlanExecutionNeedDecisionController` | `update` | القرار إلى Action مشتركة للاحتياجات |
+| `MonthlyPlanPostExecutionDecisionController` | `update` | مراجعة ما بعد التنفيذ إلى Action |
+| `MonthlyPlanChangeRequestController` | إنشاء طلب تعديل/حذف وعرضه | دورة الطلب إلى Service مشتركة |
+| `MonthlyPlanChangeRequestDecisionController` | اعتماد/رفض طلب تعديل أو حذف | القرار والتنسـيخ إلى Action |
+
+يبقى كل Controller رفيعاً: authorize، استدعاء Form Request/Query/Action، ثم Response. الهدف الإرشادي أقل من 150 سطراً، ومن دون methods محمية كثيرة تمثل منطق أعمال.
+
+### 14.3 ما لا يبقى داخل Controllers
+
+ينقل من Controller الحالي إلى طبقات واضحة:
+
+- **Form Requests:** قواعد الإنشاء، التخطيط، الحضور، اللوازم، المتطوعين، ما بعد التنفيذ، الإغلاق والقرارات.
+- **DTO/Data objects:** payload مطبع مثل `MonthlyPlanData`, `ExecutionNeedData`, `AttendanceRangeData` بدلاً من تمرير arrays كبيرة.
+- **Actions:** الإنشاء، التحديث، إنشاء نسخة، التقديم، الإغلاق، الحذف، الاستعادة، ومزامنة الأجندة.
+- **Queries:** نطاق الفرع، ظهور المسودات، ظهور منسق المتطوعين، فلاتر القائمة، ملخص البطاقات وقائمة الموافقات.
+- **Policies:** `view`, `create`, `updatePlanning`, `submit`, `close`, `delete`, `restore`, `recordExecution`; لا تبقى مصفوفات أدوار طويلة في routes أو Controller.
+- **Domain services:** مزامنة الفئات والداعمين والاحتياجات واللوازم، بناء النسخ، وحساب الإجماليات.
+- **Presenters/ViewModels:** timeline، labels، بطاقات الموافقة وخيارات الحالات.
+- **Listeners:** إرسال الإشعارات وتسجيل audit بعد نجاح العملية، بدلاً من مزجهما بعملية الحفظ.
+
+### 14.4 Actions الأساسية المقترحة
+
+```text
+MonthlyPlans/Actions/
+├── CreateMonthlyPlan.php
+├── UpdateMonthlyPlan.php
+├── CreateMonthlyPlanVersion.php
+├── SyncMonthlyPlansFromAgenda.php
+├── SubmitMonthlyPlan.php
+├── CloseMonthlyPlan.php
+├── DeleteMonthlyPlan.php
+├── RestoreMonthlyPlan.php
+├── RecordMonthlyPlanExecution.php
+└── DecideMonthlyPlanApproval.php
+```
+
+كل Action:
+
+1. يستقبل Model/DTO واضحاً، لا Request.
+2. ينفذ transaction عند تعديل أكثر من جدول.
+3. يستدعي خدمات `Common` للفئات والاحتياجات والفرق واللوازم.
+4. يعيد Model/Result معروفاً.
+5. يطلق domain event بعد نجاح transaction.
+6. لا يعيد Redirect أو View؛ هذه مسؤولية Controller.
+
+### 14.5 Queries والسياسات
+
+بدلاً من تكرار دوال نطاق الفرع والظهور:
+
+```text
+MonthlyPlans/Queries/
+├── MonthlyPlanIndexQuery.php
+├── MonthlyPlanApprovalQueueQuery.php
+├── MonthlyPlanFeedbackQuery.php
+└── AvailableAgendaEntriesQuery.php
+```
+
+تبدأ كل Query من scope مصرح به، مثل `MonthlyPlan::query()->visibleTo($user)`. وتصبح `MonthlyPlanPolicy` المرجع الوحيد للقرار الفردي، بينما Middleware يتحقق من permission عامة فقط. هذا يمنع اختلاف قواعد الوصول بين list وshow وedit.
+
+## 15. Controllers الموديولات الأخرى
+
+### 15.1 الأجندة
+
+يفكك `AgendaEventsController` إلى:
+
+- `AgendaListController`: القائمة والفلاتر.
+- `AgendaEntryController`: create/store/show/edit/update/destroy.
+- `AgendaSubmissionController`: إرسال الأجندة إلى الموافقة.
+- `AgendaParticipationController`: مشاركة الوحدة والفرع والاشتراك السريع.
+- `AgendaApprovalQueueController` و`AgendaApprovalDecisionController`: العرض والقرار.
+
+نقل إنشاء الخطط الشهرية الناتجة عن الأجندة إلى Listener/Action داخل `MonthlyPlans` يمنع اعتماد `Agenda` على تفاصيل جدول الخطط الشهرية.
+
+### 15.2 الإفطارات الرمضانية
+
+من البداية تنشأ Controllers صغيرة ولا تكرر مشكلة الخطط الشهرية:
+
+- `RamadanIftarListController`: القائمة والتقويم والفلاتر.
+- `RamadanIftarController`: CRUD التخطيط الأساسي.
+- `RamadanIftarSubmissionController`: التقديم والنسخ.
+- `RamadanIftarExecutionController`: البيانات الفعلية، الوجبات، الهدايا والحضور.
+- `RamadanIftarMonitoringController`: تقرير الرصد والمطابقة.
+- `RamadanIftarApprovalQueueController` و`RamadanIftarApprovalDecisionController`.
+- التفاصيل المشتركة لا تحتاج methods داخل Controller الإفطار؛ تستخدم Controllers/Actions من `Common` مع authorization على الأصل.
+
+### 15.3 Common
+
+يفضل Controllers محددة ومتعشقة تحت الأصل، أو invokable Controllers:
+
+```text
+Common/Http/Controllers/
+├── SyncSubjectTargetGroupsController.php
+├── SyncSubjectExecutionNeedsController.php
+├── ExecutionTeamController.php
+├── SubjectSupplyController.php
+├── SubjectAttachmentController.php
+└── MonitoringReportController.php
+```
+
+يجب ألا يقبل العميل `subject_type` عشوائياً من body. يؤخذ النوع من route ثابتة/registry allow-list، ثم يحل الأصل وتطبق Policy الخاصة به لتفادي الوصول إلى كيان من نوع آخر بتغيير النص.
+
+## 16. تنظيم routes
+
+يقسم `routes/web.php` الكبير إلى ملفات داخل الموديول، مع الحفاظ مؤقتاً على أسماء routes الحالية كي لا تنكسر Blade views:
+
+```text
+routes/events.php
+app/Modules/Events/Agenda/routes.php
+app/Modules/Events/MonthlyPlans/routes.php
+app/Modules/Events/RamadanIftars/routes.php
+app/Modules/Events/Common/routes.php
+```
+
+تسجل من Service Provider خاص بالموديول. وتستخدم مجموعات واضحة:
+
+```text
+/dashboard/events/agenda/...
+/dashboard/events/monthly-plans/...
+/dashboard/events/ramadan-iftars/...
+```
+
+خلال الترحيل يمكن إبقاء URLs القديمة أو إضافة redirects، لكن لا تغيّر URL واسم route وController والواجهة في دفعة واحدة. كما تستبدل قوائم `role:a|b|c...` الطويلة بـ permissions وPolicies، مع بقاء middleware لعزلة الفرع.
+
+## 17. استراتيجية تنفيذ آمنة من دون Big Bang
+
+### المرحلة A: شبكة أمان
+
+1. Characterization tests للـ routes الحالية وأهم السيناريوهات: القائمة، الإنشاء، التعديل، التقديم، الموافقة، الإغلاق، الحذف والاستعادة.
+2. اختبارات صلاحيات لكل دور وعزلة الفروع.
+3. تثبيت أسماء routes وواجهات responses الحالية كعقد مؤقت.
+4. إضافة قياس لحجم Controllers وعدد الاستعلامات في الصفحات الحرجة.
+
+### المرحلة B: استخراج القراءة أولاً
+
+1. استخراج `MonthlyPlanIndexQuery`, summary، calendar، feedback، approval queue.
+2. إبقاء Controllers والـ routes الحالية تستدعي Queries الجديدة.
+3. اختبار تطابق النتائج قبل/بعد الاستخراج.
+
+هذه أقل مرحلة خطراً لأنها لا تغير الكتابة أو workflow.
+
+### المرحلة C: Form Requests وPolicies
+
+1. نقل validation والتطبيع من Controller إلى Requests/DTOs.
+2. تجميع قرارات الوصول في Policies.
+3. إبقاء signatures وroute names الحالية.
+4. إضافة اختبارات منع الوصول، وليس happy path فقط.
+
+### المرحلة D: Actions والـ transactions
+
+1. استخراج store/update ثم submit/close/versioning.
+2. استخراج مزامنة الفئات والاحتياجات والفرق واللوازم إلى `Common` services.
+3. نقل الإشعارات وaudit إلى events/listeners بعد نجاح transaction.
+4. منع أي Action من الاعتماد على HTTP Request أو View.
+
+### المرحلة E: تقسيم Controllers وroutes
+
+1. إضافة Controllers الجديدة واحداً واحداً وربط route الحالية بها.
+2. حذف method القديمة بعد مرور اختبارات route المعنية.
+3. تقسيم route files وتسجيلها من provider.
+4. حذف Controller الضخم فقط عندما يصبح بلا routes، لا قبله.
+
+### المرحلة F: إضافة الإفطارات
+
+بعد تثبيت Common contracts:
+
+1. إنشاء جداول وموديول `RamadanIftars` المستقل.
+2. استخدام الفئات والاحتياجات والفرق واللوازم المشتركة.
+3. إضافة workflow مستقل للإفطار باستخدام البنية العامة.
+4. إضافة المتابعة والمطابقة ثم التقارير.
+
+### المرحلة G: ترحيل الجداول الشهرية المشتركة
+
+يتم أخيراً، وبـ expand/migrate/contract:
+
+1. إنشاء الجداول المشتركة مع بقاء القديمة.
+2. dual write مؤقت أو backfill idempotent.
+3. مقارنة counts والقيم آلياً.
+4. تحويل القراءة إلى الجديد عبر feature flag.
+5. إيقاف الكتابة القديمة ثم حذفها في release منفصل بعد فترة تحقق.
+
+## 18. معايير النظافة والقبول للكود
+
+- لا Controller يتجاوز مسؤولية HTTP orchestration، والهدف الإرشادي ≤150 سطراً.
+- لا Controller يحتوي transaction أو مزامنة علاقات أو إرسال إشعارات مباشر.
+- لا Action يستقبل `Request` أو يعيد `RedirectResponse`.
+- لا Query تغير البيانات.
+- كل عملية كتابة متعددة الجداول داخل transaction واحدة.
+- كل أصل (`MonthlyActivity`, `RamadanIftar`, `Bazaar`) يملك Policy مستقلة.
+- لا switch منتشر على `subject_type`؛ يوجد registry/resolver واحد allow-listed.
+- morph map ثابت ومختبر.
+- أسماء routes الحالية لا تتغير أثناء refactor إلا بخطة توافق معلنة.
+- اختبارات feature تغطي كل route منقول والصلاحيات وعزلة الفروع والـ workflow.
+- لا يبدأ تطوير البازارات قبل نجاح استخدام `Common` فعلياً في الخطط الشهرية والإفطارات؛ كي لا يبنى abstraction نظري زائد.
