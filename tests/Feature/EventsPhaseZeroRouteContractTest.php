@@ -30,6 +30,7 @@ class EventsPhaseZeroRouteContractTest extends TestCase
     public function monthlyActivityRouteContracts(): array
     {
         return [
+            'change-request reports' => ['role.super_admin.monthly_activities.change_requests.reports', 'dashboard/admin/monthly-activities/change-requests/reports', 'GET', ['auth']],
             'index' => ['role.relations.activities.index', 'dashboard/relations/monthly-activities', 'GET', ['auth', 'branch.isolation']],
             'calendar' => ['role.relations.activities.calendar', 'dashboard/relations/monthly-activities/calendar', 'GET', ['auth', 'branch.isolation']],
             'trash' => ['role.relations.activities.trash', 'dashboard/relations/monthly-activities/trash', 'GET', ['auth', 'branch.isolation']],

@@ -34,14 +34,14 @@ Already-extracted endpoint controllers that must be preserved are:
 |---|---|---|---|---|---|---|
 | `role.relations.activities.index` | GET | `dashboard/relations/monthly-activities` | `MonthlyActivitiesController@index` | Legacy | branch visibility, grouped status, role UI | HTTP contract protected |
 | `role.relations.activities.calendar` | GET | `.../monthly-activities/calendar` | `MonthlyActivitiesController@calendar` | Legacy | status filtering, creator action, follow-up branch scope | HTTP contract protected |
-| `role.relations.activities.trash` | GET | `.../monthly-activities/trash` | `MonthlyActivitiesController@trash` | Legacy | none direct | HTTP contract protected; browse behavior remains a gap |
-| `role.relations.activities.returned_feedback` | GET | `.../monthly-activities/returned-feedback` | `MonthlyActivitiesController@returnedFeedback` | Legacy | rejection redirect/filter interactions | HTTP contract protected; dedicated render/scope case remains a gap |
-| `role.relations.activities.post_execution_feedback` | GET | `.../monthly-activities/post-execution-feedback` | `MonthlyActivitiesController@postExecutionFeedback` | Legacy | post-execution notifications link here | HTTP contract protected; dedicated render/scope case remains a gap |
+| `role.relations.activities.trash` | GET | `.../monthly-activities/trash` | `MonthlyActivitiesController@trash` | Legacy | none direct | branch-scoped render/record visibility characterized |
+| `role.relations.activities.returned_feedback` | GET | `.../monthly-activities/returned-feedback` | `MonthlyActivitiesController@returnedFeedback` | Legacy | rejection redirect/filter interactions | branch-scoped render/record visibility characterized |
+| `role.relations.activities.post_execution_feedback` | GET | `.../monthly-activities/post-execution-feedback` | `MonthlyActivitiesController@postExecutionFeedback` | Legacy | post-execution notifications link here | branch-scoped render/record visibility characterized |
 | `role.relations.activities.trash.restore` | PATCH | `.../trash/{monthlyActivity}/restore` | `MonthlyActivitiesController@restore` | Legacy | none | authorized restore, redirect, flash, persisted state |
 | `role.relations.activities.sync_from_agenda` | POST | `.../sync-from-agenda` | `MonthlyActivitiesController@syncFromAgenda` | Legacy | mandatory/active/participant filtering | HTTP contract protected |
 | `role.relations.activities.create` | GET | `.../monthly-activities/create` | `MonthlyActivitiesController@create` | Legacy | role UI access | HTTP contract protected |
 | `role.relations.activities.store` | POST | `.../monthly-activities` | `MonthlyActivitiesController@store` | Legacy | successful planning persistence and validation failures | HTTP contract protected |
-| `role.relations.activities.deleted.show` | GET | `.../deleted/{monthlyActivity}` | `MonthlyActivitiesController@showDeleted` | Legacy | none direct | HTTP contract protected; response behavior remains a gap |
+| `role.relations.activities.deleted.show` | GET | `.../deleted/{monthlyActivity}` | `MonthlyActivitiesController@showDeleted` | Legacy | none direct | current unconditional 404 response characterized |
 | `role.relations.activities.edit` | GET | `.../{monthlyActivity}/edit` | `MonthlyActivitiesController@edit` | Legacy | workflow summary, role UI access | HTTP contract protected |
 | `role.relations.activities.show` | GET | `.../{monthlyActivity}` | `MonthlyActivitiesController@show` | Legacy | workflow summary, volunteer restriction, role UI access | HTTP contract protected |
 | `role.relations.activities.update` | PUT | `.../{monthlyActivity}` | `MonthlyActivitiesController@update` | Legacy | versioning and correction state | cross-branch mutation denial added |
@@ -56,7 +56,7 @@ Already-extracted endpoint controllers that must be preserved are:
 | `role.programs.approvals.delete_requests.update` | PUT | `.../delete-requests/{deleteRequest}` | `MonthlyActivitiesApprovalsController@decideDeleteRequest` | Legacy approval controller | notification/link behavior | HTTP contract protected |
 | `role.programs.approvals.edit_requests.update` | PUT | `.../edit-requests/{editRequest}` | `MonthlyActivitiesApprovalsController@decideEditRequest` | Legacy approval controller | notification/link behavior | HTTP contract protected |
 
-The separately extracted supply, team, and attachment routes retain their current names under `role.programs.*`; they were not moved or changed in Phase 0.
+The separately extracted supply, team, and attachment routes retain their current names under `role.programs.*`; they were not moved or changed in Phase 0. The admin change-request report remains `GET dashboard/admin/monthly-activities/change-requests/reports` with route name `role.super_admin.monthly_activities.change_requests.reports`.
 
 ## Agenda HTTP inventory
 
@@ -91,6 +91,7 @@ The separately extracted supply, team, and attachment routes retain their curren
 
 - `EventsPhaseZeroRouteContractTest` protects Monthly Activity and Agenda route names, methods, URIs, authentication, and representative branch-isolation middleware without locking controller classes.
 - `MonthlyActivityMutationSafetyNetTest` characterizes cross-branch update denial, unauthorized-role delete denial, authorized draft soft deletion, redirect/flash response, and admin restoration.
+- `MonthlyActivityPhaseZeroEndpointsTest` characterizes the restored change-request report authorization/view contract, branch-scoped trash/feedback behavior, and the deleted-show route's current unconditional 404 response.
 
 ## Authorization and branch-scope baseline
 
@@ -115,13 +116,44 @@ These tests characterize the existing role middleware, `EnforceBranchIsolation`,
 6. Preserve the workflow entity module `monthly_activities`, route parameters (`monthlyActivity`, `deleteRequest`, `editRequest`), and current-step authorization behavior during controller extraction.
 7. Preserve current branch scoping based on branch permissions/assignments and creator-only draft restrictions.
 
-## Known blockers and remaining Phase-0 gaps
+## Broken-route resolution
 
-- Dependencies are absent: `vendor/autoload.php` does not exist. Therefore Artisan and PHPUnit cannot execute in this environment. Syntax/static checks can run, but no automated test is reported as passed until dependencies are restored externally without changing production dependencies.
-- The named admin route `role.super_admin.monthly_activities.change_requests.reports` points to `MonthlyActivitiesController@changeRequestReports`, but no such public method was found during reconnaissance. This pre-existing route needs product confirmation or restoration before Phase 1; Phase 0 does not change production behavior to guess the intended response.
-- Direct behavior tests are still absent for trash listing, deleted-show, returned-feedback rendering, and post-execution-feedback rendering. Their HTTP contracts are protected and adjacent behavior exists, but these should be filled before moving those particular methods.
-- Route contracts currently protect middleware selectively. Long role strings are recorded in `routes/web.php` but intentionally not frozen wholesale because the target architecture moves authorization to Policies; representative authorization behavior is protected instead.
+Git history proves that commit `cbfb6bf` introduced the route, the dedicated Blade report, and `MonthlyActivitiesController::changeRequestReports()` together. The route and Blade files remained, while the controller method was later lost. The report is therefore active intended behavior (Case A), not an obsolete contract. Phase 0 restores that historical action with the same filters, statistics, relationships, view name, route name, URI, HTTP method, and `super_admin|admin` authorization. A regression test now checks authorized rendering and unauthorized rejection.
+
+## Runtime and test execution
+
+- Host default: PHP 8.5.7-dev; Composer 2.9.7.
+- The locked dependency set cannot install on PHP 8.5 because `nette/schema v1.2.5` supports PHP through 8.3 and `nette/utils v3.2.10` requires PHP below 8.4. No platform requirements were ignored and the lock file was not changed.
+- A repository-compatible installed runtime, PHP 8.3.31-dev, was selected from `/root/.phpenv/versions/8.3snapshot/bin`. Composer validated the lock successfully and began 107 locked installs.
+- Installation could not complete because the environment proxy returned HTTP 403 for GitHub dist archives and source fallbacks. There is no Dockerfile/Compose/devcontainer or pre-existing Composer cache/vendor tree in the environment. `vendor/autoload.php` therefore remains unavailable.
+- Consequently, Artisan/PHPUnit tests could not execute. PHP syntax checks and `git diff --check` completed successfully. This is an environment/configuration blocker (category C), not a demonstrated application-test failure.
+
+Commands attempted:
+
+```bash
+php -v
+composer --version
+php -m
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-interaction --prefer-dist
+PATH=/root/.phpenv/versions/8.3snapshot/bin:$PATH php -v
+PATH=/root/.phpenv/versions/8.3snapshot/bin:$PATH COMPOSER_ALLOW_SUPERUSER=1 composer install --no-interaction --prefer-dist
+php artisan test --filter=EventsPhaseZeroRouteContractTest
+php artisan test --filter=MonthlyActivityMutationSafetyNetTest
+php artisan test --filter=MonthlyActivityPhaseZeroEndpointsTest
+php artisan test --testsuite=Feature
+```
+
+## Remaining Phase-0 gaps
+
+- The new and existing Laravel tests still require actual execution after dependencies become available. No test is described as passed merely from static inspection.
+- The former behavioral gaps for trash, deleted-show, returned-feedback, and post-execution-feedback now have focused characterization tests, but their execution remains blocked by the missing dependency tree.
+- Route contracts protect middleware selectively. Long role strings remain recorded in `routes/web.php` but are intentionally not frozen wholesale because representative authorization behavior is the compatibility requirement.
+- No pre-existing Feature-test failure was identified because PHPUnit could not start; the only verified failure is dependency installation/network configuration.
+
+## Architecture-document verification
+
+`docs/ramadan-iftars-data-design-ar.md` was read completely and has no working-tree modification in this task. Its presence as a file added earlier in the branch is intentional; Phase 0 did not rewrite the architectural source of truth.
 
 ## Phase status
 
-Phase 0 safety-net changes are implemented, but execution is unverified in the current checkout because Composer dependencies are missing. Phase 1 must not begin until the Feature suite executes successfully and the unresolved admin change-request report route is dispositioned.
+The missing report action and known characterization gaps are addressed in code, but Phase 0 cannot be declared complete until the Phase-0 and relevant Feature tests actually execute in a dependency-complete environment. Phase 1 must not begin while that execution blocker remains.
