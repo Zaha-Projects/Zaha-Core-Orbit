@@ -38,6 +38,17 @@ class EventStatusLookup extends Model
         return $query->orderBy('sort_order')->orderBy('name');
     }
 
+    public function scopeAvailableForSelection($query, ?string $currentCode = null)
+    {
+        return $query->where(function ($query) use ($currentCode) {
+            $query->where('is_active', true);
+
+            if (filled($currentCode)) {
+                $query->orWhere('code', $currentCode);
+            }
+        });
+    }
+
     public static function labelFor(string $module, ?string $code): string
     {
         if (! filled($code)) {

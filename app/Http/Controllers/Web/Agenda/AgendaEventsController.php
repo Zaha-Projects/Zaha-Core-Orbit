@@ -429,13 +429,7 @@ class AgendaEventsController extends Controller
     {
         return EventStatusLookup::query()
             ->forModule('agenda')
-            ->where(function ($query) use ($currentStatus) {
-                $query->where('is_active', true);
-
-                if (filled($currentStatus)) {
-                    $query->orWhere('code', $currentStatus);
-                }
-            })
+            ->availableForSelection($currentStatus)
             ->ordered()
             ->get()
             ->unique('code')

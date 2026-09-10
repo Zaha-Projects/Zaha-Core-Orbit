@@ -650,13 +650,7 @@ class MonthlyActivitiesController extends Controller
         return EventStatusLookup::query()
             ->forModule($module)
             ->when($allowedCodes !== [], fn ($query) => $query->whereIn('code', $allowedCodes))
-            ->where(function ($query) use ($currentCode) {
-                $query->where('is_active', true);
-
-                if (filled($currentCode)) {
-                    $query->orWhere('code', $currentCode);
-                }
-            })
+            ->availableForSelection($currentCode)
             ->ordered()
             ->get()
             ->unique('code')
