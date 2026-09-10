@@ -128,4 +128,24 @@ class RamadanIftar extends Model
         return $this->hasMany(SubjectTargetGroup::class, 'subject_id')
             ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
     }
+
+    public function attendees()
+    {
+        return $this->hasMany(RamadanIftarAttendee::class);
+    }
+
+    public function meals()
+    {
+        return $this->hasMany(RamadanIftarMeal::class);
+    }
+
+    public function gifts()
+    {
+        return $this->hasMany(RamadanIftarGift::class);
+    }
+
+    public function programSegments()
+    {
+        return $this->hasMany(RamadanIftarProgramSegment::class)->orderBy('sort_order');
+    }
 }
