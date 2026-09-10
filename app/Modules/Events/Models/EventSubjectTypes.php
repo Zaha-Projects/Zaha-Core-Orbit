@@ -24,6 +24,7 @@ final class EventSubjectTypes
     {
         return [
             self::MONTHLY_ACTIVITY => MonthlyActivity::class,
+            self::RAMADAN_IFTAR => RamadanIftar::class,
         ];
     }
 
