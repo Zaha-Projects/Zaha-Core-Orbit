@@ -20,7 +20,20 @@ class TargetGroupSelectionTest extends TestCase
         $groups = TargetGroup::query()->active()->orderBy('sort_order')->get();
 
         $this->assertSame(['First', 'Second'], $groups->pluck('name')->all());
-        $this->assertSame(['id', 'name', 'is_other', 'is_active', 'sort_order', 'created_at', 'updated_at'], array_keys($groups->first()->getAttributes()));
+        $this->assertEqualsCanonicalizing(
+            [
+                'id',
+                'name',
+                'is_other',
+                'is_active',
+                'is_monthly_activity',
+                'is_ramadan_iftar',
+                'sort_order',
+                'created_at',
+                'updated_at',
+            ],
+            array_keys($groups->first()->getAttributes())
+        );
     }
 
     public function test_active_scope_preserves_agenda_selection_order(): void
