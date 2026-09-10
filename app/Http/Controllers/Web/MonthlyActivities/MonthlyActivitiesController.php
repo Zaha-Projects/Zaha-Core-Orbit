@@ -2043,7 +2043,7 @@ class MonthlyActivitiesController extends Controller
         }
         $branches = $branches->get();
         $agendaEvents = $this->agendaEventsForUser($user);
-        $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
+        $targetGroups = TargetGroup::query()->active()->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
         $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyCreationStatusOptions('draft');
@@ -2781,7 +2781,7 @@ class MonthlyActivitiesController extends Controller
         }
         $branches = $branches->get();
         $agendaEvents = $this->agendaEventsForUser(request()->user(), $monthlyActivity);
-        $targetGroups = TargetGroup::where('is_active', true)->orderBy('sort_order')->get();
+        $targetGroups = TargetGroup::query()->active()->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
         $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);

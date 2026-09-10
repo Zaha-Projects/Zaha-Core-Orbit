@@ -15,4 +15,9 @@ class TargetGroup extends Model
         'is_other' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }
