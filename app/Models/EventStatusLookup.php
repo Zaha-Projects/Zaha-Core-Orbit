@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Models\EventContexts;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -52,7 +53,7 @@ class EventStatusLookup extends Model
             return $lookup->name;
         }
 
-        if ($module === 'agenda') {
+        if ($module === EventContexts::AGENDA) {
             $translated = __('app.roles.relations.agenda.status_labels.' . $code);
 
             return $translated !== 'app.roles.relations.agenda.status_labels.' . $code
@@ -60,7 +61,7 @@ class EventStatusLookup extends Model
                 : (string) $code;
         }
 
-        if ($module === 'monthly_activities') {
+        if ($module === EventContexts::MONTHLY_ACTIVITIES) {
             $workflowLabel = __('workflow_ui.approvals.status_labels.' . $code);
             if ($workflowLabel !== 'workflow_ui.approvals.status_labels.' . $code) {
                 return $workflowLabel;
