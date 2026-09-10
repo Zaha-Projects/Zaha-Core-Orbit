@@ -148,4 +148,22 @@ class RamadanIftar extends Model
     {
         return $this->hasMany(RamadanIftarProgramSegment::class)->orderBy('sort_order');
     }
+
+    public function executionTeams()
+    {
+        return $this->hasMany(ExecutionTeam::class, 'subject_id')
+            ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
+    }
+
+    public function volunteerRequirements()
+    {
+        return $this->hasMany(SubjectVolunteerRequirement::class, 'subject_id')
+            ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
+    }
+
+    public function supplies()
+    {
+        return $this->hasMany(SubjectSupply::class, 'subject_id')
+            ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
+    }
 }
