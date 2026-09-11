@@ -191,6 +191,12 @@ class RamadanIftar extends Model
             ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
     }
 
+    public function executionNeeds()
+    {
+        return $this->hasMany(SubjectExecutionNeed::class, 'subject_id')
+            ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
+    }
+
     public function monitoringReports()
     {
         return $this->hasMany(MonitoringReport::class, 'subject_id')

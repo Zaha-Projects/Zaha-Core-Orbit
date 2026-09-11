@@ -8,6 +8,7 @@
         'execution_teams' => old('execution_teams', $ramadanIftar ? $ramadanIftar->executionTeams->map(fn ($team) => array_merge($team->toArray(), ['members' => $team->members->toArray()]))->toArray() : [['members' => [[]]]]),
         'volunteer_requirements' => old('volunteer_requirements', $ramadanIftar ? $ramadanIftar->volunteerRequirements->toArray() : [[]]),
         'supplies' => old('supplies', $ramadanIftar ? $ramadanIftar->supplies->toArray() : [[]]),
+        'execution_needs' => old('execution_needs', $ramadanIftar ? $ramadanIftar->executionNeeds->toArray() : []),
     ];
 @endphp
 <div class="container py-4">
@@ -31,6 +32,19 @@
             <div class="col-md-6"><label>Mobilization method</label><select class="form-select" name="mobilization_method_id"><option value="">—</option>@foreach($mobilizationMethods as $item)<option value="{{ $item->id }}" @selected($value('mobilization_method_id') == $item->id)>{{ $item->name_ar }}</option>@endforeach</select></div>
             <div class="col-md-6"><label>Other mobilization</label><input class="form-control" name="mobilization_method_other" value="{{ $value('mobilization_method_other') }}"></div>
             @foreach(['address','description','google_maps_url','contact_name','contact_phone','supporting_entity_name'] as $field)<div class="col-md-6"><label>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $field)) }}</label><input class="form-control" name="{{ $field }}" value="{{ $value($field) }}"></div>@endforeach
+        </div></div>
+
+        <div class="card mb-3"><div class="card-header"><strong>Execution needs</strong></div><div class="card-body row g-3">
+            @foreach($executionNeedTypes as $needType)
+                @php $selectedNeed = collect($collections['execution_needs'])->firstWhere('execution_need_type_id', $needType->id); @endphp
+                <div class="col-md-6 border rounded p-3">
+                    @if($selectedNeed)<input type="hidden" name="execution_needs[{{ $needType->id }}][id]" value="{{ $selectedNeed['id'] ?? '' }}">@endif
+                    <input type="hidden" name="execution_needs[{{ $needType->id }}][execution_need_type_id]" value="{{ $needType->id }}">
+                    <input type="hidden" name="execution_needs[{{ $needType->id }}][is_required]" value="0">
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="execution_needs[{{ $needType->id }}][is_required]" value="1" id="execution-need-{{ $needType->id }}" @if((bool)($selectedNeed['is_required'] ?? false)) checked @endif><label class="form-check-label" for="execution-need-{{ $needType->id }}">{{ $needType->name }}</label></div>
+                    <textarea class="form-control" name="execution_needs[{{ $needType->id }}][planned_details]" rows="2" placeholder="Planning details">{{ $selectedNeed['planned_details'] ?? '' }}</textarea>
+                </div>
+            @endforeach
         </div></div>
 
         @php $rows = $collections['target_groups']; @endphp

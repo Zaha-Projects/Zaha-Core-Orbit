@@ -9,6 +9,7 @@ use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMeal;
 use App\Modules\Events\Models\RamadanIftarProgramSegment;
 use App\Modules\Events\Models\SubjectSupply;
+use App\Modules\Events\Models\SubjectExecutionNeed;
 use App\Modules\Events\Models\SubjectVolunteerRequirement;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -100,6 +101,16 @@ class RamadanIftarPlanningService
         $this->syncSimple($iftar->supplies(), $data['supplies'], [
             'item_name', 'planned_quantity', 'provider_type', 'provider_name', 'estimated_value', 'notes',
         ], fn () => ['status' => SubjectSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
+        $requiredNeeds = collect($data['execution_needs'])->filter(fn (array $need): bool => (bool) $need['is_required'])->values()->all();
+        $this->syncSimple($iftar->executionNeeds(), $requiredNeeds, [
+            'execution_need_type_id', 'is_required', 'planned_details',
+        ], fn () => [
+            'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
+            'subject_id' => $iftar->getKey(),
+            'status' => SubjectExecutionNeed::STATUS_PENDING,
+        ], ['actual_details', 'completed_at'], function ($model) {
+            return $model->status !== SubjectExecutionNeed::STATUS_PENDING;
+        });
     }
 
     private function syncTargetGroups(RamadanIftar $iftar, array $rows): void
@@ -172,6 +183,7 @@ class RamadanIftarPlanningService
             'gifts' => $iftar->gifts(), 'program_segments' => $iftar->programSegments(),
             'execution_teams' => $iftar->executionTeams(), 'volunteer_requirements' => $iftar->volunteerRequirements(),
             'supplies' => $iftar->supplies(),
+            'execution_needs' => $iftar->executionNeeds(),
         ];
         foreach ($checks as $key => $query) $this->assertIdsBelong($key, $data[$key], $query);
         foreach ($data['meals'] as $i => $meal) if (! empty($meal['id'])) {

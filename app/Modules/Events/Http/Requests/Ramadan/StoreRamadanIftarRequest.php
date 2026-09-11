@@ -5,6 +5,7 @@ namespace App\Modules\Events\Http\Requests\Ramadan;
 use App\Models\AgendaEvent;
 use App\Models\TargetGroup;
 use App\Models\User;
+use App\Models\ExecutionNeedType;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;
@@ -32,7 +33,7 @@ class StoreRamadanIftarRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $collections = ['target_groups', 'meals', 'gifts', 'program_segments', 'execution_teams', 'volunteer_requirements', 'supplies'];
+        $collections = ['target_groups', 'meals', 'gifts', 'program_segments', 'execution_teams', 'volunteer_requirements', 'supplies', 'execution_needs'];
         $this->merge(collect($collections)->mapWithKeys(fn (string $key) => [$key => $this->input($key, [])])->all());
     }
 
@@ -126,6 +127,11 @@ class StoreRamadanIftarRequest extends FormRequest
             'supplies.*.provider_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.estimated_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'supplies.*.notes' => ['nullable', 'string'],
+            'execution_needs' => ['present', 'array'],
+            'execution_needs.*.id' => ['nullable', 'integer'],
+            'execution_needs.*.execution_need_type_id' => ['required', 'integer', 'distinct', 'exists:execution_need_types,id'],
+            'execution_needs.*.is_required' => ['required', 'boolean'],
+            'execution_needs.*.planned_details' => ['nullable', 'string', 'max:2000'],
         ];
     }
 
@@ -143,6 +149,12 @@ class StoreRamadanIftarRequest extends FormRequest
             $this->validateBranchReference($validator, LocalCommunity::class, 'local_community_id', $branchId);
             $this->validateBranchUsers($validator, $branchId);
             $this->validateConditionalLookups($validator);
+            foreach ($this->input('execution_needs', []) as $i => $need) {
+                if (! ($need['is_required'] ?? false)) continue;
+                if (! ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->whereKey($need['execution_need_type_id'])->exists()) {
+                    $validator->errors()->add("execution_needs.$i.execution_need_type_id", __('validation.exists', ['attribute' => 'execution need type']));
+                }
+            }
         });
     }
 

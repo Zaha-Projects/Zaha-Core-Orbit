@@ -7,6 +7,7 @@ use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\TargetGroup;
 use App\Models\User;
+use App\Models\ExecutionNeedType;
 use App\Modules\Events\Http\Requests\Ramadan\StoreRamadanIftarRequest;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
@@ -57,6 +58,7 @@ class RamadanIftarController extends Controller
         $ramadanIftar->load([
             'targetGroupSelections', 'meals.items', 'gifts', 'programSegments',
             'executionTeams.members', 'volunteerRequirements', 'supplies',
+            'executionNeeds.executionNeedType',
         ]);
 
         return view('pages.events.ramadan.edit', $this->formOptions($request, $ramadanIftar));
@@ -104,6 +106,7 @@ class RamadanIftarController extends Controller
             'locationTypes' => RamadanIftar::locationTypes(),
             'hostTypes' => RamadanIftar::hostTypes(),
             'mealItemTypes' => RamadanIftarMealItem::types(),
+            'executionNeedTypes' => ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->orderBy('sort_order')->get(),
         ];
     }
 }
