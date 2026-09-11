@@ -184,7 +184,7 @@ class RamadanIftarPlanningService
     private function assertIdsBelong(string $key, array $rows, $query): void
     {
         $ids = collect($rows)->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique();
-        if ($ids->isNotEmpty() && $query->whereKey($ids)->count() !== $ids->count()) $this->invalidOwnedId($key);
+        if ($ids->isNotEmpty() && $query->whereKey($ids->all())->count() !== $ids->count()) $this->invalidOwnedId($key);
     }
 
     private function invalidOwnedId(string $key): never

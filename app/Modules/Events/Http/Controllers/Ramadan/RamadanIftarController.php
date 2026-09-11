@@ -19,7 +19,12 @@ use Illuminate\Http\Request;
 
 class RamadanIftarController extends Controller
 {
-    public function __construct(private readonly RamadanIftarPlanningService $planning) {}
+    private RamadanIftarPlanningService $planning;
+
+    public function __construct(RamadanIftarPlanningService $planning)
+    {
+        $this->planning = $planning;
+    }
 
     public function create(Request $request)
     {

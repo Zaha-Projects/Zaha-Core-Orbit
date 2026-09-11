@@ -135,7 +135,8 @@ class RamadanIftarPlanningFlowTest extends TestCase
             ['supplies' => [['id' => $foreignSupply->id, 'item_name' => 'Hacked', 'planned_quantity' => 1]]],
             ['target_groups' => [['id' => $foreignTarget->id, 'target_group_id' => $foreignTarget->target_group_id, 'planned_count' => 1]]],
         ] as $override) {
-            $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftarA), $this->payload($branch, $officer, $organization, $override))->assertSessionHasErrors();
+            $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftarA), $this->payload($branch, $officer, $organization, array_merge(['title' => 'Tampered'], $override)))->assertSessionHasErrors();
+            $this->assertSame('Ramadan Plan', $iftarA->fresh()->title);
         }
         $this->assertSame('Protected', $foreignMeal->fresh()->description);
         $this->assertSame('Protected', $foreignTeam->fresh()->name);

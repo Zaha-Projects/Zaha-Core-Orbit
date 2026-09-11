@@ -7,15 +7,15 @@ $definitions = [
 ];
 @endphp
 @foreach($definitions as $collection => $fields)
-<div class="card mb-3" data-repeat="{{$collection}}"><div class="card-header d-flex justify-content-between"><strong>{{ str($collection)->replace('_',' ')->title() }}</strong><button type="button" class="btn btn-sm btn-outline-primary add-row">Add</button></div><div class="card-body">
+<div class="card mb-3" data-repeat="{{$collection}}"><div class="card-header d-flex justify-content-between"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $collection)) }}</strong><button type="button" class="btn btn-sm btn-outline-primary add-row">Add</button></div><div class="card-body">
 @foreach($collections[$collection] as $i => $row)
 <div class="planning-row row g-2 border rounded p-2 mb-2"><input type="hidden" name="{{$collection}}[{{$i}}][id]" value="{{$row['id'] ?? ''}}">
 @foreach($fields as $field)<div class="col-md-3">
-@if(in_array($field,['planned_quantity','planned_count','duration_minutes','sort_order']))<input type="number" min="0" class="form-control" name="{{$collection}}[{{$i}}][{{$field}}]" value="{{$row[$field] ?? 0}}" placeholder="{{str($field)->replace('_',' ')}}">
+@if(in_array($field,['planned_quantity','planned_count','duration_minutes','sort_order']))<input type="number" min="0" class="form-control" name="{{$collection}}[{{$i}}][{{$field}}]" value="{{$row[$field] ?? 0}}" placeholder="{{str_replace('_', ' ', $field)}}">
 @elseif($field === 'has_supporting_entity')<select class="form-select" name="{{$collection}}[{{$i}}][{{$field}}]"><option value="0">No supporter</option><option value="1" @selected($row[$field] ?? false)>Supported</option></select>
 @elseif($field === 'executor_user_id')<select class="form-select" name="{{$collection}}[{{$i}}][{{$field}}]"><option value="">External/none</option>@foreach($users as $user)<option value="{{$user->id}}" @selected(($row[$field]??null)==$user->id)>{{$user->name}}</option>@endforeach</select>
 @elseif($field === 'beneficiary_segment_id')<select class="form-select" name="{{$collection}}[{{$i}}][{{$field}}]"><option value="">—</option>@foreach($beneficiarySegments as $segment)<option value="{{$segment->id}}" @selected(($row[$field]??null)==$segment->id)>{{$segment->name_ar}}</option>@endforeach</select>
-@else<input class="form-control" name="{{$collection}}[{{$i}}][{{$field}}]" value="{{$row[$field] ?? ''}}" placeholder="{{str($field)->replace('_',' ')}}">@endif
+@else<input class="form-control" name="{{$collection}}[{{$i}}][{{$field}}]" value="{{$row[$field] ?? ''}}" placeholder="{{str_replace('_', ' ', $field)}}">@endif
 </div>@endforeach<button type="button" class="btn btn-outline-danger col-auto remove-row">×</button></div>
 @endforeach
 </div></div>

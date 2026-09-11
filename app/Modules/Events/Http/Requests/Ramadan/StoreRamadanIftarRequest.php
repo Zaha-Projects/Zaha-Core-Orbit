@@ -75,7 +75,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.source_name' => ['nullable', 'string', 'max:255'],
             'meals.*.restaurant_name' => ['nullable', 'string', 'max:255'],
             'meals.*.restaurant_contact' => ['nullable', 'string', 'max:50'],
-            'meals.*.estimated_value' => ['nullable', 'decimal:0,2', 'min:0'],
+            'meals.*.estimated_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'meals.*.items' => ['array'],
             'meals.*.items.*.id' => ['nullable', 'integer'],
             'meals.*.items.*.name' => ['required', 'string', 'max:255'],
@@ -89,7 +89,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'gifts.*.planned_quantity' => ['required', 'integer', 'min:0'],
             'gifts.*.has_supporting_entity' => ['required', 'boolean'],
             'gifts.*.supporting_entity_name' => ['nullable', 'string', 'max:255'],
-            'gifts.*.unit_value' => ['nullable', 'decimal:0,2', 'min:0'],
+            'gifts.*.unit_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'program_segments' => ['present', 'array'],
             'program_segments.*.id' => ['nullable', 'integer'],
             'program_segments.*.name' => ['required', 'string', 'max:255'],
@@ -124,14 +124,14 @@ class StoreRamadanIftarRequest extends FormRequest
             'supplies.*.planned_quantity' => ['required', 'integer', 'min:0'],
             'supplies.*.provider_type' => ['nullable', 'string', 'max:50'],
             'supplies.*.provider_name' => ['nullable', 'string', 'max:255'],
-            'supplies.*.estimated_value' => ['nullable', 'decimal:0,2', 'min:0'],
+            'supplies.*.estimated_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'supplies.*.notes' => ['nullable', 'string'],
         ];
     }
 
-    public function after(): array
+    public function withValidator(Validator $validator): void
     {
-        return [function (Validator $validator): void {
+        $validator->after(function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) return;
             $branchId = (int) $this->input('branch_id');
             if (! $this->canAccessBranch($branchId)) $validator->errors()->add('branch_id', __('validation.exists', ['attribute' => 'branch']));
@@ -143,7 +143,7 @@ class StoreRamadanIftarRequest extends FormRequest
             $this->validateBranchReference($validator, LocalCommunity::class, 'local_community_id', $branchId);
             $this->validateBranchUsers($validator, $branchId);
             $this->validateConditionalLookups($validator);
-        }];
+        });
     }
 
     private function canAccessBranch(int $branchId): bool
@@ -167,7 +167,7 @@ class StoreRamadanIftarRequest extends FormRequest
             foreach ($team['members'] ?? [] as $j => $member) if (! empty($member['user_id'])) $paths["execution_teams.$i.members.$j.user_id"] = $member['user_id'];
         }
         foreach ($paths as $path => $id) {
-            if ($id && ! User::query()->whereKey($id)->where(function ($q) use ($branchId) { $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)); })->exists()) $validator->errors()->add($path, __('validation.exists', ['attribute' => $path]));
+            if ($id && ! User::query()->whereKey($id)->where('status', 'active')->where(function ($q) use ($branchId) { $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)); })->exists()) $validator->errors()->add($path, __('validation.exists', ['attribute' => $path]));
         }
     }
 
@@ -189,6 +189,12 @@ class StoreRamadanIftarRequest extends FormRequest
                 $segment = BeneficiarySegment::query()->active()->find($segmentId);
                 if (! $segment) $validator->errors()->add("target_groups.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'beneficiary segment']));
                 elseif ($segment->is_other && blank($row['segment_custom_text'] ?? null)) $validator->errors()->add("target_groups.$i.segment_custom_text", __('validation.required', ['attribute' => 'segment other']));
+            }
+        }
+        foreach ($this->input('volunteer_requirements', []) as $i => $requirement) {
+            $segmentId = $requirement['beneficiary_segment_id'] ?? null;
+            if ($segmentId && ! BeneficiarySegment::query()->active()->whereKey($segmentId)->exists()) {
+                $validator->errors()->add("volunteer_requirements.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'beneficiary segment']));
             }
         }
         foreach ($this->input('gifts', []) as $i => $gift) if (($gift['has_supporting_entity'] ?? false) && blank($gift['supporting_entity_name'] ?? null)) $validator->errors()->add("gifts.$i.supporting_entity_name", __('validation.required', ['attribute' => 'supporting entity']));

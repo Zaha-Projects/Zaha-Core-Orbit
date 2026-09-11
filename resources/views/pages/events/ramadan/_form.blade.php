@@ -30,7 +30,7 @@
             <div class="col-md-6"><label>Local community</label><select class="form-select" name="local_community_id"><option value="">—</option>@foreach($localCommunities as $item)<option value="{{ $item->id }}" @selected($value('local_community_id') == $item->id)>{{ $item->name }}</option>@endforeach</select></div>
             <div class="col-md-6"><label>Mobilization method</label><select class="form-select" name="mobilization_method_id"><option value="">—</option>@foreach($mobilizationMethods as $item)<option value="{{ $item->id }}" @selected($value('mobilization_method_id') == $item->id)>{{ $item->name_ar }}</option>@endforeach</select></div>
             <div class="col-md-6"><label>Other mobilization</label><input class="form-control" name="mobilization_method_other" value="{{ $value('mobilization_method_other') }}"></div>
-            @foreach(['address','description','google_maps_url','contact_name','contact_phone','supporting_entity_name'] as $field)<div class="col-md-6"><label>{{ str($field)->replace('_',' ')->title() }}</label><input class="form-control" name="{{ $field }}" value="{{ $value($field) }}"></div>@endforeach
+            @foreach(['address','description','google_maps_url','contact_name','contact_phone','supporting_entity_name'] as $field)<div class="col-md-6"><label>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $field)) }}</label><input class="form-control" name="{{ $field }}" value="{{ $value($field) }}"></div>@endforeach
         </div></div>
 
         @php $rows = $collections['target_groups']; @endphp
