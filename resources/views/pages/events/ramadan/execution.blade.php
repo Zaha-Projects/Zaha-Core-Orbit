@@ -4,7 +4,7 @@
     $attendees = $ramadanIftar->attendees->concat([new \App\Modules\Events\Models\RamadanIftarAttendee]);
 @endphp
 <div class="container py-4">
-    <h1 class="h3">Ramadan Iftar execution</h1>
+    <div class="d-flex justify-content-between"><h1 class="h3">Ramadan Iftar execution</h1><a href="{{ route('events.ramadan.iftars.show', $ramadanIftar) }}">Back to Iftar</a></div>
     <p class="text-muted">Sensitive attendance and actual results for {{ $ramadanIftar->title }} · {{ optional($ramadanIftar->branch)->name }}</p>
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif

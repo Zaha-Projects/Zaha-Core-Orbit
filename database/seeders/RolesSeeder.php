@@ -175,6 +175,7 @@ class RolesSeeder extends Seeder
             'followup_officer' => [
                 'ramadan_iftars.view',
                 'ramadan_iftars.execute',
+                'ramadan_iftars.monitor',
                 'agenda.view',
                 'monthly_activities.view',
                 'monthly_activities.view_other_branches',

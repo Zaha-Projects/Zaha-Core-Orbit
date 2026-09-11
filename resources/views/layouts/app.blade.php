@@ -91,6 +91,7 @@
             @if($isFollowupOfficer)
             <li class="side-item {{ request()->routeIs('followup.dashboard') ? 'selected' : '' }}"><a href="{{ route('followup.dashboard') }}"><i class="fas fa-gauge-high"></i><span>{{ __('evaluation.followup.sidebar.dashboard') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('followup.monthly-plans*') ? 'selected' : '' }}"><a href="{{ route('followup.monthly-plans') }}"><i class="fas fa-calendar-days"></i><span>{{ __('evaluation.followup.sidebar.monthly_plans') }}</span></a></li>
+            @can('ramadan_iftars.view')<li class="side-item {{ request()->routeIs('events.ramadan.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>Ramadan Iftars</span></a></li>@endcan
             <li class="side-item {{ request()->routeIs('followup.awaiting-evaluation') || request()->routeIs('evaluations.verification.*') || request()->routeIs('evaluations.create') ? 'selected' : '' }}"><a href="{{ route('followup.awaiting-evaluation') }}"><i class="fas fa-hourglass-half"></i><span>{{ __('evaluation.followup.sidebar.awaiting_evaluation') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('followup.evaluations.*') || request()->routeIs('evaluations.show') ? 'selected' : '' }}"><a href="{{ route('followup.evaluations.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('evaluation.followup.sidebar.previous_evaluations') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}"><a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>{{ __('evaluation.followup.sidebar.user_directory') }}</span></a></li>
@@ -126,6 +127,12 @@
             @canany(['monthly_activities.view','monthly_plan.view'])
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
+            @can('ramadan_iftars.view')
+                <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>Ramadan Iftars</span></a></li>
+            @endcan
+            @can('ramadan_iftars.approve')
+                <li class="side-item {{ request()->routeIs('events.ramadan.approvals.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.approvals.index') }}"><i class="fas fa-square-check"></i><span>Ramadan Approvals</span></a></li>
+            @endcan
             @if(! $isRelationsManagerSidebar && $user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.returned_feedback') }}"><i class="fas fa-reply-all"></i><span>طلبات راجعة للفرع</span></a></li>
             @endif
