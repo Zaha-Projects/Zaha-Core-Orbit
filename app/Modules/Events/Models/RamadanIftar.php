@@ -64,6 +64,7 @@ class RamadanIftar extends Model
         'execution_status',
         'version_number',
         'parent_version_id',
+        'guidance_version_id',
         'guidance_accepted_at',
         'submitted_at',
         'approved_at',
@@ -82,6 +83,7 @@ class RamadanIftar extends Model
         'expected_attendance' => 'integer',
         'actual_attendance' => 'integer',
         'version_number' => 'integer',
+        'guidance_version_id' => 'integer',
         'guidance_accepted_at' => 'datetime',
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
@@ -131,6 +133,18 @@ class RamadanIftar extends Model
     public function versions()
     {
         return $this->hasMany(self::class, 'parent_version_id');
+    }
+
+    public function guidanceVersion()
+    {
+        return $this->belongsTo(EventGuidanceVersion::class, 'guidance_version_id');
+    }
+
+    public function hasValidGuidanceAcceptance(): bool
+    {
+        return $this->guidance_version_id !== null
+            && $this->guidance_accepted_at !== null
+            && $this->guidanceVersion()->where('code', EventGuidanceVersion::RAMADAN_IFTAR)->exists();
     }
 
     public function targetGroupSelections()

@@ -68,6 +68,7 @@ use App\Http\Controllers\Web\Evaluation\EvaluationDashboardController;
 use App\Http\Controllers\Web\Evaluation\EvaluationFormsController;
 use App\Http\Controllers\Roles\FollowupOfficer\FollowupWorkspaceController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanGuidanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -209,6 +210,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [RamadanIftarController::class, 'store'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|monthly_activities.create')->name('store');
         Route::get('/{ramadanIftar}/edit', [RamadanIftarController::class, 'edit'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|monthly_activities.edit')->whereNumber('ramadanIftar')->name('edit');
         Route::put('/{ramadanIftar}', [RamadanIftarController::class, 'update'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|monthly_activities.edit')->whereNumber('ramadanIftar')->name('update');
+    });
+    Route::prefix('dashboard/events/ramadan/guidance')->name('events.ramadan.guidance.')->middleware(['branch.isolation', 'role_or_permission:relations_manager|relations_officer|super_admin|monthly_activities.create'])->group(function () {
+        Route::get('/', [RamadanGuidanceController::class, 'show'])->name('show');
+        Route::post('/accept', [RamadanGuidanceController::class, 'accept'])->name('accept');
     });
 
     Route::get('/dashboard/relations/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.index');

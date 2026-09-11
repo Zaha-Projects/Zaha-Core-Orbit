@@ -15,27 +15,36 @@ use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Services\RamadanIftarPlanningService;
+use App\Modules\Events\Services\RamadanGuidanceAcceptanceService;
 use Illuminate\Http\Request;
 
 class RamadanIftarController extends Controller
 {
     private RamadanIftarPlanningService $planning;
+    private RamadanGuidanceAcceptanceService $guidanceAcceptance;
 
-    public function __construct(RamadanIftarPlanningService $planning)
+    public function __construct(RamadanIftarPlanningService $planning, RamadanGuidanceAcceptanceService $guidanceAcceptance)
     {
         $this->planning = $planning;
+        $this->guidanceAcceptance = $guidanceAcceptance;
     }
 
     public function create(Request $request)
     {
         $this->authorizePlanningAccess($request);
 
+        if (! $this->guidanceAcceptance->hasAcceptedCurrent($request)) {
+            return redirect()->route('events.ramadan.guidance.show');
+        }
+
         return view('pages.events.ramadan.create', $this->formOptions($request));
     }
 
     public function store(StoreRamadanIftarRequest $request)
     {
-        $iftar = $this->planning->create($request->validated(), $request->user());
+        [$guidance, $acceptedAt] = $this->guidanceAcceptance->acceptedCurrentOrFail($request);
+        $iftar = $this->planning->create($request->validated(), $request->user(), $guidance, $acceptedAt);
+        $this->guidanceAcceptance->forgetAcceptance($request);
 
         return redirect()->route('events.ramadan.iftars.edit', $iftar)
             ->with('success', 'Ramadan Iftar plan created successfully.');

@@ -3,6 +3,7 @@
 namespace App\Modules\Events\Services;
 
 use App\Modules\Events\Models\EventSubjectTypes;
+use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\ExecutionTeam;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMeal;
@@ -25,9 +26,9 @@ class RamadanIftarPlanningService
         'local_community_id', 'mobilization_method_id', 'mobilization_method_other',
     ];
 
-    public function create(array $data, User $creator): RamadanIftar
+    public function create(array $data, User $creator, EventGuidanceVersion $guidance, string $acceptedAt): RamadanIftar
     {
-        return DB::transaction(function () use ($data, $creator) {
+        return DB::transaction(function () use ($data, $creator, $guidance, $acceptedAt) {
             $iftar = RamadanIftar::query()->create(array_merge(
                 Arr::only($data, self::CORE_FIELDS),
                 $this->derivedTotals($data),
@@ -36,6 +37,8 @@ class RamadanIftarPlanningService
                     'status' => RamadanIftar::STATUS_DRAFT,
                     'execution_status' => RamadanIftar::EXECUTION_STATUS_PLANNED,
                     'version_number' => 1,
+                    'guidance_version_id' => $guidance->getKey(),
+                    'guidance_accepted_at' => $acceptedAt,
                 ],
             ));
 

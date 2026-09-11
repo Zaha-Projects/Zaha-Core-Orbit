@@ -9,6 +9,7 @@ use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\ExecutionTeam;
+use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMeal;
 use App\Modules\Events\Models\SubjectSupply;
@@ -28,6 +29,7 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $officer = $this->userWithRole('relations_officer', $branch, ['branches.view.own']);
         $staff = $this->userWithRole('staff', $branch);
 
+        $this->acceptCurrentGuidance($officer);
         $this->actingAs($officer)->get(route('events.ramadan.iftars.create'))->assertOk()->assertViewIs('pages.events.ramadan.create');
         $this->actingAs($staff)->get(route('events.ramadan.iftars.create'))->assertForbidden();
     }
@@ -39,6 +41,7 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $organization = CommunityOrganization::query()->create(['branch_id' => $branch->id, 'name' => 'Host']);
         $group = TargetGroup::query()->create(['name' => 'Families', 'is_active' => true, 'is_ramadan_iftar' => true]);
         $segment = BeneficiarySegment::query()->create(['code' => 'children', 'name_ar' => 'أطفال', 'name_en' => 'Children', 'dimension' => 'age']);
+        $this->acceptCurrentGuidance($officer);
 
         $payload = $this->payload($branch, $officer, $organization, [
             'created_by' => User::factory()->create()->id,
@@ -79,6 +82,7 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $otherGroup = TargetGroup::query()->create(['name' => 'Other', 'is_other' => true, 'is_active' => true, 'is_ramadan_iftar' => true]);
         $otherSegment = BeneficiarySegment::query()->create(['code' => 'other', 'name_ar' => 'أخرى', 'name_en' => 'Other', 'dimension' => 'other', 'is_other' => true]);
         $otherMobilization = \App\Modules\Events\Models\MobilizationMethod::query()->create(['code' => 'other', 'name_ar' => 'أخرى', 'name_en' => 'Other', 'is_other' => true]);
+        $this->acceptCurrentGuidance($officer);
 
         $this->actingAs($officer)->post(route('events.ramadan.iftars.store'), $this->payload($branch, $officer, $foreignOrganization, [
             'mobilization_method_id' => $otherMobilization->id,
@@ -172,5 +176,23 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $user = User::factory()->create(['branch_id' => $branch->id]);
         $user->assignRole($role);
         return $user;
+    }
+
+    private function acceptCurrentGuidance(User $user): EventGuidanceVersion
+    {
+        $guidance = EventGuidanceVersion::query()->create([
+            'code' => EventGuidanceVersion::RAMADAN_IFTAR,
+            'version_number' => (int) EventGuidanceVersion::query()->max('version_number') + 1,
+            'title' => 'Ramadan guidance',
+            'content' => 'Approved test guidance.',
+            'is_active' => true,
+            'published_at' => now()->subMinute(),
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)->get(route('events.ramadan.guidance.show'))->assertOk();
+        $this->actingAs($user)->post(route('events.ramadan.guidance.accept'), ['accept_guidance' => '1'])->assertRedirect(route('events.ramadan.iftars.create'));
+
+        return $guidance;
     }
 }

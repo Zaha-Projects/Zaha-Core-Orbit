@@ -2,9 +2,9 @@
 
 ## Outcome
 
-Phase 1.10 is blocked before production lifecycle routes are introduced.
+Phase 1.10 remains blocked before production lifecycle routes are introduced.
 
-- **GUIDANCE BLOCKS SUBMISSION.** The approved architecture requires the active guidance version to be displayed and accepted before creation, and records both `guidance_version_id` and `guidance_accepted_at`. The current aggregate deliberately has no compatible guidance-version foreign key or immutable guidance source. A timestamp or unversioned checkbox would not satisfy that contract.
+- **GUIDANCE BLOCKER RESOLVED.** `event_guidance_versions` now provides immutable, published Ramadan guidance versions; create/store requires server-controlled acceptance of the current version and `ramadan_iftars.guidance_version_id` retains the exact accepted version.
 - **EXECUTION NEEDS BLOCK SUBMISSION.** The approved sequence requires execution needs to be captured with the rest of the planning details before the aggregate is submitted. Phase 1.2 established that the current Monthly Activities config/JSON representation has no safe canonical mapping to shared execution-need definitions. Ramadan must not copy that legacy storage or invent `subject_execution_needs` mappings in this phase.
 
 Consequently, no submit, approval, decision, or notification endpoint is added. The existing draft-only planning flow remains unchanged and cannot imply that an incomplete plan is submission-ready.
@@ -31,13 +31,12 @@ No dedicated Ramadan permissions are seeded in this blocked slice. Adding `ramad
 
 Only the existing `draft` planning state is active. No `submitted`, `changes_requested`/`returned`, `approved`, or `rejected` Ramadan transition is introduced. `submitted_at`, `approved_at`, and `closed_at` remain untouched, and `execution_status` remains `planned`.
 
-No planning, execution, monitoring, attendance, version, or change-request data is modified by this gate decision. There are no new domain tables or migrations.
+Guidance acceptance now augments new draft creation only. Submission, approval, execution, monitoring, attendance, plan versioning, and change-request data remain untouched; the only new schema is the versioned guidance source and its restrictive Ramadan Iftar reference.
 
 ## Required prerequisite
 
 Before Phase 1.10 can resume:
 
-1. implement an immutable/versioned guidance source and bind acceptance to the exact version;
-2. normalize Execution Needs with approved canonical codes and a compatibility mapping, then provide the shared Ramadan subject storage required by the architecture;
-3. confirm the Ramadan approval actor matrix, add dedicated permissions and a `ramadan_iftars` workflow definition, and minimally generalize branch-scoped step eligibility;
-4. then implement and test atomic submission, filtered-before-pagination queues, current-step decisions, return/resubmission, final approval timestamps, entity collision protection, and server-side edit locking.
+1. normalize Execution Needs with approved canonical codes and a compatibility mapping, then provide the shared Ramadan subject storage required by the architecture;
+2. confirm the Ramadan approval actor matrix, add dedicated permissions and a `ramadan_iftars` workflow definition, and minimally generalize branch-scoped step eligibility;
+3. then implement and test atomic submission, filtered-before-pagination queues, current-step decisions, return/resubmission, final approval timestamps, entity collision protection, and server-side edit locking.
