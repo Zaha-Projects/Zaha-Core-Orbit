@@ -5,6 +5,7 @@ namespace App\Modules\Events\Models;
 use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\User;
+use App\Models\WorkflowInstance;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,6 +15,10 @@ class RamadanIftar extends Model
     use HasFactory, SoftDeletes;
 
     public const STATUS_DRAFT = 'draft';
+    public const STATUS_SUBMITTED = 'submitted';
+    public const STATUS_CHANGES_REQUESTED = 'changes_requested';
+    public const STATUS_APPROVED = 'approved';
+    public const WORKFLOW_MODULE = 'ramadan_iftars';
     public const EXECUTION_STATUS_PLANNED = 'planned';
 
     public const LOCATION_INSIDE_CENTER = 'inside_center';
@@ -147,6 +152,11 @@ class RamadanIftar extends Model
             && $this->guidanceVersion()->where('code', EventGuidanceVersion::RAMADAN_IFTAR)->exists();
     }
 
+    public function isPlanningEditable(): bool
+    {
+        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_CHANGES_REQUESTED], true);
+    }
+
     public function targetGroupSelections()
     {
         return $this->hasMany(SubjectTargetGroup::class, 'subject_id')
@@ -195,6 +205,13 @@ class RamadanIftar extends Model
     {
         return $this->hasMany(SubjectExecutionNeed::class, 'subject_id')
             ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
+    }
+
+    public function workflowInstance()
+    {
+        return $this->hasOne(WorkflowInstance::class, 'entity_id')
+            ->where('entity_type', self::class)
+            ->whereHas('workflow', fn ($query) => $query->where('module', self::WORKFLOW_MODULE)->where('is_active', true));
     }
 
     public function monitoringReports()

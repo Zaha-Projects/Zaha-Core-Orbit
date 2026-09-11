@@ -23,6 +23,12 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'monthly_activities.delete', 'module' => 'monthly_activities', 'action' => 'delete', 'name_ar' => 'حذف الخطة الشهرية', 'name_en' => 'Delete monthly activities'],
             ['name' => 'monthly_activities.approve', 'module' => 'monthly_activities', 'action' => 'approve', 'name_ar' => 'اعتماد الخطة الشهرية', 'name_en' => 'Approve monthly activities'],
 
+            ['name' => 'ramadan_iftars.view', 'module' => 'ramadan_iftars', 'action' => 'view', 'name_ar' => 'عرض خطط إفطار رمضان', 'name_en' => 'View Ramadan Iftar plans'],
+            ['name' => 'ramadan_iftars.create', 'module' => 'ramadan_iftars', 'action' => 'create', 'name_ar' => 'إنشاء خطة إفطار رمضان', 'name_en' => 'Create Ramadan Iftar plans'],
+            ['name' => 'ramadan_iftars.edit', 'module' => 'ramadan_iftars', 'action' => 'edit', 'name_ar' => 'تعديل خطة إفطار رمضان', 'name_en' => 'Edit Ramadan Iftar plans'],
+            ['name' => 'ramadan_iftars.submit', 'module' => 'ramadan_iftars', 'action' => 'submit', 'name_ar' => 'إرسال خطة إفطار رمضان', 'name_en' => 'Submit Ramadan Iftar plans'],
+            ['name' => 'ramadan_iftars.approve', 'module' => 'ramadan_iftars', 'action' => 'approve', 'name_ar' => 'اعتماد خطة إفطار رمضان', 'name_en' => 'Approve Ramadan Iftar plans'],
+
             ['name' => 'evaluation.view', 'module' => 'evaluation', 'action' => 'view', 'name_ar' => 'عرض التقييم', 'name_en' => 'View evaluation'],
             ['name' => 'evaluation.submit', 'module' => 'evaluation', 'action' => 'submit', 'name_ar' => 'إرسال التقييم', 'name_en' => 'Submit evaluation'],
             ['name' => 'evaluation.manage', 'module' => 'evaluation', 'action' => 'manage', 'name_ar' => 'إدارة التقييم', 'name_en' => 'Manage evaluation'],

@@ -219,6 +219,19 @@ class WorkflowSeeder extends Seeder
                     ],
                 ],
             ],
+            [
+                'code' => 'ramadan_iftar_approval',
+                'module' => 'ramadan_iftars',
+                'name_ar' => 'سير اعتماد خطة إفطار رمضان',
+                'name_en' => 'Ramadan Iftar Approval Workflow',
+                'steps' => [
+                    ['step_key' => 'ramadan_relations_officer_submit', 'step_order' => 1, 'approval_level' => 1, 'name_ar' => 'إنشاء وإرسال مسؤول العلاقات', 'name_en' => 'Relations Officer Draft & Submit', 'step_type' => 'sub', 'role' => 'relations_officer', 'is_editable' => true],
+                    ['step_key' => 'ramadan_supervisor_review', 'step_order' => 2, 'approval_level' => 2, 'name_ar' => 'اعتماد رئيس الفرع', 'name_en' => 'Supervisor Approval', 'step_type' => 'main', 'role' => 'supervisor', 'is_editable' => false],
+                    ['step_key' => 'ramadan_branch_coordinator_review', 'step_order' => 3, 'approval_level' => 3, 'name_ar' => 'اعتماد منسق الفروع', 'name_en' => 'Branch Coordinator Approval', 'step_type' => 'main', 'role' => 'branch_coordinator', 'is_editable' => false],
+                    ['step_key' => 'ramadan_relations_manager_review', 'step_order' => 4, 'approval_level' => 4, 'name_ar' => 'اعتماد مدير العلاقات الرئيسي', 'name_en' => 'Primary Relations Manager Approval', 'step_type' => 'main', 'role' => 'relations_manager', 'is_editable' => false],
+                    ['step_key' => 'ramadan_executive_manager_final_approval', 'step_order' => 5, 'approval_level' => 5, 'name_ar' => 'الاعتماد النهائي من المدير التنفيذي', 'name_en' => 'Executive Manager Final Approval', 'step_type' => 'main', 'role' => 'executive_manager', 'is_editable' => false],
+                ],
+            ],
         ];
     }
 }

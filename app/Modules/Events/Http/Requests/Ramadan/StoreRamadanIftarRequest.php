@@ -22,7 +22,7 @@ class StoreRamadanIftarRequest extends FormRequest
     {
         $user = $this->user();
         $iftar = $this->route('ramadanIftar');
-        $permission = $iftar ? 'monthly_activities.edit' : 'monthly_activities.create';
+        $permission = $iftar ? 'ramadan_iftars.edit' : 'ramadan_iftars.create';
 
         if (! $user || (! $user->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']) && ! $user->can($permission))) {
             return false;
@@ -150,7 +150,6 @@ class StoreRamadanIftarRequest extends FormRequest
             $this->validateBranchUsers($validator, $branchId);
             $this->validateConditionalLookups($validator);
             foreach ($this->input('execution_needs', []) as $i => $need) {
-                if (! ($need['is_required'] ?? false)) continue;
                 if (! ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->whereKey($need['execution_need_type_id'])->exists()) {
                     $validator->errors()->add("execution_needs.$i.execution_need_type_id", __('validation.exists', ['attribute' => 'execution need type']));
                 }

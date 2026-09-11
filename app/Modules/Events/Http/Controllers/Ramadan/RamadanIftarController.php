@@ -54,7 +54,7 @@ class RamadanIftarController extends Controller
     public function edit(Request $request, RamadanIftar $ramadanIftar)
     {
         $this->authorizePlanningAccess($request, $ramadanIftar);
-        abort_unless($ramadanIftar->status === RamadanIftar::STATUS_DRAFT, 403);
+        abort_unless($ramadanIftar->isPlanningEditable(), 403);
         $ramadanIftar->load([
             'targetGroupSelections', 'meals.items', 'gifts', 'programSegments',
             'executionTeams.members', 'volunteerRequirements', 'supplies',
@@ -75,7 +75,7 @@ class RamadanIftarController extends Controller
     private function authorizePlanningAccess(Request $request, ?RamadanIftar $iftar = null): void
     {
         $user = $request->user();
-        $permission = $iftar ? 'monthly_activities.edit' : 'monthly_activities.create';
+        $permission = $iftar ? 'ramadan_iftars.edit' : 'ramadan_iftars.create';
         abort_unless($user && ($user->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']) || $user->can($permission)), 403);
         if ($iftar && ! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
             abort_unless($user->hasAccessToScopedBranch((int) $iftar->branch_id), 403);

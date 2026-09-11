@@ -52,8 +52,8 @@ class RamadanIftarPlanningService
 
     public function update(RamadanIftar $iftar, array $data): RamadanIftar
     {
-        if ($iftar->status !== RamadanIftar::STATUS_DRAFT) {
-            throw ValidationException::withMessages(['status' => 'Only draft Ramadan Iftars may be edited.']);
+        if (! $iftar->isPlanningEditable()) {
+            throw ValidationException::withMessages(['status' => 'Only draft or returned Ramadan Iftars may be edited.']);
         }
 
         return DB::transaction(function () use ($iftar, $data) {
@@ -101,8 +101,7 @@ class RamadanIftarPlanningService
         $this->syncSimple($iftar->supplies(), $data['supplies'], [
             'item_name', 'planned_quantity', 'provider_type', 'provider_name', 'estimated_value', 'notes',
         ], fn () => ['status' => SubjectSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
-        $requiredNeeds = collect($data['execution_needs'])->filter(fn (array $need): bool => (bool) $need['is_required'])->values()->all();
-        $this->syncSimple($iftar->executionNeeds(), $requiredNeeds, [
+        $this->syncSimple($iftar->executionNeeds(), array_values($data['execution_needs']), [
             'execution_need_type_id', 'is_required', 'planned_details',
         ], fn () => [
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,

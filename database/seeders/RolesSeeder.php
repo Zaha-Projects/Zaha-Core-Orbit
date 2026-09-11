@@ -94,6 +94,8 @@ class RolesSeeder extends Seeder
         return [
             'super_admin' => ['*'],
             'executive_manager' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
                 'agenda.view',
                 'agenda.approve',
                 'monthly_activities.view',
@@ -116,6 +118,11 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'relations_manager' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.create',
+                'ramadan_iftars.edit',
+                'ramadan_iftars.submit',
+                'ramadan_iftars.approve',
                 'agenda.view',
                 'agenda.create',
                 'agenda.update',
@@ -134,6 +141,8 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'supervisor' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',
@@ -146,6 +155,10 @@ class RolesSeeder extends Seeder
                 'communications.view_media',
             ],
             'relations_officer' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.create',
+                'ramadan_iftars.edit',
+                'ramadan_iftars.submit',
                 'agenda.view',
                 'agenda.create',
                 'agenda.update',
@@ -182,6 +195,8 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'branch_coordinator' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',
