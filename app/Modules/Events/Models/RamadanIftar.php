@@ -23,6 +23,16 @@ class RamadanIftar extends Model
     public const HOST_CENTER = 'center';
     public const HOST_LOCAL_COMMUNITY = 'local_community';
 
+    public static function locationTypes(): array
+    {
+        return [self::LOCATION_INSIDE_CENTER, self::LOCATION_OUTSIDE_CENTER];
+    }
+
+    public static function hostTypes(): array
+    {
+        return [self::HOST_ASSOCIATION, self::HOST_CENTER, self::HOST_LOCAL_COMMUNITY];
+    }
+
     protected $fillable = [
         'agenda_event_id',
         'branch_id',
