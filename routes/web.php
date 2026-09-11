@@ -72,6 +72,7 @@ use App\Modules\Events\Http\Controllers\Ramadan\RamadanGuidanceController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarSubmissionController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarApprovalQueueController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarApprovalDecisionController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarExecutionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -214,6 +215,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/{ramadanIftar}/edit', [RamadanIftarController::class, 'edit'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.edit')->whereNumber('ramadanIftar')->name('edit');
         Route::put('/{ramadanIftar}', [RamadanIftarController::class, 'update'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.edit')->whereNumber('ramadanIftar')->name('update');
         Route::post('/{ramadanIftar}/submit', [RamadanIftarSubmissionController::class, 'submit'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.submit')->whereNumber('ramadanIftar')->name('submit');
+        Route::get('/{ramadanIftar}/execution', [RamadanIftarExecutionController::class, 'show'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.show');
+        Route::post('/{ramadanIftar}/start-execution', [RamadanIftarExecutionController::class, 'start'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.start');
+        Route::put('/{ramadanIftar}/execution', [RamadanIftarExecutionController::class, 'update'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.update');
     });
     Route::prefix('dashboard/events/ramadan/approvals')->name('events.ramadan.approvals.')->middleware(['branch.isolation', 'role_or_permission:supervisor|branch_coordinator|relations_manager|executive_manager|super_admin|ramadan_iftars.approve'])->group(function () {
         Route::get('/', [RamadanIftarApprovalQueueController::class, 'index'])->name('index');

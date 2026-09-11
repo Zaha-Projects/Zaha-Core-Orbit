@@ -173,6 +173,8 @@ class RolesSeeder extends Seeder
                 'communications.upload_media',
             ],
             'followup_officer' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.execute',
                 'agenda.view',
                 'monthly_activities.view',
                 'monthly_activities.view_other_branches',

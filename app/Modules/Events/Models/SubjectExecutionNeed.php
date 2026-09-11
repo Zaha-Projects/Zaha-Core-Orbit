@@ -11,6 +11,12 @@ class SubjectExecutionNeed extends Model
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+    public const STATUS_COMPLETED = 'completed';
+
+    public static function executionStatuses(): array
+    {
+        return [self::STATUS_PENDING, self::STATUS_COMPLETED];
+    }
 
     protected $fillable = [
         'subject_type',
