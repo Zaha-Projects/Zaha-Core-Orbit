@@ -67,6 +67,15 @@ use App\Http\Controllers\Web\Evaluation\ActivityEvaluationsController;
 use App\Http\Controllers\Web\Evaluation\EvaluationDashboardController;
 use App\Http\Controllers\Web\Evaluation\EvaluationFormsController;
 use App\Http\Controllers\Roles\FollowupOfficer\FollowupWorkspaceController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanGuidanceController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarSubmissionController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarApprovalQueueController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarApprovalDecisionController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarExecutionController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarWorkspaceController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarMonitoringController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanMonitoringReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -203,6 +212,39 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/relations/agenda/{agendaEvent}', [RelationsAgendaEventsController::class, 'show'])->middleware('role_or_permission:relations_manager|relations_officer|executive_manager|programs_manager|super_admin|agenda.view')->middleware('branch.isolation')->whereNumber('agendaEvent')->name('role.relations.agenda.show');
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
+    Route::prefix('dashboard/events/ramadan/iftars')->name('events.ramadan.iftars.')->middleware('branch.isolation')->group(function () {
+        Route::get('/', [RamadanIftarWorkspaceController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|executive_manager|followup_officer|super_admin|ramadan_iftars.view')->name('index');
+        Route::get('/create', [RamadanIftarController::class, 'create'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create')->name('create');
+        Route::post('/', [RamadanIftarController::class, 'store'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create')->name('store');
+        Route::get('/{ramadanIftar}/edit', [RamadanIftarController::class, 'edit'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.edit')->whereNumber('ramadanIftar')->name('edit');
+        Route::put('/{ramadanIftar}', [RamadanIftarController::class, 'update'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.edit')->whereNumber('ramadanIftar')->name('update');
+        Route::post('/{ramadanIftar}/submit', [RamadanIftarSubmissionController::class, 'submit'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.submit')->whereNumber('ramadanIftar')->name('submit');
+        Route::get('/{ramadanIftar}/execution', [RamadanIftarExecutionController::class, 'show'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.show');
+        Route::post('/{ramadanIftar}/start-execution', [RamadanIftarExecutionController::class, 'start'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.start');
+        Route::put('/{ramadanIftar}/execution', [RamadanIftarExecutionController::class, 'update'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.update');
+        Route::post('/{ramadanIftar}/complete-execution', [RamadanIftarExecutionController::class, 'complete'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.complete');
+        Route::get('/{ramadanIftar}/monitoring', [RamadanIftarMonitoringController::class, 'index'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->name('monitoring.index');
+        Route::post('/{ramadanIftar}/monitoring', [RamadanIftarMonitoringController::class, 'store'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->name('monitoring.store');
+        Route::get('/{ramadanIftar}/monitoring/{monitoringReport}', [RamadanIftarMonitoringController::class, 'edit'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->whereNumber('monitoringReport')->name('monitoring.edit');
+        Route::put('/{ramadanIftar}/monitoring/{monitoringReport}', [RamadanIftarMonitoringController::class, 'update'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->whereNumber('monitoringReport')->name('monitoring.update');
+        Route::post('/{ramadanIftar}/monitoring/{monitoringReport}/submit', [RamadanIftarMonitoringController::class, 'submit'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->whereNumber('monitoringReport')->name('monitoring.submit');
+        Route::get('/{ramadanIftar}', [RamadanIftarWorkspaceController::class, 'show'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|executive_manager|followup_officer|super_admin|ramadan_iftars.view')->whereNumber('ramadanIftar')->name('show');
+    });
+    Route::prefix('dashboard/events/ramadan/approvals')->name('events.ramadan.approvals.')->middleware(['branch.isolation', 'role_or_permission:supervisor|branch_coordinator|relations_manager|executive_manager|super_admin|ramadan_iftars.approve'])->group(function () {
+        Route::get('/', [RamadanIftarApprovalQueueController::class, 'index'])->name('index');
+        Route::get('/{ramadanIftar}', [RamadanIftarApprovalQueueController::class, 'show'])->whereNumber('ramadanIftar')->name('show');
+        Route::post('/{ramadanIftar}/decision', [RamadanIftarApprovalDecisionController::class, 'decide'])->whereNumber('ramadanIftar')->name('decision');
+    });
+    Route::prefix('dashboard/events/ramadan/monitoring-reviews')->name('events.ramadan.monitoring-reviews.')->middleware(['branch.isolation', 'role_or_permission:supervisor|super_admin|ramadan_iftars.monitor.review'])->group(function () {
+        Route::get('/', [RamadanMonitoringReviewController::class, 'index'])->name('index');
+        Route::get('/{monitoringReport}', [RamadanMonitoringReviewController::class, 'show'])->whereNumber('monitoringReport')->name('show');
+        Route::post('/{monitoringReport}/decision', [RamadanMonitoringReviewController::class, 'decide'])->whereNumber('monitoringReport')->name('decision');
+    });
+    Route::prefix('dashboard/events/ramadan/guidance')->name('events.ramadan.guidance.')->middleware(['branch.isolation', 'role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create'])->group(function () {
+        Route::get('/', [RamadanGuidanceController::class, 'show'])->name('show');
+        Route::post('/accept', [RamadanGuidanceController::class, 'accept'])->name('accept');
+    });
+
     Route::get('/dashboard/relations/monthly-activities', [ProgramsMonthlyActivitiesController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.index');
     Route::get('/dashboard/relations/monthly-activities/calendar', [ProgramsMonthlyActivitiesController::class, 'calendar'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.calendar');
     Route::get('/dashboard/relations/monthly-activities/trash', [ProgramsMonthlyActivitiesController::class, 'trash'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|volunteer_coordinator|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.trash');

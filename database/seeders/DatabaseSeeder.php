@@ -42,5 +42,6 @@ class DatabaseSeeder extends Seeder
         // $this->call(ActivityEvaluationFormSeeder::class);
 
         $this->call(CompleteRolePermissionSeeder::class);
+        $this->call(CanonicalExecutionNeedTypeSeeder::class);
     }
 }
