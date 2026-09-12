@@ -33,22 +33,15 @@ The transition is transactional, does not use `closed_at` as a completion timest
 and writes one `execution_completed` action to `WorkflowActionLog`. Repeating the
 transition is rejected, so it cannot duplicate audit records.
 
-## Closure blocker
+## Closure readiness prerequisite resolved
 
-Closure is **not implemented**. The approved architecture requires an approved
-monitoring report and resolved comparisons, but Phase 1.12 intentionally implements
-only draft/submitted monitoring reports and defines no monitoring review actor.
-Treating `submitted` as `approved`, guessing a closure actor, or deciding that every
-`mismatched` verification blocks closure would invent business rules.
+Closure is **not implemented**, but its monitoring prerequisite is now deterministic.
+The branch Supervisor reviews submitted reports under a dedicated permission;
+self-review is prohibited. A mismatch is resolved for closure when it has a
+documenting note and the Supervisor explicitly approves the report. The latest
+approved report is authoritative through `approvedMonitoringReportForClosure()`.
 
-The precise prerequisite is a Ramadan monitoring review slice that confirms:
-
-1. the monitoring approval/return actor sequence;
-2. whether documented mismatches may be approved or must be resolved;
-3. which approved report is authoritative when multiple reports exist;
-4. the closure actor after monitoring approval.
-
-Until then there is no close route and `closed_at` remains server-controlled and
+There is still no close route and `closed_at` remains server-controlled and
 unchanged. Existing closed records are treated as immutable: execution and
 monitoring writes reject them, submitted monitoring evidence remains read-only,
 and completed execution data is displayed read-only while open monitoring work may

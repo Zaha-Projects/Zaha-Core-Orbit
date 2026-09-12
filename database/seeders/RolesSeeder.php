@@ -143,6 +143,7 @@ class RolesSeeder extends Seeder
             'supervisor' => [
                 'ramadan_iftars.view',
                 'ramadan_iftars.approve',
+                'ramadan_iftars.monitor.review',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',

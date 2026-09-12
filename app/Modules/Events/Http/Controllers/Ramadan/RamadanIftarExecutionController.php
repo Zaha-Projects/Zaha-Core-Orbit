@@ -35,7 +35,7 @@ class RamadanIftarExecutionController extends Controller
         $execution->start($ramadanIftar, $request->user());
 
         return redirect()->route('events.ramadan.iftars.execution.show', $ramadanIftar)
-            ->with('success', 'Ramadan Iftar execution started.');
+            ->with('success', __('ramadan_iftars.messages.execution_started'));
     }
 
     public function update(UpdateRamadanIftarExecutionRequest $request, RamadanIftar $ramadanIftar, RamadanIftarExecutionService $execution)
@@ -43,7 +43,7 @@ class RamadanIftarExecutionController extends Controller
         $execution->update($ramadanIftar, $request->validated(), $request->user());
 
         return redirect()->route('events.ramadan.iftars.execution.show', $ramadanIftar)
-            ->with('success', 'Actual execution data saved.');
+            ->with('success', __('ramadan_iftars.messages.execution_updated'));
     }
 
     public function complete(Request $request, RamadanIftar $ramadanIftar, RamadanIftarExecutionService $execution)
@@ -52,7 +52,7 @@ class RamadanIftarExecutionController extends Controller
         $execution->complete($ramadanIftar, $request->user());
 
         return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)
-            ->with('success', 'Ramadan Iftar execution completed.');
+            ->with('success', __('ramadan_iftars.messages.execution_completed'));
     }
 
     private function authorizeExecution(Request $request, RamadanIftar $iftar, bool $write = true): void

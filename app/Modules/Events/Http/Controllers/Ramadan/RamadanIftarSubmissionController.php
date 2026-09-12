@@ -23,6 +23,6 @@ class RamadanIftarSubmissionController extends Controller
         }
 
         return redirect()->route('dashboard')
-            ->with('success', 'Ramadan Iftar submitted for approval.');
+            ->with('success', __('ramadan_iftars.messages.submitted'));
     }
 }

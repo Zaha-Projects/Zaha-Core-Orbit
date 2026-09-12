@@ -49,7 +49,9 @@ class RamadanIftarWorkspaceController extends Controller
         $canMonitor = $ramadanIftar->status === RamadanIftar::STATUS_APPROVED
             && in_array($ramadanIftar->execution_status, [RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED], true)
             && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.monitor'));
+        $canReviewMonitoring = ($user->hasRole('super_admin') || $user->can('ramadan_iftars.monitor.review'))
+            && $ramadanIftar->monitoringReports->contains('status', \App\Modules\Events\Models\MonitoringReport::STATUS_SUBMITTED);
 
-        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor'));
+        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor', 'canReviewMonitoring'));
     }
 }

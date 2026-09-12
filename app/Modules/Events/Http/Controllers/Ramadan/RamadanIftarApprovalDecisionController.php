@@ -18,6 +18,6 @@ class RamadanIftarApprovalDecisionController extends Controller
         [$ramadanIftar, $instance] = $approvals->decide($ramadanIftar, $user, (int) $data['workflow_step_id'], $data['decision'], $data['comment'] ?? null);
         $notifications->approvalDecision($instance, $ramadanIftar, $user, $data['decision'], route('events.ramadan.approvals.show', $ramadanIftar), $data['comment'] ?? null);
 
-        return redirect()->route('events.ramadan.approvals.index')->with('success', 'Ramadan Iftar workflow decision recorded.');
+        return redirect()->route('events.ramadan.approvals.index')->with('success', __('ramadan_iftars.messages.decision_recorded'));
     }
 }

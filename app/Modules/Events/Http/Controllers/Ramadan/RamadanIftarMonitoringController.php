@@ -29,7 +29,7 @@ class RamadanIftarMonitoringController extends Controller
     {
         $report = $monitoring->save($ramadanIftar, new MonitoringReport(), $request->validated(), $request->user());
 
-        return redirect()->route('events.ramadan.iftars.monitoring.edit', [$ramadanIftar, $report])->with('success', 'Monitoring report created.');
+        return redirect()->route('events.ramadan.iftars.monitoring.edit', [$ramadanIftar, $report])->with('success', __('ramadan_iftars.messages.monitoring_created'));
     }
 
     public function edit(Request $request, RamadanIftar $ramadanIftar, MonitoringReport $monitoringReport, RamadanIftarMonitoringService $monitoring)
@@ -51,7 +51,7 @@ class RamadanIftarMonitoringController extends Controller
     {
         $monitoring->save($ramadanIftar, $monitoringReport, $request->validated(), $request->user());
 
-        return back()->with('success', 'Monitoring report updated.');
+        return back()->with('success', __('ramadan_iftars.messages.monitoring_updated'));
     }
 
     public function submit(Request $request, RamadanIftar $ramadanIftar, MonitoringReport $monitoringReport, RamadanIftarMonitoringService $monitoring)
@@ -59,7 +59,7 @@ class RamadanIftarMonitoringController extends Controller
         $this->authorizeMonitoring($request, $ramadanIftar);
         $monitoring->submit($ramadanIftar, $monitoringReport, $request->user());
 
-        return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)->with('success', 'Monitoring report submitted.');
+        return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)->with('success', __('ramadan_iftars.messages.monitoring_submitted'));
     }
 
     private function authorizeMonitoring(Request $request, RamadanIftar $iftar, bool $write = true): void

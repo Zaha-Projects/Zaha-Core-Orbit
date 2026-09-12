@@ -52,19 +52,19 @@ class RamadanIftarWorkspaceMonitoringTest extends TestCase
         $planner->givePermissionTo(['ramadan_iftars.view', 'ramadan_iftars.edit', 'ramadan_iftars.submit', 'branches.view.own']);
         $draft = $this->iftar($branch, $planner, RamadanIftar::STATUS_DRAFT);
         $this->actingAs($planner)->get(route('events.ramadan.iftars.show', $draft))
-            ->assertOk()->assertSee('Edit plan')->assertSee('Submit')->assertDontSee('Start execution');
+            ->assertOk()->assertSee(__('ramadan_iftars.actions.edit'))->assertSee(__('ramadan_iftars.actions.submit'))->assertDontSee(__('ramadan_iftars.actions.start_execution'));
 
         $draft->update(['status' => RamadanIftar::STATUS_SUBMITTED]);
         $this->actingAs($planner)->get(route('events.ramadan.iftars.show', $draft))
-            ->assertOk()->assertDontSee('Edit plan')->assertDontSee('Start execution');
+            ->assertOk()->assertDontSee(__('ramadan_iftars.actions.edit'))->assertDontSee(__('ramadan_iftars.actions.start_execution'));
 
         $executor = User::factory()->create(['branch_id' => $branch->id, 'status' => 'active']);
         $executor->givePermissionTo(['ramadan_iftars.view', 'ramadan_iftars.execute', 'branches.view.own']);
         $draft->update(['status' => RamadanIftar::STATUS_APPROVED, 'execution_status' => RamadanIftar::EXECUTION_STATUS_PLANNED]);
-        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee('Start execution')->assertDontSee('Monitoring');
+        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee(__('ramadan_iftars.actions.start_execution'))->assertDontSee(__('ramadan_iftars.actions.monitoring'));
         $executor->givePermissionTo('ramadan_iftars.monitor');
         $draft->update(['execution_status' => RamadanIftar::EXECUTION_STATUS_IN_PROGRESS]);
-        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee('Execution')->assertSee('Monitoring');
+        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee(__('ramadan_iftars.actions.view_execution'))->assertSee(__('ramadan_iftars.actions.monitoring'));
 
         $wrongBranch = User::factory()->create(['branch_id' => Branch::factory()->create()->id, 'status' => 'active']);
         $wrongBranch->givePermissionTo(['ramadan_iftars.view', 'branches.view.own']);
@@ -77,6 +77,8 @@ class RamadanIftarWorkspaceMonitoringTest extends TestCase
         $this->assertStringContainsString("route('role.relations.activities.index')", $blade);
         $this->assertStringContainsString("route('events.ramadan.iftars.index')", $blade);
         $this->assertStringContainsString("route('events.ramadan.approvals.index')", $blade);
+        $this->assertStringContainsString("ramadan_iftars.navigation.title", $blade);
+        $this->assertStringContainsString("events.ramadan.monitoring-reviews.index", file_get_contents(resource_path('views/pages/events/ramadan/index.blade.php')));
     }
 
     public function test_monitor_can_create_update_and_submit_server_snapshots(): void

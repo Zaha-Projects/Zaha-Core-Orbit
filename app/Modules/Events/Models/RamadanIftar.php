@@ -234,4 +234,13 @@ class RamadanIftar extends Model
         return $this->hasMany(MonitoringReport::class, 'subject_id')
             ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
     }
+
+    public function approvedMonitoringReportForClosure()
+    {
+        return $this->monitoringReports()
+            ->where('status', MonitoringReport::STATUS_APPROVED)
+            ->latest('updated_at')
+            ->latest('id')
+            ->first();
+    }
 }

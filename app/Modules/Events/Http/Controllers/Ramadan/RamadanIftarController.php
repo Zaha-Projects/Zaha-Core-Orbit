@@ -48,7 +48,7 @@ class RamadanIftarController extends Controller
         $this->guidanceAcceptance->forgetAcceptance($request);
 
         return redirect()->route('events.ramadan.iftars.edit', $iftar)
-            ->with('success', 'Ramadan Iftar plan created successfully.');
+            ->with('success', __('ramadan_iftars.messages.created'));
     }
 
     public function edit(Request $request, RamadanIftar $ramadanIftar)
@@ -69,7 +69,7 @@ class RamadanIftarController extends Controller
         $this->planning->update($ramadanIftar, $request->validated());
 
         return redirect()->route('events.ramadan.iftars.edit', $ramadanIftar)
-            ->with('success', 'Ramadan Iftar plan updated successfully.');
+            ->with('success', __('ramadan_iftars.messages.updated'));
     }
 
     private function authorizePlanningAccess(Request $request, ?RamadanIftar $iftar = null): void

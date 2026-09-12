@@ -53,4 +53,9 @@ class MonitoringReport extends Model
     {
         return $this->hasMany(FieldVerification::class);
     }
+
+    public function ramadanIftar()
+    {
+        return $this->belongsTo(RamadanIftar::class, 'subject_id');
+    }
 }

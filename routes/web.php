@@ -75,6 +75,7 @@ use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarApprovalDecisionCont
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarExecutionController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarWorkspaceController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarMonitoringController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanMonitoringReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -233,6 +234,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [RamadanIftarApprovalQueueController::class, 'index'])->name('index');
         Route::get('/{ramadanIftar}', [RamadanIftarApprovalQueueController::class, 'show'])->whereNumber('ramadanIftar')->name('show');
         Route::post('/{ramadanIftar}/decision', [RamadanIftarApprovalDecisionController::class, 'decide'])->whereNumber('ramadanIftar')->name('decision');
+    });
+    Route::prefix('dashboard/events/ramadan/monitoring-reviews')->name('events.ramadan.monitoring-reviews.')->middleware(['branch.isolation', 'role_or_permission:supervisor|super_admin|ramadan_iftars.monitor.review'])->group(function () {
+        Route::get('/', [RamadanMonitoringReviewController::class, 'index'])->name('index');
+        Route::get('/{monitoringReport}', [RamadanMonitoringReviewController::class, 'show'])->whereNumber('monitoringReport')->name('show');
+        Route::post('/{monitoringReport}/decision', [RamadanMonitoringReviewController::class, 'decide'])->whereNumber('monitoringReport')->name('decision');
     });
     Route::prefix('dashboard/events/ramadan/guidance')->name('events.ramadan.guidance.')->middleware(['branch.isolation', 'role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create'])->group(function () {
         Route::get('/', [RamadanGuidanceController::class, 'show'])->name('show');
