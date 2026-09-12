@@ -118,8 +118,8 @@ class RamadanIftarMonitoringService
 
     private function assertMonitorable(RamadanIftar $iftar): void
     {
-        if ($iftar->status !== RamadanIftar::STATUS_APPROVED || $iftar->execution_status !== RamadanIftar::EXECUTION_STATUS_IN_PROGRESS) {
-            $this->invalid('status', 'Monitoring requires an approved Ramadan Iftar with execution in progress.');
+        if ($iftar->status !== RamadanIftar::STATUS_APPROVED || ! in_array($iftar->execution_status, [RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED], true) || $iftar->closed_at !== null) {
+            $this->invalid('status', 'Monitoring requires an approved, executing or completed, open Ramadan Iftar.');
         }
     }
 

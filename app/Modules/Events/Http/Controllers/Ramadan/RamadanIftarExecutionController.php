@@ -14,7 +14,7 @@ class RamadanIftarExecutionController extends Controller
 {
     public function show(Request $request, RamadanIftar $ramadanIftar)
     {
-        $this->authorizeExecution($request, $ramadanIftar);
+        $this->authorizeExecution($request, $ramadanIftar, false);
         $ramadanIftar->load([
             'branch', 'relationsOfficer', 'attendees.targetGroup', 'attendees.beneficiarySegment',
             'meals.items', 'gifts', 'programSegments', 'executionTeams.members.user',
@@ -24,7 +24,9 @@ class RamadanIftarExecutionController extends Controller
         $targetGroups = TargetGroup::query()->active()->forRamadanIftars()->orderBy('sort_order')->get();
         $beneficiarySegments = BeneficiarySegment::query()->active()->ordered()->get();
 
-        return view('pages.events.ramadan.execution', compact('ramadanIftar', 'targetGroups', 'beneficiarySegments'));
+        $executionWritable = $ramadanIftar->execution_status !== RamadanIftar::EXECUTION_STATUS_COMPLETED && $ramadanIftar->closed_at === null;
+
+        return view('pages.events.ramadan.execution', compact('ramadanIftar', 'targetGroups', 'beneficiarySegments', 'executionWritable'));
     }
 
     public function start(Request $request, RamadanIftar $ramadanIftar, RamadanIftarExecutionService $execution)
@@ -44,11 +46,20 @@ class RamadanIftarExecutionController extends Controller
             ->with('success', 'Actual execution data saved.');
     }
 
-    private function authorizeExecution(Request $request, RamadanIftar $iftar): void
+    public function complete(Request $request, RamadanIftar $ramadanIftar, RamadanIftarExecutionService $execution)
+    {
+        $this->authorizeExecution($request, $ramadanIftar);
+        $execution->complete($ramadanIftar, $request->user());
+
+        return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)
+            ->with('success', 'Ramadan Iftar execution completed.');
+    }
+
+    private function authorizeExecution(Request $request, RamadanIftar $iftar, bool $write = true): void
     {
         $user = $request->user();
         abort_unless($user && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute')), 403);
         abort_unless($user->hasRole('super_admin') || $user->can('branches.view.all') || $user->hasAccessToScopedBranch((int) $iftar->branch_id), 403);
-        abort_unless($iftar->canAccessExecution(), 403);
+        abort_unless($write ? $iftar->canAccessExecution() : $iftar->canViewExecution(), 403);
     }
 }

@@ -17,8 +17,10 @@ authorization remains authoritative.
 ## Monitoring ownership and lifecycle
 
 `ramadan_iftars.monitor` is assigned to follow-up officers. Monitoring requires an
-approved Iftar whose execution is `in_progress`, plus branch access. Reports use the
-existing Common `monitoring_reports` and `field_verifications` tables with
+approved, open Iftar whose execution is `in_progress` or `completed`, plus branch
+access. This permits monitoring to finish after operational execution has been
+marked complete without conflating completion with closure. Reports use the existing
+Common `monitoring_reports` and `field_verifications` tables with
 `subject_type=ramadan_iftar`; no Ramadan-specific monitoring tables exist.
 
 Implemented report lifecycle:
@@ -44,5 +46,5 @@ closure state.
 
 ## Deferred
 
-Monitoring approval/return decisions, report attachments, final execution
-completion, closure, and evaluation remain deferred.
+Monitoring approval/return decisions, report attachments, closure, and evaluation
+remain deferred. Closed Iftars expose their evidence read-only.

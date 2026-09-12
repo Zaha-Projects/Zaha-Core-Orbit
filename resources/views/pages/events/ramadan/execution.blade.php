@@ -19,6 +19,7 @@
         <form method="POST" action="{{ route('events.ramadan.iftars.execution.start', $ramadanIftar) }}">@csrf<button class="btn btn-primary">Start execution</button></form>
     @else
     <form method="POST" action="{{ route('events.ramadan.iftars.execution.update', $ramadanIftar) }}">@csrf @method('PUT')
+        <fieldset @if(!$executionWritable) disabled @endif>
         <div class="card my-3"><div class="card-header">Actual event data</div><div class="card-body">
             <label>Actual date</label><input class="form-control" type="date" name="actual_date" value="{{ old('actual_date', optional($ramadanIftar->actual_date)->format('Y-m-d')) }}">
             <small class="text-muted">Attendance and meal totals are derived from the detailed rows below.</small>
@@ -50,7 +51,8 @@
         <div class="card mb-3"><div class="card-header">Volunteers and supplies</div><div class="card-body">@foreach($ramadanIftar->volunteerRequirements as $i => $row)<input type="hidden" name="volunteer_requirements[{{ $i }}][id]" value="{{ $row->id }}"><div class="row g-2 mb-2"><div class="col-md-6">Volunteers planned: {{ $row->planned_count }}</div><div class="col-md-3"><input class="form-control" type="number" min="0" name="volunteer_requirements[{{ $i }}][actual_count]" value="{{ $row->actual_count }}" placeholder="Actual"></div></div>@endforeach @foreach($ramadanIftar->supplies as $i => $row)<input type="hidden" name="supplies[{{ $i }}][id]" value="{{ $row->id }}"><div class="row g-2 mb-2"><div class="col-md-4">{{ $row->item_name }} (plan {{ $row->planned_quantity }})</div><div class="col-md-3"><input class="form-control" type="number" min="0" name="supplies[{{ $i }}][actual_quantity]" value="{{ $row->actual_quantity }}" placeholder="Actual"></div><div class="col-md-3"><select class="form-select" name="supplies[{{ $i }}][is_available]"><option value="">Not assessed</option><option value="1" @if($row->is_available === true) selected @endif>Available</option><option value="0" @if($row->is_available === false) selected @endif>Unavailable</option></select></div></div>@endforeach</div></div>
 
         <div class="card mb-3"><div class="card-header">Canonical Execution Needs</div><div class="card-body">@foreach($ramadanIftar->executionNeeds as $i => $need)<input type="hidden" name="execution_needs[{{ $i }}][id]" value="{{ $need->id }}"><div class="row g-2 mb-2"><div class="col-md-4">{{ optional($need->executionNeedType)->name }} — {{ $need->is_required ? 'Required' : 'Not required' }}<br><small>{{ $need->planned_details }}</small></div><div class="col-md-3"><select class="form-select" name="execution_needs[{{ $i }}][status]"><option value="pending" @if($need->status === 'pending') selected @endif>Pending</option><option value="completed" @if($need->status === 'completed') selected @endif>Completed</option></select></div><div class="col-md-5"><input class="form-control" name="execution_needs[{{ $i }}][actual_details]" value="{{ $need->actual_details }}" placeholder="Actual result"></div></div>@endforeach</div></div>
-        <button class="btn btn-success">Save actual execution data</button>
+        @if($executionWritable)<button class="btn btn-success">Save actual execution data</button>@endif
+        </fieldset>
     </form>
     @endif
 </div>

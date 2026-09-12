@@ -21,6 +21,7 @@ class RamadanIftar extends Model
     public const WORKFLOW_MODULE = 'ramadan_iftars';
     public const EXECUTION_STATUS_PLANNED = 'planned';
     public const EXECUTION_STATUS_IN_PROGRESS = 'in_progress';
+    public const EXECUTION_STATUS_COMPLETED = 'completed';
 
     public const LOCATION_INSIDE_CENTER = 'inside_center';
     public const LOCATION_OUTSIDE_CENTER = 'outside_center';
@@ -161,7 +162,14 @@ class RamadanIftar extends Model
     public function canAccessExecution(): bool
     {
         return $this->status === self::STATUS_APPROVED
+            && $this->closed_at === null
             && in_array($this->execution_status, [self::EXECUTION_STATUS_PLANNED, self::EXECUTION_STATUS_IN_PROGRESS], true);
+    }
+
+    public function canViewExecution(): bool
+    {
+        return $this->status === self::STATUS_APPROVED
+            && in_array($this->execution_status, [self::EXECUTION_STATUS_PLANNED, self::EXECUTION_STATUS_IN_PROGRESS, self::EXECUTION_STATUS_COMPLETED], true);
     }
 
     public function targetGroupSelections()

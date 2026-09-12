@@ -1,4 +1,4 @@
-@php $editable = !isset($monitoringReport) || in_array($monitoringReport->status, ['draft','returned'], true); @endphp
+@php $editable = $monitoringWritable && (!isset($monitoringReport) || in_array($monitoringReport->status, ['draft','returned'], true)); @endphp
 <form method="POST" action="{{ $formAction }}">@csrf @if($formMethod !== 'POST') @method($formMethod) @endif
     <div class="card mb-3"><div class="card-header">Report details</div><div class="card-body row g-3">
         <div class="col-md-4"><label>Monitoring method</label><select class="form-select" name="monitoring_method_id" @if(!$editable) disabled @endif>@foreach($monitoringMethods as $method)<option value="{{ $method->id }}" @if(old('monitoring_method_id', $monitoringReport->monitoring_method_id ?? null)==$method->id) selected @endif>{{ $method->name_en ?: $method->name_ar }}</option>@endforeach</select></div>

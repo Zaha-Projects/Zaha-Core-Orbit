@@ -59,6 +59,22 @@ class RamadanIftarExecutionService
         });
     }
 
+    public function complete(RamadanIftar $iftar, User $actor): RamadanIftar
+    {
+        return DB::transaction(function () use ($iftar, $actor) {
+            $locked = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
+            $this->assertApproved($locked);
+            if ($locked->execution_status !== RamadanIftar::EXECUTION_STATUS_IN_PROGRESS) {
+                throw ValidationException::withMessages(['execution_status' => 'Only execution in progress may be completed.']);
+            }
+            $this->assertCompletionReady($locked);
+            $locked->update(['execution_status' => RamadanIftar::EXECUTION_STATUS_COMPLETED]);
+            $this->audit($locked, $actor, 'execution_completed');
+
+            return $locked->fresh();
+        });
+    }
+
     private function syncAttendees(RamadanIftar $iftar, array $rows): void
     {
         $existing = $iftar->attendees()->get()->keyBy('id');
@@ -134,6 +150,19 @@ class RamadanIftarExecutionService
         if ($iftar->status !== RamadanIftar::STATUS_APPROVED || ! $iftar->canAccessExecution()) {
             throw ValidationException::withMessages(['status' => 'Only approved Ramadan Iftars may enter execution.']);
         }
+    }
+
+    private function assertCompletionReady(RamadanIftar $iftar): void
+    {
+        $errors = [];
+        if ($iftar->actual_date === null) $errors['actual_date'] = 'Actual date is required before execution completion.';
+        if ($iftar->actual_attendance === null) $errors['actual_attendance'] = 'Attendance must be captured; zero attendance is a valid captured result.';
+        if ($iftar->actual_attendance !== null && (int) $iftar->actual_attendance !== $iftar->attendees()->where('attended', true)->count()) $errors['actual_attendance'] = 'Actual attendance must match checked-in attendees.';
+        if ($iftar->executionNeeds()->where('is_required', true)->where(function ($query) {
+            $query->where('status', '!=', SubjectExecutionNeed::STATUS_COMPLETED)
+                ->orWhereNull('actual_details')->orWhere('actual_details', '')->orWhereNull('completed_at');
+        })->exists()) $errors['execution_needs'] = 'Every required Execution Need must be completed with actual details.';
+        if ($errors !== []) throw ValidationException::withMessages($errors);
     }
 
     private function invalidOwnedId(string $key): void

@@ -42,11 +42,14 @@ class RamadanIftarWorkspaceController extends Controller
             && $workflows->currentStepForUser($instance, $user) !== null;
         $canPlan = $ramadanIftar->isPlanningEditable() && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.edit'));
         $canSubmit = $ramadanIftar->isPlanningEditable() && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.submit'));
-        $canExecute = $ramadanIftar->canAccessExecution() && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute'));
-        $canMonitor = $ramadanIftar->status === RamadanIftar::STATUS_APPROVED
+        $canExecute = $ramadanIftar->canViewExecution() && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute'));
+        $canCompleteExecution = $ramadanIftar->closed_at === null
             && $ramadanIftar->execution_status === RamadanIftar::EXECUTION_STATUS_IN_PROGRESS
+            && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute'));
+        $canMonitor = $ramadanIftar->status === RamadanIftar::STATUS_APPROVED
+            && in_array($ramadanIftar->execution_status, [RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED], true)
             && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.monitor'));
 
-        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canMonitor'));
+        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor'));
     }
 }

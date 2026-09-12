@@ -4,6 +4,6 @@
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @include('pages.events.ramadan.monitoring._form', ['formAction'=>route('events.ramadan.iftars.monitoring.update',[$ramadanIftar,$monitoringReport]),'formMethod'=>'PUT'])
-    @if(in_array($monitoringReport->status,['draft','returned'],true))<form class="mt-3" method="POST" action="{{ route('events.ramadan.iftars.monitoring.submit',[$ramadanIftar,$monitoringReport]) }}">@csrf<button class="btn btn-success">Submit monitoring report</button></form>@endif
+    @if($monitoringWritable && in_array($monitoringReport->status,['draft','returned'],true))<form class="mt-3" method="POST" action="{{ route('events.ramadan.iftars.monitoring.submit',[$ramadanIftar,$monitoringReport]) }}">@csrf<button class="btn btn-success">Submit monitoring report</button></form>@endif
 </div>
 @endsection
