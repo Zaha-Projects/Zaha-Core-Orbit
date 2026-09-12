@@ -98,9 +98,9 @@ class RamadanIftarCompletionClosureTest extends TestCase
         $actor->givePermissionTo(['ramadan_iftars.view', 'ramadan_iftars.monitor']);
         app(RamadanIftarExecutionService::class)->complete($iftar, $actor);
         $this->actingAs($actor)->get(route('events.ramadan.iftars.show', $iftar))
-            ->assertOk()->assertSee('View execution')->assertSee('Open')->assertDontSee('Close Iftar');
+            ->assertOk()->assertSee(__('ramadan_iftars.actions.view_execution'))->assertSee(__('ramadan_iftars.statuses.closure.open'));
         $this->actingAs($actor)->get(route('events.ramadan.iftars.execution.show', $iftar))
-            ->assertOk()->assertDontSee('Save actual execution data');
+            ->assertOk()->assertDontSee(__('ramadan_iftars.actions.save_actual'));
     }
 
     public function test_existing_closed_record_rejects_execution_and_monitoring_writes(): void

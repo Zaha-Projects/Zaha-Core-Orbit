@@ -22,13 +22,13 @@ class RamadanIftarApprovalService
     public function decide(RamadanIftar $iftar, User $actor, int $expectedStepId, string $decision, ?string $comment): array
     {
         if (! in_array($decision, [DynamicWorkflowService::DECISION_APPROVED, DynamicWorkflowService::DECISION_CHANGES_REQUESTED], true)) {
-            throw ValidationException::withMessages(['decision' => 'The selected decision is invalid.']);
+            throw ValidationException::withMessages(['decision' => __('ramadan_iftars.business_errors.decision_invalid')]);
         }
 
         return DB::transaction(function () use ($iftar, $actor, $expectedStepId, $decision, $comment) {
             $locked = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
             if ($locked->status !== RamadanIftar::STATUS_SUBMITTED) {
-                throw ValidationException::withMessages(['status' => 'This Ramadan Iftar is not pending approval.']);
+                throw ValidationException::withMessages(['status' => __('ramadan_iftars.business_errors.approval_pending_only')]);
             }
 
             $workflow = $this->workflows->findActiveWorkflow(RamadanIftar::WORKFLOW_MODULE);
@@ -38,7 +38,7 @@ class RamadanIftarApprovalService
                 ->where('entity_id', $locked->id)
                 ->lockForUpdate()->first() : null;
             if (! $instance || ! $this->workflows->canDecide($instance)) {
-                throw ValidationException::withMessages(['workflow' => 'No actionable Ramadan workflow was found.']);
+                throw ValidationException::withMessages(['workflow' => __('ramadan_iftars.business_errors.workflow_not_actionable')]);
             }
 
             $step = $this->workflows->currentStepForUser($instance, $actor);

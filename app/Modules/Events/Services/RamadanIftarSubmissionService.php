@@ -27,13 +27,13 @@ class RamadanIftarSubmissionService
             $locked = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
 
             if (! $locked->isPlanningEditable()) {
-                throw ValidationException::withMessages(['status' => 'This Ramadan Iftar cannot be submitted from its current status.']);
+                throw ValidationException::withMessages(['status' => __('ramadan_iftars.business_errors.submission_state')]);
             }
 
             $this->assertReady($locked);
             $workflow = $this->workflows->findActiveWorkflow(RamadanIftar::WORKFLOW_MODULE);
             if (! $workflow) {
-                throw ValidationException::withMessages(['workflow' => 'The Ramadan Iftar approval workflow is not configured.']);
+                throw ValidationException::withMessages(['workflow' => __('ramadan_iftars.business_errors.workflow_missing')]);
             }
 
             $instance = WorkflowInstance::query()
@@ -45,19 +45,19 @@ class RamadanIftarSubmissionService
 
             if ($locked->status === RamadanIftar::STATUS_CHANGES_REQUESTED) {
                 if (! $instance) {
-                    throw ValidationException::withMessages(['workflow' => 'The correction workflow instance is missing.']);
+                    throw ValidationException::withMessages(['workflow' => __('ramadan_iftars.business_errors.correction_instance_missing')]);
                 }
                 $this->workflows->markResubmitted($instance);
                 $instance->refresh();
             } elseif ($instance) {
-                throw ValidationException::withMessages(['workflow' => 'A workflow instance already exists for this Ramadan Iftar.']);
+                throw ValidationException::withMessages(['workflow' => __('ramadan_iftars.business_errors.workflow_duplicate')]);
             } else {
                 $instance = $this->workflows->forEntity($workflow, RamadanIftar::class, (int) $locked->getKey());
             }
 
             $step = $this->workflows->currentStep($instance);
             if (! $step || (string) $step->step_type !== 'sub') {
-                throw ValidationException::withMessages(['workflow' => 'The Ramadan Iftar workflow is not ready for submission.']);
+                throw ValidationException::withMessages(['workflow' => __('ramadan_iftars.business_errors.workflow_not_ready')]);
             }
 
             WorkflowLog::query()->create([
@@ -94,10 +94,10 @@ class RamadanIftarSubmissionService
     private function assertReady(RamadanIftar $iftar): void
     {
         if (! $iftar->branch_id || ! $iftar->relations_officer_id || ! $iftar->planned_date) {
-            throw ValidationException::withMessages(['planning' => 'Branch, relations officer, and planned date are required.']);
+            throw ValidationException::withMessages(['planning' => __('ramadan_iftars.business_errors.planning_required')]);
         }
         if (! $iftar->hasValidGuidanceAcceptance()) {
-            throw ValidationException::withMessages(['guidance' => 'Valid Ramadan guidance acceptance is required.']);
+            throw ValidationException::withMessages(['guidance' => __('ramadan_iftars.business_errors.guidance_required')]);
         }
 
         $applicableIds = ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()
@@ -107,7 +107,7 @@ class RamadanIftarSubmissionService
         })->orderBy('execution_need_type_id')->pluck('execution_need_type_id')->map(fn ($id) => (int) $id)->all();
 
         if ($applicableIds === [] || $capturedIds !== $applicableIds) {
-            throw ValidationException::withMessages(['execution_needs' => 'Every applicable execution need requires an explicit planning decision.']);
+            throw ValidationException::withMessages(['execution_needs' => __('ramadan_iftars.business_errors.execution_needs_incomplete')]);
         }
     }
 }

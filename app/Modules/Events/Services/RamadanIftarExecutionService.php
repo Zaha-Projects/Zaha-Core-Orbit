@@ -20,7 +20,7 @@ class RamadanIftarExecutionService
             $locked = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
             $this->assertApproved($locked);
             if ($locked->execution_status !== RamadanIftar::EXECUTION_STATUS_PLANNED) {
-                throw ValidationException::withMessages(['execution_status' => 'Execution has already started.']);
+                throw ValidationException::withMessages(['execution_status' => __('ramadan_iftars.business_errors.execution_started')]);
             }
             $locked->update(['execution_status' => RamadanIftar::EXECUTION_STATUS_IN_PROGRESS]);
             $this->audit($locked, $actor, 'execution_started');
@@ -35,7 +35,7 @@ class RamadanIftarExecutionService
             $locked = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
             $this->assertApproved($locked);
             if ($locked->execution_status !== RamadanIftar::EXECUTION_STATUS_IN_PROGRESS) {
-                throw ValidationException::withMessages(['execution_status' => 'Start execution before recording actual results.']);
+                throw ValidationException::withMessages(['execution_status' => __('ramadan_iftars.business_errors.execution_start_required')]);
             }
 
             $locked->update(Arr::only($data, ['actual_date']));
@@ -65,7 +65,7 @@ class RamadanIftarExecutionService
             $locked = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
             $this->assertApproved($locked);
             if ($locked->execution_status !== RamadanIftar::EXECUTION_STATUS_IN_PROGRESS) {
-                throw ValidationException::withMessages(['execution_status' => 'Only execution in progress may be completed.']);
+                throw ValidationException::withMessages(['execution_status' => __('ramadan_iftars.business_errors.completion_state')]);
             }
             $this->assertCompletionReady($locked);
             $locked->update(['execution_status' => RamadanIftar::EXECUTION_STATUS_COMPLETED]);
@@ -87,7 +87,7 @@ class RamadanIftarExecutionService
                 continue;
             }
             if (blank($row['full_name'] ?? null)) {
-                throw ValidationException::withMessages(['attendees' => 'An attendee name is required.']);
+                throw ValidationException::withMessages(['attendees' => __('ramadan_iftars.business_errors.attendee_name')]);
             }
             $attendee = $attendee ?: new RamadanIftarAttendee(['ramadan_iftar_id' => $iftar->id]);
             $wasAttended = (bool) $attendee->attended;
@@ -148,7 +148,7 @@ class RamadanIftarExecutionService
     private function assertApproved(RamadanIftar $iftar): void
     {
         if ($iftar->status !== RamadanIftar::STATUS_APPROVED || ! $iftar->canAccessExecution()) {
-            throw ValidationException::withMessages(['status' => 'Only approved Ramadan Iftars may enter execution.']);
+            throw ValidationException::withMessages(['status' => __('ramadan_iftars.business_errors.execution_approved_only')]);
         }
     }
 
@@ -167,7 +167,7 @@ class RamadanIftarExecutionService
 
     private function invalidOwnedId(string $key): void
     {
-        throw ValidationException::withMessages([$key => 'An execution row does not belong to this Ramadan Iftar.']);
+        throw ValidationException::withMessages([$key => __('ramadan_iftars.business_errors.execution_owned_record')]);
     }
 
     private function audit(RamadanIftar $iftar, User $actor, string $action): void

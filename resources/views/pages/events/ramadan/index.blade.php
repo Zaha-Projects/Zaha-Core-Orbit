@@ -13,7 +13,7 @@
             <td>{{ optional($iftar->planned_date)->format('Y-m-d') }}</td><td>{{ optional($iftar->relationsOfficer)->name }}</td>
             <td><span class="badge bg-secondary">{{ __('ramadan_iftars.statuses.planning.'.$iftar->status) }}</span></td><td><span class="badge bg-info text-dark">{{ __('ramadan_iftars.statuses.execution.'.$iftar->execution_status) }}</span></td><td><span class="badge {{ $iftar->closed_at ? 'bg-dark' : 'bg-light text-dark' }}">{{ __('ramadan_iftars.statuses.closure.'.($iftar->closed_at ? 'closed' : 'open')) }}</span></td>
             <td>{{ $iftar->actual_attendance ?? '—' }} / {{ $iftar->expected_attendance }}</td><td>{{ $iftar->actual_meals_count ?? '—' }} / {{ $iftar->planned_meals_count }}</td>
-            <td>{{ optional(optional($iftar->workflowInstance)->currentStep)->name_en ?? '—' }}</td>
+            <td>{{ (app()->getLocale()==='ar' ? optional(optional($iftar->workflowInstance)->currentStep)->name_ar : optional(optional($iftar->workflowInstance)->currentStep)->name_en) ?? '—' }}</td>
         </tr>@empty<tr><td colspan="11" class="text-center text-muted py-4">{{ __('ramadan_iftars.empty.iftars') }}</td></tr>@endforelse</tbody>
     </table></div></div><div class="mt-3">{{ $iftars->links() }}</div>
 </div>

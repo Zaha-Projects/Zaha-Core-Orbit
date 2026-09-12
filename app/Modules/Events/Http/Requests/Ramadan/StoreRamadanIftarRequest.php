@@ -185,8 +185,8 @@ class StoreRamadanIftarRequest extends FormRequest
     private function validateConditionalLookups(Validator $validator): void
     {
         $host = $this->input('host_type');
-        if (in_array($host, [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true) && ! $this->input('community_organization_id')) $validator->errors()->add('community_organization_id', __('validation.required', ['attribute' => 'community organization']));
-        if ($host === RamadanIftar::HOST_LOCAL_COMMUNITY && ! $this->input('local_community_id')) $validator->errors()->add('local_community_id', __('validation.required', ['attribute' => 'local community']));
+        if (in_array($host, [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true) && ! $this->input('community_organization_id')) $validator->errors()->add('community_organization_id', __('validation.required', ['attribute' => __('ramadan_iftars.labels.community_organization')]));
+        if ($host === RamadanIftar::HOST_LOCAL_COMMUNITY && ! $this->input('local_community_id')) $validator->errors()->add('local_community_id', __('validation.required', ['attribute' => __('ramadan_iftars.labels.local_community')]));
         if ($id = $this->input('mobilization_method_id')) {
             $method = MobilizationMethod::query()->active()->find($id);
             if (! $method) $validator->errors()->add('mobilization_method_id', __('validation.exists', ['attribute' => 'mobilization method']));

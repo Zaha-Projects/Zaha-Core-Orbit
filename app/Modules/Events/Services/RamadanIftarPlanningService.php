@@ -53,7 +53,7 @@ class RamadanIftarPlanningService
     public function update(RamadanIftar $iftar, array $data): RamadanIftar
     {
         if (! $iftar->isPlanningEditable()) {
-            throw ValidationException::withMessages(['status' => 'Only draft or returned Ramadan Iftars may be edited.']);
+            throw ValidationException::withMessages(['status' => __('ramadan_iftars.business_errors.planning_editable')]);
         }
 
         return DB::transaction(function () use ($iftar, $data) {
@@ -203,7 +203,7 @@ class RamadanIftarPlanningService
 
     private function invalidOwnedId(string $key): never
     {
-        throw ValidationException::withMessages([$key => 'One or more records do not belong to this Ramadan Iftar.']);
+        throw ValidationException::withMessages([$key => __('ramadan_iftars.business_errors.owned_record')]);
     }
 
     private function giftTotal(array $gift): ?string

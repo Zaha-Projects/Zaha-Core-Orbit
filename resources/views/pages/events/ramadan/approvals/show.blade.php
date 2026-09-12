@@ -1,37 +1,26 @@
 @extends('layouts.app')
 @section('content')
 <div class="container py-4">
-    <h1 class="h3">{{ $ramadanIftar->title }}</h1>
-    <p class="text-muted">{{ optional($ramadanIftar->branch)->name }} · {{ optional($ramadanIftar->planned_date)->format('Y-m-d') }}</p>
-    <div class="card mb-3"><div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Guidance</dt><dd class="col-sm-9">{{ optional($ramadanIftar->guidanceVersion)->title }} (v{{ optional($ramadanIftar->guidanceVersion)->version_number }})</dd>
-            <dt class="col-sm-3">Relations officer</dt><dd class="col-sm-9">{{ optional($ramadanIftar->relationsOfficer)->name }}</dd>
-            <dt class="col-sm-3">Expected attendance</dt><dd class="col-sm-9">{{ $ramadanIftar->expected_attendance }}</dd>
-            <dt class="col-sm-3">Planned meals</dt><dd class="col-sm-9">{{ $ramadanIftar->planned_meals_count }}</dd>
-            <dt class="col-sm-3">Description</dt><dd class="col-sm-9">{{ $ramadanIftar->description }}</dd>
-        </dl>
-    </div></div>
-
-    @php $sections = [
-        'Target groups' => $ramadanIftar->targetGroupSelections->map(fn($row) => optional($row->targetGroup)->name.' — '.$row->planned_count),
-        'Execution needs' => $ramadanIftar->executionNeeds->map(fn($row) => optional($row->executionNeedType)->name.' — '.($row->is_required ? 'Required' : 'Not required')),
-        'Meals' => $ramadanIftar->meals->map(fn($row) => $row->description.' — '.$row->planned_quantity),
-        'Gifts' => $ramadanIftar->gifts->map(fn($row) => $row->description.' — '.$row->planned_quantity),
-        'Program segments' => $ramadanIftar->programSegments->pluck('name'),
-        'Execution teams' => $ramadanIftar->executionTeams->map(fn($row) => $row->name.' — '.$row->members->count().' members'),
-        'Volunteer requirements' => $ramadanIftar->volunteerRequirements->map(fn($row) => $row->planned_count.' volunteers'),
-        'Supplies' => $ramadanIftar->supplies->map(fn($row) => $row->item_name.' — '.$row->planned_quantity),
+    <div class="d-flex flex-wrap justify-content-between gap-2 mb-4"><div><h1 class="h3 mb-1">{{ __('ramadan_iftars.approval.review_title') }}</h1><p class="text-muted mb-0">{{ $ramadanIftar->title }} · {{ optional($ramadanIftar->branch)->name }}</p></div><a class="btn btn-outline-secondary" href="{{ route('events.ramadan.approvals.index') }}">{{ __('ramadan_iftars.actions.back') }}</a></div>
+    @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    <div class="card shadow-sm mb-3"><div class="card-header fw-semibold">{{ __('ramadan_iftars.sections.core') }}</div><div class="card-body"><dl class="row mb-0">
+        <dt class="col-sm-3">{{ __('ramadan_iftars.sections.guidance') }}</dt><dd class="col-sm-9">{{ optional($ramadanIftar->guidanceVersion)->title }} ({{ __('ramadan_iftars.hints.version',['number'=>optional($ramadanIftar->guidanceVersion)->version_number]) }})</dd>
+        <dt class="col-sm-3">{{ __('ramadan_iftars.fields.relations_officer') }}</dt><dd class="col-sm-9">{{ optional($ramadanIftar->relationsOfficer)->name }}</dd>
+        <dt class="col-sm-3">{{ __('ramadan_iftars.sections.attendance') }}</dt><dd class="col-sm-9">{{ $ramadanIftar->expected_attendance }}</dd>
+        <dt class="col-sm-3">{{ __('ramadan_iftars.sections.meals') }}</dt><dd class="col-sm-9">{{ $ramadanIftar->planned_meals_count }}</dd>
+        <dt class="col-sm-3">{{ __('ramadan_iftars.labels.description') }}</dt><dd class="col-sm-9">{{ $ramadanIftar->description ?: '—' }}</dd>
+    </dl></div></div>
+    @php $sections=[
+        'targeting'=>$ramadanIftar->targetGroupSelections->map(fn($r)=>optional($r->targetGroup)->name.' — '.$r->planned_count),
+        'execution_needs'=>$ramadanIftar->executionNeeds->map(fn($r)=>optional($r->executionNeedType)->name.' — '.__('ramadan_iftars.statuses.requirement.'.($r->is_required?'required':'not_required'))),
+        'meals'=>$ramadanIftar->meals->map(fn($r)=>$r->description.' — '.$r->planned_quantity),
+        'gifts'=>$ramadanIftar->gifts->map(fn($r)=>$r->description.' — '.$r->planned_quantity),
+        'programs'=>$ramadanIftar->programSegments->pluck('name'),
+        'teams'=>$ramadanIftar->executionTeams->map(fn($r)=>$r->name.' — '.__('ramadan_iftars.units.members',['count'=>$r->members->count()])),
+        'volunteers'=>$ramadanIftar->volunteerRequirements->map(fn($r)=>__('ramadan_iftars.units.volunteers',['count'=>$r->planned_count])),
+        'supplies'=>$ramadanIftar->supplies->map(fn($r)=>$r->item_name.' — '.$r->planned_quantity),
     ]; @endphp
-    <div class="row">@foreach($sections as $heading => $rows)<div class="col-md-6 mb-3"><div class="card h-100"><div class="card-header">{{ $heading }}</div><ul class="list-group list-group-flush">@forelse($rows as $row)<li class="list-group-item">{{ $row }}</li>@empty<li class="list-group-item text-muted">None</li>@endforelse</ul></div></div>@endforeach</div>
-
-    <div class="card"><div class="card-header">Decision: {{ optional($workflowInstance->currentStep)->name_en }}</div><div class="card-body">
-        <form method="POST" action="{{ route('events.ramadan.approvals.decision', $ramadanIftar) }}">@csrf
-            <input type="hidden" name="workflow_step_id" value="{{ $workflowInstance->current_step_id }}">
-            <div class="mb-3"><label>Comment</label><textarea class="form-control" name="comment" rows="3">{{ old('comment') }}</textarea></div>
-            <button class="btn btn-success" name="decision" value="approved">Approve</button>
-            <button class="btn btn-warning" name="decision" value="changes_requested">Request changes</button>
-        </form>
-    </div></div>
+    <div class="row g-3 mb-3">@foreach($sections as $heading=>$rows)<div class="col-md-6"><div class="card h-100"><div class="card-header fw-semibold">{{ __('ramadan_iftars.sections.'.$heading) }}</div><ul class="list-group list-group-flush">@forelse($rows as $row)<li class="list-group-item">{{ $row }}</li>@empty<li class="list-group-item text-muted">{{ __('ramadan_iftars.empty.'.($heading==='targeting'?'target_groups':$heading)) }}</li>@endforelse</ul></div></div>@endforeach</div>
+    <div class="card shadow-sm"><div class="card-header fw-semibold">{{ __('ramadan_iftars.approval.decision',['step'=>(app()->getLocale()==='ar' ? optional($workflowInstance->currentStep)->name_ar : optional($workflowInstance->currentStep)->name_en) ?: '—']) }}</div><div class="card-body"><form method="POST" action="{{ route('events.ramadan.approvals.decision',$ramadanIftar) }}">@csrf<input type="hidden" name="workflow_step_id" value="{{ $workflowInstance->current_step_id }}"><label class="form-label">{{ __('ramadan_iftars.fields.comment') }}</label><textarea class="form-control mb-3" name="comment" rows="3">{{ old('comment') }}</textarea><div class="d-flex flex-wrap gap-2"><button class="btn btn-success" name="decision" value="approved">{{ __('ramadan_iftars.actions.approve') }}</button><button class="btn btn-warning" name="decision" value="changes_requested">{{ __('ramadan_iftars.approval.request_changes') }}</button></div></form></div></div>
 </div>
 @endsection

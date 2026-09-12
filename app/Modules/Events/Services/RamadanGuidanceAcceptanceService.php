@@ -24,7 +24,7 @@ class RamadanGuidanceAcceptanceService
 
         if ((int) $request->session()->get(self::PRESENTED_VERSION_KEY) !== (int) $current->getKey()) {
             throw ValidationException::withMessages([
-                'guidance' => 'The Ramadan guidance changed. Review the current version before accepting it.',
+                'guidance' => __('ramadan_iftars.business_errors.guidance_changed'),
             ]);
         }
 
@@ -49,7 +49,7 @@ class RamadanGuidanceAcceptanceService
             || ! is_string($acceptedAt)
             || $acceptedAt === '') {
             throw ValidationException::withMessages([
-                'guidance' => 'Review and accept the current Ramadan guidance before creating a plan.',
+                'guidance' => __('ramadan_iftars.business_errors.guidance_accept_before_create'),
             ]);
         }
 
@@ -69,7 +69,7 @@ class RamadanGuidanceAcceptanceService
     {
         $current = EventGuidanceVersion::currentForRamadan();
 
-        abort_unless($current, 503, 'No published Ramadan guidance is currently available.');
+        abort_unless($current, 503, __('ramadan_iftars.business_errors.guidance_unavailable'));
 
         return $current;
     }

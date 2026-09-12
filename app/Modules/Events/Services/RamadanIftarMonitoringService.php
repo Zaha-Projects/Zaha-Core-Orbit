@@ -22,9 +22,9 @@ class RamadanIftarMonitoringService
             $this->assertMonitorable($locked);
             if ($report->exists) {
                 $report = $locked->monitoringReports()->whereKey($report->id)->lockForUpdate()->first();
-                if (! $report) $this->invalid('report', 'The monitoring report does not belong to this Ramadan Iftar.');
+                if (! $report) $this->invalid('report', __('ramadan_iftars.business_errors.report_owned'));
                 if (! in_array($report->status, [MonitoringReport::STATUS_DRAFT, MonitoringReport::STATUS_RETURNED], true)) {
-                    $this->invalid('status', 'Submitted monitoring reports are read-only.');
+                    $this->invalid('status', __('ramadan_iftars.business_errors.report_read_only'));
                 }
             } else {
                 $report = new MonitoringReport([
@@ -34,7 +34,7 @@ class RamadanIftarMonitoringService
                 ]);
             }
             if (! MonitoringMethod::query()->active()->whereKey($data['monitoring_method_id'])->exists()) {
-                $this->invalid('monitoring_method_id', 'The monitoring method is inactive.');
+                $this->invalid('monitoring_method_id', __('ramadan_iftars.business_errors.method_inactive'));
             }
             $report->fill(Arr::only($data, ['monitoring_method_id', 'observed_at', 'general_notes']));
             $report->monitor_user_id = $actor->id;
@@ -53,10 +53,10 @@ class RamadanIftarMonitoringService
             $this->assertMonitorable($locked);
             $report = $locked->monitoringReports()->whereKey($report->id)->lockForUpdate()->first();
             if (! $report || ! in_array($report->status, [MonitoringReport::STATUS_DRAFT, MonitoringReport::STATUS_RETURNED], true)) {
-                $this->invalid('report', 'This monitoring report cannot be submitted.');
+                $this->invalid('report', __('ramadan_iftars.business_errors.report_not_submittable'));
             }
             if (! $report->verifications()->exists()) {
-                $this->invalid('verifications', 'At least one field verification is required.');
+                $this->invalid('verifications', __('ramadan_iftars.business_errors.verification_required'));
             }
             $resubmitted = $report->status === MonitoringReport::STATUS_RETURNED;
             $report->update(['status' => MonitoringReport::STATUS_SUBMITTED, 'submitted_at' => now(), 'monitor_user_id' => $actor->id]);
@@ -125,9 +125,9 @@ class RamadanIftarMonitoringService
         $kept = [];
         foreach ($rows as $row) {
             $candidate = $candidates->get($this->candidateKey($row));
-            if (! $candidate) $this->invalid('verifications', 'A verification target is not part of this Ramadan Iftar.');
+            if (! $candidate) $this->invalid('verifications', __('ramadan_iftars.business_errors.verification_target'));
             $verification = isset($row['id']) ? $existing->get((int) $row['id']) : null;
-            if (isset($row['id']) && ! $verification) $this->invalid('verifications', 'A verification row does not belong to this report.');
+            if (isset($row['id']) && ! $verification) $this->invalid('verifications', __('ramadan_iftars.business_errors.verification_owned'));
             $verification = $verification ?: $report->verifications()->make();
             $verification->fill([
                 'detail_type' => $candidate['detail_type'], 'detail_id' => $candidate['detail_id'],
@@ -155,7 +155,7 @@ class RamadanIftarMonitoringService
     private function assertMonitorable(RamadanIftar $iftar): void
     {
         if ($iftar->status !== RamadanIftar::STATUS_APPROVED || ! in_array($iftar->execution_status, [RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED], true) || $iftar->closed_at !== null) {
-            $this->invalid('status', 'Monitoring requires an approved, executing or completed, open Ramadan Iftar.');
+            $this->invalid('status', __('ramadan_iftars.business_errors.monitoring_eligibility'));
         }
     }
 

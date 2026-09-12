@@ -1,11 +1,11 @@
 # RAMADAN IFTARS IMPLEMENTATION STATUS
 
 - **Last updated:** 2026-09-12
-- **Current phase:** Phase 1.13 prerequisite — monitoring review and approval
-- **Latest commit before this slice:** `2fcb020`
+- **Current phase:** Phase 1.13 — ready for final closure implementation
+- **Latest completed commit before this cleanup:** `b869c5f`
 - **Overall status:** Planning through monitoring approval implemented; final closure remains.
-- **Current blocker:** Complete remaining planning/execution template localization and runtime verification; then implement final closure.
-- **Next recommended slice:** Finish Ramadan template localization/runtime smoke test, then `RESUME PHASE 1.13 — RAMADAN FINAL CLOSURE`
+- **Current blocker:** Final closure actor/permission and closure action remain to be implemented.
+- **Next recommended slice:** `RESUME PHASE 1.13 — RAMADAN FINAL CLOSURE`
 - **Runtime status:** **RUNTIME TESTING REMAINS PENDING** — `vendor/autoload.php` is missing and Composer GitHub downloads previously returned HTTP 403.
 
 ## Completed phases
@@ -28,6 +28,7 @@
 - [x] Phase 1.12 — monitoring and workspace
 - [x] Phase 1.13 partial — execution completion
 - [x] Phase 1.13 prerequisite — monitoring review/return/approval
+- [x] Ramadan planning/execution localization and static UI verification
 - [ ] Phase 1.13 — final closure
 
 ## User capability checklist
@@ -69,9 +70,9 @@
 | Planning approval queue/review | DONE |
 | Execution and monitoring edit | DONE |
 | Monitoring review queue/review | DONE |
-| Lifecycle hierarchy/status badges/empty states | PARTIAL — primary workspace and monitoring review complete |
+| Lifecycle hierarchy/status badges/empty states | DONE |
 | Responsive Bootstrap layout and global RTL | DONE |
-| Arabic and English Ramadan namespace | PARTIAL — core workspace/review localized; legacy planning/execution labels remain |
+| Arabic and English Ramadan namespace | DONE — translation key parity statically verified. |
 | Closure UI | TODO |
 | Runtime visual/browser verification | BLOCKED by missing vendor |
 
@@ -91,6 +92,34 @@
 - [ ] Manual browser smoke test
 
 Static syntax checks are not substitutes for these runtime tests.
+
+## Runtime verification state
+
+| Check | State |
+|---|---|
+| `vendor/autoload.php` | MISSING |
+| Test migrations | NOT RUN |
+| Test seeders | NOT RUN |
+| PHPUnit | NOT RUN |
+| Browser smoke test | NOT RUN |
+| Arabic browser test | NOT RUN |
+| English browser test | NOT RUN |
+
+Static PHP/Blade syntax, literal scans, translation parity, referenced-key checks,
+route inspection, and seeder inspection were completed. Runtime verification must
+be repeated when Composer dependencies are available.
+
+## Deployment bootstrap requirements
+
+Ramadan creation intentionally returns HTTP 503 when no current, active, published
+`EventGuidanceVersion` with `code=ramadan_iftar` exists. Test/development setup must
+create an explicit fixture with approved test wording. Production deployment must
+load business-approved guidance wording through controlled seed/deployment data;
+the application must not silently invent production guidance.
+
+Run `CanonicalExecutionNeedTypeSeeder` before opening the planning form. It uses
+idempotent canonical definitions and supplies every Ramadan-selectable Execution
+Need row; a missing seeder run must not be mistaken for “no requirements.”
 
 ## Manual UI-only E2E checklist
 
@@ -146,7 +175,6 @@ Monthly Activities remain on legacy behavior.
 
 - Composer/vendor environment blocker; runtime suites have not executed.
 - Browser/RTL visual verification remains blocked until dependencies are available.
-- Legacy Ramadan planning/execution templates still contain hard-coded English labels and must be migrated to the Ramadan translation namespace.
 - Legacy Monthly compatibility aliases remain intentionally isolated.
 - Closure and approved-plan versioning remain deliberately deferred.
 
