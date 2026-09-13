@@ -4,8 +4,20 @@
 $planningLabel = __('ramadan_iftars.statuses.planning.'.$ramadanIftar->status);
 $executionLabel = __('ramadan_iftars.statuses.execution.'.$ramadanIftar->execution_status);
 $latestMonitoring = $ramadanIftar->monitoringReports->sortByDesc('updated_at')->first();
+$monitoringApproved = $ramadanIftar->approvedMonitoringReportForClosure() !== null;
+$stages = [
+    ['planning', in_array($ramadanIftar->status, ['submitted','approved'], true)],
+    ['approval', $ramadanIftar->status === 'approved'],
+    ['execution', $ramadanIftar->execution_status === 'completed'],
+    ['monitoring', $monitoringApproved],
+    ['closure', $ramadanIftar->closed_at !== null],
+];
 @endphp
 <div class="container py-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.navigation.title') }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ __('ramadan_iftars.navigation.workspace',['id'=>$ramadanIftar->id]) }}</li></ol></nav>
+    @if($ramadanIftar->closed_at)<div class="alert alert-dark d-flex flex-wrap justify-content-between align-items-center gap-2"><span><i class="fas fa-lock me-1" aria-hidden="true"></i>{{ __('ramadan_iftars.closure.historical') }}</span><strong>{{ __('ramadan_iftars.closure.closed_at') }}: {{ $ramadanIftar->closed_at->format('Y-m-d H:i') }}</strong></div>@endif
+    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="card shadow-sm mb-4"><div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
             <div><h1 class="h3 mb-2">{{ $ramadanIftar->title }}</h1><div class="d-flex flex-wrap gap-2">
@@ -22,10 +34,15 @@ $latestMonitoring = $ramadanIftar->monitoringReports->sortByDesc('updated_at')->
                 @if($canCompleteExecution)<form method="POST" action="{{ route('events.ramadan.iftars.execution.complete', $ramadanIftar) }}">@csrf<button class="btn btn-outline-success">{{ __('ramadan_iftars.actions.complete_execution') }}</button></form>@endif
                 @if($canMonitor)<a class="btn btn-dark" href="{{ route('events.ramadan.iftars.monitoring.index', $ramadanIftar) }}">{{ __('ramadan_iftars.actions.monitoring') }}</a>@endif
                 @if($canReviewMonitoring)<a class="btn btn-outline-dark" href="{{ route('events.ramadan.monitoring-reviews.index') }}">{{ __('ramadan_iftars.actions.review_monitoring') }}</a>@endif
+                @if($canClose)<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#closeRamadanIftarModal"><i class="fas fa-lock me-1" aria-hidden="true"></i>{{ __('ramadan_iftars.actions.close') }}</button>@endif
             </div>
         </div>
         <hr><div class="row g-3"><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.branch') }}</small><div>{{ optional($ramadanIftar->branch)->name ?: '—' }}</div></div><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.planned_date') }}</small><div>{{ optional($ramadanIftar->planned_date)->format('Y-m-d') ?: '—' }}</div></div><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.actual_date') }}</small><div>{{ optional($ramadanIftar->actual_date)->format('Y-m-d') ?: '—' }}</div></div><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.current_step') }}</small><div>{{ (app()->getLocale()==='ar' ? optional(optional($ramadanIftar->workflowInstance)->currentStep)->name_ar : optional(optional($ramadanIftar->workflowInstance)->currentStep)->name_en) ?: '—' }}</div></div></div>
     </div></div>
+
+    <div class="card shadow-sm mb-4"><div class="card-body"><div class="row g-2 text-center">
+        @foreach($stages as [$stage,$complete])<div class="col-6 col-md"><div class="border rounded p-3 h-100 {{ $complete ? 'bg-success-subtle border-success' : 'bg-light' }}"><i class="fas {{ $complete ? 'fa-circle-check text-success' : 'fa-clock text-muted' }} mb-2" aria-hidden="true"></i><div class="fw-semibold">{{ __('ramadan_iftars.lifecycle.'.$stage) }}</div><small class="text-muted">{{ __('ramadan_iftars.lifecycle.'.($complete ? 'complete' : 'pending')) }}</small></div></div>@endforeach
+    </div></div></div>
 
     <div class="row g-3">
         @foreach([
@@ -45,4 +62,7 @@ $latestMonitoring = $ramadanIftar->monitoringReports->sortByDesc('updated_at')->
         <div class="col-12"><div class="card"><div class="card-header fw-semibold">{{ __('ramadan_iftars.sections.monitoring') }}</div><ul class="list-group list-group-flush">@forelse($ramadanIftar->monitoringReports as $report)<li class="list-group-item d-flex justify-content-between"><span>@if($canMonitor)<a href="{{ route('events.ramadan.iftars.monitoring.edit', [$ramadanIftar,$report]) }}">{{ app()->getLocale()==='ar' ? optional($report->monitoringMethod)->name_ar : (optional($report->monitoringMethod)->name_en ?: optional($report->monitoringMethod)->name_ar) }}</a>@else{{ app()->getLocale()==='ar' ? optional($report->monitoringMethod)->name_ar : (optional($report->monitoringMethod)->name_en ?: optional($report->monitoringMethod)->name_ar) }}@endif</span><span class="badge bg-secondary">{{ __('ramadan_iftars.statuses.monitoring.'.$report->status) }}</span></li>@empty<li class="list-group-item text-muted">{{ __('ramadan_iftars.empty.monitoring') }}</li>@endforelse</ul></div></div>
     </div>
 </div>
+@if($canClose)
+<div class="modal fade" id="closeRamadanIftarModal" tabindex="-1" aria-labelledby="closeRamadanIftarLabel" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="closeRamadanIftarLabel">{{ __('ramadan_iftars.closure.title') }}</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('ramadan_iftars.actions.back') }}"></button></div><div class="modal-body"><p class="fw-semibold">{{ __('ramadan_iftars.closure.ready') }}</p><div class="alert alert-warning mb-0">{{ __('ramadan_iftars.closure.warning') }}</div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('ramadan_iftars.actions.back') }}</button><form method="POST" action="{{ route('events.ramadan.iftars.close',$ramadanIftar) }}">@csrf<button class="btn btn-danger"><i class="fas fa-lock me-1" aria-hidden="true"></i>{{ __('ramadan_iftars.actions.confirm_close') }}</button></form></div></div></div></div>
+@endif
 @endsection

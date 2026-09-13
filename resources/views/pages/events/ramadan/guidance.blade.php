@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container py-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.navigation.title') }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ __('ramadan_iftars.titles.guidance') }}</li></ol></nav>
     <div class="card">
         <div class="card-header">
             <h1 class="h4 mb-1">{{ $guidance->title }}</h1>

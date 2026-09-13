@@ -33,24 +33,34 @@ The transition is transactional, does not use `closed_at` as a completion timest
 and writes one `execution_completed` action to `WorkflowActionLog`. Repeating the
 transition is rejected, so it cannot duplicate audit records.
 
-## Closure readiness prerequisite resolved
+## Final closure
 
-Closure is **not implemented**, but its monitoring prerequisite is now deterministic.
+Production Monthly post-execution review confirms that the branch Supervisor owns
+the final operational approval/closure action. Ramadan therefore uses the same
+confirmed responsibility boundary, through the dedicated
+`ramadan_iftars.close` permission, without reusing Monthly storage or status.
+
+Closure is implemented as a separate, explicit transition. Its monitoring prerequisite is deterministic.
 The branch Supervisor reviews submitted reports under a dedicated permission;
 self-review is prohibited. A mismatch is resolved for closure when it has a
 documenting note and the Supervisor explicitly approves the report. The latest
 approved report is authoritative through `approvedMonitoringReportForClosure()`.
 
-There is still no close route and `closed_at` remains server-controlled and
-unchanged. Existing closed records are treated as immutable: execution and
+The close route locks the Iftar, rechecks approved planning, completed execution,
+open state, branch-scoped Supervisor authorization, and the authoritative approved
+monitoring report, then writes the server timestamp and one `iftar_closed` generic
+action log in the same transaction. Documented mismatches in an approved report do
+not receive a second review during closure. Duplicate closure is rejected under the
+lock and cannot rewrite `closed_at` or duplicate the audit.
+
+Existing closed records are treated as immutable: planning, execution and
 monitoring writes reject them, submitted monitoring evidence remains read-only,
-and completed execution data is displayed read-only while open monitoring work may
-continue. No workflow, planning, actual,
+and completed execution data is displayed read-only. No workflow, planning, actual,
 version, or Monthly Activity data is changed by completion.
 
 ## Workspace
 
-The index shows planning, execution, and open/closed states separately. The Iftar
-hub shows Complete Execution only to an eligible execution actor while execution is
-in progress. Completed Iftars expose read-only execution and monitoring links and
-do not display a closure action.
+The index shows planning, execution, monitoring, and open/closed states separately.
+The Iftar hub shows one contextual lifecycle action, a five-stage progress summary,
+and an irreversible closure confirmation only to an eligible branch Supervisor.
+Closed Iftars remain fully readable and are clearly marked as historical.

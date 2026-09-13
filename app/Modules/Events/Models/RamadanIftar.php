@@ -243,4 +243,19 @@ class RamadanIftar extends Model
             ->latest('id')
             ->first();
     }
+
+    public function closureReadiness(): array
+    {
+        return [
+            'planning_approved' => $this->status === self::STATUS_APPROVED,
+            'execution_completed' => $this->execution_status === self::EXECUTION_STATUS_COMPLETED,
+            'still_open' => $this->closed_at === null,
+            'approved_monitoring' => $this->approvedMonitoringReportForClosure() !== null,
+        ];
+    }
+
+    public function canBeClosed(): bool
+    {
+        return ! in_array(false, $this->closureReadiness(), true);
+    }
 }

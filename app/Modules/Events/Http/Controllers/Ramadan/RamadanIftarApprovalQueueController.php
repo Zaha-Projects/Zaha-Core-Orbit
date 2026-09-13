@@ -24,7 +24,7 @@ class RamadanIftarApprovalQueueController extends Controller
             })->pluck('id')->all();
 
         $query = RamadanIftar::query()
-            ->with(['branch', 'relationsOfficer', 'workflowInstance.currentStep.role'])
+            ->with(['branch', 'creator', 'workflowInstance.currentStep.role'])
             ->where('status', RamadanIftar::STATUS_SUBMITTED)
             ->whereExists(function ($query) use ($workflow, $stepIds) {
                 $query->selectRaw('1')->from('workflow_instances')

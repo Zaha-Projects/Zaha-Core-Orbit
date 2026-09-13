@@ -144,6 +144,7 @@ class RolesSeeder extends Seeder
                 'ramadan_iftars.view',
                 'ramadan_iftars.approve',
                 'ramadan_iftars.monitor.review',
+                'ramadan_iftars.close',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',

@@ -13,15 +13,34 @@ class RamadanIftarWorkspaceController extends Controller
     {
         $user = $request->user();
         abort_unless($user && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.view')), 403);
-        $query = RamadanIftar::query()->with(['branch', 'relationsOfficer', 'workflowInstance.currentStep.role']);
+        $query = RamadanIftar::query()->with(['branch', 'relationsOfficer', 'workflowInstance.currentStep.role'])
+            ->with(['monitoringReports' => fn ($query) => $query->latest('updated_at')->latest('id')]);
         if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
             $branchIds = $user->scopedBranchIds();
             $branchIds === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchIds);
         }
 
-        $iftars = $query->orderByDesc('planned_date')->orderByDesc('id')->paginate(15)->withQueryString();
+        $filters = $request->only(['search', 'branch_id', 'status', 'execution_status', 'closure']);
+        $query->when(filled($filters['search'] ?? null), function ($query) use ($filters) {
+            $search = trim($filters['search']);
+            $query->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%'.$search.'%');
+                if (ctype_digit($search)) {
+                    $query->orWhereKey((int) $search);
+                }
+            });
+        })->when(filled($filters['branch_id'] ?? null), fn ($query) => $query->where('branch_id', $filters['branch_id']))
+            ->when(filled($filters['status'] ?? null), fn ($query) => $query->where('status', $filters['status']))
+            ->when(filled($filters['execution_status'] ?? null), fn ($query) => $query->where('execution_status', $filters['execution_status']))
+            ->when(($filters['closure'] ?? null) === 'open', fn ($query) => $query->whereNull('closed_at'))
+            ->when(($filters['closure'] ?? null) === 'closed', fn ($query) => $query->whereNotNull('closed_at'));
 
-        return view('pages.events.ramadan.index', compact('iftars'));
+        $iftars = $query->orderByDesc('planned_date')->orderByDesc('id')->paginate(15)->withQueryString();
+        $branches = \App\Models\Branch::query()
+            ->when(! $user->hasRole('super_admin') && ! $user->can('branches.view.all'), fn ($query) => $query->whereIn('id', $user->scopedBranchIds()))
+            ->orderBy('name')->get();
+
+        return view('pages.events.ramadan.index', compact('iftars', 'branches', 'filters'));
     }
 
     public function show(Request $request, RamadanIftar $ramadanIftar, DynamicWorkflowService $workflows)
@@ -51,7 +70,11 @@ class RamadanIftarWorkspaceController extends Controller
             && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.monitor'));
         $canReviewMonitoring = ($user->hasRole('super_admin') || $user->can('ramadan_iftars.monitor.review'))
             && $ramadanIftar->monitoringReports->contains('status', \App\Modules\Events\Models\MonitoringReport::STATUS_SUBMITTED);
+        $closureReadiness = $ramadanIftar->closureReadiness();
+        $canClose = ($user->hasRole('super_admin') || ($user->hasRole('supervisor') && $user->can('ramadan_iftars.close')))
+            && ($user->hasRole('super_admin') || $user->hasAccessToScopedBranch((int) $ramadanIftar->branch_id))
+            && ! in_array(false, $closureReadiness, true);
 
-        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor', 'canReviewMonitoring'));
+        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor', 'canReviewMonitoring', 'closureReadiness', 'canClose'));
     }
 }

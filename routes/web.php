@@ -76,6 +76,7 @@ use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarExecutionController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarWorkspaceController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarMonitoringController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanMonitoringReviewController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarClosureController;
 
 /*
 |--------------------------------------------------------------------------
@@ -223,6 +224,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{ramadanIftar}/start-execution', [RamadanIftarExecutionController::class, 'start'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.start');
         Route::put('/{ramadanIftar}/execution', [RamadanIftarExecutionController::class, 'update'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.update');
         Route::post('/{ramadanIftar}/complete-execution', [RamadanIftarExecutionController::class, 'complete'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.execute')->whereNumber('ramadanIftar')->name('execution.complete');
+        Route::post('/{ramadanIftar}/close', [RamadanIftarClosureController::class, 'store'])->middleware('role_or_permission:supervisor|super_admin|ramadan_iftars.close')->whereNumber('ramadanIftar')->name('close');
         Route::get('/{ramadanIftar}/monitoring', [RamadanIftarMonitoringController::class, 'index'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->name('monitoring.index');
         Route::post('/{ramadanIftar}/monitoring', [RamadanIftarMonitoringController::class, 'store'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->name('monitoring.store');
         Route::get('/{ramadanIftar}/monitoring/{monitoringReport}', [RamadanIftarMonitoringController::class, 'edit'])->middleware('role_or_permission:followup_officer|super_admin|ramadan_iftars.monitor')->whereNumber('ramadanIftar')->whereNumber('monitoringReport')->name('monitoring.edit');

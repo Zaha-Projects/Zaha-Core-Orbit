@@ -12,6 +12,7 @@ use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\SubjectExecutionNeed;
 use App\Modules\Events\Services\RamadanIftarExecutionService;
 use App\Modules\Events\Services\RamadanIftarMonitoringService;
+use App\Modules\Events\Services\RamadanIftarClosureService;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -92,15 +93,105 @@ class RamadanIftarCompletionClosureTest extends TestCase
         $this->actingAs($unauthorized)->post(route('events.ramadan.iftars.execution.complete', $otherIftar))->assertForbidden();
     }
 
-    public function test_completed_workspace_is_read_only_and_has_no_close_action(): void
+    public function test_completed_workspace_exposes_close_only_with_approved_monitoring_and_permission(): void
     {
         [$iftar, $actor] = $this->readyIftar();
         $actor->givePermissionTo(['ramadan_iftars.view', 'ramadan_iftars.monitor']);
         app(RamadanIftarExecutionService::class)->complete($iftar, $actor);
         $this->actingAs($actor)->get(route('events.ramadan.iftars.show', $iftar))
-            ->assertOk()->assertSee(__('ramadan_iftars.actions.view_execution'))->assertSee(__('ramadan_iftars.statuses.closure.open'));
+            ->assertOk()->assertSee(__('ramadan_iftars.actions.view_execution'))->assertDontSee(__('ramadan_iftars.actions.close'));
+        $supervisor = User::factory()->create(['branch_id' => $iftar->branch_id, 'status' => 'active']);
+        $supervisor->assignRole('supervisor');
+        $this->approvedReport($iftar, $actor);
+        $this->actingAs($supervisor)->get(route('events.ramadan.iftars.show', $iftar))
+            ->assertOk()->assertSee(__('ramadan_iftars.actions.close'));
         $this->actingAs($actor)->get(route('events.ramadan.iftars.execution.show', $iftar))
             ->assertOk()->assertDontSee(__('ramadan_iftars.actions.save_actual'));
+    }
+
+    public function test_closure_requires_completed_execution_and_approved_monitoring(): void
+    {
+        [$iftar, $actor] = $this->readyIftar();
+        $service = app(RamadanIftarClosureService::class);
+        $closer = $this->closureActor($iftar);
+        $this->assertClosureRejected($service, $iftar, $closer);
+        app(RamadanIftarExecutionService::class)->complete($iftar, $actor);
+        $this->assertClosureRejected($service, $iftar->fresh(), $closer);
+        $report = $this->approvedReport($iftar->fresh(), $actor);
+        $plannedDate = $iftar->fresh()->planned_date->toDateString();
+        $actualAttendance = $iftar->fresh()->actual_attendance;
+
+        $service->close($iftar->fresh(), $closer);
+        $iftar->refresh();
+        $this->assertNotNull($iftar->closed_at);
+        $this->assertSame(RamadanIftar::STATUS_APPROVED, $iftar->status);
+        $this->assertSame(RamadanIftar::EXECUTION_STATUS_COMPLETED, $iftar->execution_status);
+        $this->assertSame($plannedDate, $iftar->planned_date->toDateString());
+        $this->assertSame($actualAttendance, $iftar->actual_attendance);
+        $this->assertDatabaseHas('workflow_action_logs', [
+            'module' => RamadanIftar::WORKFLOW_MODULE, 'entity_id' => $iftar->id,
+            'action_type' => 'iftar_closed', 'performed_by' => $closer->id,
+        ]);
+        $this->assertSame($report->id, data_get(\App\Models\WorkflowActionLog::query()->where('action_type', 'iftar_closed')->first()->meta, 'monitoring_report_id'));
+    }
+
+    public function test_documented_approved_mismatch_does_not_block_closure_and_duplicate_is_safe(): void
+    {
+        [$iftar, $actor] = $this->readyIftar();
+        app(RamadanIftarExecutionService::class)->complete($iftar, $actor);
+        $report = $this->approvedReport($iftar->fresh(), $actor);
+        $report->verifications()->create([
+            'field_key' => 'attendance', 'field_label' => 'Attendance',
+            'planned_value' => ['value' => 10], 'actual_value' => ['value' => 8],
+            'match_status' => \App\Modules\Events\Models\FieldVerification::MISMATCHED,
+            'note' => 'Two invitees did not attend.', 'verified_by' => $actor->id, 'verified_at' => now(),
+        ]);
+        $service = app(RamadanIftarClosureService::class);
+        $closer = $this->closureActor($iftar);
+        $service->close($iftar->fresh(), $closer);
+        $closedAt = $iftar->fresh()->closed_at->toDateTimeString();
+        $this->assertClosureRejected($service, $iftar->fresh(), $closer);
+        $this->assertSame($closedAt, $iftar->fresh()->closed_at->toDateTimeString());
+        $this->assertSame(1, \App\Models\WorkflowActionLog::query()->where('action_type', 'iftar_closed')->count());
+    }
+
+    public function test_closure_endpoint_enforces_supervisor_permission_and_branch(): void
+    {
+        [$iftar, $actor] = $this->readyIftar();
+        app(RamadanIftarExecutionService::class)->complete($iftar, $actor);
+        $this->approvedReport($iftar->fresh(), $actor);
+        $supervisor = User::factory()->create(['branch_id' => $iftar->branch_id, 'status' => 'active']);
+        $supervisor->assignRole('supervisor');
+        $unauthorized = User::factory()->create(['branch_id' => $iftar->branch_id, 'status' => 'active']);
+        $this->actingAs($unauthorized)->post(route('events.ramadan.iftars.close', $iftar))->assertForbidden();
+        $this->actingAs($supervisor)->post(route('events.ramadan.iftars.close', $iftar))->assertRedirect();
+
+        [$other, $otherActor] = $this->readyIftar();
+        app(RamadanIftarExecutionService::class)->complete($other, $otherActor);
+        $this->approvedReport($other->fresh(), $otherActor);
+        $this->actingAs($supervisor)->post(route('events.ramadan.iftars.close', $other))->assertForbidden();
+    }
+
+    public function test_closed_iftar_remains_viewable_but_operational_writes_are_locked(): void
+    {
+        [$iftar, $executor] = $this->readyIftar();
+        app(RamadanIftarExecutionService::class)->complete($iftar, $executor);
+        $report = $this->approvedReport($iftar->fresh(), $executor);
+        $closer = $this->closureActor($iftar);
+        app(RamadanIftarClosureService::class)->close($iftar->fresh(), $closer);
+
+        $this->actingAs($closer)->get(route('events.ramadan.iftars.show', $iftar))
+            ->assertOk()
+            ->assertSee(__('ramadan_iftars.closure.historical'))
+            ->assertDontSee(__('ramadan_iftars.actions.close'));
+        $this->actingAs($closer)->get(route('events.ramadan.iftars.edit', $iftar))->assertForbidden();
+
+        try {
+            app(RamadanIftarMonitoringService::class)->review($iftar->fresh(), $report, $closer, MonitoringReport::STATUS_RETURNED, 'Late change');
+            $this->fail('Closed monitoring evidence was reviewed.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(MonitoringReport::STATUS_APPROVED, $report->fresh()->status);
+        }
     }
 
     public function test_existing_closed_record_rejects_execution_and_monitoring_writes(): void
@@ -149,6 +240,38 @@ class RamadanIftarCompletionClosureTest extends TestCase
             $this->fail('Completion should have been rejected.');
         } catch (ValidationException $exception) {
             $this->assertNotSame(RamadanIftar::EXECUTION_STATUS_COMPLETED, $iftar->fresh()->execution_status);
+        }
+    }
+
+    private function closureActor(RamadanIftar $iftar): User
+    {
+        $user = User::factory()->create(['branch_id' => $iftar->branch_id, 'status' => 'active']);
+        $user->assignRole('supervisor');
+
+        return $user;
+    }
+
+    private function approvedReport(RamadanIftar $iftar, User $monitor): MonitoringReport
+    {
+        $method = MonitoringMethod::query()->create([
+            'code' => 'closure-'.$iftar->id.'-'.MonitoringMethod::query()->count(),
+            'name_ar' => 'متابعة الإغلاق', 'name_en' => 'Closure monitoring',
+        ]);
+
+        return $iftar->monitoringReports()->create([
+            'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
+            'monitoring_method_id' => $method->id, 'monitor_user_id' => $monitor->id,
+            'status' => MonitoringReport::STATUS_APPROVED, 'submitted_at' => now(),
+        ]);
+    }
+
+    private function assertClosureRejected(RamadanIftarClosureService $service, RamadanIftar $iftar, User $actor): void
+    {
+        try {
+            $service->close($iftar, $actor);
+            $this->fail('Closure should have been rejected.');
+        } catch (ValidationException $exception) {
+            $this->assertNull($iftar->fresh()->closed_at);
         }
     }
 }

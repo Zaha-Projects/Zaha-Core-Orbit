@@ -1,11 +1,11 @@
 # RAMADAN IFTARS IMPLEMENTATION STATUS
 
 - **Last updated:** 2026-09-12
-- **Current phase:** Phase 1.13 — ready for final closure implementation
-- **Latest completed commit before this cleanup:** `b869c5f`
-- **Overall status:** Planning through monitoring approval implemented; final closure remains.
-- **Current blocker:** Final closure actor/permission and closure action remain to be implemented.
-- **Next recommended slice:** `RESUME PHASE 1.13 — RAMADAN FINAL CLOSURE`
+- **Current phase:** Phase 1.13 — execution completion and final closure complete
+- **Latest completed commit before final closure:** `f5cec93`
+- **Overall status:** Ramadan core operational flow is implemented through final closure.
+- **Current blocker:** Runtime/browser validation remains blocked by the missing Composer vendor tree.
+- **Next recommended slice:** `PHASE 1.14 — RAMADAN APPROVED-PLAN CHANGE REQUESTS AND VERSIONING`
 - **Runtime status:** **RUNTIME TESTING REMAINS PENDING** — `vendor/autoload.php` is missing and Composer GitHub downloads previously returned HTTP 403.
 
 ## Completed phases
@@ -29,7 +29,7 @@
 - [x] Phase 1.13 partial — execution completion
 - [x] Phase 1.13 prerequisite — monitoring review/return/approval
 - [x] Ramadan planning/execution localization and static UI verification
-- [ ] Phase 1.13 — final closure
+- [x] Phase 1.13 — execution completion and final closure
 
 ## User capability checklist
 
@@ -44,8 +44,8 @@
 - [x] Create report, field verification, submit, review queue, approve, return, edit, and resubmit
 ### Closure
 - [x] Deterministic approved report query contract
-- [ ] Closure authorization/readiness
-- [ ] Close Iftar
+- [x] Closure authorization/readiness
+- [x] Close Iftar
 
 ## Backend status
 
@@ -60,7 +60,7 @@
 | Audit | DONE | Generic WorkflowActionLog. |
 | Branch/subject isolation | DONE | HTTP and service checks. |
 | Tampering protection | DONE | Owned relation lookups and tests. |
-| Closure | TODO | Must consume approvedMonitoringReportForClosure(). |
+| Closure | DONE | Branch Supervisor; transactional and consumes approvedMonitoringReportForClosure(). |
 
 ## Frontend status
 
@@ -73,8 +73,26 @@
 | Lifecycle hierarchy/status badges/empty states | DONE |
 | Responsive Bootstrap layout and global RTL | DONE |
 | Arabic and English Ramadan namespace | DONE — translation key parity statically verified. |
-| Closure UI | TODO |
+| Closure UI | DONE |
 | Runtime visual/browser verification | BLOCKED by missing vendor |
+
+### Professional UI completion checklist
+
+- [x] Navigation
+- [x] Index
+- [x] Operational Hub
+- [x] Guidance
+- [x] Planning Create/Edit
+- [x] Approval Queue
+- [x] Approval Review
+- [x] Execution
+- [x] Monitoring
+- [x] Monitoring Review
+- [x] Closure
+- [x] Responsive Static Review
+- [x] Arabic Localization
+- [x] English Localization
+- [ ] Browser Visual Validation — blocked by missing `vendor/autoload.php`
 
 ## Automated testing checklist
 
@@ -140,7 +158,7 @@ Need row; a missing seeder run must not be mistaken for “no requirements.”
 - [ ] Review monitoring
 - [ ] Return, correct, and resubmit monitoring
 - [ ] Approve monitoring
-- [ ] Close Iftar (not implemented)
+- [ ] Close Iftar (implemented; runtime validation pending)
 
 ## UNRESOLVED BUSINESS RULES
 
@@ -150,10 +168,10 @@ Need row; a missing seeder run must not be mistaken for “no requirements.”
 - Self-review: prohibited; explicit super-admin support override.
 - Mismatch: approvable only with a documenting note.
 - Authoritative report: latest approved by update time, then ID.
+- Final closure actor: branch Supervisor with `ramadan_iftars.close`; super-admin support override.
+- Closure readiness: approved planning, completed execution, open record, and authoritative approved monitoring.
 
 ### Remaining
-- Closure actor and permission.
-- Any closure checks beyond completed execution plus authoritative approved monitoring.
 - Reopening a closed Iftar.
 - Approved-plan change request and version-copy semantics.
 - Delete/restore lifecycle.
@@ -176,7 +194,7 @@ Monthly Activities remain on legacy behavior.
 - Composer/vendor environment blocker; runtime suites have not executed.
 - Browser/RTL visual verification remains blocked until dependencies are available.
 - Legacy Monthly compatibility aliases remain intentionally isolated.
-- Closure and approved-plan versioning remain deliberately deferred.
+- Approved-plan versioning remains deliberately deferred.
 
 ## Reference documents
 
@@ -189,10 +207,10 @@ Read `docs/ramadan-iftars-data-design-ar.md`,
 
 ## HOW TO RESUME THIS WORK
 
-1. Start from the current branch at the commit containing this document (parent: `2fcb020`).
+1. Start from the current branch at the commit containing this document (parent: `f5cec93`).
 2. Read the reference documents above and this tracker first.
-3. Current incomplete phase: Phase 1.13 final closure.
-4. Exact next slice: `RESUME PHASE 1.13 — RAMADAN FINAL CLOSURE`.
+3. Current completed phase: Phase 1.13 final closure.
+4. Exact next slice: `PHASE 1.14 — RAMADAN APPROVED-PLAN CHANGE REQUESTS AND VERSIONING`.
 5. Once dependencies work, run the new monitoring review test first, then every Ramadan feature suite listed above.
 6. Never break these invariants:
    - Ramadan remains independent from `MonthlyActivity`.

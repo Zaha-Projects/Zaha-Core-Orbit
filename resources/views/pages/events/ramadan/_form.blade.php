@@ -12,6 +12,7 @@ $collections = [
 ];
 @endphp
 <div class="container py-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.navigation.title') }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ __($ramadanIftar ? 'ramadan_iftars.titles.edit' : 'ramadan_iftars.titles.create') }}</li></ol></nav>
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><div><h1 class="h3 mb-1">{{ __('ramadan_iftars.titles.'.($ramadanIftar ? 'edit' : 'create')) }}</h1><p class="text-muted mb-0">{{ __('ramadan_iftars.bootstrap.execution_needs') }}</p></div>@if($ramadanIftar)<a class="btn btn-outline-secondary" href="{{ route('events.ramadan.iftars.show',$ramadanIftar) }}">{{ __('ramadan_iftars.actions.back') }}</a>@endif</div>
     @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <form method="POST" action="{{ $formAction }}" id="ramadan-planning-form">@csrf @if($formMethod !== 'POST') @method($formMethod) @endif

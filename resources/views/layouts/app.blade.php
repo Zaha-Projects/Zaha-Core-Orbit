@@ -128,10 +128,13 @@
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
             @can('ramadan_iftars.view')
-                <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>Ramadan Iftars</span></a></li>
+                <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>
             @endcan
             @can('ramadan_iftars.approve')
-                <li class="side-item {{ request()->routeIs('events.ramadan.approvals.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.approvals.index') }}"><i class="fas fa-square-check"></i><span>Ramadan Approvals</span></a></li>
+                <li class="side-item {{ request()->routeIs('events.ramadan.approvals.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('ramadan_iftars.navigation.approvals') }}</span></a></li>
+            @endcan
+            @can('ramadan_iftars.monitor.review')
+                <li class="side-item {{ request()->routeIs('events.ramadan.monitoring-reviews.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.monitoring-reviews.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('ramadan_iftars.navigation.monitoring_reviews') }}</span></a></li>
             @endcan
             @if(! $isRelationsManagerSidebar && $user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.returned_feedback') }}"><i class="fas fa-reply-all"></i><span>طلبات راجعة للفرع</span></a></li>

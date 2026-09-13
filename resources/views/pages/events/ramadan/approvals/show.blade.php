@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <div class="container py-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.navigation.title') }}</a></li><li class="breadcrumb-item"><a href="{{ route('events.ramadan.approvals.index') }}">{{ __('ramadan_iftars.navigation.approvals') }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ __('ramadan_iftars.navigation.workspace',['id'=>$ramadanIftar->id]) }}</li></ol></nav>
     <div class="d-flex flex-wrap justify-content-between gap-2 mb-4"><div><h1 class="h3 mb-1">{{ __('ramadan_iftars.approval.review_title') }}</h1><p class="text-muted mb-0">{{ $ramadanIftar->title }} · {{ optional($ramadanIftar->branch)->name }}</p></div><a class="btn btn-outline-secondary" href="{{ route('events.ramadan.approvals.index') }}">{{ __('ramadan_iftars.actions.back') }}</a></div>
     @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="card shadow-sm mb-3"><div class="card-header fw-semibold">{{ __('ramadan_iftars.sections.core') }}</div><div class="card-body"><dl class="row mb-0">

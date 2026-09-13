@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <div class="container py-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.navigation.title') }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ __('ramadan_iftars.navigation.monitoring_reviews') }}</li></ol></nav>
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <div><h1 class="h3 mb-1">{{ __('ramadan_iftars.titles.monitoring_review_queue') }}</h1><p class="text-muted mb-0">{{ __('ramadan_iftars.hints.mismatch_documented') }}</p></div>
         <a class="btn btn-outline-secondary" href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.actions.back') }}</a>

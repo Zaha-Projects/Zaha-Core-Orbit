@@ -4,6 +4,7 @@
     $attendees = $ramadanIftar->attendees->concat([new \App\Modules\Events\Models\RamadanIftarAttendee]);
 @endphp
 <div class="container py-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.navigation.title') }}</a></li><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.show',$ramadanIftar) }}">{{ __('ramadan_iftars.navigation.workspace',['id'=>$ramadanIftar->id]) }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ __('ramadan_iftars.titles.execution') }}</li></ol></nav>
     <div class="d-flex justify-content-between"><h1 class="h3">{{ __('ramadan_iftars.titles.execution') }}</h1><a href="{{ route('events.ramadan.iftars.show', $ramadanIftar) }}">{{ __('ramadan_iftars.actions.back') }}</a></div>
     <p class="text-muted">{{ __('ramadan_iftars.execution.private_hint',['title'=>$ramadanIftar->title]) }} · {{ optional($ramadanIftar->branch)->name }}</p>
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif

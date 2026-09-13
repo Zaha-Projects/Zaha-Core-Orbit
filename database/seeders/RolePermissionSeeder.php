@@ -31,6 +31,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'ramadan_iftars.execute', 'module' => 'ramadan_iftars', 'action' => 'execute', 'name_ar' => 'تسجيل تنفيذ إفطار رمضان', 'name_en' => 'Record Ramadan Iftar execution'],
             ['name' => 'ramadan_iftars.monitor', 'module' => 'ramadan_iftars', 'action' => 'monitor', 'name_ar' => 'رصد إفطار رمضان', 'name_en' => 'Monitor Ramadan Iftars'],
             ['name' => 'ramadan_iftars.monitor.review', 'module' => 'ramadan_iftars', 'action' => 'monitor_review', 'name_ar' => 'مراجعة واعتماد متابعة إفطار رمضان', 'name_en' => 'Review Ramadan Iftar monitoring'],
+            ['name' => 'ramadan_iftars.close', 'module' => 'ramadan_iftars', 'action' => 'close', 'name_ar' => 'إغلاق الإفطار الرمضاني', 'name_en' => 'Close Ramadan Iftars'],
 
             ['name' => 'evaluation.view', 'module' => 'evaluation', 'action' => 'view', 'name_ar' => 'عرض التقييم', 'name_en' => 'View evaluation'],
             ['name' => 'evaluation.submit', 'module' => 'evaluation', 'action' => 'submit', 'name_ar' => 'إرسال التقييم', 'name_en' => 'Submit evaluation'],
