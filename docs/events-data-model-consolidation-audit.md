@@ -227,11 +227,13 @@ No evidence supports a safe one-step table rename or model namespace move.
 
 ## 8. Seeder and bootstrap audit
 
+> **Phase 2.5 update:** `DatabaseSeeder` now runs `EventReferenceDataSeeder`, `CanonicalExecutionNeedTypeSeeder`, then `CompleteRolePermissionSeeder`. The focused reference orchestrator runs the approved department dependency, Event types, target groups, beneficiary segments, monitoring methods, Event statuses, and Event categories. Guidance and real directory data remain business-managed.
+
 | Data | Seeder/current source | Idempotent? | Classification | Decision |
 |---|---|---:|---|---|
 | `target_groups` | `TargetGroupSeeder::updateOrCreate` | Yes | REFERENCE_DATA_SEED | Keep as the shared Events catalogue; preserve business additions. |
 | `beneficiary_segments` | `BeneficiarySegmentSeeder::updateOrCreate` | Yes | REFERENCE_DATA_SEED | Keep; production installation requires this reference catalogue. |
-| `execution_need_types` | `CanonicalExecutionNeedTypeSeeder::updateOrCreate` | Yes | REQUIRED_PRODUCTION_SEED | This is the authoritative canonical bootstrap. Retire the older overlapping `ExecutionNeedTypeSeeder` only in Phase 2.9 after install/upgrade ordering is proven. |
+| `execution_need_types` | `CanonicalExecutionNeedTypeSeeder::updateOrCreate` | Yes | REQUIRED_PRODUCTION_SEED | This is the authoritative canonical bootstrap. The older overlapping `ExecutionNeedTypeSeeder` was removed in Phase 2.5 after repository-wide dependency verification. |
 | `monitoring_methods` | `MonitoringMethodSeeder::updateOrCreate` | Yes | REFERENCE_DATA_SEED | Keep cameras/field-visit bootstrap; business can manage active state. |
 | `event_guidance_versions` | application-managed publishing | N/A | BUSINESS_MANAGED_DATA + DO_NOT_AUTO_SEED | Never synthesize approved production guidance or acceptance. |
 | `mobilization_methods` | no seeder found | N/A | BUSINESS_MANAGED_DATA | Establish an approved catalogue before considering a reference seed; do not invent values. |

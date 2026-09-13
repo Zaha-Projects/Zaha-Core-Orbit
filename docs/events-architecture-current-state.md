@@ -16,7 +16,7 @@ Three intentional transitional areas remain:
 
 1. shared team-member, supply, and verification models retain Monthly-oriented names and `App\Models` namespaces;
 2. Monthly execution needs and post-execution evidence remain legacy JSON/Monthly structures;
-3. reference-data seeders for beneficiary segments, monitoring methods, target groups, and Event lookups are not registered in the active default bootstrap; `ExecutionNeedTypeSeeder` also remains as a superseded, unregistered seeder beside the authoritative canonical seeder.
+3. the approved department catalogue is bootstrapped as an explicit dependency of Event categories; guidance, mobilization methods, and real community directories remain intentionally business-managed.
 
 Source hierarchy: code → migrations → relationships → routes → seeders/config → tests → this document → supporting documents → historical plans.
 
@@ -48,7 +48,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Phase 1.8 | Common monitoring foundation | methods, reports and verification snapshots | `field_verifications` replaced by generalized established table | Monthly report-envelope migration remains | PARTIALLY_RETAINED |
 | Phase 1.9 | Ramadan planning CRUD | validated transactional create/edit and child synchronization | Relations rebound in 2.3, behavior retained | Runtime proof pending | COMPLETE_CURRENT |
 | Guidance prerequisite | Versioned guidance acceptance before planning | `event_guidance_versions`, acceptance service/controller and historical linkage | None | Guidance content remains business-managed | COMPLETE_CURRENT |
-| Execution Needs normalization | Canonical master, mappings and applicability | canonical flags/mapping/seeder plus `subject_execution_needs` | Older `ExecutionNeedTypeSeeder` superseded | Remove/archive old unregistered seeder after deployment audit | PARTIALLY_RETAINED |
+| Execution Needs normalization | Canonical master, mappings and applicability | canonical flags/mapping/seeder plus `subject_execution_needs` | Older `ExecutionNeedTypeSeeder` removed in Phase 2.5 | Monthly JSON transition remains a separate future slice | PARTIALLY_RETAINED |
 | Phase 1.10 | Submission and normal planning approval | independent Ramadan workflow instance, queue and decisions | None | Runtime proof pending | COMPLETE_CURRENT |
 | Phase 1.11 | Actual execution flow | start/update actuals/team tasks/needs and audit | member/supply model/table binding changed in 2.3 | Runtime proof pending | COMPLETE_CURRENT |
 | Phase 1.12 | Monitoring and workspace | monitoring report CRUD/submission and operational hub | verification table binding changed in 2.3 | Runtime proof pending | COMPLETE_CURRENT |
@@ -63,6 +63,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Phase 2.2 | Data-model consolidation audit | explicit keep/generalize/merge decisions | Its pre-2.3 inventory is historical where it names abandoned tables as current | Retained as decision record | COMPLETE_BUT_LATER_SUPERSEDED |
 | Phase 2.3 | Pre-release schema consolidation | four established tables generalized; duplicate migrations/models removed; Ramadan rebound | Reversed four Phase 1 Common table choices | Runtime `migrate:fresh` proof pending | COMPLETE_CURRENT |
 | Phase 2.4 | Full reconciliation | this code-first current-state audit and documentation authority map | N/A | Runtime checks pending due environment | COMPLETE_CURRENT |
+| Phase 2.5 | Event reference-data bootstrap reconciliation | deterministic reference orchestrator, canonical need source, idempotency coverage, and removal of superseded need seeder | Replaces the incomplete reference bootstrap documented by 2.4 | Runtime seed execution pending | COMPLETE_CURRENT |
 
 ## 4. Final architecture decision matrix
 
@@ -88,7 +89,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Ramadan monitoring review | initially deferred | explicit supervisor review | service-owned report state + action logs | Keep, not a DynamicWorkflow instance | monitoring/action-log tables | `MonitoringReport` | Events | No | Yes | No | none | No | document distinction |
 | Change requests | Monthly semantics considered | separate Ramadan request table/workflow | separate domain semantics retained | Keep separate | domain request tables | request models | mixed | Yes | Yes | Yes | workflow required | Yes | namespace identity plan |
 | Monthly controllers | giant legacy controllers | focused routes inheriting legacy | physically focused controllers | Keep | N/A | N/A | Events controllers | Yes | No | No | none | No | no refactor required |
-| Seeder strategy | multiple optional calls | canonical/reference additions | minimal `DatabaseSeeder` calls complete permissions + canonical needs | One authoritative path per master | lookup/workflow/security | models above | mixed | Yes | Yes | Yes | see §16 | Yes | bootstrap ordering audit |
+| Seeder strategy | multiple optional calls | canonical/reference additions | `DatabaseSeeder` calls Event references, canonical needs, then complete auth/workflows | One authoritative path per master | lookup/workflow/security | models above | mixed | Yes | Yes | Yes | see §16 | No | runtime idempotency proof |
 
 ## 5. Fresh-database table inventory
 
@@ -285,20 +286,25 @@ Role assignments match intended actors: Relations Officer requests Ramadan chang
 
 | Seeder/data | Called from | Idempotent | Classification | Order/dependency/finding |
 |---|---|:---:|---|---|
-| `CompleteRolePermissionSeeder` | active `DatabaseSeeder` | delegated repeatable seeders | REQUIRED_PRODUCTION_SEED | calls permissions, roles, `WorkflowSeeder`, and evaluation access in safe order |
+| `EventReferenceDataSeeder` | first active `DatabaseSeeder` call | delegates idempotent seeders | REFERENCE_DATA_SEED | approved departments → types → targets → segments → monitoring methods → statuses → department-owned categories |
+| `CompleteRolePermissionSeeder` | third active `DatabaseSeeder` call | delegated repeatable seeders | REQUIRED_PRODUCTION_SEED | calls permissions, roles, `WorkflowSeeder`, and evaluation access in safe order |
 | `CanonicalExecutionNeedTypeSeeder` | active `DatabaseSeeder` | Yes (`updateOrCreate`) | REQUIRED_PRODUCTION_SEED | authoritative execution-need bootstrap |
-| `ExecutionNeedTypeSeeder` | not called; commented historical line | Yes, but incomplete legacy catalogue | SUPERSEDED | does not currently conflict at runtime; remove/archive in a small cleanup slice |
+| `ExecutionNeedTypeSeeder` | removed in Phase 2.5 | N/A | SUPERSEDED | canonical definitions fully replace its old aliases/catalogue |
 | `WorkflowSeeder` | called by `CompleteRolePermissionSeeder` | Yes, definition-driven | REQUIRED_PRODUCTION_SEED | safely follows permission/role creation inside the complete bootstrap |
 | `RolesSeeder`, `RolePermissionSeeder` | via complete bootstrap/direct deployment conventions | repeatable | REQUIRED_PRODUCTION_SEED | must precede workflow seeding |
-| `TargetGroupSeeder` | not called by active bootstrap | Yes | REFERENCE_DATA_SEED | registration gap; requires target table and must preserve business-added rows |
-| `BeneficiarySegmentSeeder` | not called by active bootstrap | Yes | REFERENCE_DATA_SEED | registration gap; Ramadan targeting catalogue may be empty on a default fresh install |
-| `MonitoringMethodSeeder` | not called by active bootstrap | Yes | REFERENCE_DATA_SEED | registration gap; Ramadan monitoring cannot create reports without a method row |
-| Event type/category/status seeders | not called by active bootstrap | `firstOrCreate`/`updateOrCreate` | REFERENCE_DATA_SEED | registration gap; deployment bootstrap must be centralized |
+| `TargetGroupSeeder` | `EventReferenceDataSeeder` | Yes (`updateOrCreate` by name) | REFERENCE_DATA_SEED | active; schema has no stable code, so approved name is the available business key |
+| `BeneficiarySegmentSeeder` | `EventReferenceDataSeeder` | Yes (`updateOrCreate` by code) | REFERENCE_DATA_SEED | active before planning selections |
+| `MonitoringMethodSeeder` | `EventReferenceDataSeeder` | Yes (`updateOrCreate` by code) | REFERENCE_DATA_SEED | active; provides `cameras` and `field_visit` required by monitoring |
+| Event type/status seeders | `EventReferenceDataSeeder` | `updateOrCreate` | REFERENCE_DATA_SEED | active and independent of organization rows |
+| `DepartmentSeeder` | first in `EventReferenceDataSeeder` | Yes (`updateOrCreate`) | REQUIRED_PRODUCTION_SEED | approved dependency for department-owned Event categories |
+| `EventCategorySeeder` | last in `EventReferenceDataSeeder` | Yes (`updateOrCreate`) | REFERENCE_DATA_SEED | active after its approved department catalogue dependency |
 | `event_guidance_versions` | application publishing only | N/A | BUSINESS_MANAGED_DATA | never fake-seed approved guidance |
 | mobilization/community/local data | business UI/data | N/A | BUSINESS_MANAGED_DATA | no fabricated production values |
 | Agenda/Monthly/workflow/post-execution showcase seeders | explicit/manual only | fixture-oriented | TEST_DEV_FIXTURE | never production bootstrap |
 
-No seeder references an abandoned Phase 2.3 table. The workflow ordering is correct through `CompleteRolePermissionSeeder`. The exact bootstrap gap is that Event reference catalogues are not called by the active default path, while Ramadan monitoring requires monitoring-method rows and planning expects reference catalogues.
+No seeder references an abandoned Phase 2.3 table. The authoritative chain is now `EventReferenceDataSeeder` → `CanonicalExecutionNeedTypeSeeder` → `CompleteRolePermissionSeeder`; the latter internally guarantees permission → role → workflow ordering. No hard-coded numeric reference ID was found in Event runtime/bootstrap code.
+
+Automatic production-safe bootstrap includes the approved department catalogue, Event types, target groups, beneficiary segments, monitoring methods, Event statuses and categories, canonical execution needs, permissions, roles, workflows, and evaluation access. Manual business setup must publish a current guidance version and create approved mobilization methods, real community organizations, and local communities. Showcase seeders remain manual test/development fixtures.
 
 ## 17. Migration graph audit
 
@@ -374,7 +380,7 @@ Missing runtime coverage is environmental rather than absent test files: migrati
 | `SubjectTargetGroup` | model | Yes | No | No | rebound to pivot | keep |
 | Monthly-named shared models | models | Yes | Yes | No | possible generic names | transitional |
 | workflow/config/services | infrastructure | Yes | No | No | N/A | preserve identities |
-| `ExecutionNeedTypeSeeder` | seeder | No | Yes | not yet | canonical seeder | cleanup candidate |
+| `ExecutionNeedTypeSeeder` | seeder | No | Yes | Yes | canonical seeder | none; do not restore |
 | this document | architecture | Yes | No | No | primary authority | maintain with changes |
 
 ### Documentation authority
@@ -416,7 +422,7 @@ Historical documents retain old names deliberately and now point readers to this
 | HIGH | Stored FQCN identity for Monthly/Agenda models and `PostExecutionVerification` audit logs | workflow/request/action-log entity types | inventory live distinct values and define alias/migration policy before moving models |
 | HIGH | Monthly JSON execution-needs/post-execution migration | authoritative JSON with code/history semantics | separate reconciliation/backfill design after runtime baseline |
 | MEDIUM | Non-MySQL nullability migration fallback and rollback constraints | Phase 2.3 migration uses fallback `change()`; Common rows cannot down-migrate losslessly | run MySQL fresh/upgrade/rollback-forward tests; document supported rollback |
-| MEDIUM | Reference bootstrap orchestration | Event reference seeders are idempotent but absent from the active default path | register the approved reference catalogue sequence and remove/archive the superseded need seeder |
+| MEDIUM | Runtime bootstrap proof | reference and auth/workflow chains are statically deterministic but vendor is absent | run fresh seed twice and assert stable counts |
 | MEDIUM | Shared model/table names | Monthly prefixes now serve Ramadan | defer rename until runtime baseline and identity/raw-reference map |
 | LOW | Large Monthly concern traits | shared and actively used, no duplicate implementation | revisit only with concrete maintenance need |
 | LOW | Historical documentation contains abandoned names | status-labelled history | retain; do not rewrite history |
@@ -424,14 +430,23 @@ Historical documents retain old names deliberately and now point readers to this
 Ordered future sequence:
 
 1. **Events runtime integration gate**: restore dependencies; run `migrate:fresh`, Phase 2.3 schema tests, Monthly/Ramadan/Agenda workflow suites, route boot, and migration upgrade rehearsal. No architecture change.
-2. **Event reference-data bootstrap reconciliation**: register the approved target/segment/monitoring/type/category/status sequence after validating business-owned boundaries; retire the unregistered old execution-need seeder if verified safe.
-3. **Stored identity inventory**: inspect real `entity_type`/audit/request values and decide alias policy.
-4. **Shared model naming/namespace slice**: only after steps 1–3; consider `ExecutionTeamMember` and `EventSupply`, while retaining `post_execution_verifications` table name.
-5. **Monthly execution-needs migration design and implementation**.
-6. **Monthly monitoring-envelope migration design and implementation**.
-7. **Volunteer semantics decision**.
-8. **Legacy compatibility cleanup**, only after multiple verified cutovers.
+2. **Stored identity inventory**: inspect real `entity_type`/audit/request values and decide alias policy.
+3. **Shared model naming/namespace slice**: only after steps 1–2; consider `ExecutionTeamMember` and `EventSupply`, while retaining `post_execution_verifications` table name.
+4. **Monthly execution-needs migration design and implementation**.
+5. **Monthly monitoring-envelope migration design and implementation**.
+6. **Volunteer semantics decision**.
+7. **Legacy compatibility cleanup**, only after multiple verified cutovers.
 
 ## 24. Reconciliation status
 
 `PHASE 2.4 COMPLETE`
+
+## 25. Reference-data bootstrap status
+
+`PHASE 2.5 COMPLETE`
+
+The default bootstrap has one explicit path for stable Event reference data, one
+canonical execution-need source, and one existing aggregate for authorization
+and workflow definitions. Runtime execution remains a deployment gate rather
+than an unverified claim because Composer dependencies are unavailable in this
+environment.
