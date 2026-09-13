@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
-use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController;
+use App\Modules\Events\Http\Controllers\MonthlyActivities\MonthlyActivityPlanningController;
 use App\Models\InAppNotification;
 use App\Models\MonthlyActivity;
 use App\Models\User;
@@ -93,7 +93,7 @@ class NotificationBranchScopeTest extends TestCase
         $otherBranchCommunicationHead->assignRole('communication_head');
 
         $activity = MonthlyActivity::factory()->create(['branch_id' => $branch->id]);
-        $controller = new MonthlyActivitiesController();
+        $controller = new MonthlyActivityPlanningController();
         $method = new \ReflectionMethod($controller, 'executionNeedOwnerUsers');
         $method->setAccessible(true);
 
