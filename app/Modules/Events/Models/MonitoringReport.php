@@ -2,6 +2,7 @@
 
 namespace App\Modules\Events\Models;
 
+use App\Models\PostExecutionVerification;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -51,7 +52,7 @@ class MonitoringReport extends Model
 
     public function verifications()
     {
-        return $this->hasMany(FieldVerification::class);
+        return $this->hasMany(PostExecutionVerification::class);
     }
 
     public function ramadanIftar()

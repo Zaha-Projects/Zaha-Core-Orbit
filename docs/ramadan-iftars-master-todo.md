@@ -231,3 +231,14 @@ Read `docs/ramadan-iftars-data-design-ar.md`,
    - Planned and actual ownership remain separate.
    - Monitoring never mutates plan or operational actual data.
    - Monthly legacy behavior remains unchanged until an explicit migration phase.
+
+## Phase 2.3 storage ownership handover
+
+The pre-release consolidation now binds Ramadan targeting, execution-team members, supplies,
+and monitoring verification rows to the generalized established tables
+`event_target_group`, `monthly_activity_team`, `monthly_activity_supplies`, and
+`post_execution_verifications`. The abandoned development-only tables
+`subject_target_groups`, `execution_team_members`, `subject_supplies`, and
+`field_verifications` are not part of the fresh-install schema. All other justified Events
+tables remain unchanged. See `docs/events-data-model-consolidation-audit.md` for the final
+ownership matrix and implementation record.

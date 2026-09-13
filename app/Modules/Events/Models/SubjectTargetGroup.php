@@ -10,6 +10,8 @@ class SubjectTargetGroup extends Model
 {
     use HasFactory;
 
+    protected $table = 'event_target_group';
+
     protected $fillable = [
         'subject_type',
         'subject_id',

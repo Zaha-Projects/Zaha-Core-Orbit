@@ -96,7 +96,7 @@ class CommonEventTargetingFoundationTest extends TestCase
         $this->assertSame('Custom segment', $row->segment_custom_text);
         $this->assertTrue($row->targetGroup->is($targetGroup));
         $this->assertTrue($row->beneficiarySegment->is($segment));
-        $this->assertTrue(Schema::hasColumns('subject_target_groups', [
+        $this->assertTrue(Schema::hasColumns('event_target_group', [
             'subject_type',
             'subject_id',
             'target_group_id',

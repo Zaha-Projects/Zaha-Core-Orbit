@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Branch;
 use App\Models\User;
-use App\Modules\Events\Models\FieldVerification;
+use App\Models\PostExecutionVerification;
 use App\Modules\Events\Models\MonitoringMethod;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\EventSubjectTypes;
@@ -93,7 +93,7 @@ class RamadanIftarWorkspaceMonitoringTest extends TestCase
         $candidate = $service->candidates($iftar->fresh())[0];
         $data = ['monitoring_method_id' => $method->id, 'observed_at' => now(), 'general_notes' => 'Observed', 'verifications' => [[
             'detail_type' => null, 'detail_id' => null, 'field_key' => $candidate['field_key'], 'field_label' => 'Forged label',
-            'planned_value' => ['value' => 999], 'actual_value' => ['value' => 999], 'match_status' => FieldVerification::MISMATCHED, 'note' => 'Variance',
+            'planned_value' => ['value' => 999], 'actual_value' => ['value' => 999], 'match_status' => PostExecutionVerification::MISMATCHED, 'note' => 'Variance',
         ]]];
         $report = $service->save($iftar, new MonitoringReport(), $data, $monitor);
         $verification = $report->verifications()->sole();

@@ -13,7 +13,7 @@ use App\Modules\Events\Models\ExecutionTeam;
 use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMeal;
-use App\Modules\Events\Models\SubjectSupply;
+use App\Models\MonthlyActivitySupply;
 use App\Modules\Events\Models\SubjectTargetGroup;
 use App\Modules\Events\Models\SubjectExecutionNeed;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -20,7 +20,7 @@ authorization remains authoritative.
 approved, open Iftar whose execution is `in_progress` or `completed`, plus branch
 access. This permits monitoring to finish after operational execution has been
 marked complete without conflating completion with closure. Reports use the existing
-Common `monitoring_reports` and `field_verifications` tables with
+Common `monitoring_reports` and generalized `post_execution_verifications` tables with
 `subject_type=ramadan_iftar`; no Ramadan-specific monitoring tables exist.
 
 Implemented report lifecycle:

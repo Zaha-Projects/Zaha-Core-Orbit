@@ -287,18 +287,18 @@ read/write cutover.
 
 | Phase | Scope | Risk | Required safety mechanism |
 |---|---|---|---|
-| **2.3 — Event model namespace consolidation** | Move Events-only PHP models; preserve aliases and stored morph/entity types | Medium | import inventory, class aliases/morph compatibility, route/job serialization regression |
-| **2.4 — Targeting table consolidation** | Add subject/segment/count columns to `event_target_group`, backfill Monthly ownership, merge Ramadan pivot rows | High | retain IDs, collision-safe aliases, unique-index redesign, archived-row coverage, dual-read parity |
-| **2.5 — Execution team consolidation** | Keep headers; generalize/rename old member table and merge newer members | High | deterministic team-header mapping, retain Monthly member IDs, FK/index transition |
-| **2.6 — Volunteer and supply consolidation** | Keep volunteer structures distinct pending adapter proof; generalize supplies in place | High | explicit cardinality decision, planned/actual mapping, row reconciliation |
-| **2.7 — Execution Needs migration** | Backfill JSON into `subject_execution_needs`, then dual-read/write validation | High | canonical-code mapping, unknown-key quarantine, immutable JSON fallback, audit comparison |
-| **2.8 — Monitoring consolidation** | Add report envelopes for Monthly; generalize old verification table and merge newer rows | High | preserve corrected/original semantics and actor timestamps; report/verification FK bridge |
-| **2.9 — Seeder/bootstrap completion** | Resolve overlapping execution-need seeders and approved missing catalogues | Medium | production bootstrap order, idempotency and business-content approval |
-| **2.10 — Legacy compatibility cleanup** | Consider obsolete Common duplicates, old columns/JSON, and aliases | High | only after read/write cutover, multi-release telemetry, reports/audit/archive regression |
+| **2.3 — Pre-release schema consolidation** | Generalize the four established tables, rebind Ramadan, and remove four unshipped duplicate create migrations | High | retain established IDs, one runtime path, fresh-install schema assertions |
+| **2.4 — Event model namespace consolidation** | Move remaining Events-only PHP models; preserve aliases and stored morph/entity types | Medium | import inventory, class aliases/morph compatibility, route/job serialization regression |
+| **2.5 — Volunteer semantic adapter audit** | Decide whether the Monthly summary and repeatable requirements should remain separate permanently | Medium | explicit cardinality and planned/actual semantic proof |
+| **2.6 — Execution Needs migration** | Backfill JSON into `subject_execution_needs`, then dual-read/write validation | High | canonical-code mapping, unknown-key quarantine, immutable JSON fallback, audit comparison |
+| **2.7 — Monthly monitoring report migration** | Add report envelopes for Monthly while retaining generalized historical verification rows | High | preserve corrected/original semantics and actor timestamps; report/verification FK bridge |
+| **2.8 — Seeder/bootstrap completion** | Resolve overlapping execution-need seeders and approved missing catalogues | Medium | production bootstrap order, idempotency and business-content approval |
+| **2.9 — Legacy compatibility cleanup** | Consider old columns/JSON and aliases only after all cutovers | High | multi-release telemetry plus reports/audit/archive regression |
 
-The smallest safe implementation slice is Phase 2.3 because it can establish coherent
-Events ownership without changing table identity or production data. It must nevertheless
-handle stored class names before moving `MonthlyActivity` or `AgendaEvent`.
+After the Phase 2.3 pre-release consolidation, the smallest safe implementation slice is
+Events model namespace consolidation. It can establish coherent Events ownership without
+changing table identity or production data, but must preserve stored class names before
+moving `MonthlyActivity` or `AgendaEvent`.
 
 ## 12. Phase outcome
 
@@ -314,3 +314,29 @@ handle stored class names before moving `MonthlyActivity` or `AgendaEvent`.
 - **No runtime work occurred:** this document is the sole Phase 2.2 artifact.
 
 **PHASE 2.2 COMPLETE**
+
+## 13. Phase 2.3 implementation outcome
+
+Phase 2.3 implemented only the four pre-release consolidation decisions below. The newer
+tables had not been deployed or accepted as historical storage, so their create migrations
+were removed rather than followed by misleading create-then-drop migrations.
+
+| Final table | Removed development table | Removed create migration | Final model | Ramadan path | Monthly historical path |
+|---|---|---|---|---|---|
+| `event_target_group` | `subject_target_groups` | `2026_09_10_000300_create_subject_target_groups_table.php` | `SubjectTargetGroup` rebound to the established pivot | planning, workspace, and revision copying use the rebound relationship | existing pivot IDs and `monthly_activity_id` remain intact |
+| `monthly_activity_team` | `execution_team_members` | `2026_09_10_001500_create_execution_team_members_table.php` | `MonthlyActivityTeam` repurposed as the shared member model | team planning, execution task confirmation, and revision copying use `ExecutionTeam::members()` | legacy model, table, member IDs, and Monthly relationships remain intact |
+| `monthly_activity_supplies` | `subject_supplies` | `2026_09_10_001700_create_subject_supplies_table.php` | `MonthlyActivitySupply` repurposed as the shared supply model | planning, actual updates, monitoring candidates, workspace, and revision copying use the rebound relation | legacy quantity/availability fields and IDs remain intact |
+| `post_execution_verifications` | `field_verifications` | `2026_09_10_001900_create_field_verifications_table.php` | `PostExecutionVerification` repurposed as the shared verification model | report editing, mismatch review, display, and closure's approved-report path use `MonitoringReport::verifications()` | legacy original/corrected/status fields, IDs, branch ownership, and relations remain intact |
+
+The forward migration
+`2026_09_14_000100_generalize_existing_event_detail_tables.php` adds only the nullable
+ownership and Common-detail columns required by these bindings. It backfills subject aliases
+on existing targeting and supply rows without changing their primary keys. There is one
+runtime table and one model path per consolidated concept; no dual-write or fallback adapter
+was introduced.
+
+The justified tables listed in the Phase 2.2 decision matrix—including `execution_teams`,
+`subject_volunteer_requirements`, `subject_execution_needs`, `monitoring_reports`, guidance,
+segments, methods, and directories—remain unchanged.
+
+**PHASE 2.3 COMPLETE**

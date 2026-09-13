@@ -5,7 +5,7 @@ namespace App\Modules\Events\Services;
 use App\Models\User;
 use App\Models\WorkflowActionLog;
 use App\Modules\Events\Models\EventSubjectTypes;
-use App\Modules\Events\Models\FieldVerification;
+use App\Models\PostExecutionVerification;
 use App\Modules\Events\Models\MonitoringMethod;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\RamadanIftar;
@@ -87,7 +87,7 @@ class RamadanIftarMonitoringService
             if ($decision === MonitoringReport::STATUS_RETURNED && blank($comment)) {
                 $this->invalid('comment', __('ramadan_iftars.errors.return_comment_required'));
             }
-            if ($decision === MonitoringReport::STATUS_APPROVED && $report->verifications()->where('match_status', FieldVerification::MISMATCHED)->where(function ($query) {
+            if ($decision === MonitoringReport::STATUS_APPROVED && $report->verifications()->where('match_status', PostExecutionVerification::MISMATCHED)->where(function ($query) {
                 $query->whereNull('note')->orWhere('note', '');
             })->exists()) {
                 $this->invalid('verifications', __('ramadan_iftars.errors.mismatch_note_required'));

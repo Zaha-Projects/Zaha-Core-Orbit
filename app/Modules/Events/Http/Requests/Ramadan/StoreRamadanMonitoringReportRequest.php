@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Http\Requests\Ramadan;
 
-use App\Modules\Events\Models\FieldVerification;
+use App\Models\PostExecutionVerification;
 use App\Modules\Events\Models\RamadanIftar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -36,7 +36,7 @@ class StoreRamadanMonitoringReportRequest extends FormRequest
             'verifications.*.detail_id' => ['nullable', 'integer'],
             'verifications.*.field_key' => ['required', 'string', 'max:100'],
             'verifications.*.field_label' => ['required', 'string', 'max:255'],
-            'verifications.*.match_status' => ['required', Rule::in(FieldVerification::matchStatuses())],
+            'verifications.*.match_status' => ['required', Rule::in(PostExecutionVerification::matchStatuses())],
             'verifications.*.note' => ['nullable', 'string', 'max:2000'],
         ];
     }

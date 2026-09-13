@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Branch;
 use App\Models\User;
 use App\Modules\Events\Models\EventSubjectTypes;
-use App\Modules\Events\Models\FieldVerification;
+use App\Models\PostExecutionVerification;
 use App\Modules\Events\Models\MonitoringMethod;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\RamadanIftar;
@@ -29,7 +29,7 @@ class RamadanMonitoringReviewWorkflowTest extends TestCase
 
     public function test_supervisor_can_approve_documented_mismatch_without_mutating_subject_data(): void
     {
-        [$iftar, $report, $monitor, $reviewer] = $this->submittedReport(FieldVerification::MISMATCHED, 'Documented variance');
+        [$iftar, $report, $monitor, $reviewer] = $this->submittedReport(PostExecutionVerification::MISMATCHED, 'Documented variance');
         $plannedDate = $iftar->planned_date->toDateString();
         $actualAttendance = $iftar->actual_attendance;
 
@@ -44,7 +44,7 @@ class RamadanMonitoringReviewWorkflowTest extends TestCase
 
     public function test_undocumented_mismatch_cannot_be_approved(): void
     {
-        [$iftar, $report, , $reviewer] = $this->submittedReport(FieldVerification::MISMATCHED, null);
+        [$iftar, $report, , $reviewer] = $this->submittedReport(PostExecutionVerification::MISMATCHED, null);
         $this->expectException(ValidationException::class);
         app(RamadanIftarMonitoringService::class)->review($iftar, $report, $reviewer, MonitoringReport::STATUS_APPROVED, null);
     }
@@ -63,7 +63,7 @@ class RamadanMonitoringReviewWorkflowTest extends TestCase
             'verifications' => [[
                 'id' => $verification->id, 'detail_type' => null, 'detail_id' => null,
                 'field_key' => 'attendance', 'field_label' => 'forged',
-                'match_status' => FieldVerification::MATCHED, 'note' => 'Confirmed',
+                'match_status' => PostExecutionVerification::MATCHED, 'note' => 'Confirmed',
             ]],
         ], $monitor);
         $service->submit($iftar, $report->fresh(), $monitor);
@@ -129,7 +129,7 @@ class RamadanMonitoringReviewWorkflowTest extends TestCase
         $second->verifications()->create([
             'field_key' => 'attendance', 'field_label' => 'Attendance',
             'planned_value' => ['value' => 10], 'actual_value' => ['value' => 10],
-            'match_status' => FieldVerification::MATCHED, 'verified_by' => $monitor->id, 'verified_at' => now(),
+            'match_status' => PostExecutionVerification::MATCHED, 'verified_by' => $monitor->id, 'verified_at' => now(),
         ]);
         $service->review($iftar, $second, $reviewer, MonitoringReport::STATUS_APPROVED, null);
         $this->assertSame($second->id, $iftar->fresh()->approvedMonitoringReportForClosure()->id);
@@ -138,7 +138,7 @@ class RamadanMonitoringReviewWorkflowTest extends TestCase
         $service->save($iftar, $second->fresh(), ['monitoring_method_id' => $method->id, 'verifications' => []], $monitor);
     }
 
-    private function submittedReport(string $match = FieldVerification::MATCHED, ?string $note = null): array
+    private function submittedReport(string $match = PostExecutionVerification::MATCHED, ?string $note = null): array
     {
         $branch = Branch::factory()->create();
         $monitor = User::factory()->create(['branch_id' => $branch->id, 'status' => 'active']);

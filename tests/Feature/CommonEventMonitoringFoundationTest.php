@@ -6,7 +6,7 @@ use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Models\User;
 use App\Modules\Events\Models\EventSubjectTypes;
-use App\Modules\Events\Models\FieldVerification;
+use App\Models\PostExecutionVerification;
 use App\Modules\Events\Models\MonitoringMethod;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\RamadanIftar;
@@ -60,11 +60,11 @@ class CommonEventMonitoringFoundationTest extends TestCase
         $this->assertSame([$ramadanReport->id], $iftar->monitoringReports()->pluck('id')->all());
     }
 
-    public function test_field_verifications_preserve_snapshots_labels_status_and_verifier(): void
+    public function test_generalized_verifications_preserve_snapshots_labels_status_and_verifier(): void
     {
         [$iftar, $monitor, $method] = $this->fixture();
         $report = $this->report($iftar, $method);
-        $verification = FieldVerification::query()->create([
+        $verification = PostExecutionVerification::query()->create([
             'monitoring_report_id' => $report->id,
             'detail_type' => 'meal',
             'detail_id' => 10,
@@ -72,7 +72,7 @@ class CommonEventMonitoringFoundationTest extends TestCase
             'field_label' => 'Planned meal quantity',
             'planned_value' => ['value' => 100, 'unit' => 'meal'],
             'actual_value' => ['value' => 92, 'unit' => 'meal'],
-            'match_status' => FieldVerification::MISMATCHED,
+            'match_status' => PostExecutionVerification::MISMATCHED,
             'verified_by' => $monitor->id,
         ]);
 
@@ -81,7 +81,7 @@ class CommonEventMonitoringFoundationTest extends TestCase
         $this->assertSame(['value' => 92, 'unit' => 'meal'], $verification->actual_value);
         $this->assertSame('planned_quantity', $verification->field_key);
         $this->assertSame('Planned meal quantity', $verification->field_label);
-        $this->assertSame(FieldVerification::MISMATCHED, $verification->match_status);
+        $this->assertSame(PostExecutionVerification::MISMATCHED, $verification->match_status);
         $this->assertNull($verification->verified_at);
         $this->assertTrue($verification->monitoringReport->is($report));
         $this->assertTrue($verification->verifier->is($monitor));
@@ -93,13 +93,13 @@ class CommonEventMonitoringFoundationTest extends TestCase
         $report = $this->report($iftar, $method);
 
         foreach ([10, 11] as $detailId) {
-            FieldVerification::query()->create([
+            PostExecutionVerification::query()->create([
                 'monitoring_report_id' => $report->id,
                 'detail_type' => 'meal',
                 'detail_id' => $detailId,
                 'field_key' => 'planned_quantity',
                 'field_label' => 'Planned quantity',
-                'match_status' => FieldVerification::MATCHED,
+                'match_status' => PostExecutionVerification::MATCHED,
             ]);
         }
 
@@ -110,16 +110,16 @@ class CommonEventMonitoringFoundationTest extends TestCase
     {
         [$iftar, , $method] = $this->fixture();
         $report = $this->report($iftar, $method);
-        $verification = FieldVerification::query()->create([
+        $verification = PostExecutionVerification::query()->create([
             'monitoring_report_id' => $report->id,
             'field_key' => 'attendance',
             'field_label' => 'Attendance',
-            'match_status' => FieldVerification::NOT_OBSERVED,
+            'match_status' => PostExecutionVerification::NOT_OBSERVED,
         ]);
 
         $report->delete();
 
-        $this->assertDatabaseMissing('field_verifications', ['id' => $verification->id]);
+        $this->assertDatabaseMissing('post_execution_verifications', ['id' => $verification->id]);
     }
 
     public function test_subject_scope_rejects_arbitrary_class_names(): void

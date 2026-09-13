@@ -108,7 +108,7 @@ class RamadanIftarExecutionService
             $members = $team->members->keyBy('id');
             foreach ($row['members'] as $memberRow) {
                 $member = $members->get((int) $memberRow['id']);
-                if (! $member) $this->invalidOwnedId('execution_team_members');
+                if (! $member) $this->invalidOwnedId('execution_teams');
                 $evaluation = array_key_exists('task_completed', $memberRow) ? $memberRow['task_completed'] : null;
                 $member->update([
                     'task_completed' => $evaluation,

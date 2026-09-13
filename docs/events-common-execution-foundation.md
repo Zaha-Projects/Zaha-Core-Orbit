@@ -1,8 +1,8 @@
 # Common Event execution foundation
 
-Phase 1.7 adds `execution_teams`, `execution_team_members`, `subject_volunteer_requirements`, and `subject_supplies` for Ramadan-first use and later Monthly Activity adoption.
+Phase 1.7 introduced Common execution storage. Phase 2.3 keeps `execution_teams` and `subject_volunteer_requirements`, while binding team members and supplies to generalized `monthly_activity_team` and `monthly_activity_supplies` tables.
 
-- Legacy Monthly Activities remain authoritative in `monthly_activity_team`, `monthly_activity_volunteer_needs`, and `monthly_activity_supplies`. Their email uniqueness, single volunteer row, availability defaults, insurance aliases, controllers, forms, JSON follow-up payloads, and workflow behavior are intentionally not copied or changed.
+- Historical Monthly rows remain authoritative in `monthly_activity_team`, `monthly_activity_volunteer_needs`, and `monthly_activity_supplies`. Team-member and supply rows retain their IDs and legacy columns while nullable Common ownership/detail columns support Ramadan. Monthly controllers, forms, JSON follow-up payloads, and workflow behavior remain unchanged.
 - Shared parents use the stable `subject_type` and `subject_id` pair. Model `forSubject()` scopes validate aliases through `EventSubjectTypes`; Ramadan relationships additionally constrain the alias to `ramadan_iftar`. No morph map or unrestricted subject relationship is used.
 - `subject_id` has no foreign key because it can identify different Event tables. Consequently, direct database writes cannot enforce alias or orphan integrity. Future transactional write/delete logic must validate ownership and explicitly clean Common rows when a subject is permanently deleted.
 - Teams allow multiple rows per subject. Members support registered users or lightweight external identity fields, nullable task evaluation, and optional confirmation. Team deletion cascades to members; deleting referenced users only nulls their references.
