@@ -1,5 +1,9 @@
 # Ramadan Iftar workspace and monitoring flow
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Reachable workspace
 
 Ramadan Iftars have an independent, permission-aware dashboard entry. The

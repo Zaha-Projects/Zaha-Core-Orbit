@@ -1,5 +1,9 @@
 # Ramadan Iftar planning flow
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Phase 1.9 adds only `create`, `store`, `edit`, and `update` routes beneath `dashboard/events/ramadan/iftars`. Access temporarily reuses the established relations planning roles and `monthly_activities.create` / `monthly_activities.edit` permissions until dedicated Ramadan permissions are introduced; authentication and branch isolation remain mandatory.
 
 `StoreRamadanIftarRequest` validates the core plan, Ramadan-applicable active target groups, active beneficiary segments and mobilization methods, branch-owned references, and nested planning payloads. System and execution fields are absent from its validated contract. Common rows always receive the server-owned `ramadan_iftar` alias and parent ID.

@@ -1,5 +1,9 @@
 # Execution Needs Phase 1.2 gate
 
+**Status: HISTORICAL_RECORD**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Production trace
 
 - `ExecutionNeedType` is currently referenced only by its migration and `ExecutionNeedTypeSeeder`; the seeder call is commented out in `DatabaseSeeder`. No controller, service, request, view, report, or Agenda flow reads `execution_need_types` in production.

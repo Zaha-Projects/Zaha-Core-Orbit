@@ -1,5 +1,9 @@
 # Events Refactor — Phase 0 Baseline
 
+**Status: HISTORICAL_RECORD**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Recorded: 2026-09-10
 
 ## Scope and current architecture

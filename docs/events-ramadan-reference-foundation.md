@@ -1,5 +1,9 @@
 # Ramadan Event reference foundation
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Phase 1.4 introduces `mobilization_methods`, `monitoring_methods`, `community_organizations`, and `local_communities` with matching models in the shared Events namespace.
 
 - Repository inspection found no reusable mobilization, monitoring-method, community-organization, or local-community master table. The deprecated `centers` concept represented Zaha operating centers and was removed in favor of branches, so it is not reused for external associations/centers.

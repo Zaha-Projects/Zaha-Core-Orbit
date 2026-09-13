@@ -1,5 +1,9 @@
 # RAMADAN IFTARS IMPLEMENTATION STATUS
 
+**Status: HISTORICAL_RECORD**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 - **Last updated:** 2026-09-13
 - **Current phase:** Phase 1.14 — approved-plan change requests and versioning complete
 - **Implementation baseline before Phase 1.14:** `143877b`

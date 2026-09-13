@@ -1,5 +1,9 @@
 # Common Event monitoring foundation
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Phase 1.8 introduced shared monitoring. Phase 2.3 keeps `monitoring_reports` and binds their owned verification rows to the generalized historical `post_execution_verifications` table.
 
 - Legacy `monthly_activity_followups` remains a Monthly Activity remark log. `post_execution_verifications` preserves its branch-scoped Monthly fields and IDs while nullable report/snapshot fields support Ramadan monitoring through the same table.

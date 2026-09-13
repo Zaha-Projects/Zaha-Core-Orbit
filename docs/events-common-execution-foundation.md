@@ -1,5 +1,9 @@
 # Common Event execution foundation
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Phase 1.7 introduced Common execution storage. Phase 2.3 keeps `execution_teams` and `subject_volunteer_requirements`, while binding team members and supplies to generalized `monthly_activity_team` and `monthly_activity_supplies` tables.
 
 - Historical Monthly rows remain authoritative in `monthly_activity_team`, `monthly_activity_volunteer_needs`, and `monthly_activity_supplies`. Team-member and supply rows retain their IDs and legacy columns while nullable Common ownership/detail columns support Ramadan. Monthly controllers, forms, JSON follow-up payloads, and workflow behavior remain unchanged.

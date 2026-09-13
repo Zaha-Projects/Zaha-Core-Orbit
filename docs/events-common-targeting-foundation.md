@@ -1,5 +1,9 @@
 # Common Event targeting foundation
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Phase 1.3 adds shared targeting storage without changing the current Monthly Activities read or write paths.
 
 - `target_groups` keeps all existing columns and gains `is_monthly_activity` and `is_ramadan_iftar`, both defaulting to `true`. These flags are intentionally simpler than a generic applicability table while only two Event consumers exist. Current Agenda and Monthly Activities queries continue to use only the existing active filter.

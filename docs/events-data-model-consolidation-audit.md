@@ -1,5 +1,9 @@
 # Events data-model consolidation audit
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 **Phase:** 2.2
 
 **Decision date:** 2026-09-13

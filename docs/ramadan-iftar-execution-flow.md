@@ -1,5 +1,9 @@
 # Ramadan Iftar execution flow
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Existing behavior reviewed
 
 Monthly Activities currently combine execution and post-execution data in aggregate

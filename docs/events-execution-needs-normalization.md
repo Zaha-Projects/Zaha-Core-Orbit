@@ -1,5 +1,9 @@
 # Events Execution Needs normalization
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Production source audit
 
 `execution_need_types` previously had eight seeded codes but no production reader and its old seeder was disabled. Monthly Activities remain authoritative through three separate legacy representations: `MonthlyActivity::EXECUTION_NEED_DEFINITIONS` for display, `config/execution_needs.php` for decision roles and center availability, and `execution_needs_payload` / `execution_needs_followup` JSON for planning details, decisions, and post-execution evidence. Agenda has no Execution Needs path.

@@ -1,5 +1,9 @@
 # Ramadan Iftar execution completion and closure
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Legacy review and lifecycle decision
 
 Monthly Activities combine post-execution submission, supervisor review, evaluation

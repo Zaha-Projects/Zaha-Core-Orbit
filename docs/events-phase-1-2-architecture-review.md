@@ -1,5 +1,9 @@
 # Events Phase 1.2 architecture review
 
+**Status: HISTORICAL_RECORD**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Scope and repository state
 
 This review covers the proposed **Phase 1.2 — Common Lookups and Shared Models** only. It does not authorize or implement model moves, schema changes, controller moves, route changes, morph-map enforcement, or Ramadan behavior.

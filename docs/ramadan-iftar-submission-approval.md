@@ -1,5 +1,9 @@
 # Ramadan Iftar submission and approval
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Reuse and identity
 
 Phase 1.10 reuses `Workflow`, `WorkflowStep`, `WorkflowInstance`, `WorkflowLog`,

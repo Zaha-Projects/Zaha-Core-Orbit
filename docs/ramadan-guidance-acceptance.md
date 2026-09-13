@@ -1,5 +1,9 @@
 # Versioned Ramadan guidance acceptance
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Infrastructure decision
 
 Repository inspection found no reusable immutable/versioned content or acceptance mechanism; the matching “terms” files are static dashboard-template examples only. This slice therefore uses the smallest Ramadan/Event-specific version source: `event_guidance_versions` and `EventGuidanceVersion` with the stable code `ramadan_iftar`. It is not a CMS and has no administration workflow or UI.

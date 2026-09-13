@@ -1,5 +1,9 @@
 # التصميم المعدّل للإفطارات الرمضانية والجداول المشتركة
 
+**Status: SUPERSEDED**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## 1. القرار المعماري الملزم
 
 الإفطارات الرمضانية **لن ترتبط بجدول `monthly_activities` ولن تستخدمه كسجل أب**. لكل إفطار سجل مستقل في جدول `ramadan_iftars`، ويرتبط مباشرة بحدث الأجندة السنوية في `agenda_events` عند وجوده.

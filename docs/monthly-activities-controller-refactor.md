@@ -1,5 +1,9 @@
 # Monthly Activities controller refactor — Phase 2.1 final architecture
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Status
 
 **Phase 2.1 complete.** Phase 2.1A established the route-owner map. Phase 2.1B

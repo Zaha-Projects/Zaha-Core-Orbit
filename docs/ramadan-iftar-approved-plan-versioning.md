@@ -1,5 +1,9 @@
 # Ramadan Iftar approved-plan change requests and versioning
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Confirmed semantics
 
 Monthly change requests are a semantic reference only: they preserve the approved

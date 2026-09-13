@@ -1,5 +1,9 @@
 # Ramadan Iftar core aggregate
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Phase 1.5 creates the independent `ramadan_iftars` aggregate and `RamadanIftar` model. It has no Monthly Activity foreign key or model dependency.
 
 - The aggregate belongs directly to an optional Agenda Event, a required Branch, a required relations officer and creator, and optional community organization, local community, and mobilization method references. Reference deletion nulls optional references; Branch and required users are restrictive and never cascade-delete the Iftar.

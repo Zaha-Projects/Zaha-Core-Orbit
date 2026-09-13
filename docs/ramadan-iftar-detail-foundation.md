@@ -1,5 +1,9 @@
 # Ramadan Iftar detail foundation
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 Phase 1.6 adds structured attendee, meal, meal-item, gift, and program-segment tables. Each row is exclusively owned through a direct `ramadan_iftar_id`; no polymorphic subject columns, Monthly Activity coupling, or JSON payloads are used.
 
 - Attendee names, phone numbers, and ages are sensitive operational data. Future routes, exports, and masking must be policy-controlled. Phone numbers are deliberately not unique because household members may share one number.

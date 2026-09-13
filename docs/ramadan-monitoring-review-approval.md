@@ -1,5 +1,9 @@
 # Ramadan monitoring review and approval
 
+**Status: CURRENT_SUPPORTING**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## Architecture and actor
 
 This is **CASE B**: a single-step report lifecycle is sufficient, so the planning
