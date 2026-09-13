@@ -13,7 +13,7 @@ class RamadanIftarWorkspaceController extends Controller
     {
         $user = $request->user();
         abort_unless($user && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.view')), 403);
-        $query = RamadanIftar::query()->with(['branch', 'relationsOfficer', 'workflowInstance.currentStep.role'])
+        $query = RamadanIftar::query()->whereDoesntHave('versions')->with(['branch', 'relationsOfficer', 'workflowInstance.currentStep.role'])
             ->with(['monitoringReports' => fn ($query) => $query->latest('updated_at')->latest('id')]);
         if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
             $branchIds = $user->scopedBranchIds();
@@ -55,13 +55,15 @@ class RamadanIftarWorkspaceController extends Controller
             'executionTeams.leader', 'executionTeams.members.user', 'executionTeams.members.confirmer',
             'volunteerRequirements.beneficiarySegment', 'supplies', 'workflowInstance.currentStep.role',
             'workflowInstance.logs.step', 'workflowInstance.logs.actor', 'monitoringReports.monitoringMethod', 'monitoringReports.monitor',
+            'parentVersion', 'versions', 'changeRequests.requester', 'changeRequests.createdVersion',
         ]);
         $instance = $ramadanIftar->workflowInstance;
         $canCurrentUserApprove = $instance && $user->can('ramadan_iftars.approve')
             && $workflows->currentStepForUser($instance, $user) !== null;
         $canPlan = $ramadanIftar->isPlanningEditable() && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.edit'));
         $canSubmit = $ramadanIftar->isPlanningEditable() && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.submit'));
-        $canExecute = $ramadanIftar->canViewExecution() && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute'));
+        $canExecute = $ramadanIftar->canViewExecution() && ! ($ramadanIftar->execution_status === RamadanIftar::EXECUTION_STATUS_PLANNED && $ramadanIftar->isSuperseded())
+            && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute'));
         $canCompleteExecution = $ramadanIftar->closed_at === null
             && $ramadanIftar->execution_status === RamadanIftar::EXECUTION_STATUS_IN_PROGRESS
             && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute'));
@@ -74,7 +76,15 @@ class RamadanIftarWorkspaceController extends Controller
         $canClose = ($user->hasRole('super_admin') || ($user->hasRole('supervisor') && $user->can('ramadan_iftars.close')))
             && ($user->hasRole('super_admin') || $user->hasAccessToScopedBranch((int) $ramadanIftar->branch_id))
             && ! in_array(false, $closureReadiness, true);
+        $versionHistory = $ramadanIftar->versionHistory();
+        $latestVersion = $versionHistory->last();
+        $canRequestChange = ($user->hasRole('super_admin') || ($user->hasRole('relations_officer') && $user->can('ramadan_iftars.change_request.create')))
+            && ($user->hasRole('super_admin') || $user->can('branches.view.all') || $user->hasAccessToScopedBranch((int) $ramadanIftar->branch_id))
+            && $ramadanIftar->status === RamadanIftar::STATUS_APPROVED
+            && $ramadanIftar->execution_status === RamadanIftar::EXECUTION_STATUS_PLANNED
+            && $ramadanIftar->closed_at === null && $latestVersion->id === $ramadanIftar->id
+            && ! $ramadanIftar->changeRequests->contains('status', \App\Modules\Events\Models\RamadanIftarChangeRequest::STATUS_PENDING);
 
-        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor', 'canReviewMonitoring', 'closureReadiness', 'canClose'));
+        return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor', 'canReviewMonitoring', 'closureReadiness', 'canClose', 'versionHistory', 'latestVersion', 'canRequestChange'));
     }
 }

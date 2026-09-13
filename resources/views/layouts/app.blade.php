@@ -136,6 +136,9 @@
             @can('ramadan_iftars.monitor.review')
                 <li class="side-item {{ request()->routeIs('events.ramadan.monitoring-reviews.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.monitoring-reviews.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('ramadan_iftars.navigation.monitoring_reviews') }}</span></a></li>
             @endcan
+            @can('ramadan_iftars.change_request.review')
+                <li class="side-item {{ request()->routeIs('events.ramadan.change-requests.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.change-requests.reviews.index') }}"><i class="fas fa-code-branch"></i><span>{{ __('ramadan_iftars.change_requests.queue') }}</span></a></li>
+            @endcan
             @if(! $isRelationsManagerSidebar && $user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.returned_feedback') }}"><i class="fas fa-reply-all"></i><span>طلبات راجعة للفرع</span></a></li>
             @endif

@@ -142,6 +142,40 @@ class RamadanIftar extends Model
         return $this->hasMany(self::class, 'parent_version_id');
     }
 
+    public function changeRequests()
+    {
+        return $this->hasMany(RamadanIftarChangeRequest::class);
+    }
+
+    public function isSuperseded(): bool
+    {
+        return $this->versions()->exists();
+    }
+
+    public function latestVersion(): self
+    {
+        $version = $this;
+        while ($child = $version->versions()->orderByDesc('version_number')->first()) {
+            $version = $child;
+        }
+
+        return $version;
+    }
+
+    public function versionHistory()
+    {
+        $root = $this;
+        while ($root->parentVersion) {
+            $root = $root->parentVersion;
+        }
+        $versions = collect([$root]);
+        while ($child = $versions->last()->versions()->orderBy('version_number')->first()) {
+            $versions->push($child);
+        }
+
+        return $versions;
+    }
+
     public function guidanceVersion()
     {
         return $this->belongsTo(EventGuidanceVersion::class, 'guidance_version_id');
@@ -163,13 +197,15 @@ class RamadanIftar extends Model
     {
         return $this->status === self::STATUS_APPROVED
             && $this->closed_at === null
+            && ! $this->isSuperseded()
             && in_array($this->execution_status, [self::EXECUTION_STATUS_PLANNED, self::EXECUTION_STATUS_IN_PROGRESS], true);
     }
 
     public function canViewExecution(): bool
     {
         return $this->status === self::STATUS_APPROVED
-            && in_array($this->execution_status, [self::EXECUTION_STATUS_PLANNED, self::EXECUTION_STATUS_IN_PROGRESS, self::EXECUTION_STATUS_COMPLETED], true);
+            && in_array($this->execution_status, [self::EXECUTION_STATUS_PLANNED, self::EXECUTION_STATUS_IN_PROGRESS, self::EXECUTION_STATUS_COMPLETED], true)
+            && ! ($this->execution_status === self::EXECUTION_STATUS_PLANNED && $this->isSuperseded());
     }
 
     public function targetGroupSelections()

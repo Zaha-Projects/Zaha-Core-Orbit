@@ -196,5 +196,15 @@ return [
         'guidance' => 'Creating a Ramadan Iftar requires one active, published Ramadan guidance version.',
         'execution_needs' => 'Canonical Ramadan Execution Needs must be seeded before opening the planning form.',
     ],
+    'change_requests' => [
+        'title' => 'Approved plan change request', 'queue' => 'Plan change requests', 'reason' => 'Reason for change',
+        'explanation' => 'The approved version will remain unchanged. Final approval creates a separate editable draft version.',
+        'request' => 'Request plan change', 'review' => 'Review request', 'approve' => 'Approve request', 'reject' => 'Reject request',
+        'version_history' => 'Version history', 'version' => 'Version :number', 'current' => 'Current version',
+        'previous' => 'Previous version', 'historical' => 'Historical version', 'new_version' => 'New draft version',
+        'requester' => 'Requester', 'requested_at' => 'Requested at', 'source_execution' => 'Source execution status', 'empty' => 'No plan change requests are awaiting your review.',
+        'messages' => ['created' => 'The plan change request was submitted.', 'reviewed' => 'The change-request decision was recorded.'],
+        'errors' => ['reason_required' => 'Provide a meaningful reason of at least 10 characters.', 'duplicate' => 'An active change request already exists for this version.', 'workflow_missing' => 'The change-request approval workflow is not configured.', 'not_pending' => 'This change request is no longer pending.', 'invalid_decision' => 'The change-request decision is invalid.', 'rejection_comment' => 'A rejection comment is required.', 'ineligible' => 'Only an approved, open plan whose execution has not started may be revised.', 'revision_exists' => 'A newer version already exists in this version chain.', 'unauthorized_review' => 'You cannot review the current change-request step.', 'self_review' => 'You cannot review your own plan change request.'],
+    ],
 
 ];

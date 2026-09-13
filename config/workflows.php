@@ -6,5 +6,6 @@ return [
     'branch_scoped_modules' => [
         'monthly_activities' => ['relations_officer', 'supervisor', 'branch_coordinator'],
         'ramadan_iftars' => ['relations_officer', 'supervisor', 'branch_coordinator'],
+        'ramadan_iftar_change_requests' => ['supervisor', 'branch_coordinator'],
     ],
 ];

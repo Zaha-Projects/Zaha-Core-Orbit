@@ -35,6 +35,7 @@ $stages = [
                 @if($canMonitor)<a class="btn btn-dark" href="{{ route('events.ramadan.iftars.monitoring.index', $ramadanIftar) }}">{{ __('ramadan_iftars.actions.monitoring') }}</a>@endif
                 @if($canReviewMonitoring)<a class="btn btn-outline-dark" href="{{ route('events.ramadan.monitoring-reviews.index') }}">{{ __('ramadan_iftars.actions.review_monitoring') }}</a>@endif
                 @if($canClose)<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#closeRamadanIftarModal"><i class="fas fa-lock me-1" aria-hidden="true"></i>{{ __('ramadan_iftars.actions.close') }}</button>@endif
+                @if($canRequestChange)<a class="btn btn-outline-primary" href="{{ route('events.ramadan.iftars.change-request.create',$ramadanIftar) }}"><i class="fas fa-code-branch me-1" aria-hidden="true"></i>{{ __('ramadan_iftars.change_requests.request') }}</a>@endif
             </div>
         </div>
         <hr><div class="row g-3"><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.branch') }}</small><div>{{ optional($ramadanIftar->branch)->name ?: '—' }}</div></div><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.planned_date') }}</small><div>{{ optional($ramadanIftar->planned_date)->format('Y-m-d') ?: '—' }}</div></div><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.actual_date') }}</small><div>{{ optional($ramadanIftar->actual_date)->format('Y-m-d') ?: '—' }}</div></div><div class="col-6 col-lg-3"><small class="text-muted">{{ __('ramadan_iftars.fields.current_step') }}</small><div>{{ (app()->getLocale()==='ar' ? optional(optional($ramadanIftar->workflowInstance)->currentStep)->name_ar : optional(optional($ramadanIftar->workflowInstance)->currentStep)->name_en) ?: '—' }}</div></div></div>
@@ -43,6 +44,10 @@ $stages = [
     <div class="card shadow-sm mb-4"><div class="card-body"><div class="row g-2 text-center">
         @foreach($stages as [$stage,$complete])<div class="col-6 col-md"><div class="border rounded p-3 h-100 {{ $complete ? 'bg-success-subtle border-success' : 'bg-light' }}"><i class="fas {{ $complete ? 'fa-circle-check text-success' : 'fa-clock text-muted' }} mb-2" aria-hidden="true"></i><div class="fw-semibold">{{ __('ramadan_iftars.lifecycle.'.$stage) }}</div><small class="text-muted">{{ __('ramadan_iftars.lifecycle.'.($complete ? 'complete' : 'pending')) }}</small></div></div>@endforeach
     </div></div></div>
+
+    <div class="card shadow-sm mb-4"><div class="card-header fw-semibold">{{ __('ramadan_iftars.change_requests.version_history') }}</div><div class="list-group list-group-flush">
+        @foreach($versionHistory as $version)<a class="list-group-item list-group-item-action d-flex flex-wrap justify-content-between align-items-center gap-2 {{ $version->id === $ramadanIftar->id ? 'active' : '' }}" href="{{ route('events.ramadan.iftars.show',$version) }}"><span>{{ __('ramadan_iftars.change_requests.version',['number'=>$version->version_number]) }} · {{ __('ramadan_iftars.statuses.planning.'.$version->status) }}</span><span class="badge {{ $version->id === $latestVersion->id ? 'bg-success' : 'bg-secondary' }}">{{ __('ramadan_iftars.change_requests.'.($version->id === $latestVersion->id ? 'current' : 'historical')) }}</span></a>@endforeach
+    </div></div>
 
     <div class="row g-3">
         @foreach([
