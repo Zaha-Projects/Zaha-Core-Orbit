@@ -81,7 +81,7 @@ class WorkflowGovernanceAndApprovalsTest extends TestCase
             'submit_action' => 'draft',
         ]);
         $request->setUserResolver(fn () => $activity->creator);
-        $controller = app(\App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController::class);
+        $controller = app(\App\Modules\Events\Http\Controllers\MonthlyActivities\MonthlyActivityPlanningController::class);
         $method = new \ReflectionMethod($controller, 'statusAfterPlanningEdit');
         $method->setAccessible(true);
 

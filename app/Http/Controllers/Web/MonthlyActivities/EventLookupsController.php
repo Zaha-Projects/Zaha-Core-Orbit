@@ -10,6 +10,7 @@ use App\Models\EventCategory;
 use App\Models\EventStatusLookup;
 use App\Models\TargetGroup;
 use App\Models\ZahaTimeOption;
+use App\Modules\Events\Models\EventContexts;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -312,7 +313,7 @@ class EventLookupsController extends Controller
     public function storeStatusLookup(Request $request)
     {
         $data = $request->validate([
-            'module' => ['required', Rule::in(['agenda', 'monthly_activities'])],
+            'module' => ['required', Rule::in(EventContexts::all())],
             'code' => ['required', 'string', 'max:100', 'alpha_dash', Rule::unique('event_status_lookups')->where(fn ($query) => $query->where('module', $request->input('module')))],
             'name' => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
@@ -333,7 +334,7 @@ class EventLookupsController extends Controller
     public function updateStatusLookup(Request $request, EventStatusLookup $eventStatusLookup)
     {
         $data = $request->validate([
-            'module' => ['required', Rule::in(['agenda', 'monthly_activities'])],
+            'module' => ['required', Rule::in(EventContexts::all())],
             'code' => ['required', 'string', 'max:100', 'alpha_dash', Rule::unique('event_status_lookups')->ignore($eventStatusLookup->id)->where(fn ($query) => $query->where('module', $request->input('module')))],
             'name' => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],

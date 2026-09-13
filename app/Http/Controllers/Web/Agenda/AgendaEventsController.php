@@ -429,13 +429,7 @@ class AgendaEventsController extends Controller
     {
         return EventStatusLookup::query()
             ->forModule('agenda')
-            ->where(function ($query) use ($currentStatus) {
-                $query->where('is_active', true);
-
-                if (filled($currentStatus)) {
-                    $query->orWhere('code', $currentStatus);
-                }
-            })
+            ->availableForSelection($currentStatus)
             ->ordered()
             ->get()
             ->unique('code')
@@ -747,7 +741,7 @@ class AgendaEventsController extends Controller
         $categories = $this->agendaCategoriesForForm();
         $branches = Branch::orderBy('name')->get();
 
-        $targetGroupsQuery = TargetGroup::query()->where('is_active', true);
+        $targetGroupsQuery = TargetGroup::query()->active();
         if (Schema::hasColumn('target_groups', 'display_order')) {
             $targetGroupsQuery->orderBy('display_order');
         }
@@ -913,7 +907,7 @@ class AgendaEventsController extends Controller
 
         $departmentUnits = $this->departmentUnitsForAgenda($agendaEvent);
 
-        $targetGroupsQuery = TargetGroup::query()->where('is_active', true);
+        $targetGroupsQuery = TargetGroup::query()->active();
         if (Schema::hasColumn('target_groups', 'display_order')) {
             $targetGroupsQuery->orderBy('display_order');
         }

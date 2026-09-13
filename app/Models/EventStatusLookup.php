@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Models\EventContexts;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -37,6 +38,17 @@ class EventStatusLookup extends Model
         return $query->orderBy('sort_order')->orderBy('name');
     }
 
+    public function scopeAvailableForSelection($query, ?string $currentCode = null)
+    {
+        return $query->where(function ($query) use ($currentCode) {
+            $query->where('is_active', true);
+
+            if (filled($currentCode)) {
+                $query->orWhere('code', $currentCode);
+            }
+        });
+    }
+
     public static function labelFor(string $module, ?string $code): string
     {
         if (! filled($code)) {
@@ -52,7 +64,7 @@ class EventStatusLookup extends Model
             return $lookup->name;
         }
 
-        if ($module === 'agenda') {
+        if ($module === EventContexts::AGENDA) {
             $translated = __('app.roles.relations.agenda.status_labels.' . $code);
 
             return $translated !== 'app.roles.relations.agenda.status_labels.' . $code
@@ -60,7 +72,7 @@ class EventStatusLookup extends Model
                 : (string) $code;
         }
 
-        if ($module === 'monthly_activities') {
+        if ($module === EventContexts::MONTHLY_ACTIVITIES) {
             $workflowLabel = __('workflow_ui.approvals.status_labels.' . $code);
             if ($workflowLabel !== 'workflow_ui.approvals.status_labels.' . $code) {
                 return $workflowLabel;
