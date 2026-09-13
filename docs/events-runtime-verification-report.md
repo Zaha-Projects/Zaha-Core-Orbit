@@ -1,0 +1,144 @@
+# Events runtime verification report (Phase 2.6)
+
+Verification date: 2026-09-13 (UTC)
+
+## Status
+
+`PHASE 2.6 INCOMPLETE`
+
+The runtime gate is blocked by dependency download policy. Static inspection is
+not being substituted for runtime proof.
+
+## Runtime environment
+
+- Default PHP: `8.5.7-dev`, resolved through `/root/.phpenv/shims/php`.
+- Compatible PHP: `/root/.phpenv/versions/8.3snapshot/bin/php`, version
+  `8.3.31-dev`.
+- Composer: `2.9.7`; it runs successfully under PHP 8.3.
+- The PHP 8.3 runtime satisfies every platform requirement recorded in
+  `composer.lock`. Its available modules include the required database,
+  XML, cURL, fileinfo, OpenSSL, tokenizer, and zip support.
+- `composer.lock` exists and `composer validate --no-check-publish` reports a
+  valid project definition. `vendor/autoload.php` was absent before and after
+  the attempted restoration.
+- No `.env` exists and no `APP_ENV`, `DB_CONNECTION`, or `DB_DATABASE`
+  environment variable was set. `.env.example` defaults to `local`, `mysql`,
+  and database `laravel`; those defaults were not treated as a disposable test
+  database.
+
+## Dependency restoration
+
+The lock-authoritative install was attempted with:
+
+```text
+/root/.phpenv/versions/8.3snapshot/bin/php /root/.phpenv/shims/composer install
+```
+
+Composer accepted the lock and planned 107 installs, with no updates or
+removals. Downloads from GitHub repeatedly failed with cURL error 56:
+`CONNECT tunnel failed, response 403`. Composer then attempted source syncs,
+which were blocked by the same network environment. The attempt was stopped
+after the blocker reproduced across unrelated packages. No package constraint,
+project requirement, or lock-file entry was changed.
+
+## Laravel and database gates
+
+`artisan --version`, `artisan about`, and `artisan route:list` each exited 255
+because `artisan` could not require the absent `vendor/autoload.php`. Laravel
+therefore did not boot.
+
+No destructive database command was run. With no explicit test environment or
+database configured, the safety of `migrate:fresh` could not be established.
+Consequently, the following gates remain unverified at runtime:
+
+- repeatable `migrate:fresh` and the Phase 2.3 generalization migration;
+- final columns, indexes, foreign keys, and absence of abandoned tables;
+- first and second `db:seed`, row counts, reference catalogues, roles,
+  permissions, workflows, and workflow steps;
+- intentionally empty business-managed catalogues;
+- model relationship smoke checks;
+- route uniqueness, controller resolution, middleware, and branch isolation;
+- all PHPUnit feature/regression suites;
+- browser and Arabic/RTL smoke tests.
+
+The Phase 2.3 `down()` path restores non-null legacy ownership columns. It must
+not be exercised after Common-owned rows exist unless those rows have first
+been reconciled, because such rows cannot satisfy that legacy shape. This is an
+architectural rollback constraint, not a claim of tested reversibility.
+
+## Required test matrix (not executed)
+
+All entries below are **not executed**, rather than passed or failed:
+
+| Area | Required coverage |
+|---|---|
+| Bootstrap | `EventReferenceDataBootstrapTest`, initial seed, second seed |
+| Phase 2.3 | `EventsPreReleaseSchemaConsolidationTest` |
+| Common Events | targeting, execution, monitoring, execution needs |
+| Monthly | routes, planning, Agenda sync, visibility, submit/approve, needs, lifecycle/close, feedback, post-execution, changes, trash/restore, reports |
+| Agenda | routes, browse/planning, workflow, changes, Monthly synchronization |
+| Ramadan planning | guidance prerequisite, create/edit, details, submit, approval |
+| Ramadan execution | start, actuals, members, supplies, needs, attendance, completion |
+| Ramadan monitoring | create/edit, verifications, submit/return/resubmit/approve, mismatch rule |
+| Ramadan closure | readiness and authoritative approved-report selection |
+| Ramadan versioning | `RamadanIftarChangeRequestVersioningTest` deep-copy and immutability rules |
+| Workflow | definitions, ordering, branch scope, authorization, instances and logs |
+
+## Failure ledger
+
+### Dependency restoration
+
+- **Command/Test:** PHP 8.3 Composer install from `composer.lock`.
+- **Expected:** install 107 locked packages and generate
+  `vendor/autoload.php`.
+- **Actual:** repeated GitHub downloads failed with cURL error 56 and proxy
+  response 403; autoload was not generated.
+- **Root Cause:** environment network/proxy policy blocks the package sources.
+- **Fixed?:** No; changing the dependency graph or requirements is prohibited
+  and would not repair network access.
+- **Fix:** None in the repository.
+- **Retest Result:** Not applicable until package-source access is restored.
+
+### Laravel boot
+
+- **Command/Test:** `artisan --version`, `artisan about`, `artisan route:list`.
+- **Expected:** Laravel boots and each command succeeds.
+- **Actual:** each exited 255 at `artisan:18`, unable to require
+  `vendor/autoload.php`.
+- **Root Cause:** dependency restoration blocker above.
+- **Fixed?:** No.
+- **Fix:** Restore the exact locked dependencies in an environment that can
+  reach their sources.
+- **Retest Result:** Still blocked; no autoloader exists.
+
+### Migration, seed, test, and browser gates
+
+- **Command/Test:** migration, bootstrap, PHPUnit, relationship, route-detail,
+  browser, and RTL verification matrix.
+- **Expected:** execute against a confirmed disposable database after Laravel
+  boot.
+- **Actual:** not executed.
+- **Root Cause:** Laravel cannot boot; additionally, no disposable database is
+  explicitly configured.
+- **Fixed?:** No.
+- **Fix:** restore locked dependencies, then configure a clearly disposable
+  database before any destructive command.
+- **Retest Result:** Pending.
+
+## Static observations and scope control
+
+No runtime application fix was applied because no application runtime was
+available to establish and retest a direct defect. Static scans found no
+reintroduced abandoned table migration or superseded
+`ExecutionNeedTypeSeeder.php`; expected negative assertions and the Phase 2.3
+migration retain old names for verification/history. The working change is
+documentation-only and does not move models, rename tables, migrate Monthly
+JSON, or alter workflows.
+
+## Remaining risks and next slice
+
+Every runtime behavior listed above remains a risk until executed. The one
+recommended next slice is to rerun **Phase 2.6 only** in an environment with
+GitHub/package-source access, restore the lock exactly under PHP 8.3, configure
+a disposable database, and complete the documented command/test matrix. No
+subsequent architecture phase should begin first.

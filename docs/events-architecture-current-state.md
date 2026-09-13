@@ -450,3 +450,21 @@ canonical execution-need source, and one existing aggregate for authorization
 and workflow definitions. Runtime execution remains a deployment gate rather
 than an unverified claim because Composer dependencies are unavailable in this
 environment.
+
+## 26. Phase 2.6 runtime verification
+
+`PHASE 2.6 INCOMPLETE`
+
+On 2026-09-13, PHP 8.3.31-dev and Composer 2.9.7 successfully validated the
+project and all locked platform requirements. The lock-authoritative Composer
+install could not restore dependencies: GitHub package downloads repeatedly
+failed with cURL error 56, `CONNECT tunnel failed, response 403`. The autoloader
+remained absent, so Laravel boot, route boot, migrations, seed/idempotency,
+database schema inspection, feature tests, and browser/RTL smoke tests could not
+run. No disposable database was configured, and no destructive database command
+was attempted.
+
+No runtime fix or architecture change was made. The detailed command results,
+failure ledger, unexecuted test matrix, rollback constraint, and exact next
+verification slice are recorded in
+[`events-runtime-verification-report.md`](events-runtime-verification-report.md).
