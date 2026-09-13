@@ -1,164 +1,234 @@
-# Monthly Activities controller refactor — Phase 2.1
+# Monthly Activities controller refactor — Phase 2.1 final architecture
 
 ## Status
 
-**Legacy controller retirement: PARTIAL.** Public route ownership is now separated under
-`App\Modules\Events\Http\Controllers\MonthlyActivities`, but the focused controllers
-still inherit the proven implementations from the two legacy controllers. This is an
-intentional compatibility seam while runtime dependencies are unavailable. It must not
-be mistaken for completed method/helper extraction.
+**Phase 2.1 complete.** Phase 2.1A established the route-owner map. Phase 2.1B
+physically moved every routed action into that focused controller, moved exclusive
+helpers with its action, retained only genuinely shared protected behavior in two
+Monthly-specific concern traits, removed the compatibility inheritance from both
+legacy controllers, removed the Follow-up controller delegation, and deleted both
+legacy controller files.
 
-The repository state at the start of this slice did not contain the documented
-`MonthlyActivitiesBrowseController` or `MonthlyActivityCalendarController`; both routes
-still targeted `MonthlyActivitiesController`. Phase 2.1 establishes those named route
-owners without changing their inherited implementations.
+## Physical public-action ownership
 
-## Complete legacy public-action inventory
+| Focused controller | Physical public methods |
+|---|---|
+| `MonthlyActivitiesBrowseController` | `index` |
+| `MonthlyActivityCalendarController` | `calendar` |
+| `MonthlyActivityPlanningController` | `create`, `syncFromAgenda`, `store`, `edit`, `update` |
+| `MonthlyActivityWorkspaceController` | `showDeleted`, `show` |
+| `MonthlyActivityLifecycleController` | `submit`, `close` |
+| `MonthlyActivityTrashController` | `trash`, `restore`, `destroy` |
+| `MonthlyActivityFeedbackController` | `returnedFeedback`, `postExecutionFeedback` |
+| `MonthlyActivityReportsController` | `changeRequestReports` |
+| `MonthlyActivityApprovalQueueController` | `index`, `details` |
+| `MonthlyActivityApprovalDecisionController` | `update`, `decideExecutionNeed` |
+| `MonthlyActivityPostExecutionDecisionController` | `decidePostExecution` |
+| `MonthlyActivityChangeRequestDecisionController` | `decideDeleteRequest`, `decideEditRequest` |
 
-### `MonthlyActivitiesController`
+All classes live under
+`App\Modules\Events\Http\Controllers\MonthlyActivities`. They contain their routed
+methods directly and none extends either deleted legacy controller.
 
-| Action | Route name / verb | Responsibility | View or response | Principal collaborators/helper families |
-|---|---|---|---|---|
-| `index` | `role.relations.activities.index` GET | Browse | `pages.monthly_activities.index` | visibility, month/status summaries, workflow presenter |
-| `calendar` | `role.relations.activities.calendar` GET | Browse/calendar | calendar view | visibility, month/status filters |
-| `trash` | `role.relations.activities.trash` GET | Trash | trash view | branch visibility, month filters |
-| `restore` | `role.relations.activities.trash.restore` PATCH | Trash | redirect | visibility and legacy lifecycle fields |
-| `create` | `role.relations.activities.create` GET | Planning | create form | lookups, branch/agenda visibility, prefill |
-| `syncFromAgenda` | `role.relations.activities.sync_from_agenda` POST | Planning bootstrap | redirect | validation, branch scope, legacy Monthly persistence |
-| `store` | `role.relations.activities.store` POST | Planning | redirect | inline validation, normalization, transaction, workflow, notification, audit |
-| `edit` | `role.relations.activities.edit` GET | Planning | edit/post-execution form | visibility, change-request state, presenters/lookups |
-| `update` | `role.relations.activities.update` PUT | Planning/execution form mutation | redirect | inline validation, normalization, transaction, version/change requests, workflow, notification, audit |
-| `show` | `role.relations.activities.show` GET | Workspace | show view | visibility, workflow presenter, attachments/change requests |
-| `showDeleted` | `role.relations.activities.deleted.show` GET | Historical guard | 404 | none (deleted records intentionally unavailable) |
-| `destroy` | `role.relations.activities.destroy` DELETE | Trash/change request | redirect | visibility, change-request service, audit |
-| `submit` | `role.relations.activities.submit` PATCH | Submission | redirect | lifecycle, workflow, notifications, audit |
-| `close` | `role.relations.activities.close` PATCH | Execution/post-execution | redirect | lifecycle, post-execution authorization and normalization |
-| `returnedFeedback` | `role.relations.activities.returned_feedback` GET | Feedback | feedback view | role/branch SQL scope |
-| `postExecutionFeedback` | `role.relations.activities.post_execution_feedback` GET | Post-execution feedback | feedback view | role/branch SQL scope, legacy JSON |
-| `changeRequestReports` | `role.super_admin.monthly_activities.change_requests.reports` GET | Reports | report view | request filters and workflow aggregates |
+## Route contract
 
-### `MonthlyActivitiesApprovalsController`
+The existing 24 Monthly route entries retain their route names, HTTP verbs, URIs,
+parameters, ordering and middleware declarations. Existing views/forms continue to use
+unchanged route names. `MonthlyActivityControllerRouteContractTest` locks every target,
+verb and URI and samples the critical role/permission and branch middleware strings.
 
-| Action | Route name / verb | Responsibility | Response | Principal collaborators/helper families |
-|---|---|---|---|---|
-| `index` | `role.programs.approvals.index` GET | Approval/change-request queue | approvals view | SQL branch scope, workflow presenter/service |
-| `details` | `role.programs.approvals.details` GET | Approval review | JSON | workflow/branch filters and presentation helpers |
-| `update` | `role.programs.approvals.update` PUT | Planning approval decision | redirect | lifecycle, dynamic workflow, notifications, audit, department notes |
-| `decideExecutionNeed` | `role.programs.approvals.execution_needs.update` PUT | Execution-need decision | redirect | legacy execution-needs JSON and authorization helpers |
-| `decidePostExecution` | `role.programs.approvals.post_execution_decision` PATCH | Post-execution review | redirect | notifications and legacy post-execution payload |
-| `decideDeleteRequest` | `role.programs.approvals.delete_requests.update` PUT | Change-request decision | redirect | `PlanChangeRequestWorkflowService` |
-| `decideEditRequest` | `role.programs.approvals.edit_requests.update` PUT | Change-request decision | redirect | `PlanChangeRequestWorkflowService` |
+The Follow-up route `followup.monthly-plans` now points directly to
+`MonthlyActivitiesBrowseController::index`. The obsolete
+`FollowupWorkspaceController::monthlyPlans` forwarding method and legacy-controller
+import were deleted. Its URI, name and permission middleware are unchanged.
 
-### Other legacy Monthly controller layer inspected
+## Shared collaborators
 
-- `CommunicationsRequestsController`: `index`, `board`, `update`, and public
-  `requirementsFor`. It owns a separate communications workflow and was not moved.
-- `WorkshopsRequestsController`: `index`, `update`. It owns workshop requests and was
-  not moved.
-- `EventLookupsController`: `index` and lookup create/update actions for Zaha time,
-  departments/units, target groups, evaluation questions, categories and statuses. It
-  is an admin lookup controller, not part of Monthly plan lifecycle decomposition.
-- Existing focused Programs controllers for supplies, teams, attachments and other
-  resources remain unchanged.
+### `InteractsWithMonthlyActivities`
 
-All route middleware, views, request payloads, redirects and collaborators remain in the
-inherited implementations; only route controller ownership changed.
+A Monthly-specific concern trait containing only protected behavior
+used by two or more of the browse, calendar, planning, workspace, lifecycle and trash
+controllers. It owns branch/record visibility, shared lifecycle eligibility, legacy
+Execution Need normalization, shared workflow submission/audit, shared index date
+filters and shared workspace presentation relations. It has no public route action.
 
-## Old to new action map
+### `InteractsWithMonthlyActivityApprovals`
 
-```text
-MonthlyActivitiesController::index
-→ MonthlyActivitiesBrowseController::index
-MonthlyActivitiesController::calendar
-→ MonthlyActivityCalendarController::calendar
-MonthlyActivitiesController::create/store/edit/update/syncFromAgenda
-→ MonthlyActivityPlanningController (same actions)
-MonthlyActivitiesController::show/showDeleted
-→ MonthlyActivityWorkspaceController (same actions)
-MonthlyActivitiesController::submit/close
-→ MonthlyActivityLifecycleController (same actions)
-MonthlyActivitiesController::trash/restore/destroy
-→ MonthlyActivityTrashController (same actions)
-MonthlyActivitiesController::returnedFeedback/postExecutionFeedback
-→ MonthlyActivityFeedbackController (same actions)
-MonthlyActivitiesController::changeRequestReports
-→ MonthlyActivityReportsController::changeRequestReports
+A Monthly-specific approval concern trait containing only protected behavior
+used by two or more approval controllers: view-only protection, branch approval scope,
+post-execution reviewer eligibility, Execution Need decision presentation, focus-area
+formatting and final-step detection. It has no public route action.
 
-MonthlyActivitiesApprovalsController::index/details
-→ MonthlyActivityApprovalQueueController (same actions)
-MonthlyActivitiesApprovalsController::update/decideExecutionNeed
-→ MonthlyActivityApprovalDecisionController (same actions)
-MonthlyActivitiesApprovalsController::decidePostExecution
-→ MonthlyActivityPostExecutionDecisionController::decidePostExecution
-MonthlyActivitiesApprovalsController::decideDeleteRequest/decideEditRequest
-→ MonthlyActivityChangeRequestDecisionController (same actions)
-```
+No focused controller calls another controller. Existing domain services remain the
+same: `MonthlyActivityLifecycleService`, `MonthlyActivityWorkflowService`,
+`DynamicWorkflowService`, `WorkflowNotificationService`, `NotificationService`,
+`PlanChangeRequestWorkflowService`, `ConflictDetectionService` and
+`MonthlyWorkflowPresenter`.
 
-## Route-contract preservation
+## Legacy retirement proof
 
-The 24 moved route entries retain the existing name, HTTP verb, URI, route parameter,
-route order and middleware declarations. Existing Blade links therefore continue to use
-unchanged route names. A route-contract characterization test locks the new controller
-action plus the verb/URI for all 24 routes and samples critical role/branch middleware.
-No route was removed or declared obsolete.
+Deleted:
 
-## Helper classification
+- `app/Http/Controllers/Web/MonthlyActivities/MonthlyActivitiesController.php`
+- `app/Http/Controllers/Web/MonthlyActivities/MonthlyActivitiesApprovalsController.php`
 
-- **A — one concern:** month/calendar filters; form-prefill/normalization; trash
-  restoration; feedback query builders; decision formatting. These remain in the
-  compatibility parent pending physical extraction.
-- **B — shared:** branch visibility, role resolution, activity visibility, status
-  lookup options, workflow presentation, active change-request data. These are retained
-  once in the legacy parent and were not duplicated.
-- **C — domain/service:** lifecycle transitions, dynamic workflow decisions,
-  notifications and plan-change-request orchestration already delegate to existing
-  services. Their calls and transactions are unchanged.
-- **D — query/presentation:** summary cards, status labels, approval card/timeline and
-  filter builders remain beside the inherited endpoints for now.
-- **E — dead:** no helper was deleted in this slice because runtime-backed proof is not
-  available and several tests intentionally reflect protected helpers.
+Repository-wide production/test searches contain no reference to either deleted FQCN,
+no focused class extends either legacy class, and no controller invokes a Monthly
+controller. Remaining text references occur only in historical/planning documentation
+that describes the pre-refactor architecture, plus the unrelated
+`StaffMonthlyActivitiesController` class whose name is not a legacy dependency.
 
-No focused controller calls another controller. The inheritance seam is the explicit
-remaining retirement blocker.
+## Behavior and storage invariants
 
-## Remaining legacy dependencies and retirement gate
-
-No application route points directly to either legacy controller after this slice.
-They cannot yet be deleted because:
-
-1. all focused route owners inherit their proven implementations and shared helpers;
-2. focused-controller characterization tests still reflect the inherited
-   `statusAfterPlanningEdit` and `executionNeedOwnerUsers` helpers directly;
-3. `FollowupWorkspaceController::monthlyPlans` still delegates to the legacy
-   `MonthlyActivitiesController::index`; replacing this pre-existing controller call
-   requires extracting the browse query/presentation behavior rather than redirecting
-   the dependency to another controller;
-4. the 4,253-line activity controller and 1,130-line approval controller have highly
-   cross-cutting helper families that require runtime regression coverage during
-   physical extraction.
-
-Accordingly, route cutover is complete but physical legacy-controller retirement is
-partial. The next controller-cleanup pass must move endpoint bodies/helper families into
-focused controllers or narrowly scoped services, update the two intentional test
-references, then repeat the repository-wide zero-reference gate before deletion.
-
-## Storage and behavior invariants
-
-- No Monthly model, table, JSON field or relationship changed.
-- No Common Event read/write or dual-write was introduced.
-- `execution_needs_payload`, `execution_needs_followup`, and post-execution payloads
+- Endpoint bodies were moved without intentional logic edits.
+- Inline validation, authorization, branch filtering, query/eager-loading behavior,
+  pagination, views, redirects, response JSON and flash messages are unchanged.
+- Existing transaction boundaries, workflow calls, notifications and audit calls moved
+  with their endpoint/helper bodies.
+- `execution_needs_payload`, `execution_needs_followup` and post-execution payloads
   remain legacy-authoritative.
-- Workflow definitions, roles, permissions, transactions, notifications and audit calls
-  are unchanged.
-- No Blade file, Ramadan production file, Agenda controller, migration or seeder changed.
+- No model or model namespace moved.
+- No database migration, schema alteration, backfill, seeder or permission changed.
+- No Common Event read/write or dual-write was introduced.
+- No Agenda, Ramadan or Monthly Blade file changed.
 
-## Phase 2.2 inventory candidates — not implemented
+## Helper ownership
 
-- Monthly Targeting → Common
-- Monthly Execution Teams → Common
-- Monthly Volunteers → Common
-- Monthly Supplies → Common
-- Monthly Execution Needs → canonical Common
-- Monthly Monitoring → Common
-- Legacy storage decommission
-- Seeder/bootstrap audit
+Exclusive helpers were moved directly beside their only routed concern. Helpers reached
+by two or more focused concerns remain once in the appropriate Monthly-specific concern
+trait. One repository-wide dead helper, `resolveStatusFilterValue`, was removed after
+static call/reference analysis found no consumer.
+
+| Helper | Old owner | New owner | Reason |
+|---|---|---|---|
+| `monthlyPageStatusOptions` | `MonthlyActivitiesController` | `MonthlyActivitiesBrowseController` | Used only by this focused responsibility. |
+| `applyMonthlyIndexSummaryFilter` | `MonthlyActivitiesController` | `MonthlyActivitiesBrowseController` | Used only by this focused responsibility. |
+| `buildMonthlyIndexSummaryCards` | `MonthlyActivitiesController` | `MonthlyActivitiesBrowseController` | Used only by this focused responsibility. |
+| `resolvePendingApprovalCardSnapshot` | `MonthlyActivitiesController` | `MonthlyActivitiesBrowseController` | Used only by this focused responsibility. |
+| `fallbackWorkflowFilterLabel` | `MonthlyActivitiesController` | `MonthlyActivitiesBrowseController` | Used only by this focused responsibility. |
+| `approvalsReturnUrl` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalDecisionController` | Used only by this focused responsibility. |
+| `publishApprovedLifecycle` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalDecisionController` | Used only by this focused responsibility. |
+| `monthlyLegacyApprovalStatusUpdates` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalDecisionController` | Used only by this focused responsibility. |
+| `storeDepartmentNoteIfPresent` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalDecisionController` | Used only by this focused responsibility. |
+| `executionStatusLabel` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `monthlyActivityStatusLabel` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `monthlyChangeRequestStats` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `applyChangeRequestFilters` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `workflowTimelineForActivity` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `applyMonthlyActivityApprovalFilters` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `buildActivityCard` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `decisionOptionsForStep` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `buildCurrentStepOptions` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `buildStatusFilterOptions` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `applyWorkflowApprovalFilters` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityApprovalQueueController` | Used only by this focused responsibility. |
+| `closeLifecycle` | `MonthlyActivitiesController` | `MonthlyActivityLifecycleController` | Used only by this focused responsibility. |
+| `branchScopedRoleUsers` | `MonthlyActivitiesController` | `MonthlyActivityLifecycleController` | Used only by this focused responsibility. |
+| `normalizePostExecutionPayload` | `MonthlyActivitiesController` | `MonthlyActivityLifecycleController` | Used only by this focused responsibility. |
+| `logChanges` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeChangeLogValue` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `shouldStartNewVersion` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `activityHasApprovalTrail` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `meaningfulChangedFields` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeComparableValue` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `statusAfterPlanningEdit` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `shouldSubmitFromRequest` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `unifiedLockedFields` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `applyUnifiedLockedFieldValues` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `isLocked` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `notifyExecutionNeedsDecisionSubmitted` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `mergeExecutionNeedsFollowupForDecisionUser` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `canSubmitPostEvaluation` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `monthlyCloseStatusOptions` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `monthlyPlanningStatusOptions` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `flashFormPrefill` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `extractVolunteerAgeBounds` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `canUseMonthlyActivityPlanningEdit` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `notifyExecutionNeedOwners` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `executionNeedOwnerUsers` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `isBranchScopedExecutionNeedRole` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `syncEvaluationData` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `syncEvaluationSummary` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `syncSponsorsAndPartners` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `syncTargetGroups` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `syncOfficialCorrespondence` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `syncVolunteerNeed` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizePlanningPayload` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeSuppliesPayload` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeExecutionNeedsPayload` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeExpectedAttendanceRange` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeVolunteerAgeRange` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `applyAgendaLockedFieldValues` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `needAvailabilityRules` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `supplyValidationRules` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `expectedAttendanceRangeRules` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `safeExternalUrlRules` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeSuppliesRequestPayload` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `normalizeMonthlyActivityContactPhones` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `buildLockAt` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `monthlyLockDays` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `currentUserBranchId` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `monthlyCreationStatusOptions` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `agendaEventsForUser` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `agendaEventsQueryForUser` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `flashCreatePrefill` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `findAgendaEventForUser` | `MonthlyActivitiesController` | `MonthlyActivityPlanningController` | Used only by this focused responsibility. |
+| `branchScopedRoleUsers` | `MonthlyActivitiesApprovalsController` | `MonthlyActivityPostExecutionDecisionController` | Used only by this focused responsibility. |
+| `abortIfProgramsManagerViewOnly` | `MonthlyActivitiesApprovalsController` | `InteractsWithMonthlyActivityApprovals` | Shared by multiple focused approval concerns; retained once in the approval trait. |
+| `canReviewPostExecution` | `MonthlyActivitiesApprovalsController` | `InteractsWithMonthlyActivityApprovals` | Shared by multiple focused approval concerns; retained once in the approval trait. |
+| `executionNeedDecisionItemsForActivity` | `MonthlyActivitiesApprovalsController` | `InteractsWithMonthlyActivityApprovals` | Shared by multiple focused approval concerns; retained once in the approval trait. |
+| `focusAreaLabels` | `MonthlyActivitiesApprovalsController` | `InteractsWithMonthlyActivityApprovals` | Shared by multiple focused approval concerns; retained once in the approval trait. |
+| `formatDecisionComment` | `MonthlyActivitiesApprovalsController` | `InteractsWithMonthlyActivityApprovals` | Shared by multiple focused approval concerns; retained once in the approval trait. |
+| `isMonthlyRelationsManagerFinalStep` | `MonthlyActivitiesApprovalsController` | `InteractsWithMonthlyActivityApprovals` | Shared by multiple focused approval concerns; retained once in the approval trait. |
+| `branchApprovalScope` | `MonthlyActivitiesApprovalsController` | `InteractsWithMonthlyActivityApprovals` | Shared by multiple focused approval concerns; retained once in the approval trait. |
+| `monthlyActivityEditRoles` | `MonthlyActivitiesController` constants | `InteractsWithMonthlyActivities` | Preserves the shared role list without PHP 8.2-only trait constants. |
+| `ownBranchId` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `followupOfficerBranchId` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `scopedBranchIds` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canAccessScopedBranch` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `isApprovedVersion` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `isSupersededVersion` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `shouldScopeToUserBranch` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `applyBranchVisibilityScope` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `applyOtherBranchesScope` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canViewOtherBranches` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `applyDraftVisibilityScope` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `isVolunteerCoordinatorOnly` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `applyVolunteerCoordinatorVisibilityScope` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canCompleteAfterExecution` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canReviewPostExecution` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canSubmitActivityForApproval` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canUseMonthlyActivityEditRoute` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `monthlyActivityChangeRequestRoles` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canManageMonthlyActivityChangeRequest` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `creatorIsPrimaryBranchRelationsOfficer` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `executionNeedDecisionRoles` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `executionNeedDecisionKeysForUser` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canDecideAnyExecutionNeed` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `ensureActivityVisibleToUser` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `activityNeedsVolunteers` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `logWorkflowAction` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `evaluationSummaryRules` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `statusLookupOptions` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `executionStatusLabels` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `normalizeExecutionNeedsFollowup` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `filterExecutionNeedsFollowupToEnabled` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `mergeExecutionNeedsFollowupRows` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `submitActivityForApproval` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `normalizeMonthlyIndexYear` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `normalizeMonthlyIndexMonth` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `applyMonthlyPageMonthFilter` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `applyMonthlyPageStatusFilter` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `hasManagerOrLaterApproval` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `isReadOnlyUnifiedAgendaActivity` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `canBranchEditUnifiedNonCoreFields` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `monthlyActivityWorkflowViewRelations` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+| `activeMonthlyChangeRequestViewData` | `MonthlyActivitiesController` | `InteractsWithMonthlyActivities` | Shared by multiple focused Monthly concerns; retained once in the Monthly trait. |
+
+## Next phase — not implemented
+
+`PHASE 2.2 — EVENTS DATA MODEL CONSOLIDATION AUDIT`
+
+That audit will classify each model/table decision as `KEEP`, `ALTER`, `RENAME`,
+`MOVE MODEL`, `MERGE`, `KEEP NEW`, or `DEPRECATE`. It will cover future candidates only:
+Monthly Targeting, Execution Teams, Volunteers, Supplies, canonical Execution Needs,
+Monitoring, legacy storage decommission and seeder/bootstrap readiness.

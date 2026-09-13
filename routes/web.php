@@ -133,7 +133,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::prefix('dashboard/followup')->middleware('role:followup_officer|evaluation_officer')->name('followup.')->group(function () {
         Route::get('/', [FollowupWorkspaceController::class, 'dashboard'])->middleware('permission:followup.dashboard.view')->name('dashboard');
-        Route::get('/monthly-plans', [FollowupWorkspaceController::class, 'monthlyPlans'])->middleware('permission:followup.monthly_plans.view')->name('monthly-plans');
+        Route::get('/monthly-plans', [MonthlyActivitiesBrowseController::class, 'index'])->middleware('permission:followup.monthly_plans.view')->name('monthly-plans');
         Route::get('/monthly-plans/{monthlyActivity}', [FollowupWorkspaceController::class, 'showPlan'])->middleware('permission:followup.monthly_plans.view')->name('monthly-plans.show');
         Route::get('/awaiting-evaluation', [FollowupWorkspaceController::class, 'awaitingEvaluation'])->middleware('permission:followup.post_execution.view')->name('awaiting-evaluation');
         Route::get('/evaluations', [FollowupWorkspaceController::class, 'evaluations'])->middleware('permission:followup.evaluations.view')->name('evaluations.index');

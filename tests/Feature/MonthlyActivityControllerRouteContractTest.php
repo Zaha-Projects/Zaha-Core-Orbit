@@ -21,6 +21,7 @@ class MonthlyActivityControllerRouteContractTest extends TestCase
         $this->assertContains($verb, $route->methods());
         $this->assertSame($uri, $route->uri());
         $this->assertSame($controller.'@'.$method, $route->getActionName());
+        $this->assertSame($controller, (new \ReflectionMethod($controller, $method))->getDeclaringClass()->getName());
     }
 
     public function monthlyRouteProvider(): array
@@ -29,6 +30,7 @@ class MonthlyActivityControllerRouteContractTest extends TestCase
 
         return [
             ['role.super_admin.monthly_activities.change_requests.reports', 'GET', 'dashboard/admin/monthly-activities/change-requests/reports', $namespace.'MonthlyActivityReportsController', 'changeRequestReports'],
+            ['followup.monthly-plans', 'GET', 'dashboard/followup/monthly-plans', $namespace.'MonthlyActivitiesBrowseController', 'index'],
             ['role.relations.activities.index', 'GET', 'dashboard/relations/monthly-activities', $namespace.'MonthlyActivitiesBrowseController', 'index'],
             ['role.relations.activities.calendar', 'GET', 'dashboard/relations/monthly-activities/calendar', $namespace.'MonthlyActivityCalendarController', 'calendar'],
             ['role.relations.activities.trash', 'GET', 'dashboard/relations/monthly-activities/trash', $namespace.'MonthlyActivityTrashController', 'trash'],
@@ -58,6 +60,7 @@ class MonthlyActivityControllerRouteContractTest extends TestCase
     public function test_monthly_route_middleware_contracts_remain_in_place(): void
     {
         $expectations = [
+            'followup.monthly-plans' => ['permission:followup.monthly_plans.view'],
             'role.relations.activities.index' => ['branch.isolation', 'role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view'],
             'role.relations.activities.create' => ['branch.isolation', 'role_or_permission:relations_manager|relations_officer|super_admin|monthly_activities.create'],
             'role.relations.activities.update' => ['role:relations_manager|relations_officer|supervisor|branch_coordinator|followup_officer|evaluation_officer|volunteer_coordinator|communication_head|transport_officer|movement_manager|administrative_unit_manager|super_admin'],
@@ -70,6 +73,18 @@ class MonthlyActivityControllerRouteContractTest extends TestCase
             foreach ($middleware as $item) {
                 $this->assertContains($item, $route->middleware(), $name.' lost middleware '.$item);
             }
+        }
+    }
+
+    public function test_focused_controllers_are_physical_owners_and_legacy_classes_are_retired(): void
+    {
+        $this->assertFileDoesNotExist(app_path('Http/Controllers/Web/MonthlyActivities/MonthlyActivitiesController.php'));
+        $this->assertFileDoesNotExist(app_path('Http/Controllers/Web/MonthlyActivities/MonthlyActivitiesApprovalsController.php'));
+
+        foreach ($this->monthlyRouteProvider() as $contract) {
+            $controller = new \ReflectionClass($contract[3]);
+            $this->assertSame(\App\Http\Controllers\Controller::class, $controller->getParentClass()->getName());
+            $this->assertSame($contract[3], $controller->getMethod($contract[4])->getDeclaringClass()->getName());
         }
     }
 }
