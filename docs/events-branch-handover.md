@@ -118,7 +118,7 @@ aggregate cutovers, and distinct high-risk Monthly data migrations.
 | `monthly_activity_approvals` | `MonthlyActivityApproval` / Events | Y | N | N | retained legacy history |
 | `monthly_activity_change_logs`, `monthly_activity_evaluation_responses`, `monthly_activity_followups`, `monthly_activity_partners`, `monthly_activity_sponsors` | corresponding Events models | Y | N | N | final current support tables |
 | `monthly_activity_attachments` | `MonthlyActivityAttachment` / `App\Models` | Y | N | N | final table, namespace move pending |
-| `monthly_activity_volunteer_needs` | `MonthlyActivityVolunteerNeed` / `App\Models` | Y | N | N | legacy-authoritative; semantic decision pending |
+| `monthly_activity_volunteer_needs` | `MonthlyActivityVolunteerNeed` / Events | Y | N | N | Monthly-only zero/one planning summary; model moved in 2.12 |
 | Monthly edit/delete request tables | request models / `App\Models` | Y | N | N | current; stored FQCN sensitive |
 
 ### Agenda domain
@@ -898,6 +898,36 @@ NO MONITORING WRITER WAS CHANGED
 NO LEGACY STORAGE WAS REMOVED
 NO DUAL-WRITE WAS INTRODUCED
 NO BUSINESS OR WORKFLOW RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## Phase 2.12 Monthly volunteer model handover addendum (2026-09-14)
+
+`PHASE 2.12 COMPLETE`
+
+The sole production model is now
+`App\Modules\Events\Models\MonthlyActivityVolunteerNeed`; the old
+`App\Models\MonthlyActivityVolunteerNeed` file is absent. The table remains
+`monthly_activity_volunteer_needs`, and `MonthlyActivity::volunteerNeed()`
+remains `hasOne`. No active import, route binding, serialized identity, seeder,
+fixture, view, or test referenced the old FQCN.
+
+Phase 2.9's `KEEP SEPARATE` decision is unchanged. Do not redirect this Monthly
+summary to `subject_volunteer_requirements` and do not add an adapter or
+dual-write.
+
+Events-owned identity-sensitive models still under `App\Models` are the
+`MonthlyActivity` and `AgendaEvent` aggregates, the four Monthly/Agenda request
+models, and `PostExecutionVerification`. The verification move remains blocked
+on Phase 2.8D; aggregate/request moves require dedicated stored-identity
+compatibility work.
+
+NO VOLUNTEER TABLE WAS RENAMED
+NO VOLUNTEER DATA WAS MIGRATED
+NO VOLUNTEER CARDINALITY OR BUSINESS SEMANTICS WERE CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+NO STORED WORKFLOW/AUDIT IDENTITY WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

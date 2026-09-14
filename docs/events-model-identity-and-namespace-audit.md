@@ -50,7 +50,7 @@ route binding alone is reported separately.
 | `MonthlyActivityFollowup` | `App\Models` | `monthly_activity_followups` | Monthly follow-up | flat Events | none found | MOVE |
 | `MonthlyActivityPartner` | `App\Models` | `monthly_activity_partners` | Monthly partners | flat Events | none found | MOVE |
 | `MonthlyActivitySponsor` | `App\Models` | `monthly_activity_sponsors` | Monthly sponsors | flat Events | none found | MOVE |
-| `MonthlyActivityVolunteerNeed` | `App\Models` | `monthly_activity_volunteer_needs` | Monthly legacy volunteer semantics | flat Events | none found; semantics intentionally unresolved | DEFER |
+| `MonthlyActivityVolunteerNeed` | `App\Modules\Events\Models` | `monthly_activity_volunteer_needs` | Monthly-only volunteer planning summary | flat Events | none found on Phase 2.12 recheck | MOVED 2.12 |
 | `ExecutionTeamMember` | `App\Modules\Events\Models` | `execution_team_members` | shared Monthly/Ramadan member; route bound | flat Events | no stored FQCN found | RENAMED/MOVED 2.8B |
 | `EventSupply` | `App\Modules\Events\Models` | `event_supplies` | shared Monthly/Ramadan supply; route bound | flat Events | no stored FQCN found | RENAMED/MOVED 2.8B |
 | `PostExecutionVerification` | `App\Models` | `post_execution_verifications` | shared verification; evaluation/monitoring | flat Events | MEDIUM: `AuditLog.entity_type` writer exists | MOVE WITH COMPATIBILITY |
@@ -496,3 +496,35 @@ PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 
 `PHASE 2.8D INCOMPLETE`
+
+## 20. Phase 2.12 MonthlyActivityVolunteerNeed identity outcome
+
+`PHASE 2.12 COMPLETE`
+
+The repository-wide recheck found no use of
+`App\Models\MonthlyActivityVolunteerNeed` or
+`MonthlyActivityVolunteerNeed::class` as a persisted discriminator. The model
+does not participate in `entity_type`, `model_type`, `auditable_type`,
+`correspondable_type`, workflow subject identity, notification class metadata,
+or application serialization. It also has no direct route binding.
+
+The model therefore moved without a compatibility wrapper to
+`App\Modules\Events\Models\MonthlyActivityVolunteerNeed`. This is the only
+production model class for `monthly_activity_volunteer_needs`.
+
+Events-owned models remaining in `App\Models`:
+
+| Model | Reason | Risk | Future phase |
+|---|---|---|---|
+| `MonthlyActivity` | persisted aggregate identity across workflow/audit/request/notifications | HIGH | dedicated aggregate identity compatibility phase |
+| `AgendaEvent` | persisted aggregate identity across workflow/audit/request history | HIGH | dedicated aggregate identity compatibility phase |
+| `MonthlyPlanEditRequest` | persisted request workflow/source identity | HIGH | dedicated request identity compatibility phase |
+| `MonthlyPlanDeleteRequest` | persisted request workflow/source identity | HIGH | dedicated request identity compatibility phase |
+| `AnnualAgendaEditRequest` | persisted request workflow/source identity | HIGH | dedicated request identity compatibility phase |
+| `AnnualAgendaDeleteRequest` | persisted request workflow/source identity | HIGH | dedicated request identity compatibility phase |
+| `PostExecutionVerification` | FQCN stored in audit history | MEDIUM/HIGH | Phase 2.8D after runtime prerequisites |
+
+NO STORED WORKFLOW/AUDIT IDENTITY WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

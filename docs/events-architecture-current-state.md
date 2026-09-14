@@ -77,7 +77,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Beneficiary segments | none | new Common lookup | retained | Keep justified | `beneficiary_segments` | `BeneficiarySegment` | Events | future | Yes | No | reference | No | none |
 | Team headers | no normalized Monthly header | new Common header | retained Common header | Keep justified | `execution_teams` | `ExecutionTeam` | Events | future | Yes | No | none | No | Monthly adapter only if required |
 | Team members | old Monthly member rows + new Common rows | duplicate development table abandoned | generalized historical table renamed in place | Final shared member concept | `execution_team_members` | `ExecutionTeamMember` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
-| Volunteer requirements | one-row Monthly summary | repeatable Common rows | both retained due distinct business facts | Keep separate (Phase 2.9) | `monthly_activity_volunteer_needs`; `subject_volunteer_requirements` | corresponding models | Monthly model remains `App\Models`; Common model Events | Yes | Yes | No | none | No | optional read projection only when a concrete report requires it |
+| Volunteer requirements | one-row Monthly summary | repeatable Common rows | both retained due distinct business facts | Keep separate (Phase 2.9) | `monthly_activity_volunteer_needs`; `subject_volunteer_requirements` | corresponding models | both models under Events; storage remains separate | Yes | Yes | No | none | No | optional read projection only when a concrete report requires it |
 | Supplies | old Monthly + duplicate Common | duplicate development table abandoned | generalized historical table renamed in place | Final shared Event supply | `event_supplies` | `EventSupply` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
 | Execution Need master | lookup master | canonical flags/mappings | sole master | Keep and generalize in place | `execution_need_types` | `ExecutionNeedType` | `App\Models` now; Events final | Yes | Yes | potential | canonical required | Yes | remove superseded seeder; namespace later |
 | Execution Need transactions | Monthly JSON | Common relational table | JSON for Monthly, rows for Ramadan | Keep separate by lifecycle contract (Phase 2.10) | Monthly JSON; `subject_execution_needs` for Common/Ramadan | `MonthlyActivity` casts; `SubjectExecutionNeed` | mixed | Yes | Yes | No | none | No | richer schema/live audit required before reconsideration |
@@ -102,7 +102,7 @@ Every table below should exist unless explicitly labelled removed. All active ta
 | `agenda_event_targets`, `agenda_approvals`, `agenda_participations`, `agenda_event_partner_departments` | 2024/2026 Agenda migrations | selected indexes/fields | Agenda models, `App\Models` | Agenda only | final domain tables | none |
 | `annual_agenda_edit_requests`, `annual_agenda_delete_requests` | `2026_06_12_000001` | none | request models, `App\Models` | Agenda changes | final domain tables | none |
 | `monthly_activities` | `2024_02_01_010600` | multiple Monthly/version/evaluation migrations | `MonthlyActivity`, `App\Models` | Monthly aggregate | final, legacy-rich | business rows |
-| `monthly_activity_volunteer_needs`, attachments, approvals, sponsors, partners, change logs, followups, evaluation responses, KPIs | respective Monthly migrations | selected later fields | Monthly models, `App\Models` | Monthly | final domain/legacy | mixed |
+| `monthly_activity_volunteer_needs`, attachments, approvals, sponsors, partners, change logs, followups, evaluation responses, KPIs | respective Monthly migrations | selected later fields | corresponding Monthly models; support models under Events where audited | Monthly | final domain/legacy | mixed |
 | `activity_evaluations`, `activity_evaluation_answers`, `evaluation_forms`, `evaluation_questions` | evaluation migrations | question sort-order migration | evaluation models, `App\Models` | Monthly evaluation | final domain | business/reference forms |
 | `monthly_plan_edit_requests`, `monthly_plan_delete_requests` | `2026_06_12_000001` | none | request models, `App\Models` | Monthly change/delete | final domain tables | none |
 | `event_target_group` | `2026_03_19_120004` | `2026_09_14_000100` | `SubjectTargetGroup`, Events | Monthly + Ramadan targeting | final generalized | none |
@@ -749,6 +749,35 @@ NO MONITORING WRITER WAS CHANGED
 NO LEGACY STORAGE WAS REMOVED
 NO DUAL-WRITE WAS INTRODUCED
 NO BUSINESS OR WORKFLOW RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 34. Phase 2.12 Monthly volunteer support-model move (2026-09-14)
+
+`PHASE 2.12 COMPLETE`
+
+`MonthlyActivityVolunteerNeed` moved from `App\Models` to
+`App\Modules\Events\Models`. Its class name, fillable fields, `belongsTo`
+relationship, `HasFactory` behavior, and `monthly_activity_volunteer_needs`
+table convention are unchanged. `MonthlyActivity::volunteerNeed()` remains the
+same `hasOne` relationship and now imports the Events-owned support model.
+
+The pre-move identity and route audit found no stored self-FQCN, audit/workflow
+identity writer, explicit route binding, controller signature, serialization
+contract, factory, `newFactory()` override, seeder import, Blade FQCN, or test
+import for the model. The old production model file was removed; no compatibility
+wrapper or migration was added.
+
+Phase 2.9 remains authoritative: this namespace move does not merge the
+Monthly-only zero/one planning summary with repeatable Common/Ramadan
+`SubjectVolunteerRequirement` storage.
+
+NO VOLUNTEER TABLE WAS RENAMED
+NO VOLUNTEER DATA WAS MIGRATED
+NO VOLUNTEER CARDINALITY OR BUSINESS SEMANTICS WERE CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+NO STORED WORKFLOW/AUDIT IDENTITY WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

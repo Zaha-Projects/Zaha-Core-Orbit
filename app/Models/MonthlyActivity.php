@@ -12,6 +12,7 @@ use App\Modules\Events\Models\MonthlyActivityEvaluationResponse;
 use App\Modules\Events\Models\MonthlyActivityFollowup;
 use App\Modules\Events\Models\MonthlyActivityPartner;
 use App\Modules\Events\Models\MonthlyActivitySponsor;
+use App\Modules\Events\Models\MonthlyActivityVolunteerNeed;
 use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

@@ -36,7 +36,7 @@ cross-Event reporting requirement supplies an explicit, non-lossy projection.
 
 | Property | Evidence-based meaning |
 |---|---|
-| Model/table | `App\Models\MonthlyActivityVolunteerNeed` / `monthly_activity_volunteer_needs` |
+| Model/table | `App\Modules\Events\Models\MonthlyActivityVolunteerNeed` / `monthly_activity_volunteer_needs` |
 | Owner | one `MonthlyActivity` through `monthly_activity_id` |
 | Cardinality | zero or one; model relation is `hasOne`, database has unique `monthly_activity_id` |
 | Planning fields | `volunteer_need`, `required_volunteers`, `volunteer_age_range`, `volunteer_gender`, `volunteer_tasks_summary` |
@@ -246,3 +246,27 @@ PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
 
 `PHASE 2.9 COMPLETE`
+
+## 13. Phase 2.12 namespace ownership update
+
+The semantic conclusion above remains unchanged. After a fresh identity and
+route-binding recheck found no stored self-FQCN or public binding contract,
+`MonthlyActivityVolunteerNeed` moved to
+`App\Modules\Events\Models\MonthlyActivityVolunteerNeed`.
+
+This is a namespace-only ownership correction. The model remains the
+Monthly-specific zero/one planning summary, continues to use
+`monthly_activity_volunteer_needs`, and remains distinct from
+`SubjectVolunteerRequirement`. No adapter, Common write, migration, table
+rename, cardinality change, or data conversion occurred.
+
+NO VOLUNTEER TABLE WAS RENAMED
+NO VOLUNTEER DATA WAS MIGRATED
+NO VOLUNTEER CARDINALITY OR BUSINESS SEMANTICS WERE CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+NO STORED WORKFLOW/AUDIT IDENTITY WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+`PHASE 2.12 COMPLETE`
