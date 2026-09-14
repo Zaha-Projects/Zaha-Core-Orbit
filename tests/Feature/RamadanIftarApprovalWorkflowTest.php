@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
-use App\Models\ExecutionNeedType;
+use App\Modules\Events\Models\ExecutionNeedType;
 use App\Models\MonthlyActivity;
 use App\Models\User;
 use App\Models\WorkflowActionLog;

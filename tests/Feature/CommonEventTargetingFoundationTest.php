@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\SubjectTargetGroup;

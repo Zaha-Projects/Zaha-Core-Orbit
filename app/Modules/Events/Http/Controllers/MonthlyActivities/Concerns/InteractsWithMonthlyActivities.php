@@ -8,7 +8,7 @@ use App\Models\MonthlyPlanDeleteRequest;
 use App\Models\MonthlyPlanEditRequest;
 use App\Models\WorkflowLog;
 use App\Models\WorkflowInstance;
-use App\Models\EventStatusLookup;
+use App\Modules\Events\Models\EventStatusLookup;
 use App\Models\WorkflowActionLog;
 use App\Models\User;
 use Illuminate\Http\Request;

@@ -5,7 +5,7 @@ namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 use App\Models\ActivityNote;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityApproval;
+use App\Modules\Events\Models\MonthlyActivityApproval;
 use App\Models\MonthlyActivityAttachment;
 use App\Models\WorkflowActionLog;
 use App\Services\DynamicWorkflowService;

@@ -3,9 +3,9 @@
 namespace App\Modules\Events\Http\Requests\Ramadan;
 
 use App\Models\AgendaEvent;
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
-use App\Models\ExecutionNeedType;
+use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;

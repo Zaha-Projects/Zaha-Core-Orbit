@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\MonthlyActivity;
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\ExecutionNeedType;
+use App\Modules\Events\Models\ExecutionNeedType;
 use Illuminate\Database\Seeder;
 
 class CanonicalExecutionNeedTypeSeeder extends Seeder

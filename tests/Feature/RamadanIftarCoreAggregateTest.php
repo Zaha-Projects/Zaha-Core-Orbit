@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AgendaEvent;
 use App\Models\Branch;
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\EventSubjectTypes;

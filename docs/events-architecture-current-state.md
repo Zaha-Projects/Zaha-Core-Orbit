@@ -450,3 +450,92 @@ canonical execution-need source, and one existing aggregate for authorization
 and workflow definitions. Runtime execution remains a deployment gate rather
 than an unverified claim because Composer dependencies are unavailable in this
 environment.
+
+## 26. Phase 2.6 runtime verification
+
+`PHASE 2.6 INCOMPLETE`
+
+On 2026-09-13, PHP 8.3.31-dev and Composer 2.9.7 successfully validated the
+project and all locked platform requirements. The lock-authoritative Composer
+install could not restore dependencies: GitHub package downloads repeatedly
+failed with cURL error 56, `CONNECT tunnel failed, response 403`. The autoloader
+remained absent, so Laravel boot, route boot, migrations, seed/idempotency,
+database schema inspection, feature tests, and browser/RTL smoke tests could not
+run. No disposable database was configured, and no destructive database command
+was attempted.
+
+No runtime fix or architecture change was made. The detailed command results,
+failure ledger, unexecuted test matrix, rollback constraint, and exact next
+verification slice are recorded in
+[`events-runtime-verification-report.md`](events-runtime-verification-report.md).
+
+The Phase 2.6 resume attempt on the same date again began with
+`VENDOR_MISSING`. A fresh lock-authoritative install under PHP 8.3 again failed
+on unrelated GitHub distributions with cURL error 56 and proxy response 403.
+Per the gate instructions, verification stopped at dependency restoration and
+the incomplete status is unchanged.
+
+## 27. Stored identity and model namespace readiness
+
+`PHASE 2.7 COMPLETE`
+
+The stored-identity audit confirms that folder ownership cannot drive aggregate
+moves. `MonthlyActivity`, `AgendaEvent`, the four Monthly/Agenda change-request
+models, `RamadanIftar`, and `RamadanIftarChangeRequest` are persisted workflow
+identities. Aggregate FQCNs also occur in workflow action logs, audit logs, and
+notification metadata. A direct class move would orphan history or create a
+second workflow identity for the same row.
+
+Common Event detail relations instead use the stable aliases
+`monthly_activity` and `ramadan_iftar`; there is no unrestricted global morph
+map. The repository should retain its flat `App\Modules\Events\Models`
+destination rather than introduce domain subnamespaces. Low-risk catalogue and
+supporting models may move only after runtime verification; aggregates remain a
+do-not-move-yet group pending explicit dual-identity compatibility and stored
+value migration.
+
+The detailed inventory, identity/workflow/polymorphic maps, raw-reference
+counts, naming decisions, compatibility requirements, tests, and staged future
+sequence are authoritative in
+[`events-model-identity-and-namespace-audit.md`](events-model-identity-and-namespace-audit.md).
+
+Runtime debt remains explicit:
+
+```text
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+```
+
+Current branch handover: [`events-branch-handover.md`](events-branch-handover.md).
+
+## 28. Low-risk Events support model namespace consolidation
+
+`PHASE 2.8A COMPLETE`
+
+All fourteen Phase 2.7 LOW-risk models moved from `App\Models` into the existing
+flat `App\Modules\Events\Models` namespace: three Agenda support models, six
+Monthly support models, and five Event catalogue models. Their names, inferred
+tables, relationships, constants, scopes, codes, and behavior were preserved.
+All active PHP imports and aggregate relationship targets now use the final
+classes; no old model file, compatibility wrapper, `class_alias`, or global
+morph map remains.
+
+The pre-move and post-move identity scans found none of these support models in
+workflow, action-log, audit-log, request, notification, or correspondence FQCN
+writers. No model was deferred from the approved group. No schema, stored value,
+route definition, workflow, permission, controller ownership, or business logic
+changed.
+
+Identity-sensitive aggregates and request models remain in `App\Models`, as do
+the medium-risk route-bound attachment/team/supply models,
+`PostExecutionVerification`, and the volunteer-semantic hold. The exact moved
+and remaining lists, factory finding, and next batch are recorded in the Phase
+2.8A outcome section of
+[`events-model-identity-and-namespace-audit.md`](events-model-identity-and-namespace-audit.md).
+
+Runtime debt is unchanged:
+
+```text
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+```

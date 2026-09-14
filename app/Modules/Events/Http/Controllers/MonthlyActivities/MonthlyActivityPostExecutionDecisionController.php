@@ -3,7 +3,7 @@
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityApproval;
+use App\Modules\Events\Models\MonthlyActivityApproval;
 use App\Models\WorkflowActionLog;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;

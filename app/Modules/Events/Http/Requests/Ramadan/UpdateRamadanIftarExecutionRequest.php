@@ -80,7 +80,7 @@ class UpdateRamadanIftarExecutionRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) return;
             foreach ($this->input('attendees', []) as $index => $row) {
-                if (! empty($row['target_group_id']) && ! \App\Models\TargetGroup::query()->active()->forRamadanIftars()->whereKey($row['target_group_id'])->exists()) {
+                if (! empty($row['target_group_id']) && ! \App\Modules\Events\Models\TargetGroup::query()->active()->forRamadanIftars()->whereKey($row['target_group_id'])->exists()) {
                     $validator->errors()->add("attendees.$index.target_group_id", 'The selected target group is not available for Ramadan Iftars.');
                 }
                 if (! empty($row['beneficiary_segment_id']) && ! \App\Modules\Events\Models\BeneficiarySegment::query()->active()->whereKey($row['beneficiary_segment_id'])->exists()) {

@@ -7,7 +7,7 @@ use App\Models\MonthlyActivity;
 use App\Models\MonthlyActivitySupply;
 use App\Models\MonthlyActivityTeam;
 use App\Models\PostExecutionVerification;
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\SubjectTargetGroup;

@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Services;
 
-use App\Models\ExecutionNeedType;
+use App\Modules\Events\Models\ExecutionNeedType;
 use App\Models\User;
 use App\Models\WorkflowActionLog;
 use App\Models\WorkflowInstance;
