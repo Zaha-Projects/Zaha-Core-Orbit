@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Database\Seeder;
 
 class TargetGroupSeeder extends Seeder

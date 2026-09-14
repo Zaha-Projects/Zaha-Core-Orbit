@@ -3,7 +3,7 @@
 namespace App\Modules\Events\Http\Controllers\Ramadan;
 
 use App\Http\Controllers\Controller;
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use App\Modules\Events\Http\Requests\Ramadan\UpdateRamadanIftarExecutionRequest;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\RamadanIftar;

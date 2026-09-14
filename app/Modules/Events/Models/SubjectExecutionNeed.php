@@ -2,7 +2,6 @@
 
 namespace App\Modules\Events\Models;
 
-use App\Models\ExecutionNeedType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

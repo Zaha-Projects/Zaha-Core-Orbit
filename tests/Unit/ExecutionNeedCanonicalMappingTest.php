@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Models\ExecutionNeedType;
+use App\Modules\Events\Models\ExecutionNeedType;
 use App\Models\MonthlyActivity;
 use PHPUnit\Framework\TestCase;
 

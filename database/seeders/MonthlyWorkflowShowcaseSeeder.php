@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityApproval;
+use App\Modules\Events\Models\MonthlyActivityApproval;
 use App\Models\User;
 use App\Models\WorkflowInstance;
 use App\Services\DynamicWorkflowService;

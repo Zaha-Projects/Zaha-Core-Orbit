@@ -505,3 +505,35 @@ Runtime debt remains explicit:
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 ```
+
+## 28. Low-risk Events support model namespace consolidation
+
+`PHASE 2.8A COMPLETE`
+
+All fourteen Phase 2.7 LOW-risk models moved from `App\Models` into the existing
+flat `App\Modules\Events\Models` namespace: three Agenda support models, six
+Monthly support models, and five Event catalogue models. Their names, inferred
+tables, relationships, constants, scopes, codes, and behavior were preserved.
+All active PHP imports and aggregate relationship targets now use the final
+classes; no old model file, compatibility wrapper, `class_alias`, or global
+morph map remains.
+
+The pre-move and post-move identity scans found none of these support models in
+workflow, action-log, audit-log, request, notification, or correspondence FQCN
+writers. No model was deferred from the approved group. No schema, stored value,
+route definition, workflow, permission, controller ownership, or business logic
+changed.
+
+Identity-sensitive aggregates and request models remain in `App\Models`, as do
+the medium-risk route-bound attachment/team/supply models,
+`PostExecutionVerification`, and the volunteer-semantic hold. The exact moved
+and remaining lists, factory finding, and next batch are recorded in the Phase
+2.8A outcome section of
+[`events-model-identity-and-namespace-audit.md`](events-model-identity-and-namespace-audit.md).
+
+Runtime debt is unchanged:
+
+```text
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+```

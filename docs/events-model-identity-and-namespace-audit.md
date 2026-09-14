@@ -366,3 +366,46 @@ RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 No Composer installation was attempted in Phase 2.7. This audit must not be used
 as production-readiness evidence; Phase 2.6 remains mandatory before any model
 migration reaches production.
+
+## 16. Phase 2.8A low-risk support-model outcome
+
+`PHASE 2.8A COMPLETE`
+
+The Phase 2.7 LOW group was rechecked against workflow, action-log, audit-log,
+request, notification-metadata, and correspondence identity writers. No model in
+the group is persisted as its own FQCN, so all fourteen approved models moved to
+the existing flat `App\Modules\Events\Models` namespace:
+
+- Agenda: `AgendaApproval`, `AgendaEventTarget`, `AgendaParticipation`;
+- Monthly: `MonthlyActivityApproval`, `MonthlyActivityChangeLog`,
+  `MonthlyActivityEvaluationResponse`, `MonthlyActivityFollowup`,
+  `MonthlyActivityPartner`, `MonthlyActivitySponsor`;
+- catalogues: `EventCategory`, `EventStatusLookup`, `EventType`,
+  `ExecutionNeedType`, `TargetGroup`.
+
+There were no candidate deferrals and no compatibility wrappers. Aggregate and
+request FQCNs remain unchanged. Imports were updated across models, controllers,
+services, form requests, seeders, Blade templates, and tests. No config,
+command/job/listener, route definition, migration, data, or business method was
+changed. The moved models use `HasFactory`, but no candidate-specific factory,
+`newFactory()` override, or candidate `::factory()` call exists; future runtime
+verification must still cover factory discovery if factories are later added.
+
+Events-owned models deliberately remaining in `App\Models` are:
+
+| Model | Reason | Risk / future slice |
+|---|---|---|
+| `MonthlyActivity`, `AgendaEvent` | persisted aggregate FQCNs | HIGH; identity compatibility before any move |
+| `MonthlyPlanEditRequest`, `MonthlyPlanDeleteRequest`, `AnnualAgendaEditRequest`, `AnnualAgendaDeleteRequest` | persisted request workflow FQCNs and source identities | HIGH; identity compatibility slice |
+| `MonthlyActivityAttachment` | implicit route binding and broader surface | MEDIUM; 2.8B |
+| `MonthlyActivityTeam`, `MonthlyActivitySupply` | route-bound shared historical models; naming deferred | MEDIUM; 2.8B without rename |
+| `PostExecutionVerification` | FQCN in audit history | MEDIUM/HIGH; identity compatibility slice |
+| `MonthlyActivityVolunteerNeed` | volunteer semantics unresolved | DEFER until semantics decision |
+
+The next model-only slice is 2.8B for the three route-bound support models,
+without model/table renames. It remains conditional on the deferred runtime gate.
+
+```text
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+```

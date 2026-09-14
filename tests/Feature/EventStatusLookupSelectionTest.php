@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\EventStatusLookup;
+use App\Modules\Events\Models\EventStatusLookup;
 use App\Modules\Events\Models\EventContexts;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

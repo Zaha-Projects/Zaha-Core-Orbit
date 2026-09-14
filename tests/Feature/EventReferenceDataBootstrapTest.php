@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\EventCategory;
-use App\Models\EventStatusLookup;
-use App\Models\EventType;
-use App\Models\ExecutionNeedType;
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\EventCategory;
+use App\Modules\Events\Models\EventStatusLookup;
+use App\Modules\Events\Models\EventType;
+use App\Modules\Events\Models\ExecutionNeedType;
+use App\Modules\Events\Models\TargetGroup;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\EventGuidanceVersion;
