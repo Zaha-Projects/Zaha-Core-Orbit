@@ -468,3 +468,9 @@ No runtime fix or architecture change was made. The detailed command results,
 failure ledger, unexecuted test matrix, rollback constraint, and exact next
 verification slice are recorded in
 [`events-runtime-verification-report.md`](events-runtime-verification-report.md).
+
+The Phase 2.6 resume attempt on the same date again began with
+`VENDOR_MISSING`. A fresh lock-authoritative install under PHP 8.3 again failed
+on unrelated GitHub distributions with cURL error 56 and proxy response 403.
+Per the gate instructions, verification stopped at dependency restoration and
+the incomplete status is unchanged.

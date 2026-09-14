@@ -2,6 +2,8 @@
 
 Verification date: 2026-09-13 (UTC)
 
+Resume attempt: 2026-09-13 (UTC)
+
 ## Status
 
 `PHASE 2.6 INCOMPLETE`
@@ -28,17 +30,22 @@ not being substituted for runtime proof.
 
 ## Dependency restoration
 
-The lock-authoritative install was attempted with:
+The resumed gate first confirmed `VENDOR_MISSING`. The command written with the
+PHP binary and the phpenv Composer shim merely evaluated that shell shim as PHP
+input, so the effective lock-authoritative install was run with the PHP 8.3
+`bin` directory first on `PATH` and its Composer executable:
 
 ```text
-/root/.phpenv/versions/8.3snapshot/bin/php /root/.phpenv/shims/composer install
+PATH=/root/.phpenv/versions/8.3snapshot/bin:$PATH \
+  /root/.phpenv/versions/8.3snapshot/bin/composer install --no-interaction
 ```
 
-Composer accepted the lock and planned 107 installs, with no updates or
-removals. Downloads from GitHub repeatedly failed with cURL error 56:
+Composer again accepted the lock and planned 107 installs, with no updates or
+removals. Downloads from GitHub again failed with cURL error 56:
 `CONNECT tunnel failed, response 403`. Composer then attempted source syncs,
 which were blocked by the same network environment. The attempt was stopped
-after the blocker reproduced across unrelated packages. No package constraint,
+immediately after the blocker reproduced across unrelated packages, as required
+by the resume instructions. No package constraint,
 project requirement, or lock-file entry was changed.
 
 ## Laravel and database gates
@@ -98,6 +105,7 @@ All entries below are **not executed**, rather than passed or failed:
   and would not repair network access.
 - **Fix:** None in the repository.
 - **Retest Result:** Not applicable until package-source access is restored.
+- **Final Status:** Environment-blocked; Phase 2.6 remains incomplete.
 
 ### Laravel boot
 
@@ -110,6 +118,7 @@ All entries below are **not executed**, rather than passed or failed:
 - **Fix:** Restore the exact locked dependencies in an environment that can
   reach their sources.
 - **Retest Result:** Still blocked; no autoloader exists.
+- **Final Status:** Not executable.
 
 ### Migration, seed, test, and browser gates
 
@@ -124,6 +133,7 @@ All entries below are **not executed**, rather than passed or failed:
 - **Fix:** restore locked dependencies, then configure a clearly disposable
   database before any destructive command.
 - **Retest Result:** Pending.
+- **Final Status:** Not executable.
 
 ## Static observations and scope control
 
