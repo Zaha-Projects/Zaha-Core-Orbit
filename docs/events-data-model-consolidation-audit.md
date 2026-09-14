@@ -346,3 +346,36 @@ The justified tables listed in the Phase 2.2 decision matrix—including `execut
 segments, methods, and directories—remain unchanged.
 
 **PHASE 2.3 COMPLETE**
+
+## Phase 2.9 final volunteer-storage decision (2026-09-14)
+
+`KEEP SEPARATE`
+
+The earlier consolidation question is resolved by
+`docs/events-volunteer-storage-reconciliation.md`. The historical Monthly table
+is a unique-owner, zero/one aggregate summary containing age-range and need text
+but no actual/status/segment. The Common table is a zero/many segmented
+planned/actual line model with operational status. The partial column overlap
+does not establish fact equivalence, and a backfill would require data loss or
+fabricated meanings.
+
+Final storage ownership:
+
+| Storage | Canonical fact | Current writer |
+|---|---|---|
+| `monthly_activity_volunteer_needs` | Monthly activity volunteer planning summary | Monthly planning synchronization only |
+| `subject_volunteer_requirements` | repeatable Event-subject segmented planned/actual requirement | Ramadan planning/execution/versioning only |
+
+No merge, rename, backfill, adapter, or dual-write was introduced. A future
+read projection may be designed only for a concrete reporting requirement and
+must not erase the distinction between these facts.
+
+NO VOLUNTEER DATA WAS MIGRATED
+NO VOLUNTEER TABLE WAS RENAMED OR DELETED
+NO BUSINESS RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+`PHASE 2.9 COMPLETE`

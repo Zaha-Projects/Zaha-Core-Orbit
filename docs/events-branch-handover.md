@@ -804,3 +804,34 @@ PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 
 `PHASE 2.8D INCOMPLETE`
+
+## Phase 2.9 volunteer-storage handover addendum (2026-09-14)
+
+`PHASE 2.9 COMPLETE`
+
+Decision: `KEEP SEPARATE`.
+
+`monthly_activity_volunteer_needs` remains the canonical zero/one Monthly
+volunteer planning summary. `subject_volunteer_requirements` remains the
+canonical repeatable planned/actual segmented requirement storage for
+Common/Ramadan subjects. They do not represent the same business fact, and
+Monthly must not be redirected or dual-written to Common storage for naming
+uniformity.
+
+The evidence, column/cardinality/UI/lifecycle matrices, historical-loss analysis,
+option comparison, and test gaps are authoritative in
+`docs/events-volunteer-storage-reconciliation.md`. No adapter should be built
+until a concrete cross-Event report defines a unified read requirement. If that
+need arises, the named design-only backlog item is **Phase 2.9A — Volunteer
+Requirement Read-Projection Contract Audit**; it must preserve two separate
+canonical writers.
+
+C6/Phase 2.8D remains blocked and was not retried.
+
+NO VOLUNTEER DATA WAS MIGRATED
+NO VOLUNTEER TABLE WAS RENAMED OR DELETED
+NO BUSINESS RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

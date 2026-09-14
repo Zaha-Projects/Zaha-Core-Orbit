@@ -77,7 +77,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Beneficiary segments | none | new Common lookup | retained | Keep justified | `beneficiary_segments` | `BeneficiarySegment` | Events | future | Yes | No | reference | No | none |
 | Team headers | no normalized Monthly header | new Common header | retained Common header | Keep justified | `execution_teams` | `ExecutionTeam` | Events | future | Yes | No | none | No | Monthly adapter only if required |
 | Team members | old Monthly member rows + new Common rows | duplicate development table abandoned | generalized historical table renamed in place | Final shared member concept | `execution_team_members` | `ExecutionTeamMember` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
-| Volunteer requirements | one-row Monthly summary | repeatable Common rows | both retained due distinct cardinality | Keep both | `monthly_activity_volunteer_needs`; `subject_volunteer_requirements` | corresponding models | mixed now; Events final | Yes | Yes | No | none | Yes | semantic adapter audit |
+| Volunteer requirements | one-row Monthly summary | repeatable Common rows | both retained due distinct business facts | Keep separate (Phase 2.9) | `monthly_activity_volunteer_needs`; `subject_volunteer_requirements` | corresponding models | Monthly model remains `App\Models`; Common model Events | Yes | Yes | No | none | No | optional read projection only when a concrete report requires it |
 | Supplies | old Monthly + duplicate Common | duplicate development table abandoned | generalized historical table renamed in place | Final shared Event supply | `event_supplies` | `EventSupply` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
 | Execution Need master | lookup master | canonical flags/mappings | sole master | Keep and generalize in place | `execution_need_types` | `ExecutionNeedType` | `App\Models` now; Events final | Yes | Yes | potential | canonical required | Yes | remove superseded seeder; namespace later |
 | Execution Need transactions | Monthly JSON | Common relational table | JSON for Monthly, rows for Ramadan | Keep justified Common table | `subject_execution_needs` | `SubjectExecutionNeed` | Events | JSON | Yes | No | none | Yes | staged Monthly migration |
@@ -653,3 +653,35 @@ PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 
 `PHASE 2.8D INCOMPLETE`
+
+## 31. Phase 2.9 volunteer storage semantic reconciliation (2026-09-14)
+
+`PHASE 2.9 COMPLETE`
+
+The code-first audit concludes `KEEP SEPARATE`. The tables represent related but
+different facts:
+
+- `monthly_activity_volunteer_needs` is an optional zero/one Monthly planning
+  summary with aggregate count, textual age range, aggregate gender, short need,
+  and task description. Its owner FK is unique, and it has no actual count,
+  segment FK, or operational status.
+- `subject_volunteer_requirements` is a zero/many Event-subject line collection,
+  currently used by Ramadan. Each row may carry beneficiary segment and gender,
+  has planned/actual counts and status, feeds monitoring, and is plan-version
+  copied without execution actuals.
+
+A migration would be lossy: Monthly age/need fields have no destination; Common
+segment/actual/status meanings have no Monthly source; summary-to-line mapping
+would invent segmentation/status semantics; and legacy duplicate count/boolean
+fields require live conflict analysis. No unified consumer presently justifies
+an adapter. The full matrix, lifecycle/UI/report/workflow audit, options, test
+gaps, and guarded future read-projection concept are in
+`docs/events-volunteer-storage-reconciliation.md`.
+
+NO VOLUNTEER DATA WAS MIGRATED
+NO VOLUNTEER TABLE WAS RENAMED OR DELETED
+NO BUSINESS RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
