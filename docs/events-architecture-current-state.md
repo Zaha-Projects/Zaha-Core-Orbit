@@ -474,3 +474,34 @@ The Phase 2.6 resume attempt on the same date again began with
 on unrelated GitHub distributions with cURL error 56 and proxy response 403.
 Per the gate instructions, verification stopped at dependency restoration and
 the incomplete status is unchanged.
+
+## 27. Stored identity and model namespace readiness
+
+`PHASE 2.7 COMPLETE`
+
+The stored-identity audit confirms that folder ownership cannot drive aggregate
+moves. `MonthlyActivity`, `AgendaEvent`, the four Monthly/Agenda change-request
+models, `RamadanIftar`, and `RamadanIftarChangeRequest` are persisted workflow
+identities. Aggregate FQCNs also occur in workflow action logs, audit logs, and
+notification metadata. A direct class move would orphan history or create a
+second workflow identity for the same row.
+
+Common Event detail relations instead use the stable aliases
+`monthly_activity` and `ramadan_iftar`; there is no unrestricted global morph
+map. The repository should retain its flat `App\Modules\Events\Models`
+destination rather than introduce domain subnamespaces. Low-risk catalogue and
+supporting models may move only after runtime verification; aggregates remain a
+do-not-move-yet group pending explicit dual-identity compatibility and stored
+value migration.
+
+The detailed inventory, identity/workflow/polymorphic maps, raw-reference
+counts, naming decisions, compatibility requirements, tests, and staged future
+sequence are authoritative in
+[`events-model-identity-and-namespace-audit.md`](events-model-identity-and-namespace-audit.md).
+
+Runtime debt remains explicit:
+
+```text
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+```
