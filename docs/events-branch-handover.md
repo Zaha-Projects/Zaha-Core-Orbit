@@ -931,3 +931,37 @@ NO STORED WORKFLOW/AUDIT IDENTITY WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## Phase 2.13 request identity handover addendum (2026-09-14)
+
+`PHASE 2.13 COMPLETE`
+
+Do not directly move the four Monthly/Agenda edit/delete request models. Their
+FQCNs are persisted in `workflow_instances`, dynamically resolved, used by exact
+morph relationships, and included in report filters. Request-table
+`entity_type`, notification metadata, and request-created action logs instead
+store aggregate identity and must not be rewritten during a request-model move.
+
+The approved design is an explicit four-entry dual-read map with the writer left
+legacy during compatibility deployment. The first eventual cutover grouping is
+`MONTHLY PAIR FIRST`, but only after compatibility infrastructure, live identity
+inventory, orphan/duplicate checks, and runtime regression/rollback proof. The
+focused handoff is `docs/events-request-model-identity-cutover.md`.
+
+Next slice: **Phase 2.13A — Request Workflow Identity Compatibility
+Infrastructure**. Implement exact dual-read and mapped resolution for all four
+identities, retain all models/writers under `App\Models`, and add mixed-identity
+tests. Do not perform the namespace cutover in that slice.
+
+Current remaining Events-owned models under `App\Models` are exactly
+`MonthlyActivity`, `AgendaEvent`, the four audited request models, and
+`PostExecutionVerification`. Do not list `ExecutionNeedType` or
+`MonthlyActivityVolunteerNeed`; both already moved.
+
+NO REQUEST MODEL NAMESPACE WAS CHANGED
+NO STORED REQUEST IDENTITY WAS CHANGED
+NO WORKFLOW INSTANCE OR REQUEST ROW WAS BACKFILLED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

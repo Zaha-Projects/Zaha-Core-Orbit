@@ -79,7 +79,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Team members | old Monthly member rows + new Common rows | duplicate development table abandoned | generalized historical table renamed in place | Final shared member concept | `execution_team_members` | `ExecutionTeamMember` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
 | Volunteer requirements | one-row Monthly summary | repeatable Common rows | both retained due distinct business facts | Keep separate (Phase 2.9) | `monthly_activity_volunteer_needs`; `subject_volunteer_requirements` | corresponding models | both models under Events; storage remains separate | Yes | Yes | No | none | No | optional read projection only when a concrete report requires it |
 | Supplies | old Monthly + duplicate Common | duplicate development table abandoned | generalized historical table renamed in place | Final shared Event supply | `event_supplies` | `EventSupply` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
-| Execution Need master | lookup master | canonical flags/mappings | sole master | Keep and generalize in place | `execution_need_types` | `ExecutionNeedType` | `App\Models` now; Events final | Yes | Yes | potential | canonical required | Yes | remove superseded seeder; namespace later |
+| Execution Need master | lookup master | canonical flags/mappings | sole master | Keep and generalize in place | `execution_need_types` | `ExecutionNeedType` | `App\Modules\Events\Models` (moved 2.8A) | Yes | Yes | potential | canonical required | Yes | canonical seeder retained; namespace complete |
 | Execution Need transactions | Monthly JSON | Common relational table | JSON for Monthly, rows for Ramadan | Keep separate by lifecycle contract (Phase 2.10) | Monthly JSON; `subject_execution_needs` for Common/Ramadan | `MonthlyActivity` casts; `SubjectExecutionNeed` | mixed | Yes | Yes | No | none | No | richer schema/live audit required before reconsideration |
 | Monitoring methods | none | Common lookup | retained | Keep justified | `monitoring_methods` | `MonitoringMethod` | Events | future | Yes | No | reference | No | none |
 | Monitoring reports | Monthly payload/evaluation/follow-up workflow | Common monitoring envelope | Ramadan Common envelope, Monthly legacy workflow | Keep Monthly separate (Phase 2.11) | `monitoring_reports`; Monthly legacy stores | `MonitoringReport`; Monthly-specific models | mixed | Yes | Yes | No | none | No | no migration approved; verification remains shared |
@@ -113,7 +113,7 @@ Every table below should exist unless explicitly labelled removed. All active ta
 | `beneficiary_segments` | `2026_09_10_000200` | none | `BeneficiarySegment`, Events | Common Events | final | reference |
 | `execution_teams` | `2026_09_10_001400` | none | `ExecutionTeam`, Events | Common Events | final | none |
 | `subject_volunteer_requirements` | `2026_09_10_001600` | none | `SubjectVolunteerRequirement`, Events | Ramadan/Common | final | none |
-| `execution_need_types` | `2026_04_26_223000` | `2026_09_11_000300` | `ExecutionNeedType`, `App\Models` | Common Events master | final | canonical |
+| `execution_need_types` | `2026_04_26_223000` | `2026_09_11_000300` | `ExecutionNeedType`, Events | Common Events master | final | canonical |
 | `subject_execution_needs` | `2026_09_11_000400` | none | `SubjectExecutionNeed`, Events | Ramadan/Common | final | none |
 | `monitoring_methods`, `monitoring_reports` | `2026_09_10_000500`, `001800` | none | monitoring models, Events | Ramadan/Common monitoring | final | method reference only |
 | `event_guidance_versions` | `2026_09_11_000100` | Ramadan FK migration | `EventGuidanceVersion`, Events | Ramadan guidance | final | do not auto-seed |
@@ -143,7 +143,7 @@ No rename is **REQUIRED** for correctness today.
 |---|---|---|---|---|---|---|
 | `MonthlyActivity`, all Monthly detail/request/evaluation models | `App\Models` | Monthly tables | controllers, services, jobs/reports, workflow entity types | High for aggregate/request identities; low-medium for details | Events | TRANSITIONAL; do not bulk move |
 | `AgendaEvent`, Agenda details/requests | `App\Models` | Agenda tables | Agenda controllers/services, workflow, Monthly/Ramadan links | High for aggregate/request workflow/entity strings | Events | TRANSITIONAL |
-| `TargetGroup`, `ExecutionNeedType`, Event lookup models | `App\Models` | Event lookup tables | Agenda/Monthly/Ramadan | Low stored-FQCN risk; broad import blast radius | Events | MOVE later |
+| `TargetGroup`, `ExecutionNeedType`, Event lookup models | Events | Event lookup tables | Agenda/Monthly/Ramadan | no stored self-FQCN found | Events | MOVED 2.8A |
 | `MonthlyActivityTeam` | `App\Models` | `monthly_activity_team` | Monthly + `ExecutionTeam::members` | Low stored FQCN; route bindings use model in Programs controller | Events | RENAME/MOVE later |
 | `MonthlyActivitySupply` | `App\Models` | `monthly_activity_supplies` | Monthly + Ramadan | Low stored FQCN; explicit route model binding exists | Events | RENAME/MOVE later |
 | `PostExecutionVerification` | `App\Models` | `post_execution_verifications` | evaluation + Ramadan monitoring | Audit logs store its FQCN, so high identity risk | Events | MOVE only with alias/history plan |
@@ -778,6 +778,40 @@ NO VOLUNTEER DATA WAS MIGRATED
 NO VOLUNTEER CARDINALITY OR BUSINESS SEMANTICS WERE CHANGED
 NO DUAL-WRITE WAS INTRODUCED
 NO STORED WORKFLOW/AUDIT IDENTITY WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 35. Phase 2.13 Monthly/Agenda request identity compatibility audit (2026-09-14)
+
+`PHASE 2.13 COMPLETE`
+
+The four request models remain under `App\Models`. Their own FQCNs are stored in
+`workflow_instances.entity_type` by `DynamicWorkflowService::forModel()` through
+`get_class()`, dynamically resolved by `resolveEntity()`, matched exactly by
+the request models' `morphOne` relationships, and included in exact-string
+report filters. A direct namespace move would hide historical workflows and may
+create a second logical workflow because the unique key includes `entity_type`.
+
+Request-row `entity_type` has a separate contract: it stores the aggregate FQCN
+(`App\Models\MonthlyActivity` or `App\Models\AgendaEvent`), not the request
+class. Request notifications and workflow action logs also retain aggregate
+identity; `workflow_logs` stores only FKs and no model identity. No audit-log or
+queue serialization of the four request models was found.
+
+The selected future strategy is a focused exact dual-read identity map, legacy
+writer first, followed by a separately gated **Monthly pair first** namespace
+cutover. Aggregate identities remain untouched. Full evidence, matrices, live
+inventory/orphan/duplicate queries, backfill, rollback, deployment order, and
+runtime tests are in `docs/events-request-model-identity-cutover.md`.
+
+`ExecutionNeedType` is already under `App\Modules\Events\Models` from Phase
+2.8A and is not a remaining namespace candidate.
+
+NO REQUEST MODEL NAMESPACE WAS CHANGED
+NO STORED REQUEST IDENTITY WAS CHANGED
+NO WORKFLOW INSTANCE OR REQUEST ROW WAS BACKFILLED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

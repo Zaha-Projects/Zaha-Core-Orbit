@@ -59,7 +59,7 @@ route binding alone is reported separately.
 | `EventCategory` | `App\Models` | `event_categories` | Agenda/Events catalogue | flat Events | no stored FQCN found | MOVE |
 | `EventStatusLookup` | `App\Models` | `event_status_lookups` | Agenda/Monthly stable module catalogue | flat Events | module codes, not FQCN | MOVE |
 | `EventType` | `App\Models` | `event_types` | Monthly/Events catalogue | flat Events | no stored FQCN found | MOVE |
-| `ExecutionNeedType` | `App\Models` | `execution_need_types` | shared Events canonical catalogue | flat Events | no stored FQCN found | MOVE |
+| `ExecutionNeedType` | `App\Modules\Events\Models` | `execution_need_types` | shared Events canonical catalogue | flat Events | no stored FQCN found | MOVED 2.8A |
 | `TargetGroup` | `App\Models` | `target_groups` | shared Events catalogue | flat Events | no stored FQCN found | MOVE |
 | `RamadanIftar` | flat Events | `ramadan_iftars` | Ramadan aggregate/workflows/routes | flat Events | HIGH: workflow instances/action logs contain current FQCN | KEEP |
 | `RamadanIftarChangeRequest` | flat Events | `ramadan_iftar_change_requests` | Ramadan change workflow/routes | flat Events | HIGH: request is workflow entity | KEEP |
@@ -525,6 +525,40 @@ Events-owned models remaining in `App\Models`:
 | `PostExecutionVerification` | FQCN stored in audit history | MEDIUM/HIGH | Phase 2.8D after runtime prerequisites |
 
 NO STORED WORKFLOW/AUDIT IDENTITY WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 21. Phase 2.13 request-model identity outcome
+
+`PHASE 2.13 COMPLETE`
+
+All four Monthly/Agenda edit/delete request models are confirmed HIGH-risk
+stored identities. `workflow_instances.entity_type` stores each request FQCN;
+the workflow resolver dynamically queries it, model relationships match it as a
+morph type, and reporting contains exact request-class filters. By contrast,
+the four request tables, request notification metadata, and request-created
+workflow action logs store the underlying aggregate FQCN. `workflow_logs` and
+audit logs do not store these request-model identities.
+
+The future compatibility boundary should be one focused four-entry request
+identity map. It must provide exact legacy/canonical pairs, dual-read workflow
+lookup, mapped dynamic resolution, and find-before-create protection across both
+identities. It must not be a global alias resolver or duplicate Eloquent model.
+The current writer remains legacy.
+
+The smallest cutover grouping is `MONTHLY PAIR FIRST`, after a compatibility-only
+deployment and live inventory. Monthly edit/delete share mutual-exclusion,
+workflow, reporting and conditional-step behavior; splitting them would split
+one business invariant. Agenda remains unchanged until a later observed slice.
+
+See `docs/events-request-model-identity-cutover.md` for the complete contract and
+safe deployment/rollback design.
+
+NO REQUEST MODEL NAMESPACE WAS CHANGED
+NO STORED REQUEST IDENTITY WAS CHANGED
+NO WORKFLOW INSTANCE OR REQUEST ROW WAS BACKFILLED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
