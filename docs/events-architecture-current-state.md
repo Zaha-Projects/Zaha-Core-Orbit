@@ -591,3 +591,40 @@ environment.
 
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+## 29. Phase 2.8C PostExecutionVerification identity compatibility (2026-09-14)
+
+`PHASE 2.8C COMPLETE`
+
+`App\Models\PostExecutionVerification` and `post_execution_verifications`
+remain unchanged. Repository code proves one self-identity writer:
+`ActivityEvaluationService::verify()` writes the model's full FQCN
+to the caller-supplied string column `audit_logs.entity_type`. Audit readers are
+aggregate/display queries; unlike `workflow_instances`, no `audit_logs` reader
+dynamically resolves the value as a class and no verification identity is stored
+in workflow/action logs.
+
+A focused `PostExecutionVerificationIdentity` support class now defines the
+legacy identity, intended future canonical identity, exact accepted read set,
+and the current legacy write identity. The selected strategy is staged dual-read
+followed by a canonical writer switch and optional exact transactional backfill;
+no compatibility model, stable-alias framework, morph map, or arbitrary class
+resolver is introduced. The complete consumer/writer/reader maps, live queries,
+backfill, rollback, deployment order, retirement gates, and runtime tests are in
+`docs/post-execution-verification-identity-cutover.md`.
+
+The compatibility design is complete, but live distinct-value inventory and
+Phase 2.6 runtime proof remain mandatory before the cutover:
+
+`POSTEXECUTIONVERIFICATION CUTOVER NOT READY`
+
+The dedicated future slice is **PHASE 2.8D — POSTEXECUTIONVERIFICATION IDENTITY
+CUTOVER**. It is not implemented here.
+
+NO STORED IDENTITY WAS BACKFILLED
+NO MODEL NAMESPACE CUTOVER WAS PERFORMED
+NO TABLE OR BUSINESS DATA WAS CHANGED
+NO WORKFLOW OR MONITORING RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED

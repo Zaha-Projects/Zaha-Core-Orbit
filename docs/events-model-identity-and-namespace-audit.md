@@ -442,3 +442,37 @@ correspondence, request, or serialized identity.
 
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+## 18. Phase 2.8C PostExecutionVerification compatibility outcome
+
+`PHASE 2.8C COMPLETE`
+
+The exhaustive source recheck narrows the stored self-identity boundary to
+`audit_logs.entity_type`, written once by
+`ActivityEvaluationService::verify()`. That column is a
+caller-supplied indexed string: current audit readers aggregate/display rows and
+do not dynamically resolve it. `workflow_instances` has a different dynamic
+class contract, but no PostExecutionVerification identity is written there or to
+`workflow_action_logs`.
+
+`App\Modules\Events\Support\PostExecutionVerificationIdentity` is the focused
+transition boundary. Reads that filter verification history must accept its
+exact legacy and canonical values; the writer deliberately remains legacy in
+2.8C. Strategy comparison, live inventory SQL, exact transactional backfill and
+reverse-backfill design, safe deployment ordering, and retirement criteria are
+recorded in `docs/post-execution-verification-identity-cutover.md`.
+
+`App\Models\PostExecutionVerification` remains the only model. The future
+canonical identity is
+`App\Modules\Events\Models\PostExecutionVerification`, but no such production
+model is introduced in this phase.
+
+`POSTEXECUTIONVERIFICATION CUTOVER NOT READY`
+
+NO STORED IDENTITY WAS BACKFILLED
+NO MODEL NAMESPACE CUTOVER WAS PERFORMED
+NO TABLE OR BUSINESS DATA WAS CHANGED
+NO WORKFLOW OR MONITORING RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED

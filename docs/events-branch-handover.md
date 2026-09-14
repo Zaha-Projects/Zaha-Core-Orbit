@@ -548,12 +548,10 @@ Each item is a separate PR/slice unless explicitly stated otherwise.
 
 ### TASK C6 — PostExecutionVerification Cutover
 
-- **Priority/Risk:** P2; HIGH.
-- **Prerequisites:** C2 and monitoring/evaluation regression.
-- **Scope:** namespace move plus `audit_logs.entity_type` compatibility/backfill.
-- **Non-goals:** Monthly monitoring-envelope migration.
-- **DoD:** old/new audit history and both Monthly/Ramadan verification relations
-  work; transactional rollback tested.
+Superseded by the Phase 2.8C handover addendum and its concrete focused design.
+The implementation slice is now named **PHASE 2.8D —
+POSTEXECUTIONVERIFICATION IDENTITY CUTOVER** and remains gated on Phase 2.6 and
+the live identity inventory.
 
 ### TASK C7 — Compatibility Retirement
 
@@ -739,6 +737,39 @@ The required deferred runtime matrix is: migration fresh/rollback/reapply;
 Monthly CRUD, confirmation, reporting and post-execution flows; Ramadan planning,
 approval, execution, monitoring, completion, closure and revision flows; seed
 bootstrap twice; full PHPUnit; and browser/API route-binding verification.
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+## Phase 2.8C handover addendum (2026-09-14)
+
+`PHASE 2.8C COMPLETE`
+
+TASK C6 has been split. Phase 2.8C completed the compatibility design and added
+the exact identity/write boundary without moving the model or changing stored
+values. The concrete plan is
+`docs/post-execution-verification-identity-cutover.md`.
+
+### TASK C6 / PHASE 2.8D — PostExecutionVerification Identity Cutover
+
+- **Current gate:** `POSTEXECUTIONVERIFICATION CUTOVER NOT READY`.
+- **Prerequisites:** complete Phase 2.6; execute and review the documented live
+  `audit_logs.entity_type` inventory; explain unknown/missing/duplicate results;
+  confirm rollback targets accept both identities.
+- **Scope:** move only `PostExecutionVerification`, update its imports and
+  explicit view references, switch the focused writer to the canonical FQCN,
+  retain exact dual-read, and observe before any exact transactional backfill.
+- **Non-goals:** all aggregate/request identity work, monitoring envelope/data
+  migration, business-rule changes, aliases/morph maps, and compatibility-model
+  duplication.
+- **DoD:** old and new history remains visible without duplicate audit events;
+  one canonical writer is proven; Monthly/Ramadan and rollback matrices pass;
+  backfill counts reconcile if backfill is separately approved.
+
+NO STORED IDENTITY WAS BACKFILLED
+NO MODEL NAMESPACE CUTOVER WAS PERFORMED
+NO TABLE OR BUSINESS DATA WAS CHANGED
+NO WORKFLOW OR MONITORING RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED

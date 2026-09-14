@@ -152,3 +152,17 @@ recommended next slice is to rerun **Phase 2.6 only** in an environment with
 GitHub/package-source access, restore the lock exactly under PHP 8.3, configure
 a disposable database, and complete the documented command/test matrix. No
 subsequent architecture phase should begin first.
+
+## Phase 2.8C deferred PostExecutionVerification identity matrix
+
+Phase 2.8C added test scaffolding but did not execute it. After dependency and
+disposable-database recovery, run the unit identity contract and feature
+old/new audit visibility test, then execute the complete inventory, writer,
+no-duplication, Monthly evaluation, Ramadan monitoring/review/closure,
+backfill/reverse-backfill, and full-suite matrix specified in
+`docs/post-execution-verification-identity-cutover.md`.
+
+No live identity counts are known or claimed.
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED

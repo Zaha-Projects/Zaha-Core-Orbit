@@ -143,7 +143,7 @@ class RamadanIftarCompletionClosureTest extends TestCase
         $report->verifications()->create([
             'field_key' => 'attendance', 'field_label' => 'Attendance',
             'planned_value' => ['value' => 10], 'actual_value' => ['value' => 8],
-            'match_status' => \App\Modules\Events\Models\PostExecutionVerification::MISMATCHED,
+            'match_status' => \App\Models\PostExecutionVerification::MISMATCHED,
             'note' => 'Two invitees did not attend.', 'verified_by' => $actor->id, 'verified_at' => now(),
         ]);
         $service = app(RamadanIftarClosureService::class);

@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\EvaluationForm;
 use App\Models\EvaluationQuestion;
 use App\Models\MonthlyActivity;
 use App\Models\Role;
 use App\Models\User;
+use App\Modules\Events\Support\PostExecutionVerificationIdentity;
 use App\Services\ActivityEvaluationService;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
@@ -210,6 +212,11 @@ class ActivityEvaluationWorkflowTest extends TestCase
 
         $this->assertSame(45, data_get($verification->fresh()->original_value, 'value'));
         $this->assertSame(40, data_get($verification->fresh()->corrected_value, 'value'));
+        $this->assertSame(1, AuditLog::query()
+            ->where('action', 'post_execution_verified')
+            ->where('entity_type', PostExecutionVerificationIdentity::currentWriteType())
+            ->where('entity_id', $verification->id)
+            ->count());
         $evaluation = $service->submit($activity, $form, $user, [$q1->id => ['score' => 4], $q2->id => ['score' => 8]]);
         $this->assertEquals(7.0, (float) $evaluation->normalized_score);
         $this->assertSame('evaluated', $activity->fresh()->status);
