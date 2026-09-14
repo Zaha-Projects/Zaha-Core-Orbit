@@ -506,6 +506,8 @@ PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 ```
 
+Current branch handover: [`events-branch-handover.md`](events-branch-handover.md).
+
 ## 28. Low-risk Events support model namespace consolidation
 
 `PHASE 2.8A COMPLETE`
