@@ -82,7 +82,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Execution Need master | lookup master | canonical flags/mappings | sole master | Keep and generalize in place | `execution_need_types` | `ExecutionNeedType` | `App\Models` now; Events final | Yes | Yes | potential | canonical required | Yes | remove superseded seeder; namespace later |
 | Execution Need transactions | Monthly JSON | Common relational table | JSON for Monthly, rows for Ramadan | Keep separate by lifecycle contract (Phase 2.10) | Monthly JSON; `subject_execution_needs` for Common/Ramadan | `MonthlyActivity` casts; `SubjectExecutionNeed` | mixed | Yes | Yes | No | none | No | richer schema/live audit required before reconsideration |
 | Monitoring methods | none | Common lookup | retained | Keep justified | `monitoring_methods` | `MonitoringMethod` | Events | future | Yes | No | reference | No | none |
-| Monitoring reports | Monthly JSON/remarks | Common envelope | Ramadan Common envelope, Monthly legacy | Keep justified | `monitoring_reports` | `MonitoringReport` | Events | future | Yes | No | none | Yes | staged Monthly migration |
+| Monitoring reports | Monthly payload/evaluation/follow-up workflow | Common monitoring envelope | Ramadan Common envelope, Monthly legacy workflow | Keep Monthly separate (Phase 2.11) | `monitoring_reports`; Monthly legacy stores | `MonitoringReport`; Monthly-specific models | mixed | Yes | Yes | No | none | No | no migration approved; verification remains shared |
 | Field verification | old Monthly correction rows + new Common | duplicate `field_verifications` | generalized old table | Keep storage; name is semantically broad enough | `post_execution_verifications` | `PostExecutionVerification` | `App\Models` now; Events final | Yes | Yes | No | none | Yes | namespace only; keep table name |
 | Guidance | none | Event-versioned guidance | Ramadan uses versioned business content | Keep | `event_guidance_versions` | `EventGuidanceVersion` | Events | No | Yes | No | business-managed | No | none |
 | Workflow | existing generic engine | module configuration added | application-wide engine reused | Keep global | workflow tables | `Workflow*` | `App\Models` | Yes | Yes | Yes | required | No | protect stored FQCNs |
@@ -713,6 +713,40 @@ options and future redesign prerequisites are in
 NO MONTHLY EXECUTION-NEEDS DATA WAS MIGRATED
 NO MONTHLY EXECUTION-NEEDS WRITER WAS CHANGED
 NO LEGACY JSON COLUMN WAS REMOVED OR RENAMED
+NO DUAL-WRITE WAS INTRODUCED
+NO BUSINESS OR WORKFLOW RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 33. Phase 2.11 Monthly monitoring normalization readiness (2026-09-14)
+
+`PHASE 2.11 COMPLETE`
+
+Decision: `KEEP MONTHLY POST-EXECUTION SEPARATE`.
+
+The audit confirms that `monitoring_reports` is a Common/Ramadan monitoring
+envelope, not a generic container for every post-execution fact. Monthly's
+versioned `post_execution_payload`, two distinct evaluation stores, append-only
+follow-up remarks, approval lifecycle, and historical action/report records have
+different actors, cardinalities and purposes. They cannot be moved into a
+monitoring envelope without semantic loss or workflow redesign.
+
+`post_execution_verifications` remains intentionally shared but dual-mode:
+Monthly verifies flattened payload fields with original/corrected values, while
+Ramadan verifies planned/actual monitoring candidates owned by a monitoring
+report. No new normalization is approved. The complete storage, lifecycle,
+mapping, actor, closure, report, history and option audit is in
+`docs/monthly-monitoring-normalization-audit.md`.
+
+Any future implementation that changes the verification model namespace depends
+on the live runtime gate in Phase 2.8D. Phase 2.11 neither retries nor bypasses
+that gate.
+
+NO MONTHLY MONITORING OR POST-EXECUTION DATA WAS MIGRATED
+NO MONTHLY EVALUATION OR FOLLOW-UP SEMANTICS WERE CHANGED
+NO MONITORING WRITER WAS CHANGED
+NO LEGACY STORAGE WAS REMOVED
 NO DUAL-WRITE WAS INTRODUCED
 NO BUSINESS OR WORKFLOW RULE WAS CHANGED
 

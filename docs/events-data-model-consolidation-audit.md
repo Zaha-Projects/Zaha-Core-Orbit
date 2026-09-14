@@ -414,3 +414,40 @@ PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
 
 `PHASE 2.10 COMPLETE`
+
+## Phase 2.11 final Monthly monitoring/post-execution decision (2026-09-14)
+
+`KEEP MONTHLY POST-EXECUTION SEPARATE`
+
+The storage overlap is limited to a deliberately shared field-verification
+table. It does not establish equivalence between the enclosing workflows:
+
+| Fact | Canonical storage | Boundary |
+|---|---|---|
+| Monthly execution submission/evidence | `monthly_activities.post_execution_payload` | versioned Monthly document and review metadata |
+| Monthly question/quality evaluation | `monthly_activity_evaluation_responses` and structured activity-evaluation tables | evaluation/feedback, not monitoring review |
+| Monthly follow-up remarks | `monthly_activity_followups` | corrective/administrative follow-up, not field verification |
+| shared field verification | `post_execution_verifications` | Monthly original/corrected mode and Ramadan planned/actual report mode remain distinct |
+| Common/Ramadan monitoring lifecycle | `monitoring_reports` | method/monitor/submission/review envelope |
+
+The strict mapping, lifecycle/actor/closure comparison, report and history
+dependencies, options and test inventory are recorded in
+`docs/monthly-monitoring-normalization-audit.md`. Full normalization and partial
+envelope migration are not approved: they would conflate evaluation, follow-up,
+approval and monitoring concepts. A read projection should be considered only
+for a concrete reporting requirement.
+
+Any namespace-dependent verification work remains gated by Phase 2.8D; this
+audit does not retry it.
+
+NO MONTHLY MONITORING OR POST-EXECUTION DATA WAS MIGRATED
+NO MONTHLY EVALUATION OR FOLLOW-UP SEMANTICS WERE CHANGED
+NO MONITORING WRITER WAS CHANGED
+NO LEGACY STORAGE WAS REMOVED
+NO DUAL-WRITE WAS INTRODUCED
+NO BUSINESS OR WORKFLOW RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+`PHASE 2.11 COMPLETE`

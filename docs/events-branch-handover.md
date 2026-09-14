@@ -867,3 +867,37 @@ NO BUSINESS OR WORKFLOW RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## Phase 2.11 Monthly monitoring handover addendum (2026-09-14)
+
+`PHASE 2.11 COMPLETE`
+
+Decision: `KEEP MONTHLY POST-EXECUTION SEPARATE`.
+
+Do not redirect Monthly payloads, evaluations, follow-ups or approval state into
+`monitoring_reports`. The Common table is a Ramadan monitoring lifecycle
+envelope; Monthly's stores represent execution evidence, quality assessment,
+feedback, corrective/administrative remarks and workflow decisions with
+different contracts. `post_execution_verifications` remains the shared but
+dual-mode field-verification table; sharing it does not make the surrounding
+lifecycles equivalent.
+
+The authoritative evidence and future guardrails are in
+`docs/monthly-monitoring-normalization-audit.md`. No implementation slice is
+approved without a new concrete business requirement and live-data audit. Any
+work that changes the `PostExecutionVerification` namespace is blocked on Phase
+2.8D and its live identity inventory.
+
+The smallest safe follow-up is **Phase 2.11A — Monthly Post-Execution Live Shape
+and Row-Mode Characterization**, a read-only inventory after runtime access is
+restored. It must not migrate, dual-write or redesign either lifecycle.
+
+NO MONTHLY MONITORING OR POST-EXECUTION DATA WAS MIGRATED
+NO MONTHLY EVALUATION OR FOLLOW-UP SEMANTICS WERE CHANGED
+NO MONITORING WRITER WAS CHANGED
+NO LEGACY STORAGE WAS REMOVED
+NO DUAL-WRITE WAS INTRODUCED
+NO BUSINESS OR WORKFLOW RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
