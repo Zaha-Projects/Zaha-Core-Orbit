@@ -147,8 +147,8 @@ aggregate cutovers, and distinct high-risk Monthly data migrations.
 | `beneficiary_segments` | `BeneficiarySegment` / Events | N | Y | N | final catalogue |
 | `event_target_group` | `SubjectTargetGroup` / Events plus Monthly pivot | Y | Y | N | final generalized targeting |
 | `execution_teams` | `ExecutionTeam` / Events | N | Y | N | final shared header |
-| `monthly_activity_team` | `MonthlyActivityTeam` / `App\Models` | Y | Y | N | final current member storage; table/model name transitional |
-| `monthly_activity_supplies` | `MonthlyActivitySupply` / `App\Models` | Y | Y | N | final current supply storage; name transitional |
+| `execution_team_members` | `ExecutionTeamMember` / Events | Y | Y | N | renamed generalized historical member storage |
+| `event_supplies` | `EventSupply` / Events | Y | Y | N | renamed generalized historical supply storage |
 | `subject_volunteer_requirements` | `SubjectVolunteerRequirement` / Events | N | Y | N | final segmented Common structure |
 | `execution_need_types` | `ExecutionNeedType` / Events | JSON codes | Y | N | final canonical master |
 | `subject_execution_needs` | `SubjectExecutionNeed` / Events | not yet | Y | N | final Common/Ramadan transactional storage |
@@ -706,3 +706,39 @@ Recommended assignment:
 The next developer should take **TASK A1 — Complete Phase 2.6 Runtime
 Verification** and no architecture refactor in the same slice. It is the only
 honest prerequisite for release and for every proposed model/data cutover.
+
+## Phase 2.8B handover addendum (2026-09-14)
+
+`PHASE 2.8B COMPLETE`
+
+Phase 2.8B supersedes the earlier import-only recommendation in this handover.
+The final support map is:
+
+| Concept | Final model | Final table | Scope |
+|---|---|---|---|
+| attachment | `App\\Modules\\Events\\Models\\MonthlyActivityAttachment` | `monthly_activity_attachments` | Monthly only |
+| team member | `App\\Modules\\Events\\Models\\ExecutionTeamMember` | `execution_team_members` | Monthly + Common/Ramadan |
+| supply | `App\\Modules\\Events\\Models\\EventSupply` | `event_supplies` | Monthly + Common/Ramadan |
+
+The original development-only `execution_team_members` table from Phase 1.x
+was abandoned in Phase 2.3.
+
+The current `execution_team_members` name is the renamed and generalized
+historical `monthly_activity_team` table.
+
+Historical rows and IDs were preserved.
+
+`event_supplies` is the renamed generalized historical
+`monthly_activity_supplies` table, not a newly created replacement table.
+The forward migration performs table renames only and reverses only those names.
+All legacy Monthly ownership columns remain. All route URLs and parameter names,
+stable Event subject aliases, planning/execution rules, and Phase 1.14 deep-copy
+field selection remain unchanged.
+
+The required deferred runtime matrix is: migration fresh/rollback/reapply;
+Monthly CRUD, confirmation, reporting and post-execution flows; Ramadan planning,
+approval, execution, monitoring, completion, closure and revision flows; seed
+bootstrap twice; full PHPUnit; and browser/API route-binding verification.
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED

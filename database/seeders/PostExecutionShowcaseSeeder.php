@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivitySupply;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\EventSupply;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -113,7 +113,7 @@ class PostExecutionShowcaseSeeder extends Seeder
 
         $activity->supplies()->delete();
         foreach (['Projector and screen', 'Sound system', 'Printed invitations'] as $item) {
-            MonthlyActivitySupply::query()->create([
+            EventSupply::query()->create([
                 'monthly_activity_id' => $activity->id,
                 'item_name' => $item,
                 'available' => true,
@@ -124,7 +124,7 @@ class PostExecutionShowcaseSeeder extends Seeder
 
         $activity->team()->delete();
         foreach ($this->teamMembers() as $member) {
-            MonthlyActivityTeam::query()->create([
+            ExecutionTeamMember::query()->create([
                 'monthly_activity_id' => $activity->id,
                 'team_name' => $member['team_name'],
                 'member_name' => $member['member_name'],

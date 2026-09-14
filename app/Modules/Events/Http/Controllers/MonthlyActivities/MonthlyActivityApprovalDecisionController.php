@@ -6,7 +6,7 @@ use App\Models\ActivityNote;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Modules\Events\Models\MonthlyActivityApproval;
-use App\Models\MonthlyActivityAttachment;
+use App\Modules\Events\Models\MonthlyActivityAttachment;
 use App\Models\WorkflowActionLog;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;

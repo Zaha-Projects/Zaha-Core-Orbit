@@ -63,6 +63,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Phase 2.2 | Data-model consolidation audit | explicit keep/generalize/merge decisions | Its pre-2.3 inventory is historical where it names abandoned tables as current | Retained as decision record | COMPLETE_BUT_LATER_SUPERSEDED |
 | Phase 2.3 | Pre-release schema consolidation | four established tables generalized; duplicate migrations/models removed; Ramadan rebound | Reversed four Phase 1 Common table choices | Runtime `migrate:fresh` proof pending | COMPLETE_CURRENT |
 | Phase 2.4 | Full reconciliation | this code-first current-state audit and documentation authority map | N/A | Runtime checks pending due environment | COMPLETE_CURRENT |
+| Phase 2.8B | Shared support-model naming consolidation | attachment namespace move; team/supply final models and in-place table renames | Earlier import-only proposal broadened after semantic recheck | Runtime proof remains Phase 2.6 debt | COMPLETE_CURRENT |
 | Phase 2.5 | Event reference-data bootstrap reconciliation | deterministic reference orchestrator, canonical need source, idempotency coverage, and removal of superseded need seeder | Replaces the incomplete reference bootstrap documented by 2.4 | Runtime seed execution pending | COMPLETE_CURRENT |
 
 ## 4. Final architecture decision matrix
@@ -75,9 +76,9 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Target selections | Monthly pivot + proposed Common table | `subject_target_groups` | generalized old pivot | Keep generalized established table | `event_target_group` | `SubjectTargetGroup` | Events | Yes | Yes | No | none | No | name acceptable |
 | Beneficiary segments | none | new Common lookup | retained | Keep justified | `beneficiary_segments` | `BeneficiarySegment` | Events | future | Yes | No | reference | No | none |
 | Team headers | no normalized Monthly header | new Common header | retained Common header | Keep justified | `execution_teams` | `ExecutionTeam` | Events | future | Yes | No | none | No | Monthly adapter only if required |
-| Team members | old Monthly member rows + new Common rows | duplicate `execution_team_members` | generalized old member table | Keep storage; rename model/table recommended later | `monthly_activity_team` | `MonthlyActivityTeam` now; preferred `ExecutionTeamMember` | `App\Models` now; Events final | Yes | Yes | No | none | Yes | isolated rename/namespace slice after runtime proof |
+| Team members | old Monthly member rows + new Common rows | duplicate development table abandoned | generalized historical table renamed in place | Final shared member concept | `execution_team_members` | `ExecutionTeamMember` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
 | Volunteer requirements | one-row Monthly summary | repeatable Common rows | both retained due distinct cardinality | Keep both | `monthly_activity_volunteer_needs`; `subject_volunteer_requirements` | corresponding models | mixed now; Events final | Yes | Yes | No | none | Yes | semantic adapter audit |
-| Supplies | old Monthly + duplicate Common | `subject_supplies` | generalized old table | Keep storage; Event-generic rename recommended | `monthly_activity_supplies` | `MonthlyActivitySupply` now; preferred `EventSupply` | `App\Models` now; Events final | Yes | Yes | No | none | Yes | naming/namespace slice |
+| Supplies | old Monthly + duplicate Common | duplicate development table abandoned | generalized historical table renamed in place | Final shared Event supply | `event_supplies` | `EventSupply` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
 | Execution Need master | lookup master | canonical flags/mappings | sole master | Keep and generalize in place | `execution_need_types` | `ExecutionNeedType` | `App\Models` now; Events final | Yes | Yes | potential | canonical required | Yes | remove superseded seeder; namespace later |
 | Execution Need transactions | Monthly JSON | Common relational table | JSON for Monthly, rows for Ramadan | Keep justified Common table | `subject_execution_needs` | `SubjectExecutionNeed` | Events | JSON | Yes | No | none | Yes | staged Monthly migration |
 | Monitoring methods | none | Common lookup | retained | Keep justified | `monitoring_methods` | `MonitoringMethod` | Events | future | Yes | No | reference | No | none |
@@ -105,8 +106,8 @@ Every table below should exist unless explicitly labelled removed. All active ta
 | `activity_evaluations`, `activity_evaluation_answers`, `evaluation_forms`, `evaluation_questions` | evaluation migrations | question sort-order migration | evaluation models, `App\Models` | Monthly evaluation | final domain | business/reference forms |
 | `monthly_plan_edit_requests`, `monthly_plan_delete_requests` | `2026_06_12_000001` | none | request models, `App\Models` | Monthly change/delete | final domain tables | none |
 | `event_target_group` | `2026_03_19_120004` | `2026_09_14_000100` | `SubjectTargetGroup`, Events | Monthly + Ramadan targeting | final generalized | none |
-| `monthly_activity_team` | `2024_02_01_010800` | `2026_09_14_000100` | `MonthlyActivityTeam`, `App\Models` | Monthly + Ramadan members | final storage, model/name transitional | none |
-| `monthly_activity_supplies` | `2024_02_01_010700` | `2026_09_14_000100` | `MonthlyActivitySupply`, `App\Models` | Monthly + Ramadan supplies | final storage, model/name transitional | none |
+| `execution_team_members` | `2024_02_01_010800` as `monthly_activity_team` | `2026_09_14_000100`, renamed by `000200` | `ExecutionTeamMember`, Events | Monthly + Ramadan members | final generalized storage | none |
+| `event_supplies` | `2024_02_01_010700` as `monthly_activity_supplies` | `2026_09_14_000100`, renamed by `000200` | `EventSupply`, Events | Monthly + Ramadan supplies | final generalized storage | none |
 | `post_execution_verifications` | `2026_07_25_000100` | `2026_09_14_000100` | `PostExecutionVerification`, `App\Models` | Monthly + Ramadan verification | final generalized | none |
 | `target_groups` | `2026_03_16_000090` | `2026_09_10_000100` | `TargetGroup`, `App\Models` | Common Events master | final | reference |
 | `beneficiary_segments` | `2026_09_10_000200` | none | `BeneficiarySegment`, Events | Common Events | final | reference |
@@ -130,8 +131,8 @@ Every table below should exist unless explicitly labelled removed. All active ta
 | Current table | Decision | Current concept | Preferred model/name | Reason |
 |---|---|---|---|---|
 | `event_target_group` | **KEEP NAME** | Event subject-to-target selection | Keep table; `SubjectTargetGroup` is acceptable | Existing name is already Event-generic. Singular pivot naming is conventional enough and a rename adds no semantic value. |
-| `monthly_activity_team` | **RENAME RECOMMENDED** | member rows owned either directly by legacy Monthly or by `execution_teams` | eventual `execution_team_members` / `ExecutionTeamMember` | The table now stores members, not teams, and Ramadan rows belong exclusively to team headers. Rename only in an isolated compatibility-tested slice. |
-| `monthly_activity_supplies` | **RENAME RECOMMENDED** | subject-owned Event supplies plus legacy Monthly columns | eventual `event_supplies` / `EventSupply` | The Monthly prefix now misstates active Ramadan use. Historical IDs survive an in-place rename, but raw references/model binding require a dedicated slice. |
+| `execution_team_members` | **FINAL** | shared execution-team member rows plus legacy Monthly ownership | `ExecutionTeamMember` | Renamed in place from the generalized historical table in Phase 2.8B. |
+| `event_supplies` | **FINAL** | subject-owned Event supplies plus legacy Monthly columns | `EventSupply` | Renamed in place from the generalized historical table in Phase 2.8B. |
 | `post_execution_verifications` | **KEEP NAME** | field verification after execution for Monthly and monitored Ramadan | eventual Events namespace; keep `PostExecutionVerification` | “Post execution” describes both use cases. A rename would be aesthetic and high-blast-radius. |
 
 No rename is **REQUIRED** for correctness today.
@@ -215,7 +216,7 @@ Agenda controllers remain in the legacy Web/Agenda area. This is a current bound
 | Request approved-plan change | change-request controller/request | `RamadanIftarChangeRequestService` | request + workflow instance/log | dedicated create permission and change-request workflow |
 | Approve request/create N+1 | review controller/request | change-request service | approved request + new draft aggregate/deep-copied planning children | dedicated review permission; transaction/locks; revision audit; normal plan workflow starts only on later submit |
 
-The entire Ramadan path uses `event_target_group`, `monthly_activity_team`, `monthly_activity_supplies`, and `post_execution_verifications` through current relations. It does not reference the four abandoned tables.
+The entire Ramadan path uses `event_target_group`, `execution_team_members`, `event_supplies`, and `post_execution_verifications` through current relations. It does not reference the abandoned duplicate tables.
 
 ## 11. Monthly end-to-end flow and legacy dependencies
 
@@ -248,9 +249,9 @@ Agenda owns `agenda_events`, targets, participations, approvals, partner departm
 | Beneficiary segmentation | Yes inside Events | future | Yes | No | `beneficiary_segments` / `BeneficiarySegment` | No |
 | Event lookups | Yes | Yes | selected | Yes | type/category/status masters | namespace only |
 | Execution team headers | Yes | not normalized | Yes | No | `execution_teams` / `ExecutionTeam` | Monthly adoption deferred |
-| Team members | Yes | Yes | Yes | No | `monthly_activity_team` / `MonthlyActivityTeam` | naming/namespace |
+| Team members | Yes | Yes | Yes | No | `execution_team_members` / `ExecutionTeamMember` | final |
 | Volunteer requirements | Partly | separate summary | Yes | No | two tables/models | semantic decision pending |
-| Supplies | Yes | Yes | Yes | No | `monthly_activity_supplies` / `MonthlyActivitySupply` | naming/namespace |
+| Supplies | Yes | Yes | Yes | No | `event_supplies` / `EventSupply` | final |
 | Execution Need master | Yes | Yes | Yes | No | `execution_need_types` / `ExecutionNeedType` | namespace/bootstrap cleanup |
 | Execution Need transactions | Yes for new Event flows | JSON | Yes | No | `subject_execution_needs` | Monthly migration pending |
 | Monitoring methods/reports | Yes for new Event flows | legacy | Yes | No | `monitoring_methods`, `monitoring_reports` | Monthly migration pending |
@@ -539,3 +540,54 @@ Runtime debt is unchanged:
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 ```
+
+## 28. Phase 2.8B shared support-model finalization (2026-09-14)
+
+`PHASE 2.8B COMPLETE`
+
+The semantic recheck confirmed three different outcomes:
+
+- `MonthlyActivityAttachment` remains a Monthly-only concept. It moved from
+  `App\\Models` to `App\\Modules\\Events\\Models` without changing its class
+  name, `monthly_activity_attachments` table, ownership, or route parameters.
+  No Ramadan, Agenda, or Common Event attachment relation consumes this model.
+- the former `MonthlyActivityTeam` is a shared member row owned either by the
+  legacy `monthly_activity_id` or a Common `execution_team_id`. Its final model
+  is `ExecutionTeamMember`, and the generalized historical
+  `monthly_activity_team` table is renamed in place to
+  `execution_team_members`.
+- the former `MonthlyActivitySupply` is subject-owned shared Event storage used
+  by Monthly and Ramadan. Its final model is `EventSupply`, and the generalized
+  historical `monthly_activity_supplies` table is renamed in place to
+  `event_supplies`.
+
+Migration `2026_09_14_000200_finalize_shared_event_support_table_names.php`
+uses only `Schema::rename` in `up()` and reverse renames in `down()`. It creates
+no table and copies no row. The outbound foreign keys and indexes belong to the
+renamed tables and remain attached during supported MySQL/MariaDB, PostgreSQL,
+and SQLite table renames; no table references either support table's primary
+key, so no inbound constraint needs recreation. Historical constraint/index
+names may retain their origin names and are intentionally not churned.
+
+The original development-only `execution_team_members` table from Phase 1.x
+was abandoned in Phase 2.3.
+
+The current `execution_team_members` name is the renamed and generalized
+historical `monthly_activity_team` table.
+
+Historical rows and IDs were preserved.
+
+`event_supplies` is the renamed generalized historical
+`monthly_activity_supplies` table, not a newly created replacement table.
+Stable `monthly_activity` and `ramadan_iftar` subject aliases and
+`subject_type`/`subject_id` semantics are unchanged. Monthly route parameter
+names (`monthlyActivityTeam`, `monthlyActivitySupply`, and
+`monthlyActivityAttachment`) also remain unchanged.
+
+The runtime matrix still requires `migrate:fresh`, rollback/reapply, the focused
+Events/Monthly/Ramadan suites, the complete suite, reference bootstrap
+idempotency, and browser/API workflow verification in a dependency-complete
+environment.
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED

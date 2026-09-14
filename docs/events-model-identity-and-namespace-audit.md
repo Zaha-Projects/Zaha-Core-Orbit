@@ -44,15 +44,15 @@ route binding alone is reported separately.
 | `AnnualAgendaDeleteRequest` | `App\Models` | `annual_agenda_delete_requests` | Agenda change-request workflow | flat Events | HIGH: same as edit request | MOVE WITH COMPATIBILITY |
 | `MonthlyActivity` | `App\Models` | `monthly_activities` | Monthly aggregate; many controllers/services/models/views/tests | flat Events | HIGH: workflow, action/audit and notification metadata FQCN | DEFER |
 | `MonthlyActivityApproval` | `App\Models` | `monthly_activity_approvals` | Monthly legacy approval history | flat Events | none found | MOVE |
-| `MonthlyActivityAttachment` | `App\Models` | `monthly_activity_attachments` | Monthly attachments/routes | flat Events | implicit route binding; no stored FQCN found | MOVE |
+| `MonthlyActivityAttachment` | `App\Modules\Events\Models` | `monthly_activity_attachments` | Monthly attachments/routes | flat Events | implicit route binding; no stored FQCN found | MOVED 2.8B |
 | `MonthlyActivityChangeLog` | `App\Models` | `monthly_activity_change_logs` | Monthly field history | flat Events | IDs/values, not model FQCN | MOVE |
 | `MonthlyActivityEvaluationResponse` | `App\Models` | `monthly_activity_evaluation_responses` | Monthly evaluation | flat Events | none found | MOVE |
 | `MonthlyActivityFollowup` | `App\Models` | `monthly_activity_followups` | Monthly follow-up | flat Events | none found | MOVE |
 | `MonthlyActivityPartner` | `App\Models` | `monthly_activity_partners` | Monthly partners | flat Events | none found | MOVE |
 | `MonthlyActivitySponsor` | `App\Models` | `monthly_activity_sponsors` | Monthly sponsors | flat Events | none found | MOVE |
 | `MonthlyActivityVolunteerNeed` | `App\Models` | `monthly_activity_volunteer_needs` | Monthly legacy volunteer semantics | flat Events | none found; semantics intentionally unresolved | DEFER |
-| `MonthlyActivityTeam` | `App\Models` | `monthly_activity_team` | shared Monthly/Ramadan team member; route bound | flat Events | no stored FQCN found | MOVE |
-| `MonthlyActivitySupply` | `App\Models` | `monthly_activity_supplies` | shared Monthly/Ramadan supply; route bound | flat Events | no stored FQCN found | MOVE |
+| `ExecutionTeamMember` | `App\Modules\Events\Models` | `execution_team_members` | shared Monthly/Ramadan member; route bound | flat Events | no stored FQCN found | RENAMED/MOVED 2.8B |
+| `EventSupply` | `App\Modules\Events\Models` | `event_supplies` | shared Monthly/Ramadan supply; route bound | flat Events | no stored FQCN found | RENAMED/MOVED 2.8B |
 | `PostExecutionVerification` | `App\Models` | `post_execution_verifications` | shared verification; evaluation/monitoring | flat Events | MEDIUM: `AuditLog.entity_type` writer exists | MOVE WITH COMPATIBILITY |
 | `MonthlyPlanEditRequest` | `App\Models` | `monthly_plan_edit_requests` | Monthly change workflow | flat Events | HIGH: request workflow FQCN; row stores Monthly FQCN | MOVE WITH COMPATIBILITY |
 | `MonthlyPlanDeleteRequest` | `App\Models` | `monthly_plan_delete_requests` | Monthly change workflow | flat Events | HIGH: request workflow FQCN; row stores Monthly FQCN | MOVE WITH COMPATIBILITY |
@@ -409,3 +409,36 @@ without model/table renames. It remains conditional on the deferred runtime gate
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 ```
+
+## 17. Phase 2.8B identity and naming outcome
+
+`PHASE 2.8B COMPLETE`
+
+The pre/post-cutover identity search found no writer or persisted discriminator
+for `App\\Models\\MonthlyActivityTeam` or
+`App\\Models\\MonthlyActivitySupply`. They were therefore removed rather than
+retained as writable compatibility models. Their replacements are
+`App\\Modules\\Events\\Models\\ExecutionTeamMember` and
+`App\\Modules\\Events\\Models\\EventSupply`.
+
+The support models remain implicitly route-bound, but route parameter names are
+not stored FQCN identity and were preserved. `MonthlyActivityAttachment` likewise
+had no stored FQCN; it moved namespace only and retained its Monthly-specific
+name because only Monthly controllers and the Monthly aggregate use it.
+
+The original development-only `execution_team_members` table from Phase 1.x
+was abandoned in Phase 2.3.
+
+The current `execution_team_members` name is the renamed and generalized
+historical `monthly_activity_team` table.
+
+Historical rows and IDs were preserved.
+
+`event_supplies` is the renamed generalized historical
+`monthly_activity_supplies` table, not a newly created replacement table.
+Neither rename changes stable `monthly_activity`/`ramadan_iftar` subject values,
+introduces a morph map, or rewrites workflow, audit, notification,
+correspondence, request, or serialized identity.
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED

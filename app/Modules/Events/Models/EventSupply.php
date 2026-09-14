@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Models;
+namespace App\Modules\Events\Models;
 
-use App\Modules\Events\Models\EventSubjectTypes;
+use App\Models\MonthlyActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MonthlyActivitySupply extends Model
+class EventSupply extends Model
 {
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
+    protected $table = 'event_supplies';
 
     protected $fillable = [
         'monthly_activity_id',

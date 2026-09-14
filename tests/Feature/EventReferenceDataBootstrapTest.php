@@ -73,7 +73,7 @@ class EventReferenceDataBootstrapTest extends TestCase
         $this->assertStringNotContainsString('ShowcaseSeeder::class', $databaseSeeder);
         $this->assertFileDoesNotExist(database_path('seeders/ExecutionNeedTypeSeeder.php'));
 
-        foreach (['subject_target_groups', 'execution_team_members', 'subject_supplies', 'field_verifications'] as $removedTable) {
+        foreach (['subject_target_groups', 'subject_supplies', 'field_verifications', 'monthly_activity_team', 'monthly_activity_supplies'] as $removedTable) {
             $this->assertStringNotContainsString($removedTable, $seederSources);
         }
     }

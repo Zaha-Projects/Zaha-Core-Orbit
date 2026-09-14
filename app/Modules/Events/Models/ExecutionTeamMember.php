@@ -1,15 +1,17 @@
 <?php
 
-namespace App\Models;
+namespace App\Modules\Events\Models;
 
+use App\Models\MonthlyActivity;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MonthlyActivityTeam extends Model
+class ExecutionTeamMember extends Model
 {
     use HasFactory;
 
-    protected $table = 'monthly_activity_team';
+    protected $table = 'execution_team_members';
 
     protected $fillable = [
         'monthly_activity_id',
@@ -45,7 +47,7 @@ class MonthlyActivityTeam extends Model
 
     public function executionTeam()
     {
-        return $this->belongsTo(\App\Modules\Events\Models\ExecutionTeam::class);
+        return $this->belongsTo(ExecutionTeam::class);
     }
 
     public function confirmer()

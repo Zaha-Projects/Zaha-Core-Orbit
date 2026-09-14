@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Models;
 
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,6 +37,6 @@ class ExecutionTeam extends Model
 
     public function members()
     {
-        return $this->hasMany(MonthlyActivityTeam::class);
+        return $this->hasMany(ExecutionTeamMember::class);
     }
 }

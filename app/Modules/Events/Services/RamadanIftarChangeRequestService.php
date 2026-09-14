@@ -9,7 +9,7 @@ use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarChangeRequest;
 use App\Modules\Events\Models\RamadanIftarProgramSegment;
 use App\Modules\Events\Models\SubjectExecutionNeed;
-use App\Models\MonthlyActivitySupply;
+use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\SubjectVolunteerRequirement;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -106,7 +106,7 @@ class RamadanIftarChangeRequestService
             foreach ($row->members as $member) $copy->members()->create(Arr::only($member->getAttributes(), ['user_id','member_name','phone','role_name','task_description']));
         }
         foreach ($source->volunteerRequirements as $row) $revision->volunteerRequirements()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['beneficiary_segment_id','gender','planned_count','tasks_summary']), ['status' => SubjectVolunteerRequirement::STATUS_PENDING]));
-        foreach ($source->supplies as $row) $revision->supplies()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['item_name','planned_quantity','provider_type','provider_name','estimated_value','notes']), ['status' => MonthlyActivitySupply::STATUS_PENDING]));
+        foreach ($source->supplies as $row) $revision->supplies()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['item_name','planned_quantity','provider_type','provider_name','estimated_value','notes']), ['status' => EventSupply::STATUS_PENDING]));
         foreach ($source->executionNeeds as $row) $revision->executionNeeds()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['execution_need_type_id','is_required','planned_details']), ['status' => SubjectExecutionNeed::STATUS_PENDING]));
 
         $this->audit($source, $actor, 'revision_created', null, null, $revision->id);

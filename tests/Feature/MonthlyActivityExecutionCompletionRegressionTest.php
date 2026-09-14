@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -68,7 +68,7 @@ class MonthlyActivityExecutionCompletionRegressionTest extends TestCase
             ],
         ]);
 
-        MonthlyActivityTeam::query()->create([
+        ExecutionTeamMember::query()->create([
             'monthly_activity_id' => $activity->id,
             'team_name' => 'Operations',
             'member_name' => 'Member One',

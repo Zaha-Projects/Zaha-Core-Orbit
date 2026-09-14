@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Roles\Programs;
 
 use App\Http\Controllers\Controller;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -19,12 +19,12 @@ class MonthlyActivityTeamController extends Controller
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('monthly_activity_team', 'member_email')->where(fn ($q) => $q->where('monthly_activity_id', $monthlyActivity->id)),
+                Rule::unique('execution_team_members', 'member_email')->where(fn ($q) => $q->where('monthly_activity_id', $monthlyActivity->id)),
             ],
             'role_desc' => ['required', 'string', 'max:255'],
         ]);
 
-        MonthlyActivityTeam::create([
+        ExecutionTeamMember::create([
             'monthly_activity_id' => $monthlyActivity->id,
             'team_name' => $data['team_name'],
             'member_name' => $data['member_name'],
@@ -37,7 +37,7 @@ class MonthlyActivityTeamController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.team.created'));
     }
 
-    public function update(Request $request, MonthlyActivityTeam $monthlyActivityTeam)
+    public function update(Request $request, ExecutionTeamMember $monthlyActivityTeam)
     {
         $data = $request->validate([
             'team_name' => ['required', 'string', 'max:255'],
@@ -46,7 +46,7 @@ class MonthlyActivityTeamController extends Controller
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('monthly_activity_team', 'member_email')
+                Rule::unique('execution_team_members', 'member_email')
                     ->where(fn ($q) => $q->where('monthly_activity_id', $monthlyActivityTeam->monthly_activity_id))
                     ->ignore($monthlyActivityTeam->id),
             ],
@@ -60,7 +60,7 @@ class MonthlyActivityTeamController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.team.updated'));
     }
 
-    public function destroy(MonthlyActivityTeam $monthlyActivityTeam)
+    public function destroy(ExecutionTeamMember $monthlyActivityTeam)
     {
         $activityId = $monthlyActivityTeam->monthly_activity_id;
         $monthlyActivityTeam->delete();

@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Modules\Events\Models\EventType;
+use App\Modules\Events\Models\EventSupply;
+use App\Modules\Events\Models\ExecutionTeamMember;
+use App\Modules\Events\Models\MonthlyActivityAttachment;
 use App\Modules\Events\Models\MonthlyActivityApproval;
 use App\Modules\Events\Models\MonthlyActivityChangeLog;
 use App\Modules\Events\Models\MonthlyActivityEvaluationResponse;
@@ -561,12 +564,12 @@ class MonthlyActivity extends Model
 
     public function supplies()
     {
-        return $this->hasMany(MonthlyActivitySupply::class);
+        return $this->hasMany(EventSupply::class);
     }
 
     public function team()
     {
-        return $this->hasMany(MonthlyActivityTeam::class);
+        return $this->hasMany(ExecutionTeamMember::class);
     }
 
     public function attachments()

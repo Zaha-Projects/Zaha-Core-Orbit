@@ -8,8 +8,8 @@ use App\Modules\Events\Models\MonthlyActivityChangeLog;
 use App\Modules\Events\Models\MonthlyActivityPartner;
 use App\Modules\Events\Models\MonthlyActivitySponsor;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivitySupply;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\EventSupply;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Models\WorkflowInstance;
 use App\Models\EvaluationQuestion;
 use App\Modules\Events\Models\MonthlyActivityFollowup;
@@ -448,7 +448,7 @@ class MonthlyActivityPlanningController extends Controller
                 if ($memberName === '') {
                     continue;
                 }
-                MonthlyActivityTeam::create([
+                ExecutionTeamMember::create([
                     'monthly_activity_id' => $monthlyActivity->id,
                     'team_name' => $teamName,
                     'member_name' => $memberName,
@@ -462,7 +462,7 @@ class MonthlyActivityPlanningController extends Controller
             if ($memberName === '') {
                 continue;
             }
-            MonthlyActivityTeam::create([
+            ExecutionTeamMember::create([
                 'monthly_activity_id' => $monthlyActivity->id,
                 'team_name' => $member['team_name'] ?? null,
                 'member_name' => $memberName,
@@ -476,7 +476,7 @@ class MonthlyActivityPlanningController extends Controller
                 continue;
             }
             $available = (bool) ($supply['available'] ?? false);
-            MonthlyActivitySupply::create([
+            EventSupply::create([
                 'monthly_activity_id' => $monthlyActivity->id,
                 'item_name' => $itemName,
                 'available' => $available,

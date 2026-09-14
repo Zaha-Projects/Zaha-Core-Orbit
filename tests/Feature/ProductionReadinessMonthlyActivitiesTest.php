@@ -66,7 +66,7 @@ class ProductionReadinessMonthlyActivitiesTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect();
 
-        $this->assertDatabaseHas('monthly_activity_supplies', [
+        $this->assertDatabaseHas('event_supplies', [
             'item_name' => 'مكبر صوت',
             'available' => false,
             'status' => 'needed',

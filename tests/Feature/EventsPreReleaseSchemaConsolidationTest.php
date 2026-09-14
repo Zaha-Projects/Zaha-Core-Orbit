@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivitySupply;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\EventSupply;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Models\PostExecutionVerification;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
@@ -22,7 +22,7 @@ class EventsPreReleaseSchemaConsolidationTest extends TestCase
 
     public function test_only_generalized_tables_exist_for_the_four_consolidated_concepts(): void
     {
-        foreach (['subject_target_groups', 'execution_team_members', 'subject_supplies', 'field_verifications'] as $table) {
+        foreach (['subject_target_groups', 'subject_supplies', 'field_verifications', 'monthly_activity_team', 'monthly_activity_supplies'] as $table) {
             $this->assertFalse(Schema::hasTable($table), $table.' must not be part of the fresh-install schema.');
         }
 
@@ -30,10 +30,10 @@ class EventsPreReleaseSchemaConsolidationTest extends TestCase
             'monthly_activity_id', 'subject_type', 'subject_id', 'beneficiary_segment_id',
             'planned_count', 'actual_count',
         ]));
-        $this->assertTrue(Schema::hasColumns('monthly_activity_team', [
+        $this->assertTrue(Schema::hasColumns('execution_team_members', [
             'monthly_activity_id', 'execution_team_id', 'task_completed', 'confirmed_by',
         ]));
-        $this->assertTrue(Schema::hasColumns('monthly_activity_supplies', [
+        $this->assertTrue(Schema::hasColumns('event_supplies', [
             'monthly_activity_id', 'subject_type', 'subject_id', 'planned_quantity', 'actual_quantity',
         ]));
         $this->assertTrue(Schema::hasColumns('post_execution_verifications', [
@@ -55,12 +55,12 @@ class EventsPreReleaseSchemaConsolidationTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        $team = MonthlyActivityTeam::query()->create([
+        $team = ExecutionTeamMember::query()->create([
             'monthly_activity_id' => $activity->id,
             'user_id' => $user->id,
             'member_name' => 'Historical member',
         ]);
-        $supply = MonthlyActivitySupply::query()->create([
+        $supply = EventSupply::query()->create([
             'monthly_activity_id' => $activity->id,
             'item_name' => 'Historical supply',
             'quantity' => 3,

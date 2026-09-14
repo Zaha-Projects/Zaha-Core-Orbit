@@ -7,9 +7,9 @@ use App\Models\User;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\ExecutionTeam;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Modules\Events\Models\RamadanIftar;
-use App\Models\MonthlyActivitySupply;
+use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\SubjectVolunteerRequirement;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
@@ -50,17 +50,17 @@ class CommonEventExecutionFoundationTest extends TestCase
             'subject_id' => $iftar->id,
             'name' => 'Operations',
         ]);
-        $internal = MonthlyActivityTeam::query()->create([
+        $internal = ExecutionTeamMember::query()->create([
             'execution_team_id' => $team->id,
             'user_id' => $user->id,
             'confirmed_by' => $user->id,
         ]);
-        $externalA = MonthlyActivityTeam::query()->create([
+        $externalA = ExecutionTeamMember::query()->create([
             'execution_team_id' => $team->id,
             'member_name' => 'External A',
             'phone' => '0790000000',
         ]);
-        $externalB = MonthlyActivityTeam::query()->create([
+        $externalB = ExecutionTeamMember::query()->create([
             'execution_team_id' => $team->id,
             'member_name' => 'External B',
             'phone' => '0790000000',
@@ -72,7 +72,7 @@ class CommonEventExecutionFoundationTest extends TestCase
         $this->assertSame(3, $team->members()->count());
 
         $team->delete();
-        $this->assertDatabaseMissing('monthly_activity_team', ['id' => $externalB->id]);
+        $this->assertDatabaseMissing('execution_team_members', ['id' => $externalB->id]);
     }
 
     public function test_volunteer_requirements_allow_multiple_rows_and_lookup_classification(): void
@@ -106,7 +106,7 @@ class CommonEventExecutionFoundationTest extends TestCase
     public function test_supplies_allow_multiple_rows_and_preserve_assessment_and_values(): void
     {
         [$iftar] = $this->iftarFixture();
-        $first = MonthlyActivitySupply::query()->create([
+        $first = EventSupply::query()->create([
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
             'subject_id' => $iftar->id,
             'item_name' => 'Tables',
@@ -116,7 +116,7 @@ class CommonEventExecutionFoundationTest extends TestCase
             'provider_name' => 'Partner',
             'estimated_value' => '250.50',
         ]);
-        MonthlyActivitySupply::query()->create([
+        EventSupply::query()->create([
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
             'subject_id' => $iftar->id,
             'item_name' => 'Tables',
@@ -129,7 +129,7 @@ class CommonEventExecutionFoundationTest extends TestCase
         $this->assertSame('supporter', $first->provider_type);
         $this->assertSame('Partner', $first->provider_name);
         $this->assertSame('250.50', $first->estimated_value);
-        $this->assertSame(MonthlyActivitySupply::STATUS_PENDING, $first->refresh()->status);
+        $this->assertSame(EventSupply::STATUS_PENDING, $first->refresh()->status);
         $this->assertSame(2, $iftar->supplies()->count());
     }
 
@@ -140,7 +140,7 @@ class CommonEventExecutionFoundationTest extends TestCase
         foreach ([EventSubjectTypes::RAMADAN_IFTAR, EventSubjectTypes::MONTHLY_ACTIVITY] as $type) {
             ExecutionTeam::query()->create(['subject_type' => $type, 'subject_id' => $iftar->id, 'name' => $type]);
             SubjectVolunteerRequirement::query()->create(['subject_type' => $type, 'subject_id' => $iftar->id, 'planned_count' => 1]);
-            MonthlyActivitySupply::query()->create(['subject_type' => $type, 'subject_id' => $iftar->id, 'item_name' => $type, 'planned_quantity' => 1]);
+            EventSupply::query()->create(['subject_type' => $type, 'subject_id' => $iftar->id, 'item_name' => $type, 'planned_quantity' => 1]);
         }
 
         $this->assertSame([EventSubjectTypes::RAMADAN_IFTAR], $iftar->executionTeams()->pluck('subject_type')->all());

@@ -8,7 +8,7 @@ use App\Modules\Events\Models\ExecutionTeam;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMeal;
 use App\Modules\Events\Models\RamadanIftarProgramSegment;
-use App\Models\MonthlyActivitySupply;
+use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\SubjectExecutionNeed;
 use App\Modules\Events\Models\SubjectVolunteerRequirement;
 use App\Models\User;
@@ -100,7 +100,7 @@ class RamadanIftarPlanningService
         ], fn () => ['status' => SubjectVolunteerRequirement::STATUS_PENDING], ['actual_count']);
         $this->syncSimple($iftar->supplies(), $data['supplies'], [
             'item_name', 'planned_quantity', 'provider_type', 'provider_name', 'estimated_value', 'notes',
-        ], fn () => ['status' => MonthlyActivitySupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
+        ], fn () => ['status' => EventSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
         $this->syncSimple($iftar->executionNeeds(), array_values($data['execution_needs']), [
             'execution_need_type_id', 'is_required', 'planned_details',
         ], fn () => [

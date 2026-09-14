@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Models;
 
-use App\Models\MonthlyActivitySupply;
+use App\Modules\Events\Models\EventSupply;
 use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\User;
@@ -249,7 +249,7 @@ class RamadanIftar extends Model
 
     public function supplies()
     {
-        return $this->hasMany(MonthlyActivitySupply::class, 'subject_id')
+        return $this->hasMany(EventSupply::class, 'subject_id')
             ->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR);
     }
 

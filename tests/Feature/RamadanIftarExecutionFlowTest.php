@@ -6,14 +6,14 @@ use App\Models\Branch;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Models\User;
 use App\Modules\Events\Models\ExecutionTeam;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarGift;
 use App\Modules\Events\Models\RamadanIftarMeal;
 use App\Modules\Events\Models\RamadanIftarProgramSegment;
 use App\Modules\Events\Models\SubjectExecutionNeed;
-use App\Models\MonthlyActivitySupply;
+use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\SubjectVolunteerRequirement;
 use App\Modules\Events\Services\RamadanIftarExecutionService;
 use Database\Seeders\RolePermissionSeeder;
@@ -167,9 +167,9 @@ class RamadanIftarExecutionFlowTest extends TestCase
         $gift = RamadanIftarGift::query()->create(['ramadan_iftar_id' => $iftar->id, 'description' => 'Gift', 'planned_quantity' => 5]);
         $program = RamadanIftarProgramSegment::query()->create(['ramadan_iftar_id' => $iftar->id, 'name' => 'Program']);
         $team = ExecutionTeam::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'name' => 'Team', 'planned_members_count' => 3]);
-        $member = MonthlyActivityTeam::query()->create(['execution_team_id' => $team->id, 'member_name' => 'Member']);
+        $member = ExecutionTeamMember::query()->create(['execution_team_id' => $team->id, 'member_name' => 'Member']);
         $volunteer = SubjectVolunteerRequirement::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'planned_count' => 6]);
-        $supply = MonthlyActivitySupply::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'item_name' => 'Water', 'planned_quantity' => 8]);
+        $supply = EventSupply::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'item_name' => 'Water', 'planned_quantity' => 8]);
         $type = ExecutionNeedType::query()->create(['code' => 'transport-'.$iftar->id, 'name' => 'Transport', 'is_active' => true, 'is_canonical' => true, 'is_ramadan_iftar' => true]);
         $need = SubjectExecutionNeed::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'execution_need_type_id' => $type->id, 'is_required' => true, 'planned_details' => 'Planned transport']);
 
