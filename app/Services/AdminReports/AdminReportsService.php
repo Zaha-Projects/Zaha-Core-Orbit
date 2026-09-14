@@ -2,7 +2,7 @@
 
 namespace App\Services\AdminReports;
 
-use App\Models\AgendaApproval;
+use App\Modules\Events\Models\AgendaApproval;
 use App\Models\AgendaEvent;
 use App\Models\AuditLog;
 use App\Models\Booking;

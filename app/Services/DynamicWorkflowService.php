@@ -622,15 +622,10 @@ class DynamicWorkflowService
 
     private function isBranchScopedStep(WorkflowInstance $instance, WorkflowStep $step): bool
     {
-        if (($instance->workflow?->module ?? null) !== 'monthly_activities') {
-            return false;
-        }
+        $module = (string) ($instance->workflow?->module ?? '');
+        $roles = config('workflows.branch_scoped_modules.'.$module, []);
 
-        return in_array((string) $step->role?->name, [
-            'relations_officer',
-            'supervisor',
-            'branch_coordinator',
-        ], true);
+        return is_array($roles) && in_array((string) $step->role?->name, $roles, true);
     }
 
     private function resolveBranchId(WorkflowInstance $instance): ?int

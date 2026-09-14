@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\AgendaApproval;
+use App\Modules\Events\Models\AgendaApproval;
 use App\Models\AgendaEvent;
-use App\Models\AgendaParticipation;
+use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
 use App\Models\DepartmentUnit;
-use App\Models\EventCategory;
+use App\Modules\Events\Models\EventCategory;
 use App\Models\User;
 use App\Models\WorkflowInstance;
 use App\Services\AgendaWorkflowBridgeService;

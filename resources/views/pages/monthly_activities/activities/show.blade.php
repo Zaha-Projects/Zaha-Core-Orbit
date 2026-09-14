@@ -55,7 +55,7 @@
         }
 
         return $monthlyStatusLabels[$status]
-            ?? \App\Models\EventStatusLookup::labelFor('monthly_activities', $status);
+            ?? \App\Modules\Events\Models\EventStatusLookup::labelFor('monthly_activities', $status);
     };
     $executionLabel = function (?string $status) use ($executionStatusLabels): string {
         if (! $status) {

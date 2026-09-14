@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AgendaEvent;
-use App\Models\AgendaParticipation;
+use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
 use App\Models\MonthlyActivity;

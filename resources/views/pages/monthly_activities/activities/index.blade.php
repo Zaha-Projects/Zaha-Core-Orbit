@@ -28,8 +28,8 @@
         $normalizedStatus = $normalizeMonthlyPageStatus($status);
 
         return $monthlyStatusLabels[$normalizedStatus]
-            ?? \App\Models\EventStatusLookup::labelFor('monthly_activities', $normalizedStatus ?: $status)
-            ?? \App\Models\EventStatusLookup::labelFor('monthly_activities', $status);
+            ?? \App\Modules\Events\Models\EventStatusLookup::labelFor('monthly_activities', $normalizedStatus ?: $status)
+            ?? \App\Modules\Events\Models\EventStatusLookup::labelFor('monthly_activities', $status);
     };
 
     $roleLabel = function (?string $roleKey): ?string {

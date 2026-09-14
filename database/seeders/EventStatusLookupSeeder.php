@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\EventStatusLookup;
+use App\Modules\Events\Models\EventStatusLookup;
 use Illuminate\Database\Seeder;
 
 class EventStatusLookupSeeder extends Seeder

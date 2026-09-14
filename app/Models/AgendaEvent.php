@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Models\AgendaApproval;
+use App\Modules\Events\Models\AgendaEventTarget;
+use App\Modules\Events\Models\AgendaParticipation;
+use App\Modules\Events\Models\EventCategory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;

@@ -4,17 +4,17 @@ namespace App\Http\Controllers\Web\Agenda;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
-use App\Models\AgendaParticipation;
+use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
 use App\Models\DepartmentUnit;
-use App\Models\EventCategory;
-use App\Models\EventStatusLookup;
+use App\Modules\Events\Models\EventCategory;
+use App\Modules\Events\Models\EventStatusLookup;
 use App\Models\MonthlyActivity;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\WorkflowLog;
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use App\Services\AgendaWorkflowPresenter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -429,13 +429,7 @@ class AgendaEventsController extends Controller
     {
         return EventStatusLookup::query()
             ->forModule('agenda')
-            ->where(function ($query) use ($currentStatus) {
-                $query->where('is_active', true);
-
-                if (filled($currentStatus)) {
-                    $query->orWhere('code', $currentStatus);
-                }
-            })
+            ->availableForSelection($currentStatus)
             ->ordered()
             ->get()
             ->unique('code')
@@ -747,7 +741,7 @@ class AgendaEventsController extends Controller
         $categories = $this->agendaCategoriesForForm();
         $branches = Branch::orderBy('name')->get();
 
-        $targetGroupsQuery = TargetGroup::query()->where('is_active', true);
+        $targetGroupsQuery = TargetGroup::query()->active();
         if (Schema::hasColumn('target_groups', 'display_order')) {
             $targetGroupsQuery->orderBy('display_order');
         }
@@ -913,7 +907,7 @@ class AgendaEventsController extends Controller
 
         $departmentUnits = $this->departmentUnitsForAgenda($agendaEvent);
 
-        $targetGroupsQuery = TargetGroup::query()->where('is_active', true);
+        $targetGroupsQuery = TargetGroup::query()->active();
         if (Schema::hasColumn('target_groups', 'display_order')) {
             $targetGroupsQuery->orderBy('display_order');
         }
