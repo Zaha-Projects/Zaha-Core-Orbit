@@ -835,3 +835,35 @@ NO DUAL-WRITE WAS INTRODUCED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## Phase 2.10 execution-needs handover addendum (2026-09-14)
+
+`PHASE 2.10 COMPLETE`
+
+Decision: `KEEP LEGACY STORAGE`.
+
+Monthly `execution_needs_payload` and `execution_needs_followup` remain the
+canonical Monthly transaction documents. `execution_need_types` remains the
+shared canonical vocabulary. `subject_execution_needs` remains the canonical
+Common/Ramadan planned/actual storage. Do not backfill or dual-write Monthly into
+it: the current row schema cannot preserve Monthly structured sections,
+availability, decision actor snapshots, scores, rejection/provision outcomes or
+historical missing/null/false distinctions.
+
+The authoritative audit is
+`docs/monthly-execution-needs-normalization-audit.md`. It includes exact mapping,
+historical-shape risks, report/change-history dependencies, MySQL-labelled live
+queries and prerequisites for any future richer-schema compatibility redesign.
+There is no approved execution-needs implementation slice while those semantics
+remain unrepresented.
+
+Phase 2.9 volunteer storage is not revisited. Phase 2.8D was not retried.
+
+NO MONTHLY EXECUTION-NEEDS DATA WAS MIGRATED
+NO MONTHLY EXECUTION-NEEDS WRITER WAS CHANGED
+NO LEGACY JSON COLUMN WAS REMOVED OR RENAMED
+NO DUAL-WRITE WAS INTRODUCED
+NO BUSINESS OR WORKFLOW RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

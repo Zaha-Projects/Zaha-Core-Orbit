@@ -379,3 +379,38 @@ PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
 
 `PHASE 2.9 COMPLETE`
+
+## Phase 2.10 final Monthly execution-needs decision (2026-09-14)
+
+`KEEP LEGACY STORAGE`
+
+`execution_need_types` is a valid shared vocabulary; this does not make the
+Monthly and Common transaction formats equivalent. Monthly planning/follow-up
+JSON preserves rich typed sections, availability, explicit/partial decisions,
+actor snapshots, scores and post-execution outcomes. The current Common row has
+no columns for most of those facts and its pending/completed lifecycle is not the
+Monthly secured/not-secured plus provided/not-provided lifecycle.
+
+Final authority:
+
+| Scope | Canonical transaction storage |
+|---|---|
+| Monthly planning/decision/post evidence | `execution_needs_payload` and `execution_needs_followup` |
+| Common/Ramadan planned/actual completion | `subject_execution_needs` |
+| shared need vocabulary/mappings | `execution_need_types` / `ExecutionNeedType` |
+
+The detailed proof and future live audit are in
+`docs/monthly-execution-needs-normalization-audit.md`. No backfill, compatibility
+reader, writer cutover, column retirement or dual-write is approved by Phase
+2.10.
+
+NO MONTHLY EXECUTION-NEEDS DATA WAS MIGRATED
+NO MONTHLY EXECUTION-NEEDS WRITER WAS CHANGED
+NO LEGACY JSON COLUMN WAS REMOVED OR RENAMED
+NO DUAL-WRITE WAS INTRODUCED
+NO BUSINESS OR WORKFLOW RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+`PHASE 2.10 COMPLETE`

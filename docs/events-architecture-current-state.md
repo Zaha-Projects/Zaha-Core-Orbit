@@ -80,7 +80,7 @@ Allowed final statuses are used exactly as defined by Phase 2.4.
 | Volunteer requirements | one-row Monthly summary | repeatable Common rows | both retained due distinct business facts | Keep separate (Phase 2.9) | `monthly_activity_volunteer_needs`; `subject_volunteer_requirements` | corresponding models | Monthly model remains `App\Models`; Common model Events | Yes | Yes | No | none | No | optional read projection only when a concrete report requires it |
 | Supplies | old Monthly + duplicate Common | duplicate development table abandoned | generalized historical table renamed in place | Final shared Event supply | `event_supplies` | `EventSupply` | `App\Modules\Events\Models` | Yes | Yes | No | none | No | runtime verification |
 | Execution Need master | lookup master | canonical flags/mappings | sole master | Keep and generalize in place | `execution_need_types` | `ExecutionNeedType` | `App\Models` now; Events final | Yes | Yes | potential | canonical required | Yes | remove superseded seeder; namespace later |
-| Execution Need transactions | Monthly JSON | Common relational table | JSON for Monthly, rows for Ramadan | Keep justified Common table | `subject_execution_needs` | `SubjectExecutionNeed` | Events | JSON | Yes | No | none | Yes | staged Monthly migration |
+| Execution Need transactions | Monthly JSON | Common relational table | JSON for Monthly, rows for Ramadan | Keep separate by lifecycle contract (Phase 2.10) | Monthly JSON; `subject_execution_needs` for Common/Ramadan | `MonthlyActivity` casts; `SubjectExecutionNeed` | mixed | Yes | Yes | No | none | No | richer schema/live audit required before reconsideration |
 | Monitoring methods | none | Common lookup | retained | Keep justified | `monitoring_methods` | `MonitoringMethod` | Events | future | Yes | No | reference | No | none |
 | Monitoring reports | Monthly JSON/remarks | Common envelope | Ramadan Common envelope, Monthly legacy | Keep justified | `monitoring_reports` | `MonitoringReport` | Events | future | Yes | No | none | Yes | staged Monthly migration |
 | Field verification | old Monthly correction rows + new Common | duplicate `field_verifications` | generalized old table | Keep storage; name is semantically broad enough | `post_execution_verifications` | `PostExecutionVerification` | `App\Models` now; Events final | Yes | Yes | No | none | Yes | namespace only; keep table name |
@@ -682,6 +682,39 @@ NO VOLUNTEER DATA WAS MIGRATED
 NO VOLUNTEER TABLE WAS RENAMED OR DELETED
 NO BUSINESS RULE WAS CHANGED
 NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 32. Phase 2.10 Monthly execution-needs normalization readiness (2026-09-14)
+
+`PHASE 2.10 COMPLETE`
+
+Decision: `KEEP LEGACY STORAGE`.
+
+The canonical type vocabulary is shared, but the transaction contracts are not
+equivalent. Monthly `execution_needs_payload` is a versioned structured planning
+document combining enabled sources, center availability, registry entries and
+rich section-specific fields. `execution_needs_followup` separately combines
+role/name decision snapshots, secured/not-secured decisions, reasons, scores,
+and provided/not-provided post-execution evidence. Current
+`subject_execution_needs` supplies only required, planned text,
+pending/completed, actual text, and completion time.
+
+Flattening Monthly into Common rows would lose structured fields, availability,
+actors, scores and typed outcomes; fabricate timestamps/statuses; mishandle
+missing/null/false values; and make the combined `certificates_thanks` follow-up
+decision ambiguous across two canonical types. Monthly JSON and Common/Ramadan
+rows therefore remain separate authoritative transaction storage. The full
+contract/mapping/status/UI/workflow/report audit, engine-labelled live queries,
+options and future redesign prerequisites are in
+`docs/monthly-execution-needs-normalization-audit.md`.
+
+NO MONTHLY EXECUTION-NEEDS DATA WAS MIGRATED
+NO MONTHLY EXECUTION-NEEDS WRITER WAS CHANGED
+NO LEGACY JSON COLUMN WAS REMOVED OR RENAMED
+NO DUAL-WRITE WAS INTRODUCED
+NO BUSINESS OR WORKFLOW RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
