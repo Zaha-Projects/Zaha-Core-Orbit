@@ -166,3 +166,30 @@ No live identity counts are known or claimed.
 
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+## Phase 2.8D prerequisite gate (2026-09-14)
+
+| Check | Command/evidence | Actual | Status |
+|---|---|---|---|
+| dependency autoloader | `test -f vendor/autoload.php` | absent | blocked |
+| Laravel boot | requires the missing autoloader | not executed | blocked |
+| environment file | `test -f .env` | absent | blocked |
+| database environment | `APP_ENV`, `DB_CONNECTION`, `DB_DATABASE` | all unset | blocked |
+| local disposable database | SQLite/database-file scan under `database` and `storage` | none found | blocked |
+| identity inventory | documented SQL queries | not executed | blocked |
+| cutover regression matrix | focused and broad PHPUnit commands | not executed | blocked |
+
+No live legacy, canonical, unknown-related, or missing-reference count is known.
+The hard stop was honored: the model did not move, the writer did not switch,
+and audit data was not backfilled. Composer/network restoration was not retried.
+
+`POSTEXECUTIONVERIFICATION CUTOVER BLOCKED`
+
+NO MODEL NAMESPACE CUTOVER WAS PERFORMED
+NO STORED IDENTITY WAS CHANGED
+NO BUSINESS DATA WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+`PHASE 2.8D INCOMPLETE`

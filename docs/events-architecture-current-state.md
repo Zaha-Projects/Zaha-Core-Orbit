@@ -628,3 +628,28 @@ NO WORKFLOW OR MONITORING RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+## 30. Phase 2.8D gated cutover attempt (2026-09-14)
+
+`POSTEXECUTIONVERIFICATION CUTOVER BLOCKED`
+
+Phase 2.8D stopped at its mandatory runtime gate. `vendor/autoload.php` is
+absent, Laravel therefore cannot be booted, and no explicitly disposable
+database configuration or SQLite database was available. The required live
+`audit_logs.entity_type` inventory and missing-reference query were not run, so
+no live counts are claimed.
+
+No model/import/view/relationship change was made, the audit writer remains on
+`PostExecutionVerificationIdentity::LEGACY`, and no backfill was performed.
+The exact blocking evidence and resume requirements are recorded in
+`docs/post-execution-verification-identity-cutover.md` and
+`docs/events-runtime-verification-report.md`.
+
+NO MODEL NAMESPACE CUTOVER WAS PERFORMED
+NO STORED IDENTITY WAS CHANGED
+NO BUSINESS DATA WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+`PHASE 2.8D INCOMPLETE`

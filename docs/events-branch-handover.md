@@ -773,3 +773,34 @@ NO WORKFLOW OR MONITORING RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+## Phase 2.8D blocked handover addendum (2026-09-14)
+
+`POSTEXECUTIONVERIFICATION CUTOVER BLOCKED`
+
+C6 remains open. The attempt stopped before source cutover because
+`vendor/autoload.php` is absent and no explicitly disposable database is
+available. Laravel boot, live identity counts, missing-reference inspection,
+and the focused regression matrix remain unexecuted. No Composer/network retry
+was made.
+
+Resume **C6 — Phase 2.8D PostExecutionVerification Identity Cutover** only after:
+
+1. locked dependencies and `vendor/autoload.php` are already present;
+2. Laravel boot succeeds;
+3. the database is explicitly identified and proven disposable;
+4. every live inventory query in
+   `docs/post-execution-verification-identity-cutover.md` runs and its actual
+   counts have no unresolved values or missing references;
+5. the focused Monthly, Ramadan, audit, and identity suites pass.
+
+Do not start C6B/backfill or compatibility retirement before C6 succeeds.
+
+NO MODEL NAMESPACE CUTOVER WAS PERFORMED
+NO STORED IDENTITY WAS CHANGED
+NO BUSINESS DATA WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
+
+`PHASE 2.8D INCOMPLETE`
