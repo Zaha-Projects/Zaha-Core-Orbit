@@ -1020,3 +1020,19 @@ NO BUSINESS OR APPROVAL RULE WAS CHANGED
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
 PHASE 2.13B REMAINS BLOCKED BY RUNTIME/LIVE INVENTORY
+
+## Phase 2.14A Agenda compatibility handover addendum (2026-09-15)
+
+`PHASE 2.14A COMPLETE — SOURCE IMPLEMENTATION`
+
+The Agenda aggregate compatibility boundary is installed while
+`AgendaEvent` remains under `App\Models`. The next static slice may move only
+that model and update imports; retain `EventAggregateIdentity`, dual-read,
+duplicate conflict behavior, and mixed-history reporting. Do not alter Monthly,
+request-model identity compatibility, routes, tables, or historical identities.
+
+All focused tests and live identity/orphan/duplicate inventories remain staging
+requirements, not blockers to further static source work.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE

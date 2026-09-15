@@ -6,6 +6,7 @@ use App\Modules\Events\Models\AgendaApproval;
 use App\Modules\Events\Models\AgendaEventTarget;
 use App\Modules\Events\Models\AgendaParticipation;
 use App\Modules\Events\Models\EventCategory;
+use App\Modules\Events\Support\EventAggregateIdentity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -189,7 +190,8 @@ class AgendaEvent extends Model
 
     public function workflowInstance()
     {
-        return $this->morphOne(WorkflowInstance::class, 'entity');
+        return $this->hasOne(WorkflowInstance::class, 'entity_id')
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(self::class));
     }
 
     public function parentVersion()

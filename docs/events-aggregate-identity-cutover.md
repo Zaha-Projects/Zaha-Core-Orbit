@@ -513,3 +513,79 @@ NO STORED AGGREGATE IDENTITY WAS CHANGED
 NO WORKFLOW, REQUEST, AUDIT, ACTION-LOG, NOTIFICATION, OR CORRESPONDENCE ROW WAS BACKFILLED
 NO BUSINESS OR APPROVAL RULE WAS CHANGED
 ```
+
+## 23. Phase 2.14A Agenda aggregate compatibility implementation
+
+Status: `PHASE 2.14A COMPLETE — SOURCE IMPLEMENTATION`
+
+`EventAggregateIdentity` now enumerates only the exact legacy and future
+canonical `AgendaEvent` identities. During this compatibility phase both stored
+values resolve to the installed `App\Models\AgendaEvent`, and
+`currentWriteType()` remains the legacy FQCN. Unknown strings receive no
+mapping, guessing, aliasing, or namespace conversion.
+
+Agenda workflow compatibility is active in source:
+
+* `DynamicWorkflowService::resolveEntity()` maps either Agenda identity to the
+  installed legacy class without weakening the independent four-request map;
+* workflow lookup and `AgendaEvent::workflowInstance()` accept both exact types;
+* creation searches both types for the active workflow and Agenda ID, reuses
+  exactly one row, writes legacy when no row exists, and throws a diagnostic
+  `LogicException` when both exist;
+* the exact Agenda approval-state workflow reader accepts both types;
+* Admin approval-speed reporting reads and normalizes both types into one
+  `AgendaEvent` category and rejects a mixed-identity duplicate logical row.
+
+No exact Agenda `workflow_action_logs` or `audit_logs` reader and no exact
+notification metadata reader was found, so those generic readers were not
+changed. Their writers remain legacy. Agenda request rows relate by `entity_id`
+and therefore already read rows carrying either aggregate identity; their
+writers remain explicitly legacy. No morph map was introduced.
+
+Focused unit and feature coverage was added for the map, unknown identity,
+resolver, relationship, non-creating reads, reuse, legacy creation, conflict,
+request aggregate identity, and report normalization. Tests are:
+
+```text
+ADDED / STAGING EXECUTION REQUIRED
+```
+
+`AgendaEvent` remains physically under `App\Models`; the future canonical model
+file does not exist. No migration, backfill, route change, history rewrite, or
+Monthly aggregate compatibility was introduced.
+
+### Phase 2.14A staging gate
+
+Before production release, staging must execute the Phase 2.14 queries and:
+
+1. inventory old/new Agenda workflow identities;
+2. prove no mixed identity duplicate for `(workflow_id, entity_id)`;
+3. identify orphan Agenda workflows;
+4. inventory Agenda edit/delete request aggregate identities;
+5. inventory Agenda workflow-action and audit identities;
+6. inventory notification metadata where JSON is valid;
+7. run the focused Agenda compatibility tests;
+8. regress Agenda routes, implicit binding, authorization, approval, reporting,
+   and request flows;
+9. rehearse compatibility-code rollback while the writer is legacy.
+
+```text
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+```
+
+```text
+Phase 2.6 staging verification pending
+Phase 2.8D staging verification pending
+Phase 2.13B staging verification pending
+```
+
+```text
+NO AGGREGATE MODEL NAMESPACE WAS CHANGED
+NO STORED AGENDA IDENTITY WAS BACKFILLED
+NEW AGENDA AGGREGATE WRITES STILL USE THE LEGACY FQCN
+NO AGENDA REQUEST-ROW IDENTITY WAS BACKFILLED
+NO WORKFLOW/AUDIT/ACTION-LOG/NOTIFICATION HISTORY WAS REWRITTEN
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+```

@@ -875,3 +875,20 @@ NO BUSINESS OR APPROVAL RULE WAS CHANGED
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
 PHASE 2.13B REMAINS BLOCKED BY RUNTIME/LIVE INVENTORY
+
+## 38. Phase 2.14A Agenda aggregate identity compatibility (2026-09-15)
+
+`PHASE 2.14A COMPLETE — SOURCE IMPLEMENTATION`
+
+Agenda workflow source now accepts exact legacy and future canonical aggregate
+FQCNs, resolves both to the installed legacy model, reuses either identity,
+rejects mixed duplicates, and continues writing the legacy identity. The Agenda
+model remains in `App\Models`; routes, request writers, action/audit/notification
+history, Monthly behavior, schema, and data are unchanged.
+
+Admin reporting normalizes both Agenda workflow identities into one logical
+category. Focused tests are added but require staging execution. This source
+completion does not assert production readiness.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web\Agenda;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgendaEvent;
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
@@ -1089,7 +1090,7 @@ class AgendaEventsController extends Controller
     protected function isApprovedAgendaEvent(AgendaEvent $agendaEvent): bool
     {
         $workflowInstance = \App\Models\WorkflowInstance::query()
-            ->where('entity_type', AgendaEvent::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(AgendaEvent::class))
             ->where('entity_id', $agendaEvent->id)
             ->latest('id')
             ->first();

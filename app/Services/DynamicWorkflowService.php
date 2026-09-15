@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Support\EventRequestModelIdentity;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyPlanDeleteRequest;
@@ -43,6 +44,30 @@ class DynamicWorkflowService
 
     public function forEntity(Workflow $workflow, string $entityType, int $entityId): WorkflowInstance
     {
+        if (EventAggregateIdentity::isCompatibleIdentity($entityType)) {
+            $instances = WorkflowInstance::query()
+                ->where('workflow_id', $workflow->id)
+                ->where('entity_id', $entityId)
+                ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes($entityType))
+                ->limit(2)
+                ->get();
+
+            if ($instances->count() > 1) {
+                throw new LogicException(sprintf(
+                    'Conflicting workflow identities exist for aggregate %s:%d in workflow %d.',
+                    EventAggregateIdentity::legacyFor($entityType),
+                    $entityId,
+                    $workflow->id
+                ));
+            }
+
+            if ($instances->isNotEmpty()) {
+                return $instances->first();
+            }
+
+            $entityType = EventAggregateIdentity::currentWriteType($entityType);
+        }
+
         if (EventRequestModelIdentity::isCompatibleIdentity($entityType)) {
             $instances = WorkflowInstance::query()
                 ->where('workflow_id', $workflow->id)
@@ -670,7 +695,9 @@ class DynamicWorkflowService
         $entityType = $instance->entity_type;
 
         if (is_string($entityType)) {
-            $entityType = EventRequestModelIdentity::installedModelFor($entityType) ?? $entityType;
+            $entityType = EventAggregateIdentity::installedModelFor($entityType)
+                ?? EventRequestModelIdentity::installedModelFor($entityType)
+                ?? $entityType;
         }
 
         if (! is_string($entityType) || ! class_exists($entityType) || ! is_subclass_of($entityType, Model::class)) {

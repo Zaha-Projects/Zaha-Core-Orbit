@@ -3,6 +3,7 @@
 namespace App\Services\AdminReports;
 
 use App\Modules\Events\Models\AgendaApproval;
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Support\EventRequestModelIdentity;
 use App\Models\AgendaEvent;
 use App\Models\AuditLog;
@@ -141,7 +142,8 @@ class AdminReportsService
 
         $approvalWorkflows = WorkflowInstance::query()
             ->whereIn('entity_type', array_merge(
-                [MonthlyActivity::class, AgendaEvent::class],
+                [MonthlyActivity::class],
+                EventAggregateIdentity::acceptedTypes(AgendaEvent::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanEditRequest::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanDeleteRequest::class),
             ))
@@ -153,18 +155,22 @@ class AdminReportsService
 
         $duplicateWorkflow = $approvalWorkflows
             ->groupBy(fn (WorkflowInstance $instance): string => implode(':', [
-                EventRequestModelIdentity::legacyFor($instance->entity_type) ?? $instance->entity_type,
+                EventAggregateIdentity::legacyFor($instance->entity_type)
+                    ?? EventRequestModelIdentity::legacyFor($instance->entity_type)
+                    ?? $instance->entity_type,
                 $instance->workflow_id,
                 $instance->entity_id,
             ]))
             ->first(fn ($instances): bool => $instances->count() > 1);
 
         if ($duplicateWorkflow) {
-            throw new \LogicException('Conflicting legacy and canonical request workflows cannot be reported safely.');
+            throw new \LogicException('Conflicting legacy and canonical workflows cannot be reported safely.');
         }
 
         $approvalSpeed = $approvalWorkflows
-            ->groupBy(fn (WorkflowInstance $instance): string => EventRequestModelIdentity::legacyFor($instance->entity_type) ?? $instance->entity_type)
+            ->groupBy(fn (WorkflowInstance $instance): string => EventAggregateIdentity::legacyFor($instance->entity_type)
+                ?? EventRequestModelIdentity::legacyFor($instance->entity_type)
+                ?? $instance->entity_type)
             ->map(function ($rows, string $entityType): array {
                 $minutes = $rows->map(fn ($row) => $row->started_at->diffInMinutes($row->completed_at))->values();
 

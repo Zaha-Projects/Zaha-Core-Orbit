@@ -213,3 +213,36 @@ explicitly disposable database.
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## Phase 2.14A Agenda aggregate compatibility staging ledger
+
+Source status: `PHASE 2.14A COMPLETE`
+
+Runtime status: `STAGING VERIFICATION REQUIRED`
+
+Execute in staging before production release:
+
+- inventory legacy and canonical Agenda values in `workflow_instances`;
+- run the mixed-identity duplicate query for `(workflow_id, entity_id)`;
+- run the orphan Agenda workflow query against `agenda_events`;
+- inventory `annual_agenda_edit_requests.entity_type` and
+  `annual_agenda_delete_requests.entity_type` by request type and status;
+- inventory Agenda identities in `workflow_action_logs` and `audit_logs`;
+- inventory JSON notification `meta.entity_type` when supported by the staging
+  database engine;
+- execute `EventAggregateIdentityTest` and
+  `AgendaEventIdentityCompatibilityTest` plus existing Agenda workflow/report
+  regressions;
+- exercise Agenda implicit binding, authorization, submission, approval,
+  change-request, and report routes;
+- rehearse rollback to compatibility code while all new writers remain legacy.
+
+Do not backfill as part of this ledger. Record actual counts, failures, database
+engine/SQL mode, and rollback observations in staging evidence.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+
+Phase 2.6 staging verification pending
+Phase 2.8D staging verification pending
+Phase 2.13B staging verification pending
