@@ -31,9 +31,14 @@ class SiteSettingsController extends Controller
             'monthly_plan_lock_days' => ['nullable', 'integer', 'min:0', 'max:31'],
             'branch_monthly_score_weight_satisfaction' => ['nullable', 'integer', 'min:0', 'max:100'],
             'branch_monthly_score_weight_commitment' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'ramadan_period_year' => ['nullable', 'integer', 'min:2020', 'max:2100'],
+            'ramadan_period_start_date' => ['nullable', 'required_if:ramadan_period_is_active,1', 'date'],
+            'ramadan_period_end_date' => ['nullable', 'required_if:ramadan_period_is_active,1', 'date', 'after_or_equal:ramadan_period_start_date'],
+            'ramadan_period_is_active' => ['nullable', 'boolean'],
         ]);
 
         $data['admin_reports_cache_enabled'] = $request->boolean('admin_reports_cache_enabled') ? '1' : '0';
+        $data['ramadan_period_is_active'] = $request->boolean('ramadan_period_is_active') ? '1' : '0';
 
         foreach ($data as $key => $value) {
             if ($value !== null) {

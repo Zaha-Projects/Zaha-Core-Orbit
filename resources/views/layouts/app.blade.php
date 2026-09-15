@@ -76,9 +76,12 @@
     @if(request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*'))
         <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/evaluation-visual-identity.css') }}">
     @endif
+    @if(request()->routeIs('events.ramadan.*'))
+        <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/ramadan-iftars.css') }}">
+    @endif
     @stack('styles')
 </head>
-<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }} {{ request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*') ? 'evaluation-visual-identity' : '' }}">
+<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }} {{ request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*') ? 'evaluation-visual-identity' : '' }} {{ request()->routeIs('events.ramadan.*') ? 'ramadan-module' : '' }}">
 <div class="layout-shell">
     <aside id="appSidebar" class="sidebar-original">
         <div class="sidebar-brand">
@@ -269,5 +272,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="{{ $versionedAsset('assets/theme/js/app.min.js') }}"></script>
 @stack('scripts')
+@if(request()->routeIs('events.ramadan.*'))
+<script src="{{ \App\Support\AssetVersion::url('assets/js/ramadan-iftars.js') }}"></script>
+@endif
 </body>
 </html>

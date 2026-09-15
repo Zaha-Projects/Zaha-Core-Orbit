@@ -1053,3 +1053,16 @@ ledger before production release.
 
 CODEX RUNTIME VERIFICATION IS UNAVAILABLE
 STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+
+## Ramadan Iftars UX/demo handover (2026-09-15)
+
+The source slice is complete and independent of namespace identity work. Use
+`RamadanPeriodSeeder`, `RamadanIftarGuidanceSeeder`, then
+`RamadanIftarDemoSeeder` only in local/staging. Ensure branch 23, an active
+branch user, roles, and the Ramadan workflow exist first. Do not add the demo
+seeder to production bootstrap.
+
+Staging must verify every Ramadan route in RTL/mobile/desktop, period editing,
+date boundaries, guidance print/content, need switches, all synthetic workflow
+states, monitoring/closure, version history, permissions, and idempotency. See
+`docs/ramadan-iftars-ui-and-demo-data.md`.

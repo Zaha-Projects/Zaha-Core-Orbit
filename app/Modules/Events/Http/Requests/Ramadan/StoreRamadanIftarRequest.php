@@ -12,6 +12,7 @@ use App\Modules\Events\Models\LocalCommunity;
 use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMealItem;
+use App\Modules\Events\Support\RamadanPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -140,6 +141,9 @@ class StoreRamadanIftarRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) return;
             $branchId = (int) $this->input('branch_id');
+            if (! RamadanPeriod::contains($this->input('planned_date'))) {
+                $validator->errors()->add('planned_date', 'تاريخ الإفطار يجب أن يكون ضمن فترة شهر رمضان المحددة من الإدارة.');
+            }
             if (! $this->canAccessBranch($branchId)) $validator->errors()->add('branch_id', __('validation.exists', ['attribute' => 'branch']));
             $agendaId = $this->input('agenda_event_id');
             if ($agendaId && ! AgendaEvent::query()->whereKey($agendaId)->forBranchAudience([$branchId])->exists()) {

@@ -908,3 +908,18 @@ validation remain staging requirements rather than claims of this source phase.
 
 CODEX RUNTIME VERIFICATION IS UNAVAILABLE
 STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+
+## Ramadan Iftars UX and demo data enhancement (2026-09-15)
+
+`SOURCE IMPLEMENTATION COMPLETE — STAGING VERIFICATION REQUIRED`
+
+Ramadan routes now share a scoped visual theme; the browse experience uses
+cards and a configured-period calendar. Existing Settings provide an active
+Ramadan season, and create/edit dates are server-validated against it. Guidance
+version 1 preserves the supplied 2025 heading and ten source sections. Focused,
+idempotent period/guidance/demo seeders support a branch-23 staging showcase
+without joining production reference bootstrap.
+
+Workflow, approval, monitoring, closure, versioning, permissions, Common
+execution-needs storage, and historical data semantics are unchanged. Details
+and staging instructions are in `docs/ramadan-iftars-ui-and-demo-data.md`.

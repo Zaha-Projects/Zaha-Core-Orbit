@@ -5,6 +5,7 @@ namespace App\Modules\Events\Http\Controllers\Ramadan;
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Services\DynamicWorkflowService;
+use App\Modules\Events\Support\RamadanPeriod;
 use Illuminate\Http\Request;
 
 class RamadanIftarWorkspaceController extends Controller
@@ -86,5 +87,25 @@ class RamadanIftarWorkspaceController extends Controller
             && ! $ramadanIftar->changeRequests->contains('status', \App\Modules\Events\Models\RamadanIftarChangeRequest::STATUS_PENDING);
 
         return view('pages.events.ramadan.show', compact('ramadanIftar', 'canCurrentUserApprove', 'canPlan', 'canSubmit', 'canExecute', 'canCompleteExecution', 'canMonitor', 'canReviewMonitoring', 'closureReadiness', 'canClose', 'versionHistory', 'latestVersion', 'canRequestChange'));
+    }
+
+    public function calendar(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.view')), 403);
+        $period = RamadanPeriod::active();
+        $iftars = collect();
+
+        if ($period) {
+            $query = RamadanIftar::query()->whereDoesntHave('versions')
+                ->with(['branch', 'monitoringReports' => fn ($query) => $query->latest('updated_at')->latest('id')])
+                ->whereBetween('planned_date', [$period['start']->toDateString(), $period['end']->toDateString()]);
+            if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
+                $query->whereIn('branch_id', $user->scopedBranchIds());
+            }
+            $iftars = $query->orderBy('planned_date')->orderBy('time_from')->get()->groupBy(fn ($iftar) => $iftar->planned_date->format('Y-m-d'));
+        }
+
+        return view('pages.events.ramadan.calendar', compact('period', 'iftars'));
     }
 }

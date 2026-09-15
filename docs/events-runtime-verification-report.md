@@ -281,3 +281,32 @@ STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
 Phase 2.6 staging verification pending
 Phase 2.8D staging verification pending
 Phase 2.13B staging verification pending
+
+## Ramadan Iftars UX and demo data staging ledger
+
+Source status: `COMPLETE`
+
+Runtime status: `STAGING VERIFICATION REQUIRED`
+
+- smoke-test the scoped Ramadan theme on index, calendar, create, edit, show,
+  approvals, execution, monitoring, monitoring review, guidance, and change
+  request/version pages;
+- verify desktop, mobile, RTL, keyboard switches, contrast, badges, and empty
+  states;
+- verify card data/actions and calendar range/query counts;
+- edit/activate/deactivate the administrative Ramadan period and test inclusive
+  date boundaries plus missing-period behavior;
+- verify all ten guidance sections, the 2025 visible source title/2026 external
+  reference note, acceptance, historical fallback, and print CSS;
+- verify optional execution-needs switches, disabled hidden details, old input,
+  and `subject_execution_needs` persistence;
+- run create/edit server validation and branch-owned lookup regressions;
+- run period/guidance/demo seeders twice and verify no duplicates or overwritten
+  administrator-authored values;
+- prove every demo Iftar and related subject row is branch 23 scoped, each
+  workflow status is coherent, and execution/monitoring/closure/version data is
+  navigable;
+- confirm no N+1 regression and no browser console errors.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED

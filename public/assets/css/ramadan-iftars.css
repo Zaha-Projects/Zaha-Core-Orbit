@@ -1,0 +1,29 @@
+.ramadan-module { --ramadan-primary:#175c4c; --ramadan-gold:#c69a3b; --ramadan-ink:#17332d; --ramadan-soft:#f8f4e8; }
+.ramadan-module .content-main { background-color:#fbfaf6; background-image:radial-gradient(circle at 1px 1px,rgba(23,92,76,.05) 1px,transparent 0); background-size:24px 24px; }
+.ramadan-module .ramadan-hero { position:relative; overflow:hidden; border:0; color:#fff; background:linear-gradient(120deg,#12483d,#1d6d59); }
+.ramadan-module .ramadan-hero::after { content:"☾"; position:absolute; inset-inline-end:1.5rem; top:-1.5rem; color:rgba(255,255,255,.12); font-size:9rem; line-height:1; }
+.ramadan-module .ramadan-hero > * { position:relative; z-index:1; }
+.ramadan-module .card { border-color:rgba(23,92,76,.13); border-radius:1rem; }
+.ramadan-module .card-header { background:#fff; border-bottom-color:rgba(23,92,76,.12); }
+.ramadan-module .btn-primary { background:var(--ramadan-primary); border-color:var(--ramadan-primary); }
+.ramadan-module .btn-outline-primary { color:var(--ramadan-primary); border-color:var(--ramadan-primary); }
+.ramadan-module .ramadan-card { transition:transform .15s ease,box-shadow .15s ease; border-top:3px solid var(--ramadan-gold); }
+.ramadan-module .ramadan-card:hover { transform:translateY(-2px); box-shadow:0 .75rem 1.5rem rgba(23,51,45,.1)!important; }
+.ramadan-module .ramadan-status { display:inline-flex; align-items:center; gap:.35rem; border-radius:99rem; padding:.35rem .65rem; font-weight:600; font-size:.75rem; }
+.ramadan-module .ramadan-status--draft,.ramadan-module .ramadan-status--planned { background:#eef1f4;color:#495057; }
+.ramadan-module .ramadan-status--submitted,.ramadan-module .ramadan-status--in_progress { background:#fff0cc;color:#755000; }
+.ramadan-module .ramadan-status--approved,.ramadan-module .ramadan-status--completed { background:#dff4e9;color:#146c43; }
+.ramadan-module .ramadan-status--changes_requested,.ramadan-module .ramadan-status--returned { background:#fde5e5;color:#a52834; }
+.ramadan-module .ramadan-calendar { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.75rem; }
+.ramadan-module .ramadan-day { min-height:150px; background:#fff; border:1px solid rgba(23,92,76,.14); border-radius:.85rem; padding:.75rem; }
+.ramadan-module .ramadan-day__date { color:var(--ramadan-primary); font-weight:700; border-bottom:1px dashed #ddd; padding-bottom:.45rem; margin-bottom:.55rem; }
+.ramadan-module .ramadan-calendar-event { display:block; color:var(--ramadan-ink); background:var(--ramadan-soft); border-inline-start:3px solid var(--ramadan-gold); border-radius:.5rem; padding:.45rem; margin-bottom:.4rem; text-decoration:none; font-size:.78rem; }
+.ramadan-module .ramadan-needs-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.ramadan-module .ramadan-need-option { border:1px solid rgba(23,92,76,.18); border-radius:.85rem; padding:1rem; background:#fff; }
+.ramadan-module .ramadan-need-option.is-active { border-color:var(--ramadan-primary); box-shadow:0 0 0 2px rgba(23,92,76,.08); }
+.ramadan-module .ramadan-need-details[hidden] { display:none!important; }
+.ramadan-module .ramadan-section-nav { position:sticky; top:.75rem; z-index:5; background:#fff; border:1px solid rgba(23,92,76,.12); border-radius:.85rem; padding:.65rem; }
+.ramadan-module .is-invalid,.ramadan-module :invalid:focus { border-color:#dc3545; }
+.ramadan-module .guidance-section { break-inside:avoid; }
+@media(max-width:767.98px){.ramadan-module .ramadan-calendar,.ramadan-module .ramadan-needs-grid{grid-template-columns:1fr}.ramadan-module .ramadan-day{min-height:auto}.ramadan-module .ramadan-section-nav{position:static}}
+@media print{.ramadan-module .sidebar-original,.ramadan-module .top-header,.ramadan-module .ramadan-no-print{display:none!important}.ramadan-module .content-main{background:#fff!important}.ramadan-module .guidance-section{box-shadow:none!important;border:1px solid #bbb!important}.ramadan-module .layout-main{margin:0!important}}

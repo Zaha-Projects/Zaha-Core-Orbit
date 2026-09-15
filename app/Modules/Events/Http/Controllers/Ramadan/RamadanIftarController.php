@@ -18,6 +18,7 @@ use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Services\RamadanIftarPlanningService;
 use App\Modules\Events\Services\RamadanGuidanceAcceptanceService;
 use Illuminate\Http\Request;
+use App\Modules\Events\Support\RamadanPeriod;
 
 class RamadanIftarController extends Controller
 {
@@ -107,6 +108,7 @@ class RamadanIftarController extends Controller
             'hostTypes' => RamadanIftar::hostTypes(),
             'mealItemTypes' => RamadanIftarMealItem::types(),
             'executionNeedTypes' => ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->orderBy('sort_order')->get(),
+            'ramadanPeriod' => RamadanPeriod::active(),
         ];
     }
 }

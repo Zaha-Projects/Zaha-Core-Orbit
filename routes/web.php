@@ -227,6 +227,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
     Route::prefix('dashboard/events/ramadan/iftars')->name('events.ramadan.iftars.')->middleware('branch.isolation')->group(function () {
         Route::get('/', [RamadanIftarWorkspaceController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|executive_manager|followup_officer|super_admin|ramadan_iftars.view')->name('index');
+        Route::get('/calendar', [RamadanIftarWorkspaceController::class, 'calendar'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|executive_manager|followup_officer|super_admin|ramadan_iftars.view')->name('calendar');
         Route::get('/create', [RamadanIftarController::class, 'create'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create')->name('create');
         Route::post('/', [RamadanIftarController::class, 'store'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create')->name('store');
         Route::get('/{ramadanIftar}/edit', [RamadanIftarController::class, 'edit'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.edit')->whereNumber('ramadanIftar')->name('edit');
