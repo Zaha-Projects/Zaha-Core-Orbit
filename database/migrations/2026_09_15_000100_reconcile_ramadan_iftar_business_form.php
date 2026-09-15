@@ -19,11 +19,15 @@ return new class extends Migration
 
         Schema::create('event_guidance_acknowledgements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('event_guidance_version_id')->constrained('event_guidance_versions')->cascadeOnDelete();
+            $table->foreignId('user_id');
+            $table->foreignId('event_guidance_version_id');
             $table->timestamp('acknowledged_at');
             $table->timestamps();
-            $table->unique(['user_id', 'event_guidance_version_id'], 'guidance_ack_user_version_unique');
+            $table->foreign('user_id', 'ega_user_fk')
+                ->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('event_guidance_version_id', 'ega_guidance_fk')
+                ->references('id')->on('event_guidance_versions')->onDelete('cascade');
+            $table->unique(['user_id', 'event_guidance_version_id'], 'ega_user_guidance_uq');
         });
     }
 
