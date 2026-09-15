@@ -60,7 +60,7 @@ otherwise. “History” describes why identity must be preserved.
 | `target_groups` | `App\Models\TargetGroup` | none; applicability flags | none | shared master used by Monthly and Ramadan | idempotent reference seed |
 | `monthly_activities.target_group_id` and text columns | on `MonthlyActivity` | optional target master FK is not constrained | legacy scalar/text | oldest Monthly target representation; must remain readable | business-created |
 | `event_target_group` | pivot, no model | Monthly + target group | none | relational Monthly many-to-many; row IDs/history can be retained | business-created |
-| `subject_target_groups` | `App\Modules\Events\Models\SubjectTargetGroup` | subject alias, target group, optional segment | none | current Ramadan planned/actual segmented targeting | business-created |
+| `event_target_group` | `App\Modules\Events\Models\SubjectTargetGroup` | generalized subject alias, target group, optional segment | none | current Monthly/Ramadan planned/actual segmented targeting | business-created |
 | `beneficiary_segments` | `BeneficiarySegment` | none | none | new Events segmentation dimension; no Monthly relational equivalent | idempotent reference seed |
 | `monthly_activity_team` | `App\Models\MonthlyActivityTeam` | Monthly + optional user | none | one row per legacy team member; IDs may appear in history | business-created |
 | `execution_teams` | `ExecutionTeam` | subject alias + leader | none | Ramadan team header with planned/actual counts | business-created |

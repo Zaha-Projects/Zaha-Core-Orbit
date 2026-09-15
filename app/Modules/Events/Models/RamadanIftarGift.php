@@ -9,6 +9,15 @@ class RamadanIftarGift extends Model
 {
     use HasFactory;
 
+    public const TYPE_GIFTS = 'gifts';
+    public const TYPE_SHIELDS = 'shields';
+    public const TYPE_BOTH = 'both';
+
+    public static function types(): array
+    {
+        return [self::TYPE_GIFTS, self::TYPE_SHIELDS, self::TYPE_BOTH];
+    }
+
     protected $fillable = [
         'ramadan_iftar_id', 'gift_type', 'description', 'planned_quantity', 'actual_quantity',
         'has_supporting_entity', 'supporting_entity_name', 'unit_value',

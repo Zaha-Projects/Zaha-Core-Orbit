@@ -10,9 +10,6 @@ use Illuminate\Validation\ValidationException;
 class RamadanGuidanceAcceptanceService
 {
     private const PRESENTED_VERSION_KEY = 'events.ramadan.guidance.presented_version_id';
-    private const ACCEPTED_VERSION_KEY = 'events.ramadan.guidance.accepted_version_id';
-    private const ACCEPTED_AT_KEY = 'events.ramadan.guidance.accepted_at';
-    private const ACCEPTED_BY_KEY = 'events.ramadan.guidance.accepted_by';
 
     public function present(Request $request, EventGuidanceVersion $version): void
     {
@@ -29,12 +26,6 @@ class RamadanGuidanceAcceptanceService
             ]);
         }
 
-        $request->session()->put([
-            self::ACCEPTED_VERSION_KEY => (int) $current->getKey(),
-            self::ACCEPTED_AT_KEY => now()->toDateTimeString(),
-            self::ACCEPTED_BY_KEY => (int) $request->user()->getKey(),
-        ]);
-
         EventGuidanceAcknowledgement::query()->updateOrCreate(
             ['user_id' => $request->user()->getKey(), 'event_guidance_version_id' => $current->getKey()],
             ['acknowledged_at' => now()]
@@ -46,18 +37,12 @@ class RamadanGuidanceAcceptanceService
     public function acceptedCurrentOrFail(Request $request): array
     {
         $current = $this->currentOrFail();
-        $acceptedVersionId = (int) $request->session()->get(self::ACCEPTED_VERSION_KEY);
-        $acceptedAt = $request->session()->get(self::ACCEPTED_AT_KEY);
-        $acceptedBy = (int) $request->session()->get(self::ACCEPTED_BY_KEY);
-
         $acknowledgement = EventGuidanceAcknowledgement::query()
             ->where('user_id', $request->user()->getKey())
             ->where('event_guidance_version_id', $current->getKey())
             ->first();
 
-        if ($acceptedVersionId !== (int) $current->getKey()
-            || $acceptedBy !== (int) $request->user()->getKey()
-            || ! $acknowledgement) {
+        if (! $acknowledgement) {
             throw ValidationException::withMessages([
                 'guidance' => __('ramadan_iftars.business_errors.guidance_accept_before_create'),
             ]);
@@ -70,9 +55,7 @@ class RamadanGuidanceAcceptanceService
     {
         $current = $this->currentOrFail();
 
-        return (int) $request->session()->get(self::ACCEPTED_VERSION_KEY) === (int) $current->getKey()
-            && (int) $request->session()->get(self::ACCEPTED_BY_KEY) === (int) $request->user()->getKey()
-            && EventGuidanceAcknowledgement::query()
+        return EventGuidanceAcknowledgement::query()
                 ->where('user_id', $request->user()->getKey())
                 ->where('event_guidance_version_id', $current->getKey())
                 ->exists();
@@ -91,9 +74,6 @@ class RamadanGuidanceAcceptanceService
     {
         $request->session()->forget([
             self::PRESENTED_VERSION_KEY,
-            self::ACCEPTED_VERSION_KEY,
-            self::ACCEPTED_AT_KEY,
-            self::ACCEPTED_BY_KEY,
         ]);
     }
 }

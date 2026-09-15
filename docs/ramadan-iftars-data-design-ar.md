@@ -128,7 +128,7 @@ lookup_applicabilities
 - الموصى بها: `lookup_applicabilities`.
 - البديل المباشر: `is_monthly_activity`, `is_ramadan_iftar`.
 
-لا يوضع نص «أخرى» في جدول التعريف؛ النص خاص بكل إفطار/نشاط ويحفظ في سجل الاختيار `subject_target_groups.custom_text`.
+لا يوضع نص «أخرى» في جدول التعريف؛ النص خاص بكل إفطار/نشاط ويحفظ في سجل الاختيار `event_target_group.target_group_custom_text`.
 
 ### 4.2 شرائح المستفيدين والأعمار: `beneficiary_segments`
 
@@ -170,7 +170,7 @@ lookup_applicabilities
 
 ## 5. جداول التفاصيل التشغيلية المشتركة
 
-### 5.1 اختيار الفئات والأعداد: `subject_target_groups`
+### 5.1 اختيار الفئات والأعداد: `event_target_group` عبر `SubjectTargetGroup`
 
 هذا الجدول يجمع الفئة المستهدفة وشريحة المستفيد والعدد، ويخدم النشاط الشهري والإفطار والبازار.
 
@@ -389,7 +389,7 @@ lookup_applicabilities
 ### الدفعة الأولى: تأسيس Common من دون كسر النظام الحالي
 
 1. إنشاء/تعديل lookups المشتركة: قابلية الاستخدام، شرائح المستفيدين، الحشد والرصد.
-2. إنشاء `subject_target_groups` و`subject_execution_needs`.
+2. تعميم `event_target_group` واستخدامه عبر `SubjectTargetGroup`، وإنشاء `subject_execution_needs`.
 3. إنشاء فرق التنفيذ وأعضائها ومتطلبات المتطوعين واللوازم المشتركة.
 4. إنشاء المرفقات/تقارير الرصد والمطابقة والتقييم المشترك أو توسيع الجداول العامة الحالية.
 5. لا تحذف أو تعدل جداول `monthly_activity_*` في هذه الدفعة؛ تبقى الخطط الشهرية تعمل كما هي.

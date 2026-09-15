@@ -1070,3 +1070,7 @@ states, monitoring/closure, version history, permissions, and idempotency. See
 ## Ramadan form reconciliation slice (2026-09-15)
 
 Ramadan planning now uses version-bound persisted guidance acknowledgement, authenticated-user branch derivation, canonical Monthly/Ramadan execution-need applicability, a mandatory Ramadan execution team, and conditional supply/gift detail storage. Use `RamadanIftarStagingSeeder` only for staging/demo. See `docs/ramadan-iftar-form-business-reconciliation.md`; runtime verification remains a staging responsibility.
+
+### Ramadan source consistency and dashboard (2026-09-15)
+
+Hard review reconfirmed `SubjectTargetGroup` -> `event_target_group`, the single canonical execution-need catalogue, planning-only version copies, and persistent per-version guidance acceptance. The main dashboard now has a permission/period/branch-scoped Ramadan summary. Runtime remains pending, not a source-development blocker.

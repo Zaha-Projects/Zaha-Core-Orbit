@@ -23,6 +23,9 @@ use App\Modules\Events\Models\SubjectVolunteerRequirement;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;
 use App\Modules\Events\Models\MobilizationMethod;
+use App\Modules\Events\Models\TargetGroup;
+use App\Modules\Events\Models\BeneficiarySegment;
+use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Support\RamadanPeriod;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -125,9 +128,20 @@ class RamadanIftarDemoSeeder extends Seeder
         );
         $team->members()->updateOrCreate(['user_id' => $user->id], ['role_name' => 'مشرف الإفطار', 'task_description' => 'متابعة التنفيذ']);
 
-        $iftar->meals()->updateOrCreate(['description' => 'وجبة إفطار متكاملة'], [
+        $meal = $iftar->meals()->updateOrCreate(['description' => 'وجبة إفطار متكاملة'], [
             'planned_quantity' => $iftar->planned_meals_count, 'restaurant_name' => 'مطعم زها التجريبي', 'restaurant_contact' => '0790000023',
         ]);
+        $meal->items()->updateOrCreate(['name' => 'الطبق الرئيسي التجريبي'], [
+            'item_type' => RamadanIftarMealItem::TYPE_MAIN, 'quantity' => $iftar->planned_meals_count,
+            'notes' => 'تمر وماء وعصير وشوربة', 'sort_order' => 10,
+        ]);
+        $target = TargetGroup::query()->active()->forRamadanIftars()->orderBy('sort_order')->first();
+        if (! $target) throw new RuntimeException('Ramadan demo requires at least one active Ramadan target group.');
+        $segment = BeneficiarySegment::query()->active()->ordered()->first();
+        $iftar->targetGroupSelections()->updateOrCreate(
+            ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'target_group_id' => $target->id],
+            ['beneficiary_segment_id' => $segment?->id, 'planned_count' => $iftar->expected_attendance]
+        );
         $iftar->programSegments()->updateOrCreate(['name' => 'فقرة الترحيب'], ['starts_at' => '17:15', 'sort_order' => 10, 'external_executor_name' => 'فريق زها']);
         $iftar->volunteerRequirements()->updateOrCreate(
             ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'gender' => 'mixed'],
@@ -136,12 +150,12 @@ class RamadanIftarDemoSeeder extends Seeder
         if ($index % 2) {
             EventSupply::query()->updateOrCreate(
                 ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'item_name' => 'مفارش طعام بيضاء'],
-                ['planned_quantity' => 10, 'is_available' => true, 'status' => EventSupply::STATUS_PENDING]
+                ['planned_quantity' => 10, 'planned_available' => true, 'status' => EventSupply::STATUS_PENDING]
             );
         } else {
             RamadanIftarGift::query()->updateOrCreate(
                 ['ramadan_iftar_id' => $iftar->id, 'description' => 'حقيبة هدايا تجريبية'],
-                ['gift_type' => 'gifts', 'planned_quantity' => 25, 'has_supporting_entity' => true, 'supporting_entity_name' => 'الجهة الداعمة التجريبية']
+                ['gift_type' => RamadanIftarGift::TYPE_GIFTS, 'planned_quantity' => 25, 'has_supporting_entity' => true, 'supporting_entity_name' => 'الجهة الداعمة التجريبية']
             );
         }
         if ($index % 3 === 0) {
@@ -186,7 +200,7 @@ class RamadanIftarDemoSeeder extends Seeder
         foreach (ExecutionNeedType::query()->whereIn('code',$codes)->get() as $type) {
             SubjectExecutionNeed::query()->updateOrCreate(
                 ['subject_type'=>EventSubjectTypes::RAMADAN_IFTAR,'subject_id'=>$iftar->id,'execution_need_type_id'=>$type->id],
-                ['is_required'=>true,'planned_details'=>'تفاصيل تخطيط تجريبية: '.$type->name,'status'=>$execution==='completed'?'completed':'pending','actual_details'=>$execution==='completed'?'تم التنفيذ ضمن العرض التجريبي.':null,'completed_at'=>$execution==='completed'?now():null]
+                ['is_required'=>$type->isMandatoryForRamadan(),'planned_details'=>'تفاصيل تخطيط تجريبية: '.$type->name,'status'=>$execution==='completed'?'completed':'pending','actual_details'=>$execution==='completed'?'تم التنفيذ ضمن العرض التجريبي.':null,'completed_at'=>$execution==='completed'?now():null]
             );
         }
     }

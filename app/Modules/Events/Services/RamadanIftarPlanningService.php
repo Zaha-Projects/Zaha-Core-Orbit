@@ -102,7 +102,7 @@ class RamadanIftarPlanningService
             'beneficiary_segment_id', 'gender', 'planned_count', 'tasks_summary',
         ], fn () => ['status' => SubjectVolunteerRequirement::STATUS_PENDING], ['actual_count']);
         $this->syncSimple($iftar->supplies(), $data['supplies'], [
-            'item_name', 'planned_quantity', 'is_available', 'provider_type', 'provider_name', 'estimated_value', 'notes',
+            'item_name', 'planned_quantity', 'planned_available', 'provider_type', 'provider_name', 'estimated_value', 'notes',
         ], fn () => ['status' => EventSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
         $this->syncSimple($iftar->executionNeeds(), array_values($data['execution_needs']), [
             'execution_need_type_id', 'is_required', 'planned_details',

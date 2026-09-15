@@ -12,6 +12,7 @@ use App\Modules\Events\Models\LocalCommunity;
 use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMealItem;
+use App\Modules\Events\Models\RamadanIftarGift;
 use App\Modules\Events\Support\RamadanPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -113,7 +114,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.items.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'gifts' => ['present', 'array'],
             'gifts.*.id' => ['nullable', 'integer'],
-            'gifts.*.gift_type' => ['required', Rule::in(['gifts', 'shields', 'both'])],
+            'gifts.*.gift_type' => ['required', Rule::in(RamadanIftarGift::types())],
             'gifts.*.description' => ['required', 'string'],
             'gifts.*.planned_quantity' => ['required', 'integer', 'min:0'],
             'gifts.*.has_supporting_entity' => ['required', 'boolean'],
@@ -154,7 +155,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'supplies.*.provider_type' => ['nullable', 'string', 'max:50'],
             'supplies.*.provider_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.estimated_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
-            'supplies.*.is_available' => ['nullable', 'boolean'],
+            'supplies.*.planned_available' => ['required', 'boolean'],
             'supplies.*.notes' => ['nullable', 'string'],
             'execution_needs' => ['present', 'array'],
             'execution_needs.*.id' => ['nullable', 'integer'],

@@ -22,7 +22,7 @@ The create route resolves the current active, published `EventGuidanceVersion`. 
 1. Guidance acknowledgement state.
 2. Basic information: location, Ramadan date, supporting entity, relations officer.
 3. Attendance source: `host_type`; organization/center maps to `CommunityOrganization`, local-community maps to `LocalCommunity` plus `MobilizationMethod` and `ramadan_iftar_attendees`.
-4. Targets: generalized `subject_target_groups` with `TargetGroup` and `BeneficiarySegment`.
+4. Targets: generalized `event_target_group` through `SubjectTargetGroup` with `TargetGroup` and `BeneficiarySegment`.
 5. Meals: `ramadan_iftar_meals` and items. `planned_meals_count` is derived from meal quantities and is not independently posted.
 6. Execution needs: canonical selection plus conditional team/supply/gift details.
 7. Program segments: `ramadan_iftar_program_segments`.
@@ -61,3 +61,47 @@ The orchestration seeds Events reference data, canonical need metadata, mobiliza
 ## Required staging checks
 
 Run migrations and PHPUnit; verify guidance redirect/acceptance/new-version behavior, branch tampering, cross-branch IDs, both attendance modes, repeatable rows, mandatory team, optional supplies/gifts, edit idempotency, version copy, period boundaries, demo idempotency, and all lifecycle/approval/monitoring regressions. Runtime results are not claimed from Codex.
+
+
+## Hard-review clarifications
+
+- `SubjectTargetGroup` is bound to the Phase 2.3 generalized `event_target_group`; `subject_target_groups` remains abandoned and must not be recreated.
+- Guidance acknowledgement is authoritative per user and exact published version. The session records only the version actually presented while accepting, preventing a stale-page POST; subsequent creates for the same current version rely on persistent acknowledgement.
+- Host codes are exact: `association` (جمعية), `center` (مركز), and `local_community` (مجتمع محلي). Association/center use branch-owned `CommunityOrganization` (`name`, `contact_name`, `contact_phone`, `location_name`, address/map); local community uses branch-owned `LocalCommunity`, `MobilizationMethod`, and attendee rows.
+- Meal-item `notes` represents textual meal accompaniments/components, not file uploads. Restaurant name/contact are columns on `ramadan_iftar_meals`.
+- The current schema and UI permit multiple execution-team rows per Iftar; at least one is mandatory.
+
+### Period bootstrap precedence
+
+| Existing state | Seeder behavior |
+|---|---|
+| valid active admin configuration | preserve |
+| complete inactive admin configuration | preserve intentional inactive state; demo reports actionable failure |
+| missing keys | create explicit active demo defaults |
+| partial keys | fill only missing keys; never overwrite supplied values; invalid result fails clearly |
+
+## Source consistency hard review
+
+### Planning-copy boundary
+
+| Planning concept | Copied to N+1 | Execution/actual state excluded |
+|---|---|---|
+| attendance source core fields | yes | actual attendance/date excluded |
+| local-community attendee contacts | yes | `attended`, `checked_in_at` excluded |
+| targets | yes | `actual_count` excluded |
+| meals/items | yes | actual quantity, rating excluded |
+| execution needs | yes | status, actual details, completion excluded |
+| teams/members | yes | actual member count, task confirmation excluded |
+| supplies | yes | planned availability copied; actual quantity/availability excluded |
+| gifts/shields | yes | actual quantity excluded |
+| program segments | yes | reset to planned; actual notes excluded |
+| volunteer requirements | yes | actual count/status excluded |
+| workflow/monitoring/closure | no | all excluded |
+
+### Demo idempotency
+
+All created children use stable natural keys under the stable demo Iftar: attendee name, target type, meal description, meal item name, execution-need type, team name, team user, supply name, gift description, program name, volunteer gender, workflow identity, monitoring method, guidance user/version, and branch/title for the version child. The demo creates no workflow logs or monitoring verification rows. Reruns update these rows and do not append them.
+
+### Dashboard contract
+
+The general dashboard panel requires an active Ramadan period and `ramadan_iftars.view` (or super admin). Normal users are constrained by `scopedBranchIds`; broad users follow `branches.view.all`. One conditional aggregate query computes bounded lifecycle metrics and one eager-loaded query returns at most five upcoming Iftars. No demo branch constant participates in dashboard queries.
