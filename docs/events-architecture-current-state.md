@@ -847,3 +847,31 @@ NO DUAL-WRITE WAS INTRODUCED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 37. Phase 2.14 aggregate identity compatibility audit (2026-09-15)
+
+`PHASE 2.14 COMPLETE`
+
+`MonthlyActivity` and `AgendaEvent` remain under `App\Models`. Both persist
+their FQCN in workflow instances, action history, selected audit rows, request
+rows, and notification metadata. Monthly additionally persists its FQCN as the
+`OfficialCorrespondence` morph type; a direct move would break both forward and
+inverse historical correspondence resolution and could create a second logical
+row under the type-bearing unique key.
+
+The selected strategy is exact dual-read compatibility with a single legacy
+writer before each move, followed by **SEPARATE CUTOVERS, AGENDA FIRST**. Agenda
+has no correspondence morph surface in current source. Request-model workflow
+identity and request-row aggregate identity are separate contracts; Phase 2.13B
+is not a technical prerequisite for aggregate compatibility, but the cutovers
+must not be combined. Full matrices, queries, rollback, and deployment ordering
+are in `docs/events-aggregate-identity-cutover.md`.
+
+NO AGGREGATE MODEL NAMESPACE WAS CHANGED
+NO STORED AGGREGATE IDENTITY WAS CHANGED
+NO WORKFLOW, REQUEST, AUDIT, ACTION-LOG, NOTIFICATION, OR CORRESPONDENCE ROW WAS BACKFILLED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+PHASE 2.13B REMAINS BLOCKED BY RUNTIME/LIVE INVENTORY

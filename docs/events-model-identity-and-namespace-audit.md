@@ -590,3 +590,37 @@ NO DUAL-WRITE WAS INTRODUCED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 23. Phase 2.14 aggregate identity outcome
+
+`PHASE 2.14 COMPLETE`
+
+The two remaining Events aggregates are confirmed identity-sensitive.
+`workflow_instances` dynamically resolves their stored FQCNs and uses the type
+inside its uniqueness key. Request rows store aggregate (not request-model)
+FQCNs. Action logs, selected audit rows, and notification metadata retain the
+same aggregate identity. Common Events subject tables instead use the stable
+`monthly_activity` alias and require no namespace migration.
+
+Monthly has a higher-risk identity surface because
+`official_correspondences.correspondable_type` drives both a `morphOne` and
+inverse `morphTo`. Historical rows would not safely resolve after an unguarded
+move. Agenda has no corresponding morph in current source.
+
+Selected ordering: `SEPARATE CUTOVERS, AGENDA FIRST`, each preceded by focused
+dual-read/find-before-create compatibility and live duplicate/orphan inventory.
+No broad morph map, alias model, or backfill-first deployment is approved. See
+`docs/events-aggregate-identity-cutover.md`.
+
+Events-owned models still under `App\Models` remain `MonthlyActivity`,
+`AgendaEvent`, the four runtime-gated request models, and
+`PostExecutionVerification`.
+
+NO AGGREGATE MODEL NAMESPACE WAS CHANGED
+NO STORED AGGREGATE IDENTITY WAS CHANGED
+NO WORKFLOW, REQUEST, AUDIT, ACTION-LOG, NOTIFICATION, OR CORRESPONDENCE ROW WAS BACKFILLED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+PHASE 2.13B REMAINS BLOCKED BY RUNTIME/LIVE INVENTORY

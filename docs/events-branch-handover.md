@@ -994,3 +994,29 @@ NO DUAL-WRITE WAS INTRODUCED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## Phase 2.14 aggregate identity handover addendum (2026-09-15)
+
+`PHASE 2.14 COMPLETE`
+
+Do not directly move `MonthlyActivity` or `AgendaEvent`. First implement a
+focused two-pair aggregate identity boundary: workflow resolution and
+relationships must accept old/new types, creation must find before create and
+reject mixed duplicates, and exact request/report/history readers must dual
+read while writers remain legacy.
+
+Cut over aggregates separately, Agenda first. Monthly needs an additional gate
+for `official_correspondences`: forward lookup, inverse `morphTo`, duplicate
+detection, write identity, and rollback must all work with old/new FQCNs. The
+request-model cutover remains independently runtime-gated; do not bundle it
+with an aggregate cutover. Use
+`docs/events-aggregate-identity-cutover.md` as the authoritative handoff.
+
+NO AGGREGATE MODEL NAMESPACE WAS CHANGED
+NO STORED AGGREGATE IDENTITY WAS CHANGED
+NO WORKFLOW, REQUEST, AUDIT, ACTION-LOG, NOTIFICATION, OR CORRESPONDENCE ROW WAS BACKFILLED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+PHASE 2.13B REMAINS BLOCKED BY RUNTIME/LIVE INVENTORY
