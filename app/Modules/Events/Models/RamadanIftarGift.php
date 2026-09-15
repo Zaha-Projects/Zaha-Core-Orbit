@@ -10,7 +10,7 @@ class RamadanIftarGift extends Model
     use HasFactory;
 
     protected $fillable = [
-        'ramadan_iftar_id', 'description', 'planned_quantity', 'actual_quantity',
+        'ramadan_iftar_id', 'gift_type', 'description', 'planned_quantity', 'actual_quantity',
         'has_supporting_entity', 'supporting_entity_name', 'unit_value',
         'estimated_total_value',
     ];

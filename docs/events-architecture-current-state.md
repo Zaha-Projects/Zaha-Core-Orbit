@@ -923,3 +923,7 @@ without joining production reference bootstrap.
 Workflow, approval, monitoring, closure, versioning, permissions, Common
 execution-needs storage, and historical data semantics are unchanged. Details
 and staging instructions are in `docs/ramadan-iftars-ui-and-demo-data.md`.
+
+## Ramadan form reconciliation (2026-09-15)
+
+The canonical execution-needs catalogue now owns context applicability and mandatory metadata. Ramadan uses `SubjectExecutionNeed`; Monthly legacy execution-needs storage remains unchanged. Ramadan team, supply, gift, program, attendee, target, meal, and volunteer planning remain in their established normalized tables. Creation is gated by a persisted acknowledgement of the current published guidance version, and branch ownership is server-derived.

@@ -1,9 +1,7 @@
 @php
 $definitions = [
-    'gifts' => ['description','planned_quantity','has_supporting_entity','supporting_entity_name','unit_value'],
     'program_segments' => ['name','starts_at','ends_at','duration_minutes','sort_order','executor_user_id','external_executor_name'],
     'volunteer_requirements' => ['beneficiary_segment_id','gender','planned_count','tasks_summary'],
-    'supplies' => ['item_name','planned_quantity','provider_type','provider_name','estimated_value','notes'],
 ];
 $sectionKeys = ['gifts'=>'gifts','program_segments'=>'programs','volunteer_requirements'=>'volunteers','supplies'=>'supplies'];
 $addKeys = ['gifts'=>'add_gift','program_segments'=>'add_program','volunteer_requirements'=>'add_volunteer','supplies'=>'add_supply'];
@@ -17,6 +15,7 @@ $fieldKeys = [
 ];
 @endphp
 @foreach($definitions as $collection => $fields)
+@if(!isset($collectionFilter) || in_array($collection, $collectionFilter, true))
 <div class="card shadow-sm mb-3" data-repeat="{{ $collection }}">
     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <strong>{{ __('ramadan_iftars.sections.'.$sectionKeys[$collection]) }}</strong>
@@ -48,8 +47,10 @@ $fieldKeys = [
         @endforeach
     </div>
 </div>
+@endif
 @endforeach
 
+@if($includeMeals ?? true)
 <div class="card shadow-sm mb-3" data-repeat="meals">
     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2"><strong>{{ __('ramadan_iftars.sections.meals') }}</strong><button type="button" class="btn btn-sm btn-outline-primary add-row">{{ __('ramadan_iftars.planning.add_meal') }}</button></div>
     <div class="card-body">@foreach($collections['meals'] as $i => $meal)<div class="planning-row border rounded p-3 mb-3">
@@ -58,12 +59,4 @@ $fieldKeys = [
         @foreach($meal['items']??[] as $j=>$item)<div class="row g-3 mt-1"><input type="hidden" name="meals[{{ $i }}][items][{{ $j }}][id]" value="{{ $item['id']??'' }}"><div class="col-md-5"><label class="form-label">{{ __('ramadan_iftars.labels.item_name') }}</label><input class="form-control" name="meals[{{ $i }}][items][{{ $j }}][name]" value="{{ $item['name']??'' }}"></div><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.item_type') }}</label><select class="form-select" name="meals[{{ $i }}][items][{{ $j }}][item_type]">@foreach($mealItemTypes as $type)<option value="{{ $type }}" @selected(($item['item_type']??null)===$type)>{{ __('ramadan_iftars.options.'.$type) }}</option>@endforeach</select></div><div class="col-md-3"><label class="form-label">{{ __('ramadan_iftars.labels.quantity') }}</label><input type="number" min="0" class="form-control" name="meals[{{ $i }}][items][{{ $j }}][quantity]" value="{{ $item['quantity']??'' }}"></div></div>@endforeach
     </div>@endforeach</div>
 </div>
-
-<div class="card shadow-sm mb-3" data-repeat="execution_teams">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2"><strong>{{ __('ramadan_iftars.sections.teams') }}</strong><button type="button" class="btn btn-sm btn-outline-primary add-row">{{ __('ramadan_iftars.planning.add_team') }}</button></div>
-    <div class="card-body">@foreach($collections['execution_teams'] as $i=>$team)<div class="planning-row border rounded p-3 mb-3">
-        <div class="d-flex justify-content-between mb-2"><strong>{{ __('ramadan_iftars.planning.team_row',['number'=>$i+1]) }}</strong><button type="button" class="btn btn-sm btn-outline-danger remove-row">{{ __('ramadan_iftars.planning.remove') }}</button></div>
-        <input type="hidden" name="execution_teams[{{ $i }}][id]" value="{{ $team['id']??'' }}"><div class="row g-3"><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.fields.name') }}</label><input class="form-control" name="execution_teams[{{ $i }}][name]" value="{{ $team['name']??'' }}"></div><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.leader') }}</label><select class="form-select" name="execution_teams[{{ $i }}][leader_user_id]"><option value="">{{ __('ramadan_iftars.options.none') }}</option>@foreach($users as $user)<option value="{{ $user->id }}" @selected(($team['leader_user_id']??null)==$user->id)>{{ $user->name }}</option>@endforeach</select></div><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.planned_members_count') }}</label><input type="number" min="0" class="form-control" name="execution_teams[{{ $i }}][planned_members_count]" value="{{ $team['planned_members_count']??'' }}"></div></div>
-        @foreach($team['members']??[] as $j=>$member)<div class="row g-3 mt-1"><input type="hidden" name="execution_teams[{{ $i }}][members][{{ $j }}][id]" value="{{ $member['id']??'' }}"><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.executor') }}</label><select class="form-select" name="execution_teams[{{ $i }}][members][{{ $j }}][user_id]"><option value="">{{ __('ramadan_iftars.options.external_none') }}</option>@foreach($users as $user)<option value="{{ $user->id }}" @selected(($member['user_id']??null)==$user->id)>{{ $user->name }}</option>@endforeach</select></div><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.member_name') }}</label><input class="form-control" name="execution_teams[{{ $i }}][members][{{ $j }}][member_name]" value="{{ $member['member_name']??'' }}"></div><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.task_description') }}</label><input class="form-control" name="execution_teams[{{ $i }}][members][{{ $j }}][task_description]" value="{{ $member['task_description']??'' }}"></div></div>@endforeach
-    </div>@endforeach</div>
-</div>
+@endif

@@ -1066,3 +1066,7 @@ Staging must verify every Ramadan route in RTL/mobile/desktop, period editing,
 date boundaries, guidance print/content, need switches, all synthetic workflow
 states, monitoring/closure, version history, permissions, and idempotency. See
 `docs/ramadan-iftars-ui-and-demo-data.md`.
+
+## Ramadan form reconciliation slice (2026-09-15)
+
+Ramadan planning now uses version-bound persisted guidance acknowledgement, authenticated-user branch derivation, canonical Monthly/Ramadan execution-need applicability, a mandatory Ramadan execution team, and conditional supply/gift detail storage. Use `RamadanIftarStagingSeeder` only for staging/demo. See `docs/ramadan-iftar-form-business-reconciliation.md`; runtime verification remains a staging responsibility.

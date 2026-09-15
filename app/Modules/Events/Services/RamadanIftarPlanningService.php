@@ -5,6 +5,7 @@ namespace App\Modules\Events\Services;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\ExecutionTeam;
+use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMeal;
 use App\Modules\Events\Models\RamadanIftarProgramSegment;
@@ -84,10 +85,12 @@ class RamadanIftarPlanningService
 
     private function syncPlanning(RamadanIftar $iftar, array $data): void
     {
+        $data = $this->normalizeExecutionNeeds($data);
+        $this->syncSimple($iftar->attendees(), $data['attendees'], ['full_name', 'phone', 'age'], null, ['attended', 'checked_in_at'], fn ($model) => $model->attended || $model->checked_in_at !== null);
         $this->syncTargetGroups($iftar, $data['target_groups']);
         $this->syncMeals($iftar, $data['meals']);
         $this->syncSimple($iftar->gifts(), $data['gifts'], [
-            'description', 'planned_quantity', 'has_supporting_entity', 'supporting_entity_name', 'unit_value',
+            'gift_type', 'description', 'planned_quantity', 'has_supporting_entity', 'supporting_entity_name', 'unit_value',
         ], fn (array $row) => ['estimated_total_value' => $this->giftTotal($row)], ['actual_quantity'], null, true);
         $this->syncSimple($iftar->programSegments(), $data['program_segments'], [
             'name', 'starts_at', 'ends_at', 'duration_minutes', 'sort_order', 'executor_user_id', 'external_executor_name',
@@ -99,7 +102,7 @@ class RamadanIftarPlanningService
             'beneficiary_segment_id', 'gender', 'planned_count', 'tasks_summary',
         ], fn () => ['status' => SubjectVolunteerRequirement::STATUS_PENDING], ['actual_count']);
         $this->syncSimple($iftar->supplies(), $data['supplies'], [
-            'item_name', 'planned_quantity', 'provider_type', 'provider_name', 'estimated_value', 'notes',
+            'item_name', 'planned_quantity', 'is_available', 'provider_type', 'provider_name', 'estimated_value', 'notes',
         ], fn () => ['status' => EventSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
         $this->syncSimple($iftar->executionNeeds(), array_values($data['execution_needs']), [
             'execution_need_type_id', 'is_required', 'planned_details',
@@ -110,6 +113,32 @@ class RamadanIftarPlanningService
         ], ['actual_details', 'completed_at'], function ($model) {
             return $model->status !== SubjectExecutionNeed::STATUS_PENDING;
         });
+    }
+
+    private function normalizeExecutionNeeds(array $data): array
+    {
+        $types = ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->get()->keyBy('id');
+        $selected = collect($data['execution_needs'] ?? [])->filter(function (array $row) use ($types): bool {
+            $type = $types->get((int) ($row['execution_need_type_id'] ?? 0));
+            return $type && ($type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false));
+        })->map(function (array $row) use ($types): array {
+            $type = $types->get((int) $row['execution_need_type_id']);
+            $row['is_required'] = $type->isMandatoryForRamadan();
+            return $row;
+        })->values();
+
+        foreach ($types->filter->isMandatoryForRamadan() as $type) {
+            if (! $selected->contains(fn ($row) => (int) $row['execution_need_type_id'] === (int) $type->id)) {
+                throw ValidationException::withMessages(['execution_needs' => "Mandatory Ramadan execution need is missing: {$type->code}"]);
+            }
+        }
+
+        $enabledCodes = $selected->map(fn ($row) => $types->get((int) $row['execution_need_type_id'])->code);
+        if (! $enabledCodes->contains('supplies')) $data['supplies'] = [];
+        if (! $enabledCodes->contains('gifts_shields')) $data['gifts'] = [];
+        $data['execution_needs'] = $selected->all();
+
+        return $data;
     }
 
     private function syncTargetGroups(RamadanIftar $iftar, array $rows): void
@@ -178,7 +207,7 @@ class RamadanIftarPlanningService
     private function assertOwnership(RamadanIftar $iftar, array $data): void
     {
         $checks = [
-            'target_groups' => $iftar->targetGroupSelections(), 'meals' => $iftar->meals(),
+            'attendees' => $iftar->attendees(), 'target_groups' => $iftar->targetGroupSelections(), 'meals' => $iftar->meals(),
             'gifts' => $iftar->gifts(), 'program_segments' => $iftar->programSegments(),
             'execution_teams' => $iftar->executionTeams(), 'volunteer_requirements' => $iftar->volunteerRequirements(),
             'supplies' => $iftar->supplies(),

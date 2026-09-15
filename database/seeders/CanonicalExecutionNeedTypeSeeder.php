@@ -17,8 +17,10 @@ class CanonicalExecutionNeedTypeSeeder extends Seeder
                     'sort_order' => (array_search($code, ExecutionNeedType::canonicalCodes(), true) + 1) * 10,
                     'is_active' => true,
                     'is_canonical' => true,
-                    'is_monthly_activity' => true,
-                    'is_ramadan_iftar' => $definition['ramadan'],
+                    'is_monthly_activity' => $definition['monthly'] ?? true,
+                    'is_ramadan_iftar' => $definition['ramadan'] ?? false,
+                    'mandatory_for_monthly' => $definition['mandatory_monthly'] ?? false,
+                    'mandatory_for_ramadan' => $definition['mandatory_ramadan'] ?? false,
                 ]
             );
         }

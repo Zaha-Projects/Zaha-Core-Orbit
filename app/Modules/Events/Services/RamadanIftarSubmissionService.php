@@ -101,9 +101,10 @@ class RamadanIftarSubmissionService
         }
 
         $applicableIds = ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()
+            ->where('mandatory_for_ramadan', true)
             ->orderBy('id')->pluck('id')->map(fn ($id) => (int) $id)->all();
         $capturedIds = $iftar->executionNeeds()->whereHas('executionNeedType', function ($query) {
-            $query->canonical()->active()->forRamadanIftars();
+            $query->canonical()->active()->forRamadanIftars()->where('mandatory_for_ramadan', true);
         })->orderBy('execution_need_type_id')->pluck('execution_need_type_id')->map(fn ($id) => (int) $id)->all();
 
         if ($applicableIds === [] || $capturedIds !== $applicableIds) {

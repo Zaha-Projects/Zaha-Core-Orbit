@@ -19,6 +19,7 @@ use Illuminate\Validation\Validator;
 
 class StoreRamadanIftarRequest extends FormRequest
 {
+    private bool $postedBranch = false;
     public function authorize(): bool
     {
         $user = $this->user();
@@ -34,8 +35,28 @@ class StoreRamadanIftarRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $collections = ['target_groups', 'meals', 'gifts', 'program_segments', 'execution_teams', 'volunteer_requirements', 'supplies', 'execution_needs'];
-        $this->merge(collect($collections)->mapWithKeys(fn (string $key) => [$key => $this->input($key, [])])->all());
+        $this->postedBranch = $this->exists('branch_id');
+        $collections = ['attendees', 'target_groups', 'meals', 'gifts', 'program_segments', 'execution_teams', 'volunteer_requirements', 'supplies', 'execution_needs'];
+        $branchId = $this->route('ramadanIftar')?->branch_id
+            ?? $this->user()?->branch_id
+            ?? collect($this->user()?->scopedBranchIds() ?? [])->first();
+        $rows = collect($collections)->mapWithKeys(fn (string $key) => [$key => $this->meaningfulRows($key, $this->input($key, []))])->all();
+        $this->merge(array_merge(
+            $rows,
+            ['branch_id' => $branchId]
+        ));
+    }
+
+    private function meaningfulRows(string $key, array $rows): array
+    {
+        $identity = [
+            'attendees' => 'full_name', 'target_groups' => 'target_group_id', 'meals' => 'description',
+            'gifts' => 'description', 'program_segments' => 'name', 'execution_teams' => 'name',
+            'volunteer_requirements' => 'planned_count', 'supplies' => 'item_name',
+            'execution_needs' => 'execution_need_type_id',
+        ][$key];
+
+        return array_values(array_filter($rows, fn ($row) => is_array($row) && filled($row[$identity] ?? null)));
     }
 
     public function rules(): array
@@ -61,6 +82,11 @@ class StoreRamadanIftarRequest extends FormRequest
             'local_community_id' => ['nullable', 'integer', 'exists:local_communities,id'],
             'mobilization_method_id' => ['nullable', 'integer', 'exists:mobilization_methods,id'],
             'mobilization_method_other' => ['nullable', 'string'],
+            'attendees' => ['array'],
+            'attendees.*.id' => ['nullable', 'integer'],
+            'attendees.*.full_name' => ['required', 'string', 'max:255'],
+            'attendees.*.phone' => ['nullable', 'string', 'max:50'],
+            'attendees.*.age' => ['nullable', 'integer', 'min:0', 'max:120'],
             'target_groups' => ['present', 'array'],
             'target_groups.*.id' => ['nullable', 'integer'],
             'target_groups.*.target_group_id' => ['required', 'integer', 'exists:target_groups,id'],
@@ -87,6 +113,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.items.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'gifts' => ['present', 'array'],
             'gifts.*.id' => ['nullable', 'integer'],
+            'gifts.*.gift_type' => ['required', Rule::in(['gifts', 'shields', 'both'])],
             'gifts.*.description' => ['required', 'string'],
             'gifts.*.planned_quantity' => ['required', 'integer', 'min:0'],
             'gifts.*.has_supporting_entity' => ['required', 'boolean'],
@@ -127,6 +154,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'supplies.*.provider_type' => ['nullable', 'string', 'max:50'],
             'supplies.*.provider_name' => ['nullable', 'string', 'max:255'],
             'supplies.*.estimated_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
+            'supplies.*.is_available' => ['nullable', 'boolean'],
             'supplies.*.notes' => ['nullable', 'string'],
             'execution_needs' => ['present', 'array'],
             'execution_needs.*.id' => ['nullable', 'integer'],
@@ -141,6 +169,7 @@ class StoreRamadanIftarRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) return;
             $branchId = (int) $this->input('branch_id');
+            if ($this->postedBranch) $validator->errors()->add('branch_id', 'لا يمكن اختيار الفرع من نموذج إفطار رمضان.');
             if (! RamadanPeriod::contains($this->input('planned_date'))) {
                 $validator->errors()->add('planned_date', 'تاريخ الإفطار يجب أن يكون ضمن فترة شهر رمضان المحددة من الإدارة.');
             }
@@ -158,7 +187,35 @@ class StoreRamadanIftarRequest extends FormRequest
                     $validator->errors()->add("execution_needs.$i.execution_need_type_id", __('validation.exists', ['attribute' => 'execution need type']));
                 }
             }
+            $types = ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->get();
+            $selected = collect($this->input('execution_needs'))->filter(fn ($row) => (bool) ($row['is_required'] ?? false))->pluck('execution_need_type_id')->map(fn ($id) => (int) $id);
+            foreach ($types->filter->isMandatoryForRamadan() as $type) {
+                if (! $selected->contains((int) $type->id)) $validator->errors()->add('execution_needs', "متطلب التنفيذ {$type->name} إجباري.");
+            }
+            if ($types->firstWhere('code', 'execution_team') && empty($this->input('execution_teams'))) $validator->errors()->add('execution_teams', 'فريق التنفيذ إجباري.');
+            $this->validateConditionalDetails($validator, $types);
         });
+    }
+
+    private function validateConditionalDetails(Validator $validator, $types): void
+    {
+        $enabled = collect($this->input('execution_needs'))->filter(fn ($row) => (bool) ($row['is_required'] ?? false))
+            ->pluck('execution_need_type_id')->map(fn ($id) => (int) $id);
+        foreach (['supplies' => 'supplies', 'gifts_shields' => 'gifts'] as $code => $collection) {
+            $type = $types->firstWhere('code', $code);
+            if ($type && $enabled->contains((int) $type->id) && empty($this->input($collection))) {
+                $validator->errors()->add($collection, "يجب إدخال تفاصيل {$type->name} عند تفعيله.");
+            }
+        }
+        foreach ($this->input('supplies') as $i => $row) {
+            if (blank($row['item_name'] ?? null) || ! isset($row['planned_quantity'])) $validator->errors()->add("supplies.$i", 'بيانات سطر المستلزمات غير مكتملة.');
+        }
+        foreach ($this->input('gifts') as $i => $row) {
+            if (blank($row['description'] ?? null) || ! isset($row['planned_quantity'])) $validator->errors()->add("gifts.$i", 'بيانات سطر الهدايا أو الدروع غير مكتملة.');
+        }
+        if ($this->input('host_type') === RamadanIftar::HOST_LOCAL_COMMUNITY && empty($this->input('attendees'))) {
+            $validator->errors()->add('attendees', 'يجب إدخال كشف حضور للمجتمع المحلي.');
+        }
     }
 
     private function canAccessBranch(int $branchId): bool

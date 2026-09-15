@@ -310,3 +310,7 @@ Runtime status: `STAGING VERIFICATION REQUIRED`
 
 CODEX RUNTIME VERIFICATION IS UNAVAILABLE
 STAGING VERIFICATION IS REQUIRED
+
+## Ramadan form business reconciliation staging ledger (2026-09-15)
+
+STAGING VERIFICATION REQUIRED: migrate the execution-need metadata, guidance acknowledgement, and gift-type changes; run `RamadanIftarBusinessReconciliationTest`; run `RamadanIftarStagingSeeder` twice; verify current-version guidance gating, branch derivation/tamper rejection, organization and local-community attendance, targets, meals, mandatory execution team, conditional supplies/gifts, program/volunteer rows, repeat-save synchronization, approved-plan planning copy, branch 23 demo ownership, and unchanged approval/monitoring/closure behavior.

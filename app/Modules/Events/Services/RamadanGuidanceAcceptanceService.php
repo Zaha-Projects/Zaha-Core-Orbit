@@ -3,6 +3,7 @@
 namespace App\Modules\Events\Services;
 
 use App\Modules\Events\Models\EventGuidanceVersion;
+use App\Modules\Events\Models\EventGuidanceAcknowledgement;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -34,6 +35,11 @@ class RamadanGuidanceAcceptanceService
             self::ACCEPTED_BY_KEY => (int) $request->user()->getKey(),
         ]);
 
+        EventGuidanceAcknowledgement::query()->updateOrCreate(
+            ['user_id' => $request->user()->getKey(), 'event_guidance_version_id' => $current->getKey()],
+            ['acknowledged_at' => now()]
+        );
+
         return $current;
     }
 
@@ -44,16 +50,20 @@ class RamadanGuidanceAcceptanceService
         $acceptedAt = $request->session()->get(self::ACCEPTED_AT_KEY);
         $acceptedBy = (int) $request->session()->get(self::ACCEPTED_BY_KEY);
 
+        $acknowledgement = EventGuidanceAcknowledgement::query()
+            ->where('user_id', $request->user()->getKey())
+            ->where('event_guidance_version_id', $current->getKey())
+            ->first();
+
         if ($acceptedVersionId !== (int) $current->getKey()
             || $acceptedBy !== (int) $request->user()->getKey()
-            || ! is_string($acceptedAt)
-            || $acceptedAt === '') {
+            || ! $acknowledgement) {
             throw ValidationException::withMessages([
                 'guidance' => __('ramadan_iftars.business_errors.guidance_accept_before_create'),
             ]);
         }
 
-        return [$current, $acceptedAt];
+        return [$current, $acknowledgement->acknowledged_at->toDateTimeString()];
     }
 
     public function hasAcceptedCurrent(Request $request): bool
@@ -62,7 +72,10 @@ class RamadanGuidanceAcceptanceService
 
         return (int) $request->session()->get(self::ACCEPTED_VERSION_KEY) === (int) $current->getKey()
             && (int) $request->session()->get(self::ACCEPTED_BY_KEY) === (int) $request->user()->getKey()
-            && filled($request->session()->get(self::ACCEPTED_AT_KEY));
+            && EventGuidanceAcknowledgement::query()
+                ->where('user_id', $request->user()->getKey())
+                ->where('event_guidance_version_id', $current->getKey())
+                ->exists();
     }
 
     public function currentOrFail(): EventGuidanceVersion

@@ -16,7 +16,8 @@ class ExecutionNeedType extends Model
     public const MAPPING_NO_SAFE_MAPPING = 'NO_SAFE_MAPPING';
 
     public const CANONICAL_DEFINITIONS = [
-        'volunteers' => ['name' => 'الحاجة للمتطوعين', 'ramadan' => true],
+        'execution_team' => ['name' => 'فريق التنفيذ', 'monthly' => false, 'ramadan' => true, 'mandatory_monthly' => false, 'mandatory_ramadan' => true],
+        'volunteers' => ['name' => 'الفرق التطوعية', 'monthly' => true, 'ramadan' => true],
         'official_correspondence' => ['name' => 'الحاجة للمخاطبة الرسمية', 'ramadan' => true],
         'media_coverage' => ['name' => 'الحاجة لتغطية إعلامية', 'ramadan' => true],
         'supplies' => ['name' => 'الحاجة للمستلزمات', 'ramadan' => true],
@@ -63,6 +64,8 @@ class ExecutionNeedType extends Model
         'is_canonical',
         'is_monthly_activity',
         'is_ramadan_iftar',
+        'mandatory_for_monthly',
+        'mandatory_for_ramadan',
     ];
 
     protected $casts = [
@@ -71,6 +74,8 @@ class ExecutionNeedType extends Model
         'is_canonical' => 'boolean',
         'is_monthly_activity' => 'boolean',
         'is_ramadan_iftar' => 'boolean',
+        'mandatory_for_monthly' => 'boolean',
+        'mandatory_for_ramadan' => 'boolean',
     ];
 
     public static function canonicalCodes(): array
@@ -96,5 +101,20 @@ class ExecutionNeedType extends Model
     public function scopeForRamadanIftars($query)
     {
         return $query->where('is_ramadan_iftar', true);
+    }
+
+    public function scopeForMonthlyActivities($query)
+    {
+        return $query->where('is_monthly_activity', true);
+    }
+
+    public function isMandatoryForRamadan(): bool
+    {
+        return $this->is_ramadan_iftar && $this->mandatory_for_ramadan;
+    }
+
+    public function isMandatoryForMonthly(): bool
+    {
+        return $this->is_monthly_activity && $this->mandatory_for_monthly;
     }
 }

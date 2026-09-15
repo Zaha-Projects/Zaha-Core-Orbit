@@ -74,4 +74,9 @@ class EventGuidanceVersion extends Model
     {
         return $this->hasMany(RamadanIftar::class, 'guidance_version_id');
     }
+
+    public function acknowledgements()
+    {
+        return $this->hasMany(EventGuidanceAcknowledgement::class);
+    }
 }

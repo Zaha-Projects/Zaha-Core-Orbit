@@ -4,7 +4,6 @@ namespace App\Modules\Events\Http\Controllers\Ramadan;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\AgendaEvent;
-use App\Models\Branch;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\ExecutionNeedType;
@@ -57,7 +56,7 @@ class RamadanIftarController extends Controller
         $this->authorizePlanningAccess($request, $ramadanIftar);
         abort_unless($ramadanIftar->isPlanningEditable(), 403);
         $ramadanIftar->load([
-            'targetGroupSelections', 'meals.items', 'gifts', 'programSegments',
+            'attendees', 'targetGroupSelections', 'meals.items', 'gifts', 'programSegments',
             'executionTeams.members', 'volunteerRequirements', 'supplies',
             'executionNeeds.executionNeedType',
         ]);
@@ -86,17 +85,15 @@ class RamadanIftarController extends Controller
     private function formOptions(Request $request, ?RamadanIftar $iftar = null): array
     {
         $user = $request->user();
-        $branchIds = ($user->hasRole('super_admin') || $user->can('branches.view.all')) ? null : $user->scopedBranchIds();
-        $selectedBranchId = old('branch_id', $iftar?->branch_id ?? ($branchIds[0] ?? null));
-        $branchQuery = Branch::query()->orderBy('name');
-        if ($branchIds !== null) $branchQuery->whereIn('id', $branchIds);
+        $selectedBranchId = $iftar?->branch_id ?? $user->branch_id ?? collect($user->scopedBranchIds())->first();
+        abort_unless($selectedBranchId, 422, 'لا يوجد فرع مخول للمستخدم.');
         $users = User::query()->where('status', 'active')->when($selectedBranchId, function ($query, $branchId) {
             $query->where(fn ($q) => $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)));
         })->orderBy('name')->get();
 
         return [
             'ramadanIftar' => $iftar,
-            'branches' => $branchQuery->get(),
+            'authorizedBranchId' => (int) $selectedBranchId,
             'agendaEvents' => AgendaEvent::query()->when($selectedBranchId, fn ($q, $id) => $q->forBranchAudience([(int) $id]))->orderBy('event_date')->get(),
             'targetGroups' => TargetGroup::query()->active()->forRamadanIftars()->orderBy('sort_order')->get(),
             'beneficiarySegments' => BeneficiarySegment::query()->active()->ordered()->get(),

@@ -7,12 +7,22 @@ use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
 use App\Modules\Events\Models\EventGuidanceVersion;
+use App\Modules\Events\Models\EventGuidanceAcknowledgement;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\MonitoringMethod;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\SubjectExecutionNeed;
+use App\Modules\Events\Models\ExecutionTeam;
+use App\Modules\Events\Models\EventSupply;
+use App\Modules\Events\Models\RamadanIftarGift;
+use App\Modules\Events\Models\RamadanIftarMeal;
+use App\Modules\Events\Models\RamadanIftarProgramSegment;
+use App\Modules\Events\Models\SubjectVolunteerRequirement;
+use App\Modules\Events\Models\CommunityOrganization;
+use App\Modules\Events\Models\LocalCommunity;
+use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Support\RamadanPeriod;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -25,7 +35,7 @@ class RamadanIftarDemoSeeder extends Seeder
 
     public function run(): void
     {
-        $this->call([EventReferenceDataSeeder::class, CanonicalExecutionNeedTypeSeeder::class, RamadanPeriodSeeder::class, RamadanIftarGuidanceSeeder::class]);
+        $this->call([EventReferenceDataSeeder::class, CanonicalExecutionNeedTypeSeeder::class, MobilizationMethodSeeder::class, RamadanPeriodSeeder::class, RamadanIftarGuidanceSeeder::class]);
 
         $branch = Branch::query()->find(self::BRANCH_ID);
         if (! $branch) throw new RuntimeException('Ramadan demo requires branch_id = 23. Seed the approved branch catalogue first.');
@@ -36,6 +46,10 @@ class RamadanIftarDemoSeeder extends Seeder
         if (! $guidance) throw new RuntimeException('Ramadan demo requires published Ramadan guidance.');
         $workflow = Workflow::query()->where('module', RamadanIftar::WORKFLOW_MODULE)->where('is_active', true)->with('steps')->first();
         if (! $workflow) throw new RuntimeException('Ramadan demo requires the active Ramadan Iftar workflow. Run WorkflowSeeder after roles exist.');
+        EventGuidanceAcknowledgement::query()->updateOrCreate(
+            ['user_id' => $user->id, 'event_guidance_version_id' => $guidance->id],
+            ['acknowledged_at' => now()]
+        );
 
         $scenarios = [
             ['key'=>'01','title'=>'[DEMO-RAMADAN-01] إفطار حي الأمل','day'=>1,'status'=>'draft','execution'=>'planned','workflow'=>null,'monitoring'=>null],
@@ -71,6 +85,7 @@ class RamadanIftarDemoSeeder extends Seeder
             );
             $this->syncWorkflow($workflow, $iftar, $scenario['workflow']);
             $this->syncNeeds($iftar, $index, $scenario['execution']);
+            $this->syncPlanningDetails($iftar, $user, $index);
             $this->syncMonitoring($iftar, $user, $scenario['monitoring']);
         }
 
@@ -82,6 +97,56 @@ class RamadanIftarDemoSeeder extends Seeder
                 'execution_status'=>RamadanIftar::EXECUTION_STATUS_PLANNED, 'version_number'=>2, 'parent_version_id'=>$approved->id,
             ])
         );
+    }
+
+    private function syncPlanningDetails(RamadanIftar $iftar, User $user, int $index): void
+    {
+        if ($index % 3 === 0) {
+            $community = LocalCommunity::query()->updateOrCreate(
+                ['branch_id' => self::BRANCH_ID, 'name' => 'المجتمع المحلي التجريبي'],
+                ['location_name' => 'نطاق الفرع 23', 'is_active' => true]
+            );
+            $iftar->update([
+                'host_type' => RamadanIftar::HOST_LOCAL_COMMUNITY,
+                'local_community_id' => $community->id,
+                'community_organization_id' => null,
+                'mobilization_method_id' => MobilizationMethod::query()->where('code', 'local_community')->value('id'),
+            ]);
+        } else {
+            $organization = CommunityOrganization::query()->updateOrCreate(
+                ['branch_id' => self::BRANCH_ID, 'name' => 'جمعية الأمل التجريبية'],
+                ['contact_name' => 'ضابط ارتباط تجريبي', 'contact_phone' => '0790000023', 'location_name' => 'نطاق الفرع 23', 'is_active' => true]
+            );
+            $iftar->update(['host_type' => RamadanIftar::HOST_ASSOCIATION, 'community_organization_id' => $organization->id, 'local_community_id' => null]);
+        }
+        $team = ExecutionTeam::query()->updateOrCreate(
+            ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'name' => 'فريق التنفيذ التجريبي'],
+            ['leader_user_id' => $user->id, 'planned_members_count' => 4]
+        );
+        $team->members()->updateOrCreate(['user_id' => $user->id], ['role_name' => 'مشرف الإفطار', 'task_description' => 'متابعة التنفيذ']);
+
+        $iftar->meals()->updateOrCreate(['description' => 'وجبة إفطار متكاملة'], [
+            'planned_quantity' => $iftar->planned_meals_count, 'restaurant_name' => 'مطعم زها التجريبي', 'restaurant_contact' => '0790000023',
+        ]);
+        $iftar->programSegments()->updateOrCreate(['name' => 'فقرة الترحيب'], ['starts_at' => '17:15', 'sort_order' => 10, 'external_executor_name' => 'فريق زها']);
+        $iftar->volunteerRequirements()->updateOrCreate(
+            ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'gender' => 'mixed'],
+            ['planned_count' => 7, 'tasks_summary' => 'استقبال الأطفال', 'status' => 'pending']
+        );
+        if ($index % 2) {
+            EventSupply::query()->updateOrCreate(
+                ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'item_name' => 'مفارش طعام بيضاء'],
+                ['planned_quantity' => 10, 'is_available' => true, 'status' => EventSupply::STATUS_PENDING]
+            );
+        } else {
+            RamadanIftarGift::query()->updateOrCreate(
+                ['ramadan_iftar_id' => $iftar->id, 'description' => 'حقيبة هدايا تجريبية'],
+                ['gift_type' => 'gifts', 'planned_quantity' => 25, 'has_supporting_entity' => true, 'supporting_entity_name' => 'الجهة الداعمة التجريبية']
+            );
+        }
+        if ($index % 3 === 0) {
+            $iftar->attendees()->updateOrCreate(['full_name' => 'مستفيد تجريبي '.($index + 1)], ['phone' => '07900000'.str_pad((string) $index, 2, '0', STR_PAD_LEFT), 'age' => 12]);
+        }
     }
 
     private function demoUsers(): User
@@ -117,7 +182,7 @@ class RamadanIftarDemoSeeder extends Seeder
 
     private function syncNeeds(RamadanIftar $iftar, int $index, string $execution): void
     {
-        $codes = $index % 2 ? ['volunteers','supplies','transport'] : ['official_correspondence','media_coverage','gifts_shields'];
+        $codes = array_merge(['execution_team'], $index % 2 ? ['volunteers','supplies','transport'] : ['official_correspondence','media_coverage','gifts_shields']);
         foreach (ExecutionNeedType::query()->whereIn('code',$codes)->get() as $type) {
             SubjectExecutionNeed::query()->updateOrCreate(
                 ['subject_type'=>EventSubjectTypes::RAMADAN_IFTAR,'subject_id'=>$iftar->id,'execution_need_type_id'=>$type->id],
