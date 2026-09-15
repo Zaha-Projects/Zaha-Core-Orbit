@@ -3,7 +3,7 @@
 namespace App\Modules\Events\Http\Controllers\Ramadan;
 
 use App\Http\Controllers\Controller;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;

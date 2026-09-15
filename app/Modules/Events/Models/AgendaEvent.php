@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Models;
+namespace App\Modules\Events\Models;
 
-use App\Modules\Events\Models\AgendaApproval;
-use App\Modules\Events\Models\AgendaEventTarget;
-use App\Modules\Events\Models\AgendaParticipation;
-use App\Modules\Events\Models\EventCategory;
+use App\Models\AnnualAgendaDeleteRequest;
+use App\Models\AnnualAgendaEditRequest;
+use App\Models\Department;
+use App\Models\MonthlyActivity;
+use App\Models\User;
+use App\Models\WorkflowInstance;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\WorkflowInstance;
 
 class AgendaEvent extends Model
 {

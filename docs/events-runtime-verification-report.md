@@ -246,3 +246,38 @@ STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
 Phase 2.6 staging verification pending
 Phase 2.8D staging verification pending
 Phase 2.13B staging verification pending
+
+## Phase 2.14B AgendaEvent namespace cutover staging ledger
+
+Source status: `PHASE 2.14B COMPLETE`
+
+Runtime status: `STAGING VERIFICATION REQUIRED`
+
+In addition to the Phase 2.14A inventory, staging must prove:
+
+- both legacy and canonical Agenda workflow rows resolve to the canonical model;
+- `AgendaEvent::workflowInstance` reads either identity without writing;
+- find-before-create reuses either identity, creates one canonical row when
+  absent, and rejects a mixed duplicate;
+- new Agenda approval/action-log, unit-participation audit, edit/delete request,
+  and model-derived notification metadata writes use the canonical FQCN;
+- legacy request rows and historical action/audit/notification metadata remain
+  visible and navigable;
+- Admin approval-speed reporting includes both identities once without splitting
+  `AgendaEvent` or silently accepting a duplicate logical workflow;
+- every `{agendaEvent}` route preserves implicit binding, authorization,
+  validation, soft-delete, archive, submission, approval, participation, and
+  reporting behavior;
+- rollback to compatibility-aware pre-move code resolves any canonical rows;
+- no live job/worker payload depends on the removed production class.
+
+Run the focused identity tests and all existing Agenda, workflow governance,
+Ramadan/Agenda relation, request, enterprise, and report regressions. Record
+actual results; do not backfill as part of verification.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+
+Phase 2.6 staging verification pending
+Phase 2.8D staging verification pending
+Phase 2.13B staging verification pending

@@ -648,3 +648,21 @@ NO AGENDA REQUEST-ROW IDENTITY WAS BACKFILLED
 NO WORKFLOW/AUDIT/ACTION-LOG/NOTIFICATION HISTORY WAS REWRITTEN
 NO BUSINESS OR APPROVAL RULE WAS CHANGED
 NO DUAL-WRITE WAS INTRODUCED
+
+## 25. Phase 2.14B AgendaEvent namespace outcome
+
+`PHASE 2.14B COMPLETE — SOURCE IMPLEMENTATION`
+
+`AgendaEvent` now has one production definition under
+`App\Modules\Events\Models`; its former `App\Models` file is absent. The exact
+legacy string remains only as identity data in `EventAggregateIdentity`, tests,
+and historical/staging documentation. All active model imports are canonical.
+
+Both stored workflow identities resolve to the canonical installed model. New
+Agenda workflows, action logs, audit rows, request aggregate identities, and
+model-derived notification metadata use the canonical identity without a
+backfill or dual-write. Annual Agenda request classes remain under `App\Models`
+and keep their independent request-model compatibility.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE

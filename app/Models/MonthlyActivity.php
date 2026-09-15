@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\EventType;
 use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\ExecutionTeamMember;

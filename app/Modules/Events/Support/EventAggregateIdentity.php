@@ -2,12 +2,12 @@
 
 namespace App\Modules\Events\Support;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 
 final class EventAggregateIdentity
 {
-    public const AGENDA_LEGACY = AgendaEvent::class;
-    public const AGENDA_CANONICAL = 'App\\Modules\\Events\\Models\\AgendaEvent';
+    public const AGENDA_LEGACY = 'App\\Models\\AgendaEvent';
+    public const AGENDA_CANONICAL = AgendaEvent::class;
 
     /**
      * @return array<int, string>
@@ -31,12 +31,12 @@ final class EventAggregateIdentity
 
     public static function installedModelFor(string $storedIdentity): ?string
     {
-        return self::legacyFor($storedIdentity);
+        return self::isAgendaIdentity($storedIdentity) ? self::AGENDA_CANONICAL : null;
     }
 
     public static function currentWriteType(string $modelClass): string
     {
-        return self::legacyFor($modelClass) ?? $modelClass;
+        return self::isAgendaIdentity($modelClass) ? self::AGENDA_CANONICAL : $modelClass;
     }
 
     public static function isCompatibleIdentity(string $identity): bool

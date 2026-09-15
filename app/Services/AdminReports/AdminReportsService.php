@@ -5,7 +5,7 @@ namespace App\Services\AdminReports;
 use App\Modules\Events\Models\AgendaApproval;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Support\EventRequestModelIdentity;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Branch;

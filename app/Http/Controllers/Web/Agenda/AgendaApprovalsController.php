@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web\Agenda;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\AgendaApproval;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\AnnualAgendaDeleteRequest;
 use App\Models\AnnualAgendaEditRequest;
 use App\Models\WorkflowActionLog;

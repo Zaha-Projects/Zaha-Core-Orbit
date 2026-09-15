@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Models\User;

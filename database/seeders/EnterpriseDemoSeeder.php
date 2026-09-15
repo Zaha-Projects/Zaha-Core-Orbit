@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Modules\Events\Models\AgendaApproval;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;

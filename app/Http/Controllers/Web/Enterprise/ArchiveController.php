@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Web\Enterprise;
 
 use App\Http\Controllers\Controller;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\MonthlyActivity;
 use Illuminate\Http\Request;
 

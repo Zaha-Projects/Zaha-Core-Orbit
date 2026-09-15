@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Modules\Events\Models\MonthlyActivityChangeLog;
 use App\Modules\Events\Models\MonthlyActivityPartner;

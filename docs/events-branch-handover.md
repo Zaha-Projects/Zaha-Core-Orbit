@@ -1036,3 +1036,20 @@ requirements, not blockers to further static source work.
 
 CODEX RUNTIME VERIFICATION IS UNAVAILABLE
 STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+
+## Phase 2.14B AgendaEvent cutover handover addendum (2026-09-15)
+
+`PHASE 2.14B COMPLETE — SOURCE IMPLEMENTATION`
+
+Use only `App\Modules\Events\Models\AgendaEvent` as the production model. Do not
+restore an `App\Models` wrapper. Preserve `EventAggregateIdentity` until staging
+and the later observation/retirement phase prove that legacy workflow and
+historical identities no longer require it.
+
+New Agenda writers are canonical; legacy history is intentionally not
+backfilled. Annual Agenda request models remain in `App\Models`, and their own
+workflow identities still use `EventRequestModelIdentity`. Execute the staging
+ledger before production release.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE

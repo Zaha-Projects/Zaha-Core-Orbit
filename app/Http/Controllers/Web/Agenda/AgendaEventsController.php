@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Web\Agenda;
 
 use App\Http\Controllers\Controller;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;

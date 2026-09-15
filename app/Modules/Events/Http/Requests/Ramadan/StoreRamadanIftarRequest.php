@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Http\Requests\Ramadan;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\ExecutionNeedType;

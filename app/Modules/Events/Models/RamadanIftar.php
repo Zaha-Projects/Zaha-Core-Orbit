@@ -3,7 +3,6 @@
 namespace App\Modules\Events\Models;
 
 use App\Modules\Events\Models\EventSupply;
-use App\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\User;
 use App\Models\WorkflowInstance;

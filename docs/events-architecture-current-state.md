@@ -892,3 +892,19 @@ completion does not assert production readiness.
 
 CODEX RUNTIME VERIFICATION IS UNAVAILABLE
 STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+
+## 39. Phase 2.14B AgendaEvent namespace cutover (2026-09-15)
+
+`PHASE 2.14B COMPLETE — SOURCE IMPLEMENTATION`
+
+`AgendaEvent` is now owned by `App\Modules\Events\Models`; `agenda_events`
+remains unchanged. All active imports are canonical, while the focused aggregate
+identity helper preserves exact legacy reads and uses the canonical installed
+model/write identity. Mixed historical identity is supported without backfill.
+
+No compatibility model, alias, morph map, migration, route change, workflow
+rule, permission change, or data rewrite was introduced. Runtime and live-data
+validation remain staging requirements rather than claims of this source phase.
+
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE

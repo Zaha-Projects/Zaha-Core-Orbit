@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\EventStatusLookup;
 use App\Models\User;
 use App\Models\WorkflowInstance;

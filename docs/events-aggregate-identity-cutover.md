@@ -589,3 +589,68 @@ NO WORKFLOW/AUDIT/ACTION-LOG/NOTIFICATION HISTORY WAS REWRITTEN
 NO BUSINESS OR APPROVAL RULE WAS CHANGED
 NO DUAL-WRITE WAS INTRODUCED
 ```
+
+## 24. Phase 2.14B AgendaEvent namespace cutover
+
+Status: `PHASE 2.14B COMPLETE — SOURCE IMPLEMENTATION`
+
+`AgendaEvent` moved from `App\Models` to
+`App\Modules\Events\Models` without changing its class name, table contract,
+attributes, casts, scopes, relationships, route key behavior, or business
+helpers. There is one production model: the old file is absent and no wrapper,
+`class_alias`, duplicate model, morph map, migration, or backfill was added.
+
+The moved model explicitly imports its global dependencies while Events-owned
+related models resolve within the shared namespace. Controllers, services,
+request models, seeders, and tests now import the canonical class. Route names,
+URIs, `{agendaEvent}` parameters, authorization, validation, and seeded values
+are unchanged.
+
+`EventAggregateIdentity` retains the literal historical identity
+`App\Models\AgendaEvent`, identifies the canonical class as
+`App\Modules\Events\Models\AgendaEvent`, resolves either stored value to the
+canonical installed model, and now returns the canonical write identity.
+Consequently:
+
+* historical legacy and canonical workflow rows remain readable;
+* find-before-create reuses either row and still rejects the same logical
+  workflow stored under both identities;
+* a new Agenda aggregate workflow writes only the canonical FQCN;
+* new Agenda action-log, audit, request-row, and `get_class()` notification
+  metadata writes naturally use the canonical imported model;
+* historical rows remain untouched and mixed history is expected;
+* report normalization still groups both identities as one `AgendaEvent`.
+
+Annual Agenda request models remain under `App\Models`. Their request-model
+workflow identity continues to use the independent `EventRequestModelIdentity`;
+only their aggregate relationships and future aggregate `entity_type` writer
+now reference the canonical Agenda class.
+
+Tests were updated so the identity helper, dynamic resolver, relationship,
+legacy/canonical reuse, canonical single writer, duplicate conflict, mixed
+request-row reads, request compatibility, and report normalization match the
+post-cutover contract. They are:
+
+```text
+ADDED / UPDATED — STAGING EXECUTION REQUIRED
+```
+
+Staging must execute the existing Phase 2.14A ledger plus route binding,
+authorization, request creation, workflow/action/audit/notification writer,
+Admin report, and rollback regressions against mixed identities. No runtime or
+live database result is claimed here.
+
+```text
+CODEX RUNTIME VERIFICATION IS UNAVAILABLE
+STAGING VERIFICATION IS REQUIRED BEFORE PRODUCTION RELEASE
+```
+
+```text
+NO AGENDA TABLE WAS RENAMED
+NO AGENDA DATA OR HISTORICAL IDENTITY WAS BACKFILLED
+NO LEGACY COMPATIBILITY MODEL OR CLASS ALIAS WAS ADDED
+NEW AGENDA AGGREGATE WRITES USE THE CANONICAL FQCN
+HISTORICAL LEGACY AGENDA IDENTITIES REMAIN READABLE
+NO BUSINESS, ROUTE, AUTHORIZATION, OR APPROVAL RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+```

@@ -150,8 +150,8 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
         return [
             ['class' => MonthlyPlanEditRequest::class, 'request_type' => 'edit', 'aggregate_type' => 'App\\Models\\MonthlyActivity', 'legacy' => EventRequestModelIdentity::MONTHLY_EDIT_LEGACY, 'canonical' => EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL],
             ['class' => MonthlyPlanDeleteRequest::class, 'request_type' => 'delete', 'aggregate_type' => 'App\\Models\\MonthlyActivity', 'legacy' => EventRequestModelIdentity::MONTHLY_DELETE_LEGACY, 'canonical' => EventRequestModelIdentity::MONTHLY_DELETE_CANONICAL],
-            ['class' => AnnualAgendaEditRequest::class, 'request_type' => 'edit', 'aggregate_type' => 'App\\Models\\AgendaEvent', 'legacy' => EventRequestModelIdentity::AGENDA_EDIT_LEGACY, 'canonical' => EventRequestModelIdentity::AGENDA_EDIT_CANONICAL],
-            ['class' => AnnualAgendaDeleteRequest::class, 'request_type' => 'delete', 'aggregate_type' => 'App\\Models\\AgendaEvent', 'legacy' => EventRequestModelIdentity::AGENDA_DELETE_LEGACY, 'canonical' => EventRequestModelIdentity::AGENDA_DELETE_CANONICAL],
+            ['class' => AnnualAgendaEditRequest::class, 'request_type' => 'edit', 'aggregate_type' => 'App\\Modules\\Events\\Models\\AgendaEvent', 'legacy' => EventRequestModelIdentity::AGENDA_EDIT_LEGACY, 'canonical' => EventRequestModelIdentity::AGENDA_EDIT_CANONICAL],
+            ['class' => AnnualAgendaDeleteRequest::class, 'request_type' => 'delete', 'aggregate_type' => 'App\\Modules\\Events\\Models\\AgendaEvent', 'legacy' => EventRequestModelIdentity::AGENDA_DELETE_LEGACY, 'canonical' => EventRequestModelIdentity::AGENDA_DELETE_CANONICAL],
         ];
     }
 

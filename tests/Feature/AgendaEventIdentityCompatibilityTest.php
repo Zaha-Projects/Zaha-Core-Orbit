@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\AnnualAgendaEditRequest;
 use App\Models\User;
 use App\Models\Workflow;
@@ -47,7 +47,7 @@ class AgendaEventIdentityCompatibilityTest extends TestCase
         }
     }
 
-    public function test_for_model_reuses_either_identity_and_creates_only_legacy_identity(): void
+    public function test_for_model_reuses_either_identity_and_creates_only_canonical_identity(): void
     {
         $workflow = $this->workflow();
         $event = $this->agendaEvent();
@@ -67,8 +67,8 @@ class AgendaEventIdentityCompatibilityTest extends TestCase
         }
 
         $created = $service->forModel('agenda', $event);
-        $this->assertSame(EventAggregateIdentity::AGENDA_LEGACY, $created?->entity_type);
-        $this->assertNotSame(EventAggregateIdentity::AGENDA_CANONICAL, $created?->entity_type);
+        $this->assertSame(EventAggregateIdentity::AGENDA_CANONICAL, $created?->entity_type);
+        $this->assertNotSame(EventAggregateIdentity::AGENDA_LEGACY, $created?->entity_type);
         $this->assertSame(1, WorkflowInstance::query()->count());
     }
 
@@ -89,7 +89,7 @@ class AgendaEventIdentityCompatibilityTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage(sprintf(
             'Conflicting workflow identities exist for aggregate %s:%d in workflow %d.',
-            AgendaEvent::class,
+            EventAggregateIdentity::AGENDA_LEGACY,
             $event->id,
             $workflow->id
         ));
@@ -97,7 +97,7 @@ class AgendaEventIdentityCompatibilityTest extends TestCase
         app(DynamicWorkflowService::class)->forModel('agenda', $event);
     }
 
-    public function test_agenda_request_aggregate_reader_accepts_both_identity_values_without_changing_writer_contract(): void
+    public function test_agenda_request_aggregate_reader_accepts_both_identity_values_with_canonical_writer_contract(): void
     {
         $event = $this->agendaEvent();
 

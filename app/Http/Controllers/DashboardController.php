@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\CommunicationsRequest;
 use App\Models\DepartmentUnit;
