@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Support\EventRequestModelIdentity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,5 +29,9 @@ class MonthlyPlanEditRequest extends Model
     public function currentApprover() { return $this->belongsTo(User::class, 'current_approver_id'); }
     public function monthlyActivity() { return $this->belongsTo(MonthlyActivity::class, 'entity_id'); }
     public function approvedVersion() { return $this->belongsTo(MonthlyActivity::class, 'approved_version_id'); }
-    public function workflowInstance() { return $this->morphOne(WorkflowInstance::class, 'entity'); }
+    public function workflowInstance()
+    {
+        return $this->hasOne(WorkflowInstance::class, 'entity_id')
+            ->whereIn('entity_type', EventRequestModelIdentity::acceptedTypes(self::class));
+    }
 }

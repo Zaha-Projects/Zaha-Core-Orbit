@@ -815,3 +815,35 @@ NO BUSINESS OR APPROVAL RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 36. Phase 2.13A request workflow identity compatibility (2026-09-15)
+
+`PHASE 2.13A COMPLETE`
+
+A narrow four-entry `EventRequestModelIdentity` map now supports exact legacy and
+future canonical FQCN reads for the Monthly/Agenda edit/delete request models.
+Dynamic resolution maps canonical stored identities to the currently installed
+legacy classes. Workflow relationships read both identities, workflow creation
+reuses either identity, and a mixed old/new duplicate for one workflow/request
+causes an explicit hard failure. New workflow instances still use legacy FQCNs.
+
+The Admin relations report now reads and groups both Monthly request identities
+without splitting the logical request category; its aggregate filters are
+unchanged. Request rows, action logs and notification metadata retain
+`App\Models\MonthlyActivity` or `App\Models\AgendaEvent` identity.
+
+All four request models remain under `App\Models`. Tests covering the helper,
+resolution, relationships, reuse/create/conflict behavior and reports were added
+but not executed because runtime dependencies remain unavailable. The Monthly
+pair is source-ready only; live inventory/runtime prerequisites still block its
+actual move.
+
+NO REQUEST MODEL NAMESPACE WAS CHANGED
+NO STORED REQUEST IDENTITY WAS BACKFILLED
+NEW REQUEST WORKFLOW WRITES STILL USE LEGACY FQCNS
+NO REQUEST-ROW AGGREGATE IDENTITY WAS CHANGED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

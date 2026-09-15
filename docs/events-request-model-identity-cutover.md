@@ -518,3 +518,49 @@ PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
 
 `PHASE 2.13 COMPLETE`
+
+## 22. Phase 2.13A compatibility infrastructure outcome (2026-09-15)
+
+`PHASE 2.13A COMPLETE`
+
+`App\Modules\Events\Support\EventRequestModelIdentity` now contains exactly the
+four legacy/canonical request pairs. In this compatibility deployment both
+stored identities resolve to the installed legacy model and
+`currentWriteType()` returns the legacy FQCN. Unknown identities are returned to
+the pre-existing DynamicWorkflowService resolution path unchanged.
+
+`DynamicWorkflowService::resolveEntity()` maps only these four exact identities.
+`forEntity()` searches both identities for the active workflow and request ID
+before creating; it reuses one match, writes the legacy identity when none
+exists, and throws `LogicException` if both identities already exist. It neither
+merges nor deletes conflicting rows.
+
+Each request model remains in `App\Models`. Its public `workflowInstance()` name
+is preserved and now uses a `hasOne` query constrained by request ID plus the
+exact accepted identity pair. Aggregate relationships and request-row
+`entity_type` values are unchanged.
+
+`AdminReportsService` includes both Monthly request identity pairs, normalizes
+them to the legacy logical category for grouping, and fails on an old/new
+workflow duplicate for the same workflow/request rather than double-counting.
+Agenda request workflow reporting was not added because it was not part of that
+report's existing business scope.
+
+Focused unit and feature tests were added for the four-entry map, unknown
+identity behavior, canonical-to-installed resolution, relationship dual-read,
+legacy/canonical reuse, legacy-only creation, mixed-identity conflict, and
+normalized Monthly report totals. They are `ADDED / NOT EXECUTED` because
+`vendor/autoload.php` remains unavailable.
+
+Source compatibility for the Monthly pair is complete, but the actual namespace
+cutover remains gated by the Phase 2.13 live inventory and runtime matrix.
+
+NO REQUEST MODEL NAMESPACE WAS CHANGED
+NO STORED REQUEST IDENTITY WAS BACKFILLED
+NEW REQUEST WORKFLOW WRITES STILL USE LEGACY FQCNS
+NO REQUEST-ROW AGGREGATE IDENTITY WAS CHANGED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

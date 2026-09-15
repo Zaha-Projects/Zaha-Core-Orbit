@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Modules\Events\Support\EventRequestModelIdentity;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyPlanDeleteRequest;
 use App\Models\MonthlyPlanEditRequest;
@@ -12,6 +13,7 @@ use App\Models\WorkflowLog;
 use App\Models\WorkflowStep;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use LogicException;
 
 class DynamicWorkflowService
 {
@@ -41,6 +43,30 @@ class DynamicWorkflowService
 
     public function forEntity(Workflow $workflow, string $entityType, int $entityId): WorkflowInstance
     {
+        if (EventRequestModelIdentity::isCompatibleIdentity($entityType)) {
+            $instances = WorkflowInstance::query()
+                ->where('workflow_id', $workflow->id)
+                ->where('entity_id', $entityId)
+                ->whereIn('entity_type', EventRequestModelIdentity::acceptedTypes($entityType))
+                ->limit(2)
+                ->get();
+
+            if ($instances->count() > 1) {
+                throw new LogicException(sprintf(
+                    'Conflicting workflow identities exist for request %s:%d in workflow %d.',
+                    EventRequestModelIdentity::legacyFor($entityType),
+                    $entityId,
+                    $workflow->id
+                ));
+            }
+
+            if ($instances->isNotEmpty()) {
+                return $instances->first();
+            }
+
+            $entityType = EventRequestModelIdentity::currentWriteType($entityType);
+        }
+
         return WorkflowInstance::query()->firstOrCreate(
             [
                 'workflow_id' => $workflow->id,
@@ -642,6 +668,10 @@ class DynamicWorkflowService
     private function resolveEntity(WorkflowInstance $instance): ?Model
     {
         $entityType = $instance->entity_type;
+
+        if (is_string($entityType)) {
+            $entityType = EventRequestModelIdentity::installedModelFor($entityType) ?? $entityType;
+        }
 
         if (! is_string($entityType) || ! class_exists($entityType) || ! is_subclass_of($entityType, Model::class)) {
             return null;

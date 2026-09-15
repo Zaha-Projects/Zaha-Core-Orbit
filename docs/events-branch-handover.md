@@ -965,3 +965,32 @@ NO BUSINESS OR APPROVAL RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## Phase 2.13A request compatibility handover addendum (2026-09-15)
+
+`PHASE 2.13A COMPLETE`
+
+The compatibility-only deployment is implemented in source. The exact
+four-entry request identity map, dual-read relationships, mapped dynamic
+resolution, find-before-create protection, duplicate conflict, and normalized
+Monthly report read are present. All request models and writers remain legacy;
+no identity row was updated.
+
+The next slice is **Phase 2.13B — Monthly Request Model Namespace Cutover**, but
+it must not begin until a disposable database is available and the Phase 2.13
+live identity, orphan, duplicate and active-overlap queries plus the new focused
+runtime tests pass. That slice moves only the Monthly edit/delete pair, retains
+dual-read, and leaves aggregate identities unchanged.
+
+Tests are `ADDED / NOT EXECUTED`; do not infer runtime readiness from static
+source compatibility.
+
+NO REQUEST MODEL NAMESPACE WAS CHANGED
+NO STORED REQUEST IDENTITY WAS BACKFILLED
+NEW REQUEST WORKFLOW WRITES STILL USE LEGACY FQCNS
+NO REQUEST-ROW AGGREGATE IDENTITY WAS CHANGED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

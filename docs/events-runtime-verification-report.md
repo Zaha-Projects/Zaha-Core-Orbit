@@ -193,3 +193,23 @@ PHASE 2.6 REMAINS INCOMPLETE
 RUNTIME VERIFICATION IS DEFERRED, NOT WAIVED
 
 `PHASE 2.8D INCOMPLETE`
+
+## Phase 2.13A request identity compatibility runtime debt (2026-09-15)
+
+The four-model request identity map, canonical-to-installed dynamic resolution,
+dual-read relationships, find-before-create behavior, duplicate detection,
+legacy writer assertion and report compatibility tests were added in source.
+They were not executed because `vendor/autoload.php` remains unavailable and no
+runtime restoration was attempted.
+
+Before Phase 2.13B, execute the live identity and referential-consistency queries
+in `docs/events-request-model-identity-cutover.md`, then run
+`EventRequestModelIdentityTest`,
+`EventRequestWorkflowIdentityCompatibilityTest`, the Monthly/Agenda change
+request suites, workflow governance tests and Admin reports regressions on an
+explicitly disposable database.
+
+`MONTHLY REQUEST PAIR CUTOVER NOT READY`
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED

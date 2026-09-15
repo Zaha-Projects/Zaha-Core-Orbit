@@ -562,3 +562,31 @@ NO BUSINESS OR APPROVAL RULE WAS CHANGED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+## 22. Phase 2.13A request identity compatibility outcome
+
+`PHASE 2.13A COMPLETE`
+
+The focused `EventRequestModelIdentity` map recognizes only the four audited
+legacy/canonical request pairs. Dynamic workflow resolution maps a future
+canonical stored value to the installed `App\Models` class, while unknown model
+identities keep the existing class-resolution behavior. Request workflow
+relationships and creation now read both exact values; creation remains a
+single legacy-FQCN writer and rejects mixed-identity duplicates.
+
+All four request models remain under `App\Models`. Request rows, action logs and
+notification metadata continue to store the unchanged aggregate identities.
+No backfill or aggregate/PostExecutionVerification compatibility was added.
+
+The Monthly pair is source-compatible for a later cutover, but live identity,
+orphan, duplicate and regression checks remain mandatory before movement.
+
+NO REQUEST MODEL NAMESPACE WAS CHANGED
+NO STORED REQUEST IDENTITY WAS BACKFILLED
+NEW REQUEST WORKFLOW WRITES STILL USE LEGACY FQCNS
+NO REQUEST-ROW AGGREGATE IDENTITY WAS CHANGED
+NO BUSINESS OR APPROVAL RULE WAS CHANGED
+NO DUAL-WRITE WAS INTRODUCED
+
+PHASE 2.6 REMAINS INCOMPLETE
+PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
