@@ -2,6 +2,7 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
+use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Modules\Events\Models\MonthlyActivityChangeLog;
@@ -67,7 +68,9 @@ class MonthlyActivityPlanningController extends Controller
         $monthlyStatusOptions = $this->monthlyCreationStatusOptions('draft');
         $executionStatusLabels = $this->executionStatusLabels();
 
-        return view('pages.monthly_activities.activities.create', compact(
+        $monthlyNeedCodes = ExecutionNeedType::monthlyAvailableCodes();
+
+        return view('pages.monthly_activities.activities.create', compact('monthlyNeedCodes',
             'branches',
             'agendaEvents',
             'targetGroups',
@@ -173,6 +176,21 @@ class MonthlyActivityPlanningController extends Controller
         DynamicWorkflowService $dynamicWorkflowService
     )
     {
+        return DB::transaction(function () use ($request, $conflicts, $workflowService, $workflowNotifications, $lifecycle, $dynamicWorkflowService) {
+            ExecutionNeedType::query()->orderBy('id')->sharedLock()->get();
+            return $this->storePlanning($request, $conflicts, $workflowService, $workflowNotifications, $lifecycle, $dynamicWorkflowService);
+        }, 5);
+    }
+
+    private function storePlanning(
+        Request $request,
+        ConflictDetectionService $conflicts,
+        MonthlyActivityWorkflowService $workflowService,
+        WorkflowNotificationService $workflowNotifications,
+        MonthlyActivityLifecycleService $lifecycle,
+        DynamicWorkflowService $dynamicWorkflowService
+    )
+    {
         if ($request->hasFile('planning_attachment') && ! $request->hasFile('branch_plan_file')) {
             $request->files->set('branch_plan_file', $request->file('planning_attachment'));
         }
@@ -183,6 +201,8 @@ class MonthlyActivityPlanningController extends Controller
 
         $this->normalizeMonthlyActivityContactPhones($request);
         $this->normalizeSuppliesRequestPayload($request);
+
+        ExecutionNeedType::rejectUnavailableMonthlyFields($request->all(), ExecutionNeedType::monthlyAvailableCodes());
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -578,7 +598,11 @@ class MonthlyActivityPlanningController extends Controller
                 && ! $canCompleteAfterExecution
                 && $executionNeedDecisionKeys !== []);
 
-        return view('pages.monthly_activities.activities.edit', compact(
+        $monthlyNeedCodes = ExecutionNeedType::monthlyAvailableCodes();
+
+        $historicNeedDetails = $this->historicNeedDetails($monthlyActivity, $monthlyNeedCodes);
+
+        return view('pages.monthly_activities.activities.edit', compact('historicNeedDetails', 'monthlyNeedCodes',
             'monthlyActivity',
             'branches',
             'agendaEvents',
@@ -601,6 +625,24 @@ class MonthlyActivityPlanningController extends Controller
     }
 
     public function update(
+        Request $request,
+        MonthlyActivity $monthlyActivity,
+        ConflictDetectionService $conflicts,
+        MonthlyActivityWorkflowService $workflowService,
+        WorkflowNotificationService $workflowNotifications,
+        MonthlyActivityLifecycleService $lifecycle,
+        DynamicWorkflowService $dynamicWorkflowService,
+        PlanChangeRequestWorkflowService $changeRequests
+    )
+    {
+        return DB::transaction(function () use ($request, $monthlyActivity, $conflicts, $workflowService, $workflowNotifications, $lifecycle, $dynamicWorkflowService, $changeRequests) {
+            ExecutionNeedType::query()->orderBy('id')->sharedLock()->get();
+            $monthlyActivity = MonthlyActivity::query()->whereKey($monthlyActivity->id)->lockForUpdate()->firstOrFail();
+            return $this->updatePlanning($request, $monthlyActivity, $conflicts, $workflowService, $workflowNotifications, $lifecycle, $dynamicWorkflowService, $changeRequests);
+        }, 5);
+    }
+
+    private function updatePlanning(
         Request $request,
         MonthlyActivity $monthlyActivity,
         ConflictDetectionService $conflicts,
@@ -734,6 +776,8 @@ class MonthlyActivityPlanningController extends Controller
         if ($request->user()->hasRole('programs_officer') && $monthlyActivity->executive_approval_status === 'approved' && ! $isCreator) {
             return back()->withErrors(['status' => 'لا يمكن تعديل الفعالية بعد الاعتماد التنفيذي النهائي.']);
         }
+
+        ExecutionNeedType::rejectUnavailableMonthlyFields($request->all(), ExecutionNeedType::monthlyAvailableCodes());
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -1071,6 +1115,8 @@ class MonthlyActivityPlanningController extends Controller
             'executive_approval_status' => $monthlyActivity->executive_approval_status,
         ];
 
+        $newValues = $this->preserveUnavailableNeedValues($monthlyActivity, $newValues);
+
         $changedFields = $this->meaningfulChangedFields($oldValues, $newValues);
 
         if ($changedFields !== [] && $this->hasManagerOrLaterApproval($monthlyActivity)) {
@@ -1203,6 +1249,8 @@ class MonthlyActivityPlanningController extends Controller
                 'is_official' => $this->buildLockAt($data['proposed_date'])?->isPast() ?? false,
                 'created_by' => $request->user()->id,
             ]);
+
+                $this->copyUnavailableNeedRelations($lockedCurrent, $activityToSave);
 
                 $lockedCurrent->update([
                     'status' => 'cancelled',
@@ -1805,23 +1853,114 @@ class MonthlyActivityPlanningController extends Controller
         }
     }
 
-    protected function syncSponsorsAndPartners(MonthlyActivity $monthlyActivity, array $data): void
+    protected function copyUnavailableNeedRelations(MonthlyActivity $source, MonthlyActivity $target): void
     {
-        $monthlyActivity->sponsors()->delete();
-        foreach (($data['sponsors'] ?? []) as $sponsor) {
-            $name = trim((string) ($sponsor['name'] ?? ''));
-            if ($name === '') {
+        $codes = ExecutionNeedType::monthlyAvailableCodes();
+        foreach (['execution_team' => 'team', 'volunteers' => 'volunteerNeed', 'official_correspondence' => 'officialCorrespondence', 'supplies' => 'supplies', 'official_sponsorship' => 'sponsors', 'external_partners' => 'partners'] as $code => $relation) {
+            if (ExecutionNeedType::monthlyKeyAvailable($code, $codes)) {
                 continue;
             }
+            foreach ($source->$relation()->get() as $row) {
+                $target->$relation()->save($row->replicate());
+            }
+        }
+    }
 
-            MonthlyActivitySponsor::create([
-                'monthly_activity_id' => $monthlyActivity->id,
-                'name' => $name,
-                'title' => $sponsor['title'] ?? null,
-                'is_official' => (bool) ($sponsor['is_official'] ?? true),
-            ]);
+    protected function historicNeedDetails(MonthlyActivity $activity, array $codes): array
+    {
+        $activity->loadMissing(['team', 'volunteerNeed', 'officialCorrespondence', 'supplies', 'sponsors', 'partners']);
+        $relations = [
+            'execution_team' => ['team', ['team_name', 'member_name', 'role_desc', 'task_description']],
+            'volunteers' => ['volunteerNeed', ['required_volunteers', 'volunteer_age_range', 'volunteer_gender', 'volunteer_tasks_summary']],
+            'official_correspondence' => ['officialCorrespondence', ['reason', 'target', 'brief']],
+            'supplies' => ['supplies', ['item_name', 'quantity', 'provider_name']],
+            'official_sponsorship' => ['sponsors', ['name', 'title']],
+            'external_partners' => ['partners', ['name', 'role', 'contact_info']],
+        ];
+        $result = [];
+        foreach (ExecutionNeedType::CANONICAL_DEFINITIONS as $code => $definition) {
+            if (ExecutionNeedType::monthlyKeyAvailable($code, $codes)) continue;
+            $details = [];
+            if (isset($relations[$code])) {
+                [$relation, $fields] = $relations[$code];
+                $rows = $activity->$relation;
+                $rows = $rows instanceof \Illuminate\Database\Eloquent\Model ? [$rows] : ($rows ?? []);
+                foreach ($rows as $row) {
+                    $details[] = collect($fields)->map(fn ($field) => $row->$field)->filter(fn ($value) => filled($value))->implode(' · ');
+                }
+            }
+            $section = ExecutionNeedType::MONTHLY_PAYLOAD_SECTIONS[$code] ?? null;
+            $sectionData = $section ? ($activity->execution_needs_payload[$section] ?? []) : [];
+            unset($sectionData['need_code'], $sectionData['future_cycle_id']);
+            foreach (\Illuminate\Support\Arr::flatten($sectionData) as $value) {
+                if (is_scalar($value) && ! is_bool($value) && filled($value)) $details[] = (string) $value;
+            }
+            if ($code === 'media_coverage' && $activity->needs_media_coverage) $details[] = $activity->media_coverage_notes ?: 'تغطية إعلامية مطلوبة';
+            if ($details !== []) $result[$definition['name']] = $details;
         }
 
+        return $result;
+    }
+
+    protected function preserveUnavailableNeedValues(MonthlyActivity $activity, array $values): array
+    {
+        $codes = ExecutionNeedType::monthlyAvailableCodes();
+        $previous = $activity->execution_needs_payload ?? [];
+        $payload = $values['execution_needs_payload'] ?? [];
+        foreach (ExecutionNeedType::MONTHLY_INPUT_FIELDS as $code => $fields) {
+            if (ExecutionNeedType::monthlyKeyAvailable($code, $codes)) {
+                continue;
+            }
+            foreach ($fields as $field) {
+                if (array_key_exists($field, $values) && array_key_exists($field, $activity->getAttributes())) {
+                    $values[$field] = $activity->getAttribute($field);
+                }
+            }
+            $keys = array_filter([ExecutionNeedType::MONTHLY_FIELDS[$code] ?? null, ExecutionNeedType::MONTHLY_PAYLOAD_SECTIONS[$code] ?? null]);
+            foreach ($keys as $key) {
+                unset($payload[$key]);
+                if (array_key_exists($key, $previous)) {
+                    $payload[$key] = $previous[$key];
+                }
+            }
+            $section = ExecutionNeedType::MONTHLY_PAYLOAD_SECTIONS[$code] ?? $code;
+            foreach (['availability', 'needs_registry'] as $group) {
+                unset($payload[$group][$section]);
+                if (array_key_exists($section, $previous[$group] ?? [])) {
+                    $payload[$group][$section] = $previous[$group][$section];
+                }
+            }
+        }
+        $values['execution_needs_payload'] = $payload;
+        $rows = collect($values['execution_needs_followup'] ?? [])->filter(fn ($row) => ExecutionNeedType::monthlyKeyAvailable($row['key'] ?? '', $codes));
+        $historic = collect($activity->execution_needs_followup ?? [])->reject(fn ($row) => ExecutionNeedType::monthlyKeyAvailable($row['key'] ?? '', $codes));
+        $values['execution_needs_followup'] = $rows->merge($historic)->values()->all() ?: null;
+
+        return $values;
+    }
+
+    protected function syncSponsorsAndPartners(MonthlyActivity $monthlyActivity, array $data): void
+    {
+        $codes = ExecutionNeedType::monthlyAvailableCodes();
+        if (ExecutionNeedType::monthlyKeyAvailable('official_sponsorship', $codes)) {
+            $monthlyActivity->sponsors()->delete();
+            foreach (($data['sponsors'] ?? []) as $sponsor) {
+                $name = trim((string) ($sponsor['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+
+                MonthlyActivitySponsor::create([
+                    'monthly_activity_id' => $monthlyActivity->id,
+                    'name' => $name,
+                    'title' => $sponsor['title'] ?? null,
+                    'is_official' => (bool) ($sponsor['is_official'] ?? true),
+                ]);
+            }
+        }
+        if (! ExecutionNeedType::monthlyKeyAvailable('external_partners', $codes)) {
+            return;
+        }
         $monthlyActivity->partners()->delete();
         $seen = [];
         foreach (($data['partners'] ?? []) as $index => $partner) {
@@ -1897,6 +2036,7 @@ class MonthlyActivityPlanningController extends Controller
 
     protected function normalizePlanningPayload(array &$data): void
     {
+        \App\Modules\Events\Models\ExecutionNeedType::validateMonthlySelection($data);
         $this->normalizeVolunteerAgeRange($data);
         $this->normalizeExpectedAttendanceRange($data);
         $this->normalizeExecutionNeedsFollowup($data);

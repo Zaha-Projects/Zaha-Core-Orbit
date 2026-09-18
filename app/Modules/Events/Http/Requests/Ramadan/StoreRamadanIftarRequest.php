@@ -21,6 +21,7 @@ use Illuminate\Validation\Validator;
 class StoreRamadanIftarRequest extends FormRequest
 {
     private bool $postedBranch = false;
+    private array $submittedNeedDetails = [];
     public function authorize(): bool
     {
         $user = $this->user();
@@ -36,12 +37,17 @@ class StoreRamadanIftarRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->submittedNeedDetails = array_intersect(array_values(ExecutionNeedType::IFTAR_DETAIL_FIELDS), array_keys($this->all()));
         $this->postedBranch = $this->exists('branch_id');
         $collections = ['attendees', 'target_groups', 'meals', 'gifts', 'program_segments', 'execution_teams', 'volunteer_requirements', 'supplies', 'execution_needs'];
         $branchId = $this->route('ramadanIftar')?->branch_id
             ?? $this->user()?->branch_id
             ?? collect($this->user()?->scopedBranchIds() ?? [])->first();
-        $rows = collect($collections)->mapWithKeys(fn (string $key) => [$key => $this->meaningfulRows($key, $this->input($key, []))])->all();
+        $rows = collect($collections)->mapWithKeys(function (string $key): array {
+            $value = $this->input($key, []);
+
+            return [$key => is_array($value) ? $this->meaningfulRows($key, $value) : $value];
+        })->all();
         $this->merge(array_merge(
             $rows,
             ['branch_id' => $branchId]
@@ -165,30 +171,52 @@ class StoreRamadanIftarRequest extends FormRequest
         ];
     }
 
+    public function attributes(): array
+    {
+        return [
+            'title' => __('ramadan_iftars.labels.name'),
+            'branch_id' => __('ramadan_iftars.fields.branch'),
+            'agenda_event_id' => __('ramadan_iftars.labels.agenda_event'),
+            'relations_officer_id' => __('ramadan_iftars.fields.relations_officer'),
+            'planned_date' => __('ramadan_iftars.fields.planned_date'),
+            'community_organization_id' => __('ramadan_iftars.labels.community_organization'),
+            'local_community_id' => __('ramadan_iftars.labels.local_community'),
+            'mobilization_method_id' => __('ramadan_iftars.labels.mobilization_method'),
+            'mobilization_method_other' => __('ramadan_iftars.labels.mobilization_method_other'),
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) return;
             $branchId = (int) $this->input('branch_id');
             if ($this->postedBranch) $validator->errors()->add('branch_id', 'لا يمكن اختيار الفرع من نموذج إفطار رمضان.');
-            if (! RamadanPeriod::contains($this->input('planned_date'))) {
+            $existingIftar = $this->route('ramadanIftar');
+            $unchangedDate = $existingIftar instanceof RamadanIftar && $existingIftar->planned_date?->toDateString() === $this->input('planned_date');
+            if (! $unchangedDate && ! RamadanPeriod::contains($this->input('planned_date'))) {
                 $validator->errors()->add('planned_date', 'تاريخ الإفطار يجب أن يكون ضمن فترة شهر رمضان المحددة من الإدارة.');
             }
-            if (! $this->canAccessBranch($branchId)) $validator->errors()->add('branch_id', __('validation.exists', ['attribute' => 'branch']));
+            if (! $this->canAccessBranch($branchId)) $validator->errors()->add('branch_id', __('validation.exists', ['attribute' => __('ramadan_iftars.fields.branch')]));
             $agendaId = $this->input('agenda_event_id');
             if ($agendaId && ! AgendaEvent::query()->whereKey($agendaId)->forBranchAudience([$branchId])->exists()) {
-                $validator->errors()->add('agenda_event_id', __('validation.exists', ['attribute' => 'agenda event']));
+                $validator->errors()->add('agenda_event_id', __('validation.exists', ['attribute' => __('ramadan_iftars.labels.agenda_event')]));
             }
             $this->validateBranchReference($validator, CommunityOrganization::class, 'community_organization_id', $branchId);
             $this->validateBranchReference($validator, LocalCommunity::class, 'local_community_id', $branchId);
             $this->validateBranchUsers($validator, $branchId);
             $this->validateConditionalLookups($validator);
-            foreach ($this->input('execution_needs', []) as $i => $need) {
-                if (! ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->whereKey($need['execution_need_type_id'])->exists()) {
-                    $validator->errors()->add("execution_needs.$i.execution_need_type_id", __('validation.exists', ['attribute' => 'execution need type']));
+            $types = ExecutionNeedType::ramadanAvailableTypes()->keyBy('id');
+            foreach (ExecutionNeedType::IFTAR_DETAIL_FIELDS as $code => $field) {
+                if (! $types->contains('code', $code) && in_array($field, $this->submittedNeedDetails, true)) {
+                    $validator->errors()->add($field, 'هذا الاحتياج غير متاح للتعديل؛ بياناته السابقة محفوظة للقراءة فقط.');
                 }
             }
-            $types = ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->get();
+            foreach ($this->input('execution_needs', []) as $i => $need) {
+                if (! $types->has($need['execution_need_type_id'])) {
+                    $validator->errors()->add("execution_needs.$i.execution_need_type_id", __('validation.exists', ['attribute' => __('ramadan_iftars.labels.execution_need')]));
+                }
+            }
             $selected = collect($this->input('execution_needs'))->filter(fn ($row) => (bool) ($row['is_required'] ?? false))->pluck('execution_need_type_id')->map(fn ($id) => (int) $id);
             foreach ($types->filter->isMandatoryForRamadan() as $type) {
                 if (! $selected->contains((int) $type->id)) $validator->errors()->add('execution_needs', "متطلب التنفيذ {$type->name} إجباري.");
@@ -228,7 +256,11 @@ class StoreRamadanIftarRequest extends FormRequest
     private function validateBranchReference(Validator $validator, string $model, string $field, int $branchId): void
     {
         $id = $this->input($field);
-        if ($id && ! $model::query()->whereKey($id)->where('branch_id', $branchId)->where('is_active', true)->exists()) $validator->errors()->add($field, __('validation.exists', ['attribute' => $field]));
+        $labels = [
+            'community_organization_id' => __('ramadan_iftars.labels.community_organization'),
+            'local_community_id' => __('ramadan_iftars.labels.local_community'),
+        ];
+        if ($id && ! $model::query()->whereKey($id)->where('branch_id', $branchId)->where('is_active', true)->exists()) $validator->errors()->add($field, __('validation.exists', ['attribute' => $labels[$field]]));
     }
 
     private function validateBranchUsers(Validator $validator, int $branchId): void
@@ -251,8 +283,8 @@ class StoreRamadanIftarRequest extends FormRequest
         if ($host === RamadanIftar::HOST_LOCAL_COMMUNITY && ! $this->input('local_community_id')) $validator->errors()->add('local_community_id', __('validation.required', ['attribute' => __('ramadan_iftars.labels.local_community')]));
         if ($id = $this->input('mobilization_method_id')) {
             $method = MobilizationMethod::query()->active()->find($id);
-            if (! $method) $validator->errors()->add('mobilization_method_id', __('validation.exists', ['attribute' => 'mobilization method']));
-            elseif ($method->is_other && blank($this->input('mobilization_method_other'))) $validator->errors()->add('mobilization_method_other', __('validation.required', ['attribute' => 'mobilization method other']));
+            if (! $method) $validator->errors()->add('mobilization_method_id', __('validation.exists', ['attribute' => __('ramadan_iftars.labels.mobilization_method')]));
+            elseif ($method->is_other && blank($this->input('mobilization_method_other'))) $validator->errors()->add('mobilization_method_other', __('validation.required', ['attribute' => __('ramadan_iftars.labels.mobilization_method_other')]));
         }
         foreach ($this->input('target_groups', []) as $i => $row) {
             $group = TargetGroup::query()->active()->forRamadanIftars()->find($row['target_group_id']);

@@ -15,9 +15,9 @@ class MonitoringMethodSeeder extends Seeder
         ];
 
         foreach ($methods as $index => $method) {
-            MonitoringMethod::query()->updateOrCreate(
-                ['code' => $method['code']],
+            MonitoringMethod::query()->insertOrIgnore(
                 [
+                    'code' => $method['code'], 'created_at' => now(), 'updated_at' => now(),
                     'name_ar' => $method['name_ar'],
                     'name_en' => $method['name_en'],
                     'is_active' => true,

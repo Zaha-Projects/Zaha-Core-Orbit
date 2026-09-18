@@ -94,6 +94,7 @@ return [
         'external_none' => 'خارجي / بدون',
     ],
     'labels' => [
+        'name' => 'الاسم',
         'agenda_event' => 'فعالية الأجندة',
         'description' => 'الوصف',
         'time_from' => 'من',
@@ -111,6 +112,7 @@ return [
         'supporting_entity_name' => 'اسم الجهة الداعمة',
         'mobilization_method' => 'طريقة الحشد',
         'mobilization_method_other' => 'طريقة حشد أخرى',
+        'execution_need' => 'احتياج التنفيذ',
         'target_group' => 'الفئة المستهدفة',
         'beneficiary_segment' => 'شريحة المستفيدين',
         'planned_count' => 'العدد المخطط',
@@ -194,7 +196,7 @@ return [
 
     'bootstrap' => [
         'guidance' => 'يتطلب إنشاء إفطار رمضاني نسخة إرشادات رمضانية منشورة ومفعلة.',
-        'execution_needs' => 'يجب تهيئة احتياجات التنفيذ القياسية الخاصة برمضان قبل فتح نموذج الخطة.',
+        'execution_needs' => 'لا تتوفر احتياجات تنفيذ مهيأة لرمضان حاليًا. يرجى مراجعة إعدادات النطاقات.',
     ],
     'change_requests' => [
         'title' => 'طلب تعديل خطة معتمدة', 'queue' => 'طلبات تعديل الخطط', 'reason' => 'سبب التعديل',

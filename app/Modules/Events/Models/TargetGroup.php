@@ -10,6 +10,7 @@ class TargetGroup extends Model
     use HasFactory;
 
     protected $fillable = [
+        'code',
         'name',
         'is_other',
         'is_active',

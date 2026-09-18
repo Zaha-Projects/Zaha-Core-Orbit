@@ -23,6 +23,7 @@ class TargetGroupSelectionTest extends TestCase
         $this->assertEqualsCanonicalizing(
             [
                 'id',
+                'code',
                 'name',
                 'is_other',
                 'is_active',

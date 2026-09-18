@@ -20,7 +20,12 @@ class RamadanGuidanceController extends Controller
         $guidance = $this->acceptance->currentOrFail();
         $this->acceptance->present($request, $guidance);
 
-        return view('pages.events.ramadan.guidance', compact('guidance'));
+        $acknowledgement = \App\Modules\Events\Models\EventGuidanceAcknowledgement::query()
+            ->where('user_id', $request->user()->getKey())
+            ->where('event_guidance_version_id', $guidance->getKey())
+            ->first();
+
+        return view('pages.events.ramadan.guidance', compact('guidance', 'acknowledgement'));
     }
 
     public function accept(Request $request)

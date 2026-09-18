@@ -57,7 +57,7 @@ class RamadanIftarController extends Controller
         abort_unless($ramadanIftar->isPlanningEditable(), 403);
         $ramadanIftar->load([
             'attendees', 'targetGroupSelections', 'meals.items', 'gifts', 'programSegments',
-            'executionTeams.members', 'volunteerRequirements', 'supplies',
+            'executionTeams.members', 'volunteerRequirements.beneficiarySegment', 'supplies',
             'executionNeeds.executionNeedType',
         ]);
 
@@ -104,8 +104,10 @@ class RamadanIftarController extends Controller
             'locationTypes' => RamadanIftar::locationTypes(),
             'hostTypes' => RamadanIftar::hostTypes(),
             'mealItemTypes' => RamadanIftarMealItem::types(),
-            'executionNeedTypes' => ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->orderBy('sort_order')->get(),
+            'giftTypes' => \App\Modules\Events\Models\RamadanIftarGiftType::query()->active()->orderBy('sort_order')->orderBy('id')->get(),
+            'executionNeedTypes' => ExecutionNeedType::ramadanAvailableTypes(),
             'ramadanPeriod' => RamadanPeriod::active(),
+            'ramadanPeriods' => \App\Modules\Events\Models\RamadanPeriod::query()->active()->orderBy('start_date')->get(),
         ];
     }
 }

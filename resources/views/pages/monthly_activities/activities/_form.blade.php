@@ -1,4 +1,5 @@
 ﻿@php
+    $availableNeed = fn (string $key) => \App\Modules\Events\Models\ExecutionNeedType::monthlyKeyAvailable($key, $monthlyNeedCodes);
     $existingMonthlyActivity = $monthlyActivity ?? null;
     $executionNeedsPayload = $existingMonthlyActivity?->execution_needs_payload ?? [];
     $payloadValue = fn (string $key, mixed $default = null) => data_get($executionNeedsPayload, $key, $default);
@@ -126,6 +127,8 @@
         && $isAgendaLinkedActivity
         && filled($value);
 @endphp
+@include('pages.monthly_activities.activities._historic_needs')
+
 
 <div class="event-module monthly-plan-form-page">
     <div class="card event-card">
@@ -353,6 +356,7 @@
 
                 <div class="col-12">
                     <div class="monthly-activation-grid">
+                        @if($availableNeed('volunteers'))
                         <label class="monthly-activation-option">
                             <span>الحاجة للمتطوعين</span>
                             <input type="hidden" name="needs_volunteers" value="0">
@@ -360,6 +364,8 @@
                                 <input class="form-check-input js-needs-volunteers" type="checkbox" role="switch" name="needs_volunteers" value="1" {{ $needsVolunteersChecked ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('official_correspondence'))
                         <label class="monthly-activation-option">
                             <span>الحاجة للمخاطبة الرسمية</span>
                             <input type="hidden" name="needs_official_correspondence" value="0">
@@ -367,6 +373,8 @@
                                 <input class="form-check-input js-needs-letters" type="checkbox" role="switch" name="needs_official_correspondence" value="1" {{ $needsOfficialCorrespondenceChecked ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('media_coverage'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لتغطية إعلامية</span>
                             <input type="hidden" name="needs_media_coverage" value="0">
@@ -374,6 +382,8 @@
                                 <input class="form-check-input js-needs-media" type="checkbox" role="switch" name="needs_media_coverage" value="1" {{ $needsMediaCoverageChecked ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('supplies'))
                         <label class="monthly-activation-option">
                             <span>الحاجة للمستلزمات</span>
                             <input type="hidden" name="requires_supplies" value="0">
@@ -381,6 +391,8 @@
                                 <input class="form-check-input js-needs-supplies" type="checkbox" role="switch" name="requires_supplies" value="1" {{ $requiresSuppliesChecked ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('official_sponsorship'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لرعاية رسمية</span>
                             <input type="hidden" name="has_sponsor" value="0">
@@ -388,6 +400,8 @@
                                 <input class="form-check-input js-has-sponsor" type="checkbox" role="switch" name="has_sponsor" value="1" {{ $hasSponsorChecked ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('external_partners'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لشركاء خارجيين</span>
                             <input type="hidden" name="has_partners" value="0">
@@ -395,6 +409,8 @@
                                 <input class="form-check-input js-has-partners" type="checkbox" role="switch" name="has_partners" value="1" {{ $hasPartnersChecked ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('ceremony_agenda'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لوجود أجندة حفل</span>
                             <input type="hidden" name="needs_ceremony_agenda" value="0">
@@ -402,6 +418,8 @@
                                 <input class="form-check-input js-needs-ceremony-agenda" type="checkbox" role="switch" name="needs_ceremony_agenda" value="1" {{ (bool) old('needs_ceremony_agenda', $payloadValue('needs_ceremony_agenda', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('transport'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لتأمين مواصلات</span>
                             <input type="hidden" name="needs_transport" value="0">
@@ -409,6 +427,8 @@
                                 <input class="form-check-input js-needs-transport" type="checkbox" role="switch" name="needs_transport" value="1" {{ (bool) old('needs_transport', $payloadValue('needs_transport', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('maintenance_workers'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لعمال صيانة بالموقع</span>
                             <input type="hidden" name="needs_maintenance_workers" value="0">
@@ -416,6 +436,8 @@
                                 <input class="form-check-input js-needs-maintenance" type="checkbox" role="switch" name="needs_maintenance_workers" value="1" {{ (bool) old('needs_maintenance_workers', $payloadValue('needs_maintenance_workers', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('gifts_shields'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لهدايا ودروع</span>
                             <input type="hidden" name="needs_gifts" value="0">
@@ -423,6 +445,8 @@
                                 <input class="form-check-input js-needs-gifts" type="checkbox" role="switch" name="needs_gifts" value="1" {{ (bool) old('needs_gifts', $payloadValue('needs_gifts', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('programs_participation'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لمشاركة البرامج</span>
                             <input type="hidden" name="needs_programs_participation" value="0">
@@ -430,6 +454,8 @@
                                 <input class="form-check-input js-needs-programs-participation" type="checkbox" role="switch" name="needs_programs_participation" value="1" {{ (bool) old('needs_programs_participation', $payloadValue('needs_programs_participation', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('certificates_thanks'))
                         <label class="monthly-activation-option">
                             <span>الحاجة لشهادات وكتب شكر</span>
                             <input type="hidden" name="needs_certificates_and_thanks" value="0">
@@ -437,6 +463,8 @@
                                 <input class="form-check-input js-needs-certificates" type="checkbox" role="switch" name="needs_certificates_and_thanks" value="1" {{ (bool) old('needs_certificates_and_thanks', $payloadValue('needs_certificates_and_thanks', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
+                        @if($availableNeed('invitations'))
                         <label class="monthly-activation-option">
                             <span>الحاجة إلى بطاقات دعوة</span>
                             <input type="hidden" name="needs_invitations" value="0">
@@ -444,9 +472,11 @@
                                 <input class="form-check-input js-needs-invitations" type="checkbox" role="switch" name="needs_invitations" value="1" {{ (bool) old('needs_invitations', $payloadValue('needs_invitations', false)) ? 'checked' : '' }}>
                             </div>
                         </label>
+                        @endif
                     </div>
                 </div>
 
+                @if($availableNeed('volunteers'))
                 <div class="col-12 js-volunteers-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--volunteers">
                         <h3 class="h6 mb-3">احتياج المتطوعين</h3>
@@ -510,7 +540,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('official_correspondence'))
                 <div class="col-12 js-correspondence-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--correspondence">
                         <h3 class="h6 mb-3">المخاطبة الرسمية</h3>
@@ -534,7 +566,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('media_coverage'))
                 <div class="col-12 js-media-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--media">
                         <h3 class="h6 mb-3">التغطية الإعلامية</h3>
@@ -548,7 +582,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('ceremony_agenda'))
                 <div class="col-12 js-ceremony-agenda-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--ceremony">
                         <h3 class="h6 mb-3">أجندة الحفل</h3>
@@ -562,7 +598,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('transport'))
                 <div class="col-12 js-transport-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--transport">
                         <h3 class="h6 mb-3">تأمين المواصلات</h3>
@@ -603,7 +641,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('maintenance_workers'))
                 <div class="col-12 js-maintenance-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--maintenance">
                         <h3 class="h6 mb-3">الصيانة بالموقع</h3>
@@ -616,7 +656,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('gifts_shields'))
                 <div class="col-12 js-gifts-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--gifts">
                         <h3 class="h6 mb-3">الهدايا والدروع</h3>
@@ -637,7 +679,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('official_sponsorship'))
                 <div class="col-12 js-sponsor-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--sponsor">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
@@ -653,7 +697,9 @@
                         <div class="row g-3 mt-1 js-sponsors-container"></div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('external_partners'))
                 <div class="col-12 js-partners-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--partners">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
@@ -669,7 +715,9 @@
                         <div class="row g-3 js-partners-container"></div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('programs_participation'))
                 <div class="col-12 js-programs-participation-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--programs">
                         <h3 class="h6 mb-3">مشاركة البرامج</h3>
@@ -737,11 +785,14 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('certificates_thanks'))
                 <div class="col-12 js-certificates-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--certificates">
                         <h3 class="h6 mb-3">الشهادات وكتب الشكر</h3>
                         <div class="row g-3">
+                            @if($availableNeed('certificates'))
                             {!! $availabilityField('certificates') !!}
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">إصدار شهادات؟</label>
@@ -762,6 +813,8 @@
                                 <input type="hidden" name="certificates_for" class="js-certificates-for-hidden" value="{{ old('certificates_for', $payloadValue('certificates.for')) }}">
                                 <div class="row g-2 js-certificates-names-container"></div>
                             </div>
+                            @endif
+                            @if($availableNeed('thanks_letters'))
                             <div class="col-12 col-md-6">
                                 <label class="form-label d-block">إصدار كتب شكر؟</label>
                                 <div class="form-check form-switch pt-2">
@@ -781,10 +834,13 @@
                                 <input type="hidden" name="thanks_letters_for" class="js-thanks-letters-for-hidden" value="{{ old('thanks_letters_for', $payloadValue('thanks_letters.for')) }}">
                                 <div class="row g-2 js-thanks-letters-names-container"></div>
                             </div>
+                            @endif
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('invitations'))
                 <div class="col-12 js-invitations-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--invitations">
                         <h3 class="h6 mb-3">بطاقات الدعوة</h3>
@@ -813,7 +869,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('supplies'))
                 <div class="col-12 js-supplies-fields">
                     <div class="monthly-subsection-card monthly-subsection-card--supplies">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
@@ -829,7 +887,9 @@
                         <div class="row g-3 js-supplies-container"></div>
                     </div>
                 </div>
+                @endif
 
+                @if($availableNeed('execution_team'))
                 <div class="col-12">
                     <div class="monthly-subsection-card monthly-subsection-card--team">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
@@ -842,6 +902,7 @@
                         <div class="js-team-groups-container"></div>
                     </div>
                 </div>
+                @endif
 
                 <div class="col-12">
                     <div class="monthly-form-actions">

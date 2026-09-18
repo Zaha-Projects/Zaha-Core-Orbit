@@ -93,19 +93,27 @@ class RamadanIftarWorkspaceController extends Controller
     {
         $user = $request->user();
         abort_unless($user && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.view')), 403);
-        $period = RamadanPeriod::active();
-        $iftars = collect();
-
-        if ($period) {
-            $query = RamadanIftar::query()->whereDoesntHave('versions')
-                ->with(['branch', 'monitoringReports' => fn ($query) => $query->latest('updated_at')->latest('id')])
-                ->whereBetween('planned_date', [$period['start']->toDateString(), $period['end']->toDateString()]);
-            if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
-                $query->whereIn('branch_id', $user->scopedBranchIds());
-            }
-            $iftars = $query->orderBy('planned_date')->orderBy('time_from')->get()->groupBy(fn ($iftar) => $iftar->planned_date->format('Y-m-d'));
+        $request->validate(['year' => ['nullable', 'integer', 'between:2020,2100']]);
+        $periods = \App\Modules\Events\Models\RamadanPeriod::query()->orderByDesc('year')->get();
+        $query = RamadanIftar::query()->whereDoesntHave('versions');
+        if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
+            $query->whereIn('branch_id', $user->scopedBranchIds());
         }
+        $recordYears = (clone $query)->selectRaw('YEAR(planned_date) as year')->distinct()->pluck('year');
+        $years = $periods->pluck('year')->merge($recordYears)->filter()->unique()->sortDesc()->values();
+        $defaultYear = RamadanPeriod::defaultYear();
+        $selectedYear = (int) $request->input('year', $years->contains($defaultYear) ? $defaultYear : ($years->first() ?? $defaultYear));
+        $season = $periods->firstWhere('year', $selectedYear);
+        $records = $query->whereBetween('planned_date', [$selectedYear.'-01-01', $selectedYear.'-12-31'])
+            ->with('branch')->orderBy('planned_date')->orderBy('time_from')->get();
+        $iftars = $records->groupBy(fn ($iftar) => $iftar->planned_date->format('Y-m-d'));
+        // Historical records remain visible even after an administrator edits or disables the period.
+        $dates = $records->pluck('planned_date');
+        if ($season) {
+            $dates = $dates->merge([$season->start_date, $season->end_date]);
+        }
+        $period = $dates->isEmpty() ? null : ['start' => $dates->min(), 'end' => $dates->max()];
 
-        return view('pages.events.ramadan.calendar', compact('period', 'iftars'));
+        return view('pages.events.ramadan.calendar', compact('period', 'iftars', 'periods', 'years', 'selectedYear', 'season'));
     }
 }

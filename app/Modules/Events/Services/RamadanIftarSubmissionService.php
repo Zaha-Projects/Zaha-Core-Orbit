@@ -107,7 +107,7 @@ class RamadanIftarSubmissionService
             $query->canonical()->active()->forRamadanIftars()->where('mandatory_for_ramadan', true);
         })->orderBy('execution_need_type_id')->pluck('execution_need_type_id')->map(fn ($id) => (int) $id)->all();
 
-        if ($applicableIds === [] || $capturedIds !== $applicableIds) {
+        if ($capturedIds !== $applicableIds) {
             throw ValidationException::withMessages(['execution_needs' => __('ramadan_iftars.business_errors.execution_needs_incomplete')]);
         }
     }
