@@ -13,6 +13,7 @@
             <a class="btn btn-outline-primary" href="{{ route('role.super_admin.reports', ['tab' => 'relations', 'report_year' => $reportYear, 'report_month' => $reportMonth]) }}">
                 الرجوع للتقارير
             </a>
+            <a class="btn btn-outline-success" href="{{ route('role.super_admin.ramadan_reference_data.index') }}">إدارة البيانات المرجعية</a>
         </div>
     </div>
 

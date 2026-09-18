@@ -95,16 +95,27 @@ class RamadanIftarController extends Controller
             'ramadanIftar' => $iftar,
             'authorizedBranchId' => (int) $selectedBranchId,
             'agendaEvents' => AgendaEvent::query()->when($selectedBranchId, fn ($q, $id) => $q->forBranchAudience([(int) $id]))->orderBy('event_date')->get(),
-            'targetGroups' => TargetGroup::query()->active()->forRamadanIftars()->orderBy('sort_order')->get(),
-            'beneficiarySegments' => BeneficiarySegment::query()->active()->ordered()->get(),
-            'mobilizationMethods' => MobilizationMethod::query()->active()->ordered()->get(),
-            'communityOrganizations' => CommunityOrganization::query()->active()->when($selectedBranchId, fn ($q, $id) => $q->where('branch_id', $id))->ordered()->get(),
-            'localCommunities' => LocalCommunity::query()->active()->when($selectedBranchId, fn ($q, $id) => $q->where('branch_id', $id))->ordered()->get(),
+            'targetGroups' => TargetGroup::query()->where(function ($query) use ($iftar) {
+                $query->where(fn ($available) => $available->active()->forRamadanIftars());
+                if ($iftar) {
+                    $query->orWhereIn('id', $iftar->targetGroupSelections()->pluck('target_group_id'));
+                }
+            })->orderBy('sort_order')->get(),
+            'beneficiarySegments' => BeneficiarySegment::query()->where(function ($query) use ($iftar) {
+                $query->active();
+                if ($iftar) $query->orWhereIn('id', $iftar->targetGroupSelections()->pluck('beneficiary_segment_id')->merge($iftar->volunteerRequirements()->pluck('beneficiary_segment_id'))->filter());
+            })->ordered()->get(),
+            'mobilizationMethods' => MobilizationMethod::query()->where(fn ($query) => $query->active()->when($iftar?->mobilization_method_id, fn ($q, $id) => $q->orWhere('id', $id)))->ordered()->get(),
+            'communityOrganizations' => CommunityOrganization::query()->where(fn ($query) => $query->active()->when($iftar?->community_organization_id, fn ($q, $id) => $q->orWhere('id', $id)))->when($selectedBranchId, fn ($q, $id) => $q->where('branch_id', $id))->ordered()->get(),
+            'localCommunities' => LocalCommunity::query()->where(fn ($query) => $query->active()->when($iftar?->local_community_id, fn ($q, $id) => $q->orWhere('id', $id)))->when($selectedBranchId, fn ($q, $id) => $q->where('branch_id', $id))->ordered()->get(),
             'users' => $users,
             'locationTypes' => RamadanIftar::locationTypes(),
-            'hostTypes' => RamadanIftar::hostTypes(),
+            'hostTypes' => ['organization', RamadanIftar::HOST_LOCAL_COMMUNITY],
             'mealItemTypes' => RamadanIftarMealItem::types(),
-            'giftTypes' => \App\Modules\Events\Models\RamadanIftarGiftType::query()->active()->orderBy('sort_order')->orderBy('id')->get(),
+            'giftTypes' => \App\Modules\Events\Models\RamadanIftarGiftType::query()->where(function ($query) use ($iftar) {
+                $query->active();
+                if ($iftar) $query->orWhereIn('code', $iftar->gifts()->pluck('gift_type'));
+            })->orderBy('sort_order')->orderBy('id')->get(),
             'executionNeedTypes' => ExecutionNeedType::ramadanAvailableTypes(),
             'ramadanPeriod' => RamadanPeriod::active(),
             'ramadanPeriods' => \App\Modules\Events\Models\RamadanPeriod::query()->active()->orderBy('start_date')->get(),

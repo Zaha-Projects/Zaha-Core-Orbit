@@ -12,6 +12,8 @@ use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanPeriod;
+use App\Modules\Events\Models\LocalCommunity;
+use App\Modules\Events\Models\MobilizationMethod;
 use Database\Seeders\RamadanReferenceDataSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
@@ -36,10 +38,11 @@ class RamadanScopePreservationTest extends TestCase
 
     private function iftarPayload(User $user): array
     {
-        $host = CommunityOrganization::create(['branch_id' => $user->branch_id, 'name' => 'Test host']);
+        $host = CommunityOrganization::firstOrCreate(['branch_id' => $user->branch_id, 'name' => 'Test host']);
 
         return ['title' => 'Original title', 'planned_date' => '2026-02-20', 'relations_officer_id' => $user->id,
             'host_type' => 'association', 'location_type' => 'outside_center', 'community_organization_id' => $host->id,
+            'contact_name' => 'Test liaison', 'contact_phone' => '0790000000', 'location_name' => 'Test location',
             'execution_needs' => ExecutionNeedType::ramadanAvailableTypes()->filter->isMandatoryForRamadan()->map(fn ($type) => ['execution_need_type_id' => $type->id, 'is_required' => true])->values()->all(),
             'execution_teams' => [['name' => 'Historic team', 'members' => [['member_name' => 'Historic member', 'task_description' => 'Welcome']]]],
         ];
@@ -51,7 +54,10 @@ class RamadanScopePreservationTest extends TestCase
         $payload = $this->iftarPayload($user) + [
             'gifts' => [['gift_type' => 'gifts', 'description' => 'Historic gift', 'planned_quantity' => 3, 'has_supporting_entity' => false]],
             'supplies' => [['item_name' => 'Historic supply', 'planned_quantity' => 4, 'planned_available' => true]],
-            'volunteer_requirements' => [['planned_count' => 5, 'tasks_summary' => 'Historic volunteer task']],
+            'volunteer_requirements' => [[
+                'beneficiary_segment_id' => \App\Modules\Events\Models\BeneficiarySegment::query()->active()->firstOrFail()->id,
+                'gender' => 'mixed', 'planned_count' => 5, 'tasks_summary' => 'Historic volunteer task',
+            ]],
         ];
         $payload['execution_needs'] = ExecutionNeedType::ramadanAvailableTypes()->map(fn ($type) => ['execution_need_type_id' => $type->id, 'is_required' => true, 'planned_details' => 'Historic need detail'])->all();
         $this->post(route('events.ramadan.iftars.store'), $payload)->assertSessionHasNoErrors()->assertRedirect();
@@ -73,6 +79,97 @@ class RamadanScopePreservationTest extends TestCase
         $this->put(route('events.ramadan.iftars.update', $iftar), $payload + ['execution_needs' => [['id' => $before['executionNeeds'][0]['id'], 'execution_need_type_id' => $before['executionNeeds'][0]['execution_need_type_id'], 'is_required' => true, 'planned_details' => 'Forged']]])->assertSessionHasErrors('execution_needs.0.execution_need_type_id');
     }
 
+    public function test_optional_need_and_three_team_members_survive_create_and_update(): void
+    {
+        $user = $this->admin();
+        $payload = $this->iftarPayload($user);
+        $transport = ExecutionNeedType::query()->where('code', 'transport')->firstOrFail();
+        $payload['execution_needs'][] = [
+            'execution_need_type_id' => $transport->id,
+            'is_required' => true,
+            'planned_details' => 'سيارة لنقل الضيوف',
+        ];
+        $payload['execution_teams'][0]['planned_members_count'] = 3;
+        $payload['execution_teams'][0]['members'] = [
+            ['member_name' => 'Member One', 'role_name' => 'Lead', 'task_description' => 'Task 1'],
+            ['member_name' => 'Member Two', 'role_name' => 'Host', 'task_description' => 'Task 2'],
+            ['member_name' => 'Member Three', 'role_name' => 'Support', 'task_description' => 'Task 3'],
+        ];
+
+        $this->post(route('events.ramadan.iftars.store'), $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $iftar = RamadanIftar::query()->sole();
+        $savedNeed = $iftar->executionNeeds()->where('execution_need_type_id', $transport->id)->sole();
+        $team = $iftar->executionTeams()->sole();
+        $this->assertTrue($savedNeed->is_required);
+        $this->assertSame('سيارة لنقل الضيوف', $savedNeed->planned_details);
+        $this->assertSame(3, $team->members()->count());
+        $this->get(route('events.ramadan.iftars.edit', $iftar))->assertOk()
+            ->assertSee('id="need-'.$transport->id.'" checked', false)
+            ->assertSee('Member Three');
+
+        $payload['title'] = 'Updated without losing needs';
+        foreach ($payload['execution_needs'] as &$need) {
+            $need['id'] = $iftar->executionNeeds()->where('execution_need_type_id', $need['execution_need_type_id'])->value('id');
+        }
+        unset($need);
+        $payload['execution_teams'][0]['id'] = $team->id;
+        foreach ($payload['execution_teams'][0]['members'] as $index => &$member) {
+            $member['id'] = $team->members()->orderBy('id')->skip($index)->value('id');
+        }
+        unset($member);
+
+        $this->put(route('events.ramadan.iftars.update', $iftar), $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertTrue($savedNeed->fresh()->is_required);
+        $this->assertSame('سيارة لنقل الضيوف', $savedNeed->fresh()->planned_details);
+        $this->assertSame(3, $team->members()->count());
+        $this->assertSame(3, $team->members()->pluck('member_name')->unique()->count());
+    }
+
+    public function test_conditional_host_meal_and_volunteer_validation_and_persistence(): void
+    {
+        $user = $this->admin();
+        $associationPayload = $this->iftarPayload($user);
+        unset($associationPayload['contact_name'], $associationPayload['contact_phone'], $associationPayload['location_name']);
+        $this->post(route('events.ramadan.iftars.store'), $associationPayload)
+            ->assertSessionHasErrors(['contact_name', 'contact_phone', 'location_name']);
+
+        $community = LocalCommunity::query()->create(['branch_id' => $user->branch_id, 'name' => 'Test community']);
+        $method = MobilizationMethod::query()->active()->firstOrFail();
+        $localPayload = $this->iftarPayload($user);
+        $localPayload['host_type'] = 'local_community';
+        unset($localPayload['community_organization_id'], $localPayload['contact_name'], $localPayload['contact_phone'], $localPayload['location_name']);
+        $localPayload['local_community_id'] = $community->id;
+        $localPayload['mobilization_method_id'] = $method->id;
+        $localPayload['attendees'] = [['full_name' => 'Guest']];
+        $this->post(route('events.ramadan.iftars.store'), $localPayload)
+            ->assertSessionHasErrors(['attendees.0.phone', 'attendees.0.age']);
+
+        $volunteers = ExecutionNeedType::query()->where('code', 'volunteers')->firstOrFail();
+        $localPayload['attendees'][0] += ['phone' => '0791111111', 'age' => 25];
+        $localPayload['execution_needs'][] = ['execution_need_type_id' => $volunteers->id, 'is_required' => true];
+        $localPayload['volunteer_requirements'] = [['planned_count' => 2]];
+        $localPayload['meals'] = [[
+            'description' => 'وجبة إفطار', 'planned_quantity' => 10,
+            'items' => [['name' => 'أرز', 'item_type' => 'main']],
+        ]];
+        $this->post(route('events.ramadan.iftars.store'), $localPayload)->assertSessionHasErrors([
+            'volunteer_requirements.0.beneficiary_segment_id', 'volunteer_requirements.0.gender',
+            'volunteer_requirements.0.tasks_summary', 'meals.0.restaurant_name',
+            'meals.0.restaurant_contact', 'meals.0.items.0.notes',
+        ]);
+
+        $localPayload['volunteer_requirements'][0] += [
+            'beneficiary_segment_id' => \App\Modules\Events\Models\BeneficiarySegment::query()->active()->firstOrFail()->id,
+            'gender' => 'mixed', 'tasks_summary' => 'تنظيم الضيوف',
+        ];
+        $localPayload['meals'][0] += ['restaurant_name' => 'مطعم الاختبار', 'restaurant_contact' => '0792222222'];
+        $localPayload['meals'][0]['items'][0]['notes'] = 'أرز ولحم';
+        $this->post(route('events.ramadan.iftars.store'), $localPayload)->assertSessionHasNoErrors()->assertRedirect();
+        $iftar = RamadanIftar::query()->sole();
+        $this->assertDatabaseHas('ramadan_iftar_meals', ['ramadan_iftar_id' => $iftar->id, 'restaurant_name' => 'مطعم الاختبار', 'restaurant_contact' => '0792222222']);
+        $this->assertDatabaseHas('ramadan_iftar_meal_items', ['name' => 'أرز', 'notes' => 'أرز ولحم']);
+    }
+
     public function test_volunteer_form_and_direct_requests_follow_all_four_scopes(): void
     {
         $user = $this->admin();
@@ -82,7 +179,10 @@ class RamadanScopePreservationTest extends TestCase
             $available = in_array($scope, ['iftars', 'both'], true);
             $response = $this->get(route('events.ramadan.iftars.create'))->assertOk();
             $available ? $response->assertSee('name="volunteer_requirements[', false) : $response->assertDontSee('name="volunteer_requirements[', false);
-            $payload = $this->iftarPayload($user) + ['volunteer_requirements' => [['planned_count' => 2, 'tasks_summary' => 'Test volunteers']]];
+            $payload = $this->iftarPayload($user) + ['volunteer_requirements' => [[
+                'beneficiary_segment_id' => \App\Modules\Events\Models\BeneficiarySegment::query()->active()->firstOrFail()->id,
+                'gender' => 'mixed', 'planned_count' => 2, 'tasks_summary' => 'Test volunteers',
+            ]]];
             $result = $this->post(route('events.ramadan.iftars.store'), $payload);
             $available ? $result->assertSessionHasNoErrors()->assertRedirect() : $result->assertSessionHasErrors('volunteer_requirements');
             $this->assertSame($available, ExecutionNeedType::ramadanAvailableTypes()->contains('code', 'volunteers'));

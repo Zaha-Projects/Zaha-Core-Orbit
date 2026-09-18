@@ -21,6 +21,7 @@ use App\Http\Controllers\Web\Access\ApprovalsController as SuperAdminApprovalsCo
 use App\Http\Controllers\Web\Access\WorkflowsController as SuperAdminWorkflowsController;
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
 use App\Http\Controllers\Roles\SuperAdmin\SiteSettingsController as SuperAdminSiteSettingsController;
+use App\Http\Controllers\Roles\SuperAdmin\RamadanReferenceDataController;
 use App\Http\Controllers\Roles\SuperAdmin\EvaluationAssignmentsController as SuperAdminEvaluationAssignmentsController;
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
@@ -163,6 +164,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');
     Route::get('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.site_settings.index');
     Route::put('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.site_settings.update');
+    Route::get('/dashboard/admin/ramadan-reference-data', [RamadanReferenceDataController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.index');
+    Route::post('/dashboard/admin/ramadan-reference-data/{resource}', [RamadanReferenceDataController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.store');
+    Route::put('/dashboard/admin/ramadan-reference-data/{resource}/{id}', [RamadanReferenceDataController::class, 'update'])->whereNumber('id')->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.update');
     Route::post('/dashboard/admin/site-settings/cache/refresh', [SuperAdminSiteSettingsController::class, 'refreshReportCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.refresh');
     Route::delete('/dashboard/admin/site-settings/cache/report', [SuperAdminSiteSettingsController::class, 'deleteReportCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.delete');
     Route::delete('/dashboard/admin/site-settings/cache/application', [SuperAdminSiteSettingsController::class, 'clearApplicationCache'])->middleware('role:super_admin')->name('role.super_admin.site_settings.cache.clear_all');

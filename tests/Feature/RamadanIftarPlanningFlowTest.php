@@ -44,6 +44,11 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $group = TargetGroup::query()->create(['name' => 'Families', 'is_active' => true, 'is_ramadan_iftar' => true]);
         $segment = BeneficiarySegment::query()->create(['code' => 'children', 'name_ar' => 'أطفال', 'name_en' => 'Children', 'dimension' => 'age']);
         $needType = $this->executionNeedType('transport');
+        $giftNeed = $this->executionNeedType('gifts_shields');
+        $supplyNeed = $this->executionNeedType('supplies');
+        $volunteerNeed = $this->executionNeedType('volunteers');
+        $teamNeed = $this->executionNeedType('execution_team');
+        $teamNeed->update(['mandatory_for_ramadan' => true]);
         $this->acceptCurrentGuidance($officer);
 
         $payload = $this->payload($branch, $officer, $organization, [
@@ -51,12 +56,12 @@ class RamadanIftarPlanningFlowTest extends TestCase
             'status' => 'approved',
             'actual_attendance' => 999,
             'target_groups' => [['target_group_id' => $group->id, 'beneficiary_segment_id' => $segment->id, 'planned_count' => 12]],
-            'meals' => [['description' => 'Dinner', 'planned_quantity' => 15, 'items' => [['name' => 'Rice', 'item_type' => 'main', 'quantity' => 15]]]],
-            'gifts' => [['description' => 'Toy', 'planned_quantity' => 2, 'has_supporting_entity' => true, 'supporting_entity_name' => 'Donor', 'unit_value' => '2.50']],
-            'program_segments' => [['name' => 'Welcome', 'executor_user_id' => $officer->id]],
+            'meals' => [['description' => 'Dinner', 'planned_quantity' => 15, 'restaurant_name' => 'Test restaurant', 'restaurant_contact' => '0790000000', 'items' => [['name' => 'Rice', 'item_type' => 'main', 'quantity' => 15, 'notes' => 'Rice and meat']]]],
+            'gifts' => [['gift_type' => 'gifts', 'description' => 'Toy', 'planned_quantity' => 2, 'has_supporting_entity' => true, 'supporting_entity_name' => 'Donor', 'unit_value' => '2.50']],
+            'program_segments' => [['name' => 'Welcome', 'starts_at' => '18:00:00', 'ends_at' => '18:30:00', 'executor_user_id' => $officer->id]],
             'execution_teams' => [['name' => 'Operations', 'members' => [['user_id' => $officer->id, 'task_description' => 'Setup']]]],
-            'volunteer_requirements' => [['beneficiary_segment_id' => $segment->id, 'planned_count' => 3]],
-            'supplies' => [['item_name' => 'Tables', 'planned_quantity' => 4, 'estimated_value' => '20.00']],
+            'volunteer_requirements' => [['beneficiary_segment_id' => $segment->id, 'gender' => 'mixed', 'planned_count' => 3, 'tasks_summary' => 'Hosting']],
+            'supplies' => [['item_name' => 'Tables', 'planned_quantity' => 4, 'planned_available' => true, 'estimated_value' => '20.00']],
             'execution_needs' => [[
                 'execution_need_type_id' => $needType->id,
                 'is_required' => true,
@@ -65,10 +70,13 @@ class RamadanIftarPlanningFlowTest extends TestCase
                 'subject_id' => 999999,
                 'status' => 'completed',
                 'actual_details' => 'Forged',
-            ]],
+            ], ['execution_need_type_id' => $giftNeed->id, 'is_required' => true],
+                ['execution_need_type_id' => $supplyNeed->id, 'is_required' => true],
+                ['execution_need_type_id' => $volunteerNeed->id, 'is_required' => true],
+                ['execution_need_type_id' => $teamNeed->id, 'is_required' => true]],
         ]);
 
-        $this->actingAs($officer)->post(route('events.ramadan.iftars.store'), $payload)->assertRedirect();
+        $this->actingAs($officer)->post(route('events.ramadan.iftars.store'), $payload)->assertSessionHasNoErrors()->assertRedirect();
         $iftar = RamadanIftar::query()->sole();
         $this->assertSame($officer->id, $iftar->created_by);
         $this->assertSame(RamadanIftar::STATUS_DRAFT, $iftar->status);
@@ -83,10 +91,11 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $this->assertCount(1, $iftar->executionTeams()->sole()->members);
         $this->assertCount(1, $iftar->volunteerRequirements);
         $this->assertCount(1, $iftar->supplies);
-        $this->assertSame(EventSubjectTypes::RAMADAN_IFTAR, $iftar->executionNeeds()->sole()->subject_type);
-        $this->assertSame('Bus required', $iftar->executionNeeds()->sole()->planned_details);
-        $this->assertSame(SubjectExecutionNeed::STATUS_PENDING, $iftar->executionNeeds()->sole()->status);
-        $this->assertNull($iftar->executionNeeds()->sole()->actual_details);
+        $storedNeed = $iftar->executionNeeds()->where('execution_need_type_id', $needType->id)->sole();
+        $this->assertSame(EventSubjectTypes::RAMADAN_IFTAR, $storedNeed->subject_type);
+        $this->assertSame('Bus required', $storedNeed->planned_details);
+        $this->assertSame(SubjectExecutionNeed::STATUS_PENDING, $storedNeed->status);
+        $this->assertNull($storedNeed->actual_details);
     }
 
     public function test_branch_references_and_other_values_are_validated(): void
@@ -126,12 +135,17 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $removed = $iftar->gifts()->create(['description' => 'Remove', 'planned_quantity' => 1]);
         $supply = $iftar->supplies()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'item_name' => 'Old', 'planned_quantity' => 2, 'actual_quantity' => 1, 'status' => 'pending']);
         $iftar->update(['actual_attendance' => 7]);
+        $this->executionNeedType('gifts_shields');
+        $supplyNeed = $this->executionNeedType('supplies');
 
         $payload = $this->payload($branch, $officer, $organization, [
-            'meals' => [['id' => $meal->id, 'description' => 'Updated', 'planned_quantity' => 12, 'items' => []], ['description' => 'New', 'planned_quantity' => 3, 'items' => []]],
-            'supplies' => [['id' => $supply->id, 'item_name' => 'Updated', 'planned_quantity' => 5]],
+            'time_from' => '17:30:00',
+            'time_to' => '20:30:00',
+            'meals' => [['id' => $meal->id, 'description' => 'Updated', 'planned_quantity' => 12, 'restaurant_name' => 'Restaurant A', 'restaurant_contact' => '0790000000', 'items' => [['name' => 'Meal A', 'item_type' => 'main', 'notes' => 'Ingredients']]], ['description' => 'New', 'planned_quantity' => 3, 'restaurant_name' => 'Restaurant B', 'restaurant_contact' => '0780000000', 'items' => [['name' => 'Meal B', 'item_type' => 'main', 'notes' => 'Ingredients']]]],
+            'supplies' => [['id' => $supply->id, 'item_name' => 'Updated', 'planned_quantity' => 5, 'planned_available' => true]],
+            'execution_needs' => [['execution_need_type_id' => $supplyNeed->id, 'is_required' => true]],
         ]);
-        $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftar), $payload)->assertRedirect();
+        $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftar), $payload)->assertSessionHasNoErrors()->assertRedirect();
 
         $this->assertSame(7, $iftar->fresh()->actual_attendance);
         $this->assertSame(8, $meal->fresh()->actual_quantity);
@@ -203,11 +217,11 @@ class RamadanIftarPlanningFlowTest extends TestCase
             ['id' => $existing->id, 'execution_need_type_id' => $transport->id, 'is_required' => true, 'planned_details' => 'Updated'],
             ['execution_need_type_id' => $maintenance->id, 'is_required' => true, 'planned_details' => 'Two workers'],
         ];
-        $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftar), $this->payload($branch, $officer, $organization, ['execution_needs' => $rows]))->assertRedirect();
+        $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftar), $this->payload($branch, $officer, $organization, ['execution_needs' => $rows]))->assertSessionHasNoErrors()->assertRedirect();
         $this->assertCount(2, $iftar->executionNeeds()->get());
         $this->assertSame('Updated', $existing->fresh()->planned_details);
 
-        $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftar), $this->payload($branch, $officer, $organization, ['execution_needs' => [$rows[0]]]))->assertRedirect();
+        $this->actingAs($officer)->put(route('events.ramadan.iftars.update', $iftar), $this->payload($branch, $officer, $organization, ['execution_needs' => [$rows[0]]]))->assertSessionHasNoErrors()->assertRedirect();
         $this->assertCount(1, $iftar->executionNeeds()->get());
         $this->assertDatabaseMissing('subject_execution_needs', ['execution_need_type_id' => $maintenance->id, 'subject_id' => $iftar->id]);
     }
@@ -218,7 +232,7 @@ class RamadanIftarPlanningFlowTest extends TestCase
         $officer ??= $this->userWithRole('relations_officer', $branch, ['branches.view.own']);
         $organization ??= CommunityOrganization::query()->create(['branch_id' => $branch->id, 'name' => 'Host']);
         $iftar = RamadanIftar::query()->create(array_merge($this->payload($branch, $officer, $organization), [
-            'created_by' => $officer->id, 'planned_meals_count' => 0, 'expected_attendance' => 0,
+            'branch_id' => $branch->id, 'created_by' => $officer->id, 'planned_meals_count' => 0, 'expected_attendance' => 0,
         ]));
         return [$branch, $officer, $organization, $iftar];
     }
@@ -226,11 +240,11 @@ class RamadanIftarPlanningFlowTest extends TestCase
     private function payload(Branch $branch, User $officer, CommunityOrganization $organization, array $override = []): array
     {
         return array_merge([
-            'branch_id' => $branch->id, 'title' => 'Ramadan Plan', 'relations_officer_id' => $officer->id,
+            'title' => 'Ramadan Plan', 'relations_officer_id' => $officer->id,
             'planned_date' => '2027-03-01', 'location_type' => RamadanIftar::LOCATION_OUTSIDE_CENTER,
             'host_type' => RamadanIftar::HOST_ASSOCIATION, 'community_organization_id' => $organization->id,
-            'target_groups' => [], 'meals' => [], 'gifts' => [], 'program_segments' => [],
-            'execution_teams' => [], 'volunteer_requirements' => [], 'supplies' => [],
+            'contact_name' => 'Test liaison', 'contact_phone' => '0790000000', 'location_name' => 'Test location',
+            'target_groups' => [], 'meals' => [], 'program_segments' => [],
             'execution_needs' => [],
         ], $override);
     }
@@ -260,6 +274,10 @@ class RamadanIftarPlanningFlowTest extends TestCase
 
     private function acceptCurrentGuidance(User $user): EventGuidanceVersion
     {
+        \App\Modules\Events\Models\RamadanPeriod::query()->firstOrCreate(
+            ['year' => 2027],
+            ['start_date' => '2027-02-01', 'end_date' => '2027-03-10', 'is_active' => true]
+        );
         $guidance = EventGuidanceVersion::query()->create([
             'code' => EventGuidanceVersion::RAMADAN_IFTAR,
             'version_number' => (int) EventGuidanceVersion::query()->max('version_number') + 1,

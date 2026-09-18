@@ -139,7 +139,7 @@ class RamadanIftarPlanningService
             return $type && ($type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false));
         })->map(function (array $row) use ($types): array {
             $type = $types->get((int) $row['execution_need_type_id']);
-            $row['is_required'] = $type->isMandatoryForRamadan();
+            $row['is_required'] = $type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false);
             return $row;
         })->values();
 

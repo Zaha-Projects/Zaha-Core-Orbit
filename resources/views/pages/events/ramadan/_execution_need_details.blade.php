@@ -26,6 +26,7 @@
                         @foreach($team['members']??[] as $j=>$member)
                             <div class="row g-2 mt-2" data-team-member>
                                 <input type="hidden" name="execution_teams[{{ $i }}][members][{{ $j }}][id]" value="{{ $member['id']??'' }}">
+                                <div class="col-12 fw-semibold" data-member-title>عضو {{ $j + 1 }} من {{ max(1, (int) ($team['planned_members_count'] ?? count($team['members'] ?? []))) }}</div>
                                 <div class="col-md-4">
                                     <label class="form-label">عضو الفريق</label>
                                     <input class="form-control" name="execution_teams[{{ $i }}][members][{{ $j }}][member_name]" value="{{ $member['member_name']??'' }}">
@@ -140,7 +141,9 @@
         while (rows.length < count) {
             var clone = template.cloneNode(true), index = Date.now() + rows.length;
             clone.querySelectorAll('[name]').forEach(function (input) {
-                input.name = input.name.replace(/\[\d+\]/, '[' + index + ']');
+                input.name = selector === '[data-team-member]'
+                    ? input.name.replace(/(\[members\])\[\d+\]/, '$1[' + index + ']')
+                    : input.name.replace(/\[\d+\]/, '[' + index + ']');
                 if (input.type === 'hidden') input.value = '';
                 else if (input.tagName !== 'SELECT') input.value = '';
             });
@@ -148,7 +151,11 @@
             template.parentNode.appendChild(clone);
             rows.push(clone);
         }
-        rows.forEach(function (row, index) { row.hidden = index >= count; });
+        rows.forEach(function (row, index) {
+            row.hidden = index >= count;
+            var title = row.querySelector('[data-member-title]');
+            if (title) title.textContent = 'عضو ' + (index + 1) + ' من ' + count;
+        });
     }
     document.addEventListener('input', function (event) {
         if (event.target.matches('[data-member-count]')) {
@@ -160,6 +167,11 @@
             appendRows(supplies, '[data-supply-row]', Math.max(1, parseInt(event.target.value, 10) || 1));
         }
     });
-    document.querySelectorAll('[data-member-count]').forEach(function (input) { input.dispatchEvent(new Event('input')); });
+    document.querySelectorAll('[data-member-count]').forEach(function (input) {
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    document.querySelectorAll('[data-supplies-count]').forEach(function (input) {
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
 }());
 </script>

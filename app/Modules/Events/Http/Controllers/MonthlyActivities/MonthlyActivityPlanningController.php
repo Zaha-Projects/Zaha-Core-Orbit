@@ -62,7 +62,7 @@ class MonthlyActivityPlanningController extends Controller
         }
         $branches = $branches->get();
         $agendaEvents = $this->agendaEventsForUser($user);
-        $targetGroups = TargetGroup::query()->active()->orderBy('sort_order')->get();
+        $targetGroups = TargetGroup::query()->active()->forMonthlyActivities()->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
         $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyCreationStatusOptions('draft');
@@ -579,7 +579,11 @@ class MonthlyActivityPlanningController extends Controller
         }
         $branches = $branches->get();
         $agendaEvents = $this->agendaEventsForUser(request()->user(), $monthlyActivity);
-        $targetGroups = TargetGroup::query()->active()->orderBy('sort_order')->get();
+        $historicTargetGroupIds = $monthlyActivity->targetGroups()->pluck('target_groups.id');
+        $targetGroups = TargetGroup::query()->where(function ($query) use ($historicTargetGroupIds) {
+            $query->where(fn ($available) => $available->active()->forMonthlyActivities())
+                ->orWhereIn('id', $historicTargetGroupIds);
+        })->orderBy('sort_order')->get();
         $evaluationQuestions = EvaluationQuestion::where('is_active', true)->orderBy('sort_order')->get();
         $zahaTimeOptions = ZahaTimeOption::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $monthlyStatusOptions = $this->monthlyPlanningStatusOptions((string) $monthlyActivity->status);
@@ -934,7 +938,7 @@ class MonthlyActivityPlanningController extends Controller
             }
         }
 
-        $this->normalizePlanningPayload($data);
+        $this->normalizePlanningPayload($data, $monthlyActivity);
 
         $date = Carbon::parse($data['activity_date']);
         $conflictNames = $conflicts->findMonthlyActivityConflicts($data['proposed_date'], (int) $data['branch_id'], $monthlyActivity->id, $data['execution_time'] ?? null);
@@ -2034,9 +2038,20 @@ class MonthlyActivityPlanningController extends Controller
         );
     }
 
-    protected function normalizePlanningPayload(array &$data): void
+    protected function normalizePlanningPayload(array &$data, ?MonthlyActivity $monthlyActivity = null): void
     {
         \App\Modules\Events\Models\ExecutionNeedType::validateMonthlySelection($data);
+        $selectedTargetIds = collect($data['target_group_ids'] ?? [])->push($data['target_group_id'] ?? null)->filter()->map(fn ($id) => (int) $id)->unique();
+        $historicTargetIds = $monthlyActivity?->targetGroups()->pluck('target_groups.id') ?? collect();
+        $allowedTargetIds = TargetGroup::query()->where(function ($query) use ($historicTargetIds) {
+            $query->where(fn ($available) => $available->active()->forMonthlyActivities())
+                ->orWhereIn('id', $historicTargetIds);
+        })->whereKey($selectedTargetIds)->pluck('id');
+        if ($allowedTargetIds->count() !== $selectedTargetIds->count()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'target_group_ids' => 'تتضمن الفئات المستهدفة قيمة غير متاحة للخطط الشهرية.',
+            ]);
+        }
         $this->normalizeVolunteerAgeRange($data);
         $this->normalizeExpectedAttendanceRange($data);
         $this->normalizeExecutionNeedsFollowup($data);

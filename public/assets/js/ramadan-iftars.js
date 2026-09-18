@@ -7,9 +7,13 @@
         option.classList.toggle('is-active', active);
         var details = option.querySelector('.ramadan-need-details');
         if (details) details.hidden = !active;
+        var badge = option.querySelector('[data-enabled-badge]');
+        if (badge) badge.hidden = !active;
         option.querySelectorAll('.ramadan-need-details [name]').forEach(function (input) {
             input.disabled = !active;
         });
+        var counter = document.querySelector('[data-selected-needs-count]');
+        if (counter) counter.textContent = document.querySelectorAll('[data-ramadan-need-toggle]:checked').length + ' احتياجات مفعّلة';
     }
     document.querySelectorAll('[data-ramadan-need-toggle]').forEach(function (toggle) {
         syncNeed(toggle);
@@ -46,4 +50,15 @@
     }
     host.addEventListener('change', attendanceMode);
     attendanceMode();
+    document.querySelectorAll('#ramadan-planning-form [data-reference-contact]').forEach(function (select) {
+        select.addEventListener('change', function () {
+            var option = select.options[select.selectedIndex];
+            if (!option || !option.value) return;
+            ['contactName', 'contactPhone', 'locationName', 'address', 'googleMapsUrl'].forEach(function (key) {
+                var fieldName = key.replace(/[A-Z]/g, function (letter) { return '_' + letter.toLowerCase(); });
+                var input = document.querySelector('#ramadan-planning-form [name="' + fieldName + '"]');
+                if (input) input.value = option.dataset[key] || '';
+            });
+        });
+    });
 }());

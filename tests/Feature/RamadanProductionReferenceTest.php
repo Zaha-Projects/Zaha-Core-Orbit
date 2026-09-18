@@ -180,6 +180,7 @@ class RamadanProductionReferenceTest extends TestCase
         $payload = [
             'title' => 'Valid plan', 'planned_date' => '2026-02-20', 'relations_officer_id' => $admin->id,
             'host_type' => 'association', 'location_type' => 'outside_center', 'community_organization_id' => $host->id,
+            'contact_name' => 'Test liaison', 'contact_phone' => '0790000000', 'location_name' => 'Test location',
         ];
         $url = route('events.ramadan.iftars.store');
         $this->actingAs($admin)->post($url, $payload + ['execution_needs' => [['execution_need_type_id' => $need->id, 'is_required' => true]]])

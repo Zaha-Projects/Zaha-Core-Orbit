@@ -94,6 +94,7 @@ return [
         'external_none' => 'External / none',
     ],
     'labels' => [
+        'name' => 'Name',
         'agenda_event' => 'Agenda event',
         'description' => 'Description',
         'time_from' => 'From',
@@ -154,6 +155,7 @@ return [
         'confirmed_at' => 'Confirmed at',
         'actual_count' => 'Actual count',
         'availability' => 'Availability',
+        'execution_need' => 'Execution need',
         'execution_need_result' => 'Execution Need result',
         'completed_at' => 'Completed at',
     ],
