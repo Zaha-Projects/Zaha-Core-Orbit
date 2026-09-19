@@ -170,7 +170,7 @@ class RamadanIftarExecutionFlowTest extends TestCase
         $member = ExecutionTeamMember::query()->create(['execution_team_id' => $team->id, 'member_name' => 'Member']);
         $volunteer = SubjectVolunteerRequirement::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'planned_count' => 6]);
         $supply = EventSupply::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'item_name' => 'Water', 'planned_quantity' => 8]);
-        $type = ExecutionNeedType::query()->create(['code' => 'transport-'.$iftar->id, 'name' => 'Transport', 'is_active' => true, 'is_canonical' => true, 'is_ramadan_iftar' => true]);
+        $type = ExecutionNeedType::query()->create(['code' => 'transport-'.$iftar->id, 'name' => 'Transport '.$iftar->id, 'is_active' => true, 'is_canonical' => true, 'is_ramadan_iftar' => true]);
         $need = SubjectExecutionNeed::query()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'execution_need_type_id' => $type->id, 'is_required' => true, 'planned_details' => 'Planned transport']);
 
         return [$iftar, $actor, compact('meal', 'gift', 'program', 'team', 'member', 'volunteer', 'supply', 'need')];

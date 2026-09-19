@@ -101,6 +101,10 @@ class RamadanReferenceDataController extends Controller
             'monitoring_methods' => ['code' => $commonCode, 'name_ar' => $uniqueName('name_ar'), 'name_en' => ['required', 'string', 'max:255'], 'is_active' => ['required', 'boolean'], 'sort_order' => ['required', 'integer', 'min:0']],
         };
 
-        return $request->validate($rules);
+        return $request->validate($rules, [
+            'code.unique' => 'الرمز مستخدم مسبقًا.',
+            'name.unique' => 'الاسم مستخدم مسبقًا.',
+            'name_ar.unique' => 'الاسم العربي مستخدم مسبقًا.',
+        ]);
     }
 }
