@@ -3,49 +3,57 @@
 namespace App\Modules\Events\Support;
 
 use App\Modules\Events\Models\AgendaEvent;
+use App\Models\MonthlyActivity;
 
 final class EventAggregateIdentity
 {
     public const AGENDA_LEGACY = 'App\\Models\\AgendaEvent';
     public const AGENDA_CANONICAL = AgendaEvent::class;
+    public const MONTHLY_ACTIVITY_LEGACY = MonthlyActivity::class;
+    public const MONTHLY_ACTIVITY_CANONICAL = 'App\\Modules\\Events\\Models\\MonthlyActivity';
+
+    private const IDENTITIES = [
+        self::AGENDA_LEGACY => self::AGENDA_CANONICAL,
+        self::MONTHLY_ACTIVITY_LEGACY => self::MONTHLY_ACTIVITY_CANONICAL,
+    ];
 
     /**
      * @return array<int, string>
      */
     public static function acceptedTypes(string $identity): array
     {
-        return self::isAgendaIdentity($identity)
-            ? [self::AGENDA_LEGACY, self::AGENDA_CANONICAL]
-            : [$identity];
+        $legacy = self::legacyFor($identity);
+        return $legacy === null ? [$identity] : [$legacy, self::IDENTITIES[$legacy]];
     }
 
     public static function legacyFor(string $identity): ?string
     {
-        return self::isAgendaIdentity($identity) ? self::AGENDA_LEGACY : null;
+        if (array_key_exists($identity, self::IDENTITIES)) return $identity;
+        $legacy = array_search($identity, self::IDENTITIES, true);
+        return $legacy === false ? null : $legacy;
     }
 
     public static function canonicalFor(string $identity): ?string
     {
-        return self::isAgendaIdentity($identity) ? self::AGENDA_CANONICAL : null;
+        $legacy = self::legacyFor($identity);
+        return $legacy === null ? null : self::IDENTITIES[$legacy];
     }
 
     public static function installedModelFor(string $storedIdentity): ?string
     {
-        return self::isAgendaIdentity($storedIdentity) ? self::AGENDA_CANONICAL : null;
+        $legacy = self::legacyFor($storedIdentity);
+        if ($legacy === self::AGENDA_LEGACY) return self::AGENDA_CANONICAL;
+        if ($legacy === self::MONTHLY_ACTIVITY_LEGACY) return self::MONTHLY_ACTIVITY_LEGACY;
+        return null;
     }
 
     public static function currentWriteType(string $modelClass): string
     {
-        return self::isAgendaIdentity($modelClass) ? self::AGENDA_CANONICAL : $modelClass;
+        return self::installedModelFor($modelClass) ?? $modelClass;
     }
 
     public static function isCompatibleIdentity(string $identity): bool
     {
-        return self::isAgendaIdentity($identity);
-    }
-
-    private static function isAgendaIdentity(string $identity): bool
-    {
-        return $identity === self::AGENDA_LEGACY || $identity === self::AGENDA_CANONICAL;
+        return self::legacyFor($identity) !== null;
     }
 }

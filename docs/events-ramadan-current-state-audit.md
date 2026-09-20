@@ -192,7 +192,7 @@ The panel requires an active period and Ramadan view permission (or super admin)
 | `subject_target_groups` plan | SUPERSEDED | generalized pivot and negative tests | never recreate | no |
 | Agenda request pair cutover | DONE IN SOURCE / STAGING PENDING | sole canonical model definitions and dual-read compatibility | stage mixed identity, binding and workflow regressions; no backfill | yes |
 | Monthly request pair cutover | DONE IN SOURCE / STAGING PENDING | canonical models and writers; legacy workflow dual-read | staging verification only | yes |
-| MonthlyActivity compatibility/cutover | NOT STARTED | audited identity plus correspondence morph | compatibility then separate move; preserve JSON/status | yes |
+| MonthlyActivity compatibility preparation | DONE IN SOURCE / STAGING PENDING | aggregate helper, workflow/report dual-read, correspondence resolver and duplicate guard | Phase 2.18 model move only after staging | yes |
 | PostExecutionVerification cutover | NOT STARTED | audit identity; model still legacy | focused inventory/helper then move | yes |
 | Monthly need transaction normalization | PARTIAL / DEFERRED | shared catalogue, legacy JSON transactions | separately authorized business/data migration | yes |
 | Phase 2.6/general runtime gate | NOT STARTED here | missing vendor and DB | consolidated staging run later | yes |
@@ -201,7 +201,7 @@ The panel requires an active period and Ramadan view permission (or super admin)
 
 Dependency order: (1) MonthlyActivity compatibility including `official_correspondences.correspondable_type`; (2) a later, separate MonthlyActivity cutover; (3) focused PostExecutionVerification compatibility then move; (4) only separately authorize Monthly transaction normalization.
 
-**Recommended next slice: MonthlyActivity aggregate identity compatibility preparation.** Inventory and prepare dual-read handling for `official_correspondences.correspondable_type` and every persisted MonthlyActivity identity without moving MonthlyActivity.
+**Recommended next slice: Phase 2.18 — MonthlyActivity namespace cutover.** Use the prepared identity boundaries, retain mixed-history reads, and switch the installed/current writer only with the sole model move.
 
 Do **not** include MonthlyActivity, PostExecutionVerification, backfills, broad morph maps, dual writes, workflow/business changes, or Ramadan features.
 
@@ -238,3 +238,8 @@ the official-correspondence morph boundary remain unchanged. No schema migration
 historical backfill, dual write, or Ramadan change was made. The next source
 slice is MonthlyActivity aggregate identity compatibility preparation; it must
 prepare persisted readers/writers before any MonthlyActivity move.
+
+
+## Phase 2.17 — MonthlyActivity aggregate identity compatibility preparation
+
+DONE IN SOURCE / STAGING PENDING. `EventAggregateIdentity` recognizes legacy and future canonical MonthlyActivity identities while installed/current write identity remains `App\Models\MonthlyActivity`. Workflow, reports, action-log readers, request aggregate lookup, and official correspondence now dual-read. Correspondence inverse resolution is focused and no global morph map was added; writes find before create and reject mixed duplicates. Stable `monthly_activity` subject aliases remain unchanged. No model move, migration, backfill, PostExecutionVerification, or Ramadan change occurred.

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Models\MonthlyActivityApproval;
 use App\Models\User;
 use App\Models\WorkflowInstance;
@@ -198,7 +199,7 @@ class MonthlyWorkflowShowcaseSeeder extends Seeder
         $activity->approvals()->delete();
 
         WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $activity->id)
             ->delete();
 

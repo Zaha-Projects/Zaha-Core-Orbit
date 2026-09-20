@@ -83,7 +83,7 @@ class AdminReportsService
         $branchActivityRows = MonthlyActivity::query()
             ->leftJoin('workflow_instances', function ($join): void {
                 $join->on('workflow_instances.entity_id', '=', 'monthly_activities.id')
-                    ->where('workflow_instances.entity_type', '=', MonthlyActivity::class);
+                    ->whereIn('workflow_instances.entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class));
             })
             ->leftJoin('workflow_steps', 'workflow_steps.id', '=', 'workflow_instances.current_step_id')
             ->select('monthly_activities.branch_id')
@@ -142,7 +142,7 @@ class AdminReportsService
 
         $approvalWorkflows = WorkflowInstance::query()
             ->whereIn('entity_type', array_merge(
-                [MonthlyActivity::class],
+                EventAggregateIdentity::acceptedTypes(MonthlyActivity::class),
                 EventAggregateIdentity::acceptedTypes(AgendaEvent::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanEditRequest::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanDeleteRequest::class),

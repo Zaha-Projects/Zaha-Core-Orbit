@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Branch;
 use App\Models\InAppNotification;
 use App\Models\MonthlyActivity;
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
@@ -224,7 +225,7 @@ class TemporaryBranchScopedNotificationsSeeder extends Seeder
 
         WorkflowInstance::query()
             ->where('workflow_id', $workflow->id)
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $activity->id)
             ->delete();
 

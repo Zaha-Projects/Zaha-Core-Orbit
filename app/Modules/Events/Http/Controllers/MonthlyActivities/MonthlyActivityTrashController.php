@@ -2,6 +2,7 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Models\WorkflowActionLog;
@@ -47,7 +48,7 @@ class MonthlyActivityTrashController extends Controller
         $deletedBy = WorkflowActionLog::query()
             ->with('performer')
             ->where('module', 'monthly_activities')
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('action_type', 'deleted')
             ->whereIn('entity_id', $activities->getCollection()->pluck('id')->all())
             ->orderByDesc('performed_at')

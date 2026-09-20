@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
 use App\Modules\Events\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\EventType;
 use App\Modules\Events\Models\EventSupply;
@@ -588,7 +589,8 @@ class MonthlyActivity extends Model
 
     public function officialCorrespondence()
     {
-        return $this->morphOne(OfficialCorrespondence::class, 'correspondable');
+        return $this->hasOne(OfficialCorrespondence::class, 'correspondable_id')
+            ->whereIn('correspondable_type', EventAggregateIdentity::acceptedTypes(self::class));
     }
 
     public function supplies()
@@ -696,7 +698,8 @@ class MonthlyActivity extends Model
 
     public function workflowInstance()
     {
-        return $this->morphOne(WorkflowInstance::class, 'entity');
+        return $this->hasOne(WorkflowInstance::class, 'entity_id')
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(self::class));
     }
 
 }

@@ -577,7 +577,7 @@ class DynamicWorkflowService
     private function approvedWorkflowStepKeysForMonthlyActivity(int $activityId): array
     {
         $instance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $activityId)
             ->latest('id')
             ->first();
