@@ -942,3 +942,12 @@ their namespace status: the sole model is now
 `App\Modules\Events\Models\PostExecutionVerification`, the focused audit
 identity writer is canonical, and both exact audit identities remain accepted.
 No migration or backfill occurred; staging verification remains pending.
+
+## Final Events identity authority (2026-09-20)
+
+`docs/events-identity-cutover-final-state.md` supersedes older phase-specific
+namespace status statements. All seven identity-sensitive Events models are
+canonical in source; exact legacy identities remain only for persisted-history
+compatibility. No backfill or identity migration has occurred. Execute
+`docs/events-staging-cutover-runbook.md`; staging/runtime verification is the
+only remaining identity gate.

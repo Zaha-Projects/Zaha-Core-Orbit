@@ -277,3 +277,14 @@ detail aliases. No verification workflow identity, polymorphic model identity,
 route binding, queued model serialization, migration, backfill, dual write, or
 business-rule change was introduced. No Events-owned identity-sensitive models
 remain under `App\Models`.
+
+## Final Events identity source cleanup
+
+DONE IN SOURCE / STAGING PENDING. The authoritative identity matrix is now
+`docs/events-identity-cutover-final-state.md`; the executable staging gate is
+`docs/events-staging-cutover-runbook.md`. AgendaEvent, both Annual request
+models, both Monthly request models, MonthlyActivity, and
+PostExecutionVerification are canonical. Older phase sections in this document
+are historical chronology, not current TODOs. Legacy stored identities remain
+supported and unmodified. Remaining work is STAGING / RUNTIME VERIFICATION ONLY;
+no additional identity namespace source cutover remains.

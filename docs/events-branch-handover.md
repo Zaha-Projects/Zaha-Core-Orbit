@@ -1087,3 +1087,12 @@ storage identity in compatibility readers; do not restore a wrapper, backfill
 history, or alter stable `monthly_activity` aliases. PostExecutionVerification
 remains under `App\Models` and is NOT CUT OVER. Its compatibility sufficiency
 must be reviewed before the next cutover.
+
+## Final Events identity handover (2026-09-20)
+
+Source namespace work is complete for AgendaEvent, Annual Agenda requests,
+Monthly requests, MonthlyActivity, and PostExecutionVerification. Use
+`docs/events-identity-cutover-final-state.md` as the authoritative matrix and
+`docs/events-staging-cutover-runbook.md` as the next action. Do not remove legacy
+compatibility, backfill identities, add wrappers, or begin another namespace
+phase. Remaining identity work is staging/runtime verification only.
