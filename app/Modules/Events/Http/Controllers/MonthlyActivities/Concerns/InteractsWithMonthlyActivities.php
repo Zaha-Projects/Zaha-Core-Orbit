@@ -4,7 +4,7 @@ namespace App\Modules\Events\Http\Controllers\MonthlyActivities\Concerns;
 
 use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
 use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\WorkflowLog;

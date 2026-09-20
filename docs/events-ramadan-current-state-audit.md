@@ -247,3 +247,18 @@ DONE IN SOURCE / STAGING PENDING. `EventAggregateIdentity` recognizes legacy and
 ## 2026-09-20 Admin navigation and lookup-management UX slice
 
 DONE IN SOURCE / STAGING PENDING. Ramadan dashboard visibility is now a persisted, default-enabled setting and an additional gate ahead of Ramadan period/metric work. The main header has an application-timezone live clock plus Gregorian and display-only ICU Umm al-Qura Hijri dates; approved `RamadanPeriod` dates remain the sole operational authority. Shared and Ramadan-specific lookup management is inventoried in `docs/admin-reference-data-and-navigation-audit.md` and grouped in the Admin navigation. No Events aggregate identity, MonthlyActivity, PostExecutionVerification, backfill, approval, monitoring, closure, period-rule, or guidance-acknowledgement change was made. The next source slice remains Phase 2.18 — MonthlyActivity namespace cutover.
+
+## Phase 2.18 — MonthlyActivity namespace cutover
+
+DONE IN SOURCE / STAGING PENDING. `MonthlyActivity` now has one installed model at
+`App\Modules\Events\Models\MonthlyActivity`; its removed `App\Models` name is
+retained only as a historical compatibility identity. New workflow,
+workflow-action, official-correspondence, Monthly request aggregate, audit, and
+class-derived metadata writes are canonical. Workflow, Monthly request, and
+official-correspondence readers still accept both identities, reuse a single
+historical row, and reject mixed logical duplicates where creation is guarded.
+The focused correspondence inverse resolver maps both stored identities to the
+canonical model without a global morph map. Stable `monthly_activity` subject
+aliases are unchanged. No migration, backfill, dual write, business-rule,
+Ramadan, or PostExecutionVerification change was made. PostExecutionVerification
+remains NOT CUT OVER.

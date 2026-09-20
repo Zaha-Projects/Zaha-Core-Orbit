@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Models\ActivityEvaluation;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use App\Support\EvaluationVisibility;
 

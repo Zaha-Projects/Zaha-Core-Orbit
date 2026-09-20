@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Models;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use InvalidArgumentException;
 
 final class EventSubjectTypes

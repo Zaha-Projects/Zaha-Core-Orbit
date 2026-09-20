@@ -11,7 +11,7 @@ use App\Models\Booking;
 use App\Models\Branch;
 use App\Models\DonationCash;
 use App\Models\MaintenanceRequest;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
 use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\Payment;

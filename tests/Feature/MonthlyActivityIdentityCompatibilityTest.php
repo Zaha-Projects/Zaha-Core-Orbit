@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\OfficialCorrespondence;
 use App\Models\User;
 use App\Models\Workflow;
@@ -20,7 +20,7 @@ class MonthlyActivityIdentityCompatibilityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_workflow_reuses_either_identity_writes_legacy_and_rejects_duplicates(): void
+    public function test_workflow_reuses_either_identity_writes_canonical_and_rejects_duplicates(): void
     {
         $activity = MonthlyActivity::factory()->create();
         $workflow = Workflow::query()->create(['code'=>'monthly_identity','module'=>'monthly_identity','name_ar'=>'هوية','name_en'=>'Identity','is_active'=>true]);
@@ -33,7 +33,7 @@ class MonthlyActivityIdentityCompatibilityTest extends TestCase
         }
 
         $created = $service->forEntity($workflow, EventAggregateIdentity::MONTHLY_ACTIVITY_CANONICAL, $activity->id);
-        $this->assertSame(EventAggregateIdentity::MONTHLY_ACTIVITY_LEGACY, $created->entity_type);
+        $this->assertSame(EventAggregateIdentity::MONTHLY_ACTIVITY_CANONICAL, $created->entity_type);
         $created->delete();
 
         foreach (EventAggregateIdentity::acceptedTypes(MonthlyActivity::class) as $identity) {
@@ -43,21 +43,21 @@ class MonthlyActivityIdentityCompatibilityTest extends TestCase
         $service->forEntity($workflow, MonthlyActivity::class, $activity->id);
     }
 
-    public function test_correspondence_reads_both_types_and_sync_preserves_current_writer(): void
+    public function test_correspondence_reads_both_types_and_sync_uses_canonical_writer(): void
     {
         $activity = MonthlyActivity::factory()->create();
         $service = app(MonthlyActivityOfficialCorrespondenceService::class);
 
-        $legacy = $service->sync($activity, ['reason'=>'legacy']);
-        $this->assertSame(EventAggregateIdentity::MONTHLY_ACTIVITY_LEGACY, $legacy->correspondable_type);
-        $this->assertTrue($legacy->correspondable->is($activity));
-        $this->assertSame($legacy->id, $activity->fresh()->officialCorrespondence->id);
-
-        $legacy->update(['correspondable_type'=>EventAggregateIdentity::MONTHLY_ACTIVITY_CANONICAL]);
         $canonical = $service->sync($activity, ['reason'=>'canonical']);
-        $this->assertSame($legacy->id, $canonical->id);
         $this->assertSame(EventAggregateIdentity::MONTHLY_ACTIVITY_CANONICAL, $canonical->correspondable_type);
-        $this->assertTrue($canonical->fresh()->correspondable->is($activity));
+        $this->assertTrue($canonical->correspondable->is($activity));
+        $this->assertSame($canonical->id, $activity->fresh()->officialCorrespondence->id);
+
+        $canonical->update(['correspondable_type'=>EventAggregateIdentity::MONTHLY_ACTIVITY_LEGACY]);
+        $legacy = $service->sync($activity, ['reason'=>'legacy']);
+        $this->assertSame($canonical->id, $legacy->id);
+        $this->assertSame(EventAggregateIdentity::MONTHLY_ACTIVITY_LEGACY, $legacy->correspondable_type);
+        $this->assertTrue($legacy->fresh()->correspondable->is($activity));
     }
 
     public function test_correspondence_mixed_identity_duplicate_is_explicit_conflict(): void
@@ -90,6 +90,15 @@ class MonthlyActivityIdentityCompatibilityTest extends TestCase
             }
         }
 
-        $this->assertSame(MonthlyActivity::class, EventAggregateIdentity::currentWriteType(EventAggregateIdentity::MONTHLY_ACTIVITY_CANONICAL));
+        $newRequest = MonthlyPlanEditRequest::query()->create([
+            'requester_id'=>$user->id,
+            'request_type'=>'edit',
+            'entity_type'=>MonthlyActivity::class,
+            'entity_id'=>$activity->id,
+            'status'=>'pending',
+            'requested_at'=>now(),
+        ]);
+        $this->assertSame(EventAggregateIdentity::MONTHLY_ACTIVITY_CANONICAL, $newRequest->entity_type);
+        $this->assertSame(MonthlyActivity::class, EventAggregateIdentity::currentWriteType(EventAggregateIdentity::MONTHLY_ACTIVITY_LEGACY));
     }
 }

@@ -6,7 +6,7 @@ use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
 use App\Modules\Events\Models\AnnualAgendaEditRequest;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
 use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\User;

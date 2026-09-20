@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\WorkflowNotificationService;

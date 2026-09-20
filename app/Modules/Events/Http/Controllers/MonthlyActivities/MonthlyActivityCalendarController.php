@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Http\Controllers\MonthlyActivities\Concerns\InteractsWithMonthlyActivities;

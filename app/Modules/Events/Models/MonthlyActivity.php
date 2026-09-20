@@ -1,27 +1,22 @@
 <?php
 
-namespace App\Models;
+namespace App\Modules\Events\Models;
 
-use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
-use App\Modules\Events\Models\MonthlyPlanEditRequest;
+use App\Models\ActivityAttendance;
+use App\Models\ActivityEvaluation;
+use App\Models\ActivityNote;
+use App\Models\Branch;
+use App\Models\CommunicationsRequest;
+use App\Models\DonationCash;
+use App\Models\OfficialCorrespondence;
+use App\Models\PostExecutionVerification;
+use App\Models\User;
+use App\Models\WorkflowInstance;
+use App\Models\WorkshopsRequest;
 use App\Modules\Events\Support\EventAggregateIdentity;
-use App\Modules\Events\Models\AgendaEvent;
-use App\Modules\Events\Models\EventType;
-use App\Modules\Events\Models\EventSupply;
-use App\Modules\Events\Models\ExecutionTeamMember;
-use App\Modules\Events\Models\MonthlyActivityAttachment;
-use App\Modules\Events\Models\MonthlyActivityApproval;
-use App\Modules\Events\Models\MonthlyActivityChangeLog;
-use App\Modules\Events\Models\MonthlyActivityEvaluationResponse;
-use App\Modules\Events\Models\MonthlyActivityFollowup;
-use App\Modules\Events\Models\MonthlyActivityPartner;
-use App\Modules\Events\Models\MonthlyActivitySponsor;
-use App\Modules\Events\Models\MonthlyActivityVolunteerNeed;
-use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\WorkflowInstance;
 
 class MonthlyActivity extends Model
 {

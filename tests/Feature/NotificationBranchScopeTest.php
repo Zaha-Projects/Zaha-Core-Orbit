@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Branch;
 use App\Modules\Events\Http\Controllers\MonthlyActivities\MonthlyActivityPlanningController;
 use App\Models\InAppNotification;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use App\Services\WorkflowNotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

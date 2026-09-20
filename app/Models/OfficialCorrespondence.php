@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use Illuminate\Database\Eloquent\Model;
 

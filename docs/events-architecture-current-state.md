@@ -266,7 +266,7 @@ Agenda owns `agenda_events`, targets, participations, approvals, partner departm
 | Flow | Workflow module/code | Stored entity identity | Steps/decision owner | Risk / final identity |
 |---|---|---|---|---|
 | Agenda planning | `agenda` / `agenda_approval` | `App\Models\AgendaEvent` FQCN in instances | Relations Officer → Relations Manager → Executive Manager | High namespace-move risk; retain stored identity |
-| Monthly planning | `monthly_activities` / `monthly_activity_approval` | `App\Models\MonthlyActivity` FQCN | Relations Officer; conditional Supervisor/Coordinator; Relations Manager; conditional Executive | High namespace-move risk; legacy status mirror remains |
+| Monthly planning | `monthly_activities` / `monthly_activity_approval` | `App\Modules\Events\Models\MonthlyActivity` canonical FQCN; legacy identity read-compatible | Relations Officer; conditional Supervisor/Coordinator; Relations Manager; conditional Executive | High namespace-move risk; legacy status mirror remains |
 | Monthly edit/delete requests | request tables + `PlanChangeRequestWorkflowService` | request/entity type strings | existing Monthly/Agenda semantics | High; not interchangeable with Ramadan |
 | Ramadan planning | `ramadan_iftars` / `ramadan_iftar_approval` | `App\Modules\Events\Models\RamadanIftar` | five seeded steps | Final identity; per-version instance |
 | Ramadan monitoring | no DynamicWorkflow definition | report ID in action-log metadata | Follow-up submit; Supervisor review | Do not invent workflow instance; report status is authoritative |

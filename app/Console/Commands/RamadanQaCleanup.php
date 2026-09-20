@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\RamadanIftar;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;

@@ -3,14 +3,14 @@
 namespace App\Modules\Events\Support;
 
 use App\Modules\Events\Models\AgendaEvent;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 
 final class EventAggregateIdentity
 {
     public const AGENDA_LEGACY = 'App\\Models\\AgendaEvent';
     public const AGENDA_CANONICAL = AgendaEvent::class;
-    public const MONTHLY_ACTIVITY_LEGACY = MonthlyActivity::class;
-    public const MONTHLY_ACTIVITY_CANONICAL = 'App\\Modules\\Events\\Models\\MonthlyActivity';
+    public const MONTHLY_ACTIVITY_LEGACY = 'App\\Models\\MonthlyActivity';
+    public const MONTHLY_ACTIVITY_CANONICAL = MonthlyActivity::class;
 
     private const IDENTITIES = [
         self::AGENDA_LEGACY => self::AGENDA_CANONICAL,
@@ -43,7 +43,7 @@ final class EventAggregateIdentity
     {
         $legacy = self::legacyFor($storedIdentity);
         if ($legacy === self::AGENDA_LEGACY) return self::AGENDA_CANONICAL;
-        if ($legacy === self::MONTHLY_ACTIVITY_LEGACY) return self::MONTHLY_ACTIVITY_LEGACY;
+        if ($legacy === self::MONTHLY_ACTIVITY_LEGACY) return self::MONTHLY_ACTIVITY_CANONICAL;
         return null;
     }
 

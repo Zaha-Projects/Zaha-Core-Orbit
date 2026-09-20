@@ -7,7 +7,7 @@ use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\Department;
 use App\Modules\Events\Models\EventCategory;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Services\EnterpriseAnalyticsService;
 use Illuminate\Http\Request;
 

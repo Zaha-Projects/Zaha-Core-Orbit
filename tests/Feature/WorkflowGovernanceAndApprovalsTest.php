@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
 use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\InAppNotification;

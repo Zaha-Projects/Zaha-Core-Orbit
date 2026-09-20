@@ -4,7 +4,7 @@ namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
 use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Services\DynamicWorkflowService;

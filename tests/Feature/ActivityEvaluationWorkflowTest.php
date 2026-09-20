@@ -6,7 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\EvaluationForm;
 use App\Models\EvaluationQuestion;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\Role;
 use App\Models\User;
 use App\Modules\Events\Support\PostExecutionVerificationIdentity;

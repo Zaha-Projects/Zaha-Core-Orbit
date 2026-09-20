@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Branch;
 use App\Models\InAppNotification;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Models\Role;
 use App\Models\User;

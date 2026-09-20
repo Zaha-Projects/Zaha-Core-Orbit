@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities\Concerns;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 
 trait InteractsWithMonthlyActivityApprovals

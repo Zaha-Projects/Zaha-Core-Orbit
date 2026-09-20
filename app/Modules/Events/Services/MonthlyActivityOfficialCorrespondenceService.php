@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Services;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\OfficialCorrespondence;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use LogicException;

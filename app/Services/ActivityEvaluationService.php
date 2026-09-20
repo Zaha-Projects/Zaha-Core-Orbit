@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\ActivityEvaluation;
 use App\Models\AuditLog;
 use App\Models\EvaluationForm;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\PostExecutionVerification;
 use App\Models\User;
 use App\Modules\Events\Support\PostExecutionVerificationIdentity;

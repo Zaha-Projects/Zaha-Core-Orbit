@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Models\ActivityEvaluation;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Policies\MonthlyActivityEvaluationPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;

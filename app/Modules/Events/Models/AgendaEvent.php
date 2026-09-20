@@ -5,7 +5,7 @@ namespace App\Modules\Events\Models;
 use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
 use App\Modules\Events\Models\AnnualAgendaEditRequest;
 use App\Models\Department;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use App\Models\WorkflowInstance;
 use App\Modules\Events\Support\EventAggregateIdentity;
