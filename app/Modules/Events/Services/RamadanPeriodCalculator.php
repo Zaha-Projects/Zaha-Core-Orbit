@@ -3,6 +3,7 @@
 namespace App\Modules\Events\Services;
 
 use Carbon\CarbonImmutable;
+use App\Support\UmmAlQuraCalendar;
 use RuntimeException;
 
 class RamadanPeriodCalculator
@@ -12,10 +13,7 @@ class RamadanPeriodCalculator
     public function calculate(int $gregorianYear): array
     {
         if ($gregorianYear < 2020 || $gregorianYear > 2100) throw new RuntimeException('Gregorian year is outside the supported range.');
-        if (! class_exists(\IntlCalendar::class)) throw new RuntimeException('PHP ext-intl with ICU Islamic Umm al-Qura calendar support is required.');
-
-        $calendar = \IntlCalendar::createInstance('UTC', 'ar_SA@calendar=islamic-umalqura');
-        if (! $calendar instanceof \IntlCalendar) throw new RuntimeException('ICU could not create the Islamic Umm al-Qura calendar.');
+        $calendar = UmmAlQuraCalendar::create('UTC');
 
         $estimate = $gregorianYear - 579;
         foreach (range($estimate - 2, $estimate + 2) as $hijriYear) {

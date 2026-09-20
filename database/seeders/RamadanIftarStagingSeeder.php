@@ -14,6 +14,7 @@ class RamadanIftarStagingSeeder extends Seeder
             MobilizationMethodSeeder::class,
             CommunityOrganizationSeeder::class,
             LocalCommunitySeeder::class,
+            RamadanDashboardSettingSeeder::class,
             RamadanPeriodSeeder::class,
             RamadanIftarGuidanceSeeder::class,
             RamadanIftarDemoSeeder::class,

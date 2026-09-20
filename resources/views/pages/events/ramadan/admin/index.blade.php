@@ -6,6 +6,13 @@
 @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger"><strong>تعذر الحفظ:</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
+<div class="card shadow-sm mb-4"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div><div class="d-flex align-items-center gap-2"><h2 class="h5 mb-0">إظهار قسم رمضان في لوحة التحكم</h2><span class="badge {{ $ramadanDashboardEnabled ? 'bg-success' : 'bg-secondary' }}">{{ $ramadanDashboardEnabled ? 'مفعّل' : 'معطّل' }}</span></div><p class="text-muted small mb-0 mt-2">هذا مفتاح ظهور إضافي؛ تظل الفترة النشطة والصلاحيات ونطاق الفرع مطلوبة.</p></div>
+    <form method="POST" action="{{ route('events.ramadan.admin.dashboard-visibility.update') }}" class="d-flex align-items-center gap-3">@csrf @method('PUT')
+        <input type="hidden" name="ramadan_dashboard_enabled" value="0"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="ramadan-dashboard-enabled" name="ramadan_dashboard_enabled" value="1" {{ $ramadanDashboardEnabled ? 'checked' : '' }}><label class="form-check-label" for="ramadan-dashboard-enabled">إظهار القسم</label></div><button class="btn btn-primary">حفظ</button>
+    </form>
+</div></div>
+
 <div class="row g-4"><div class="col-12"><div class="card"><div class="card-header"><strong>فترات رمضان</strong></div><div class="card-body">
 @if($activePeriod)<div class="alert alert-success">الفترة النشطة: {{ $activePeriod->year }} / {{ $activePeriod->hijri_year ?: 'السنة الهجرية غير مدخلة' }} — {{ $activePeriod->start_date->format('Y-m-d') }} إلى {{ $activePeriod->end_date->format('Y-m-d') }}</div>@else<div class="alert alert-warning">لا توجد فترة رمضان نشطة.</div>@endif
 <form method="POST" action="{{ route('events.ramadan.admin.periods.sync') }}" class="row g-2 mb-4">@csrf<div class="col-md-4"><label class="form-label">السنة الميلادية للمقترح</label><input class="form-control" type="number" name="year" min="2020" max="2100" value="{{ now()->year + 1 }}" required></div><div class="col-md-4 d-flex align-items-end"><button class="btn btn-outline-success"><i class="fas fa-rotate"></i> مزامنة فترة رمضان</button></div><div class="col-12 form-text">الحساب اقتراح محلي عبر ICU/Umm al-Qura ولا يعتمد التواريخ أو يفعّلها تلقائيًا.</div></form>

@@ -15,6 +15,7 @@ class RamadanReferenceDataSeeder extends Seeder
             MobilizationMethodSeeder::class,
             CommunityOrganizationSeeder::class,
             LocalCommunitySeeder::class,
+            RamadanDashboardSettingSeeder::class,
             CanonicalExecutionNeedTypeSeeder::class,
             RamadanPeriodSeeder::class,
             RamadanIftarGuidanceSeeder::class,

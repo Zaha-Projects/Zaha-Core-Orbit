@@ -26,6 +26,7 @@ use App\Modules\Events\Http\Controllers\Admin\RamadanAdminController;
 use App\Modules\Events\Http\Controllers\Admin\RamadanPeriodController;
 use App\Modules\Events\Http\Controllers\Admin\RamadanGuidanceAdminController;
 use App\Modules\Events\Http\Controllers\Admin\MobilizationMethodController;
+use App\Modules\Events\Http\Controllers\Admin\RamadanDashboardSettingController;
 use App\Http\Controllers\Roles\SuperAdmin\EvaluationAssignmentsController as SuperAdminEvaluationAssignmentsController;
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
@@ -171,6 +172,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.site_settings.update');
     Route::prefix('/dashboard/events/ramadan/admin')->name('events.ramadan.admin.')->middleware('role:super_admin')->group(function () {
         Route::get('/', [RamadanAdminController::class, 'index'])->name('index');
+        Route::put('/dashboard-visibility', [RamadanDashboardSettingController::class, 'update'])->name('dashboard-visibility.update');
         Route::post('/periods', [RamadanPeriodController::class, 'store'])->name('periods.store');
         Route::post('/periods/sync', [RamadanPeriodController::class, 'sync'])->name('periods.sync');
         Route::put('/periods/{period}', [RamadanPeriodController::class, 'update'])->name('periods.update');
