@@ -17,6 +17,12 @@ return new class extends Migration
             'execution_need_types' => 'name',
             'monitoring_methods' => 'name_ar',
         ];
+        // MySQL DDL commits implicitly: complete every data check before the first index.
+        foreach ($globalNames + ['community_organizations' => 'name', 'local_communities' => 'name'] as $table => $column) {
+            if (DB::table($table)->whereRaw("BINARY `{$column}` <> BINARY TRIM(`{$column}`) OR `{$column}` REGEXP '[[:space:]]{2,}'")->exists()) {
+                throw new RuntimeException("Review whitespace in {$table}.{$column} before adding unique constraints; no data was changed.");
+            }
+        }
         foreach ($globalNames as $table => $column) {
             $duplicate = DB::table($table)->select($column)
                 ->groupBy($column)->havingRaw('COUNT(*) > 1')->first();
@@ -25,6 +31,9 @@ return new class extends Migration
             }
         }
         foreach (['community_organizations', 'local_communities'] as $table) {
+            if (DB::table($table)->whereNull('branch_id')->exists()) {
+                throw new RuntimeException("Resolve NULL {$table}.branch_id before adding unique constraints; no data was changed.");
+            }
             $duplicate = DB::table($table)->select('branch_id', 'name')
                 ->groupBy('branch_id', 'name')->havingRaw('COUNT(*) > 1')->first();
             if ($duplicate) {

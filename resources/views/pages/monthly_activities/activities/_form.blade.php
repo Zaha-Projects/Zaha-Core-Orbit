@@ -355,6 +355,7 @@
                 </div>
 
                 <div class="col-12">
+                    @include('pages.monthly_activities.activities._custom_execution_needs')
                     <div class="monthly-activation-grid">
                         @if($availableNeed('volunteers'))
                         <label class="monthly-activation-option">

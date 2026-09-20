@@ -382,6 +382,31 @@ class MonthlyActivity extends Model
             ->all();
     }
 
+    public function executionNeeds()
+    {
+        return $this->hasMany(\App\Modules\Events\Models\SubjectExecutionNeed::class, 'subject_id')
+            ->where('subject_type', \App\Modules\Events\Models\EventSubjectTypes::MONTHLY_ACTIVITY);
+    }
+
+    public function customExecutionNeedPlan(): array
+    {
+        return $this->executionNeeds()->whereHas('executionNeedType', fn ($query) => $query->custom())
+            ->orderBy('execution_need_type_id')->get()
+            ->map(fn ($need) => $need->only(['execution_need_type_id', 'is_required', 'planned_details']))->all();
+    }
+
+    // Call only with a validated planning snapshot, inside the caller's transaction.
+    public function syncCustomExecutionNeedPlan(array $rows): void
+    {
+        foreach ($rows as $row) {
+            $this->executionNeeds()->updateOrCreate([
+                'subject_type' => \App\Modules\Events\Models\EventSubjectTypes::MONTHLY_ACTIVITY,
+                'execution_need_type_id' => $row['execution_need_type_id'],
+            ], \Illuminate\Support\Arr::only($row, ['is_required', 'planned_details']));
+        }
+        $this->unsetRelation('executionNeeds');
+    }
+
 
     protected static function booted(): void
     {

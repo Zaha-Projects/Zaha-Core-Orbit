@@ -69,8 +69,9 @@ class MonthlyActivityPlanningController extends Controller
         $executionStatusLabels = $this->executionStatusLabels();
 
         $monthlyNeedCodes = ExecutionNeedType::monthlyAvailableCodes();
+        $customNeedTypes = ExecutionNeedType::query()->custom()->availableFor(\App\Modules\Events\Models\EventSubjectTypes::MONTHLY_ACTIVITY)->orderBy('sort_order')->orderBy('id')->get();
 
-        return view('pages.monthly_activities.activities.create', compact('monthlyNeedCodes',
+        return view('pages.monthly_activities.activities.create', compact('customNeedTypes', 'monthlyNeedCodes',
             'branches',
             'agendaEvents',
             'targetGroups',
@@ -203,6 +204,7 @@ class MonthlyActivityPlanningController extends Controller
         $this->normalizeSuppliesRequestPayload($request);
 
         ExecutionNeedType::rejectUnavailableMonthlyFields($request->all(), ExecutionNeedType::monthlyAvailableCodes());
+        $customNeedPlan = $this->validatedCustomNeedPlan($request);
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -451,6 +453,7 @@ class MonthlyActivityPlanningController extends Controller
         ]);
 
         $workflowService->initializeDynamicStatuses($monthlyActivity);
+        $monthlyActivity->syncCustomExecutionNeedPlan($customNeedPlan);
         $this->syncVolunteerNeed($monthlyActivity, $data);
         $this->syncOfficialCorrespondence($monthlyActivity, $data);
         $this->syncTargetGroups($monthlyActivity, $data);
@@ -605,8 +608,10 @@ class MonthlyActivityPlanningController extends Controller
         $monthlyNeedCodes = ExecutionNeedType::monthlyAvailableCodes();
 
         $historicNeedDetails = $this->historicNeedDetails($monthlyActivity, $monthlyNeedCodes);
+        $monthlyActivity->loadMissing('executionNeeds.executionNeedType');
+        $customNeedTypes = ExecutionNeedType::query()->custom()->availableFor(\App\Modules\Events\Models\EventSubjectTypes::MONTHLY_ACTIVITY)->orderBy('sort_order')->orderBy('id')->get();
 
-        return view('pages.monthly_activities.activities.edit', compact('historicNeedDetails', 'monthlyNeedCodes',
+        return view('pages.monthly_activities.activities.edit', compact('customNeedTypes', 'historicNeedDetails', 'monthlyNeedCodes',
             'monthlyActivity',
             'branches',
             'agendaEvents',
@@ -1120,6 +1125,8 @@ class MonthlyActivityPlanningController extends Controller
         ];
 
         $newValues = $this->preserveUnavailableNeedValues($monthlyActivity, $newValues);
+        $oldValues['custom_execution_needs'] = $monthlyActivity->customExecutionNeedPlan();
+        $newValues['custom_execution_needs'] = $this->validatedCustomNeedPlan($request, $monthlyActivity);
 
         $changedFields = $this->meaningfulChangedFields($oldValues, $newValues);
 
@@ -1352,6 +1359,7 @@ class MonthlyActivityPlanningController extends Controller
             $workflowService->initializeDynamicStatuses($activityToSave);
         }
         $this->syncTargetGroups($activityToSave, $data);
+        $activityToSave->syncCustomExecutionNeedPlan($newValues['custom_execution_needs']);
         Log::info('monthly_activity.updated', [
             'monthly_activity_id' => $activityToSave->id,
             'updated_by' => $request->user()->id,
@@ -1855,6 +1863,39 @@ class MonthlyActivityPlanningController extends Controller
         if ($updates !== []) {
             $monthlyActivity->forceFill($updates)->save();
         }
+    }
+
+    private function validatedCustomNeedPlan(Request $request, ?MonthlyActivity $activity = null): array
+    {
+        $validated = $request->validate([
+            'custom_execution_needs' => ['sometimes', 'array'],
+            'custom_execution_needs.*' => ['required', 'array:execution_need_type_id,is_required,planned_details'],
+            'custom_execution_needs.*.execution_need_type_id' => ['required', 'integer', 'distinct'],
+            'custom_execution_needs.*.is_required' => ['required', 'boolean'],
+            'custom_execution_needs.*.planned_details' => ['nullable', 'string', 'max:2000'],
+        ], [], [
+            'custom_execution_needs' => 'احتياجات التنفيذ المخصصة',
+            'custom_execution_needs.*.execution_need_type_id' => 'نوع احتياج التنفيذ',
+            'custom_execution_needs.*.is_required' => 'حالة احتياج التنفيذ',
+            'custom_execution_needs.*.planned_details' => 'تفاصيل احتياج التنفيذ',
+        ]);
+        $plan = collect($activity?->customExecutionNeedPlan() ?? [])->keyBy('execution_need_type_id');
+        $available = ExecutionNeedType::query()->custom()->availableFor(\App\Modules\Events\Models\EventSubjectTypes::MONTHLY_ACTIVITY)->pluck('id');
+        foreach ($validated['custom_execution_needs'] ?? [] as $index => $row) {
+            $id = (int) $row['execution_need_type_id'];
+            $required = (bool) $row['is_required'];
+            $normalized = ['execution_need_type_id' => $id, 'is_required' => $required, 'planned_details' => $required ? ($row['planned_details'] ?? null) : null];
+            if (! $available->contains($id)) {
+                // An unchanged historic row may be resubmitted, but never added or modified.
+                if (! $plan->has($id) || $plan->get($id) !== $normalized) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(["custom_execution_needs.$index.execution_need_type_id" => 'هذا الاحتياج غير متاح للخطة الشهرية؛ بياناته السابقة محفوظة للقراءة فقط.']);
+                }
+                continue;
+            }
+            if ($required || $plan->has($id)) $plan->put($id, $normalized);
+        }
+
+        return $plan->sortKeys()->values()->all();
     }
 
     protected function copyUnavailableNeedRelations(MonthlyActivity $source, MonthlyActivity $target): void

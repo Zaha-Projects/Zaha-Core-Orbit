@@ -21,7 +21,19 @@ class ExecutionNeedType extends Model
 
     public static function ramadanAvailableTypes()
     {
-        return static::query()->canonical()->active()->forRamadanIftars()->orderBy('sort_order')->get();
+        return static::query()->canonical()->availableFor(EventSubjectTypes::RAMADAN_IFTAR)->orderBy('sort_order')->get();
+    }
+
+    public function scopeAvailableFor($query, string $subjectType)
+    {
+        EventSubjectTypes::modelFor($subjectType);
+
+        return $query->active()->where($subjectType === EventSubjectTypes::MONTHLY_ACTIVITY ? 'is_monthly_activity' : 'is_ramadan_iftar', true);
+    }
+
+    public function scopeCustom($query)
+    {
+        return $query->whereNotIn('code', array_keys(self::MONTHLY_INPUT_FIELDS));
     }
 
     public const MONTHLY_INPUT_FIELDS = [
@@ -93,7 +105,7 @@ class ExecutionNeedType extends Model
     public static function monthlyAvailableCodes(): array
     {
         $configured = static::query()->pluck('code');
-        $available = static::query()->active()->forMonthlyActivities()->pluck('code')->all();
+        $available = static::query()->availableFor(EventSubjectTypes::MONTHLY_ACTIVITY)->pluck('code')->all();
         // Monthly forms predate the catalogue. Preserve their existing defaults
         // only for absent rows; an explicit inactive/none row always wins.
         foreach (self::CANONICAL_DEFINITIONS as $code => $definition) {

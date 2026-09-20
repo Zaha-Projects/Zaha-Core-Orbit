@@ -63,7 +63,7 @@
                                     <option value="{{ $savedPeriod->year }}" {{ (int) old('ramadan_default_year', $ramadanDefaultYear) === $savedPeriod->year ? 'selected' : '' }}>{{ $savedPeriod->year }}</option>
                                 @endforeach
                             </select>
-                            <div class="form-text">تعديل تواريخ سنة أدناه لا يغيّر السنة الافتراضية.</div>
+                            <div class="form-text">التواريخ ميلادية ومدخلة يدويًا وتحتاج اعتماد الإدارة. تعديل تواريخ سنة أدناه لا يغيّر السنة الافتراضية.</div>
                             @error('ramadan_default_year')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12 col-md-3"><label class="form-label" for="ramadan_period_year">السنة الميلادية</label><input id="ramadan_period_year" class="form-control @error('ramadan_period_year') is-invalid @enderror" type="number" name="ramadan_period_year" value="{{ old('ramadan_period_year', $ramadanPeriod?->year ?? request('ramadan_year', now()->year)) }}" min="2020" max="2100" required>@error('ramadan_period_year')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
