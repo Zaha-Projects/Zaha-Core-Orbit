@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Modules\Events\Models\AgendaEvent;
-use App\Models\AnnualAgendaEditRequest;
+use App\Modules\Events\Models\AnnualAgendaEditRequest;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;

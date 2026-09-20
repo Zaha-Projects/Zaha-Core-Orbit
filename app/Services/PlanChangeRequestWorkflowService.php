@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Modules\Events\Models\AgendaEvent;
-use App\Models\AnnualAgendaDeleteRequest;
-use App\Models\AnnualAgendaEditRequest;
+use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
+use App\Modules\Events\Models\AnnualAgendaEditRequest;
 use App\Models\MonthlyActivity;
 use App\Models\MonthlyPlanDeleteRequest;
 use App\Models\MonthlyPlanEditRequest;

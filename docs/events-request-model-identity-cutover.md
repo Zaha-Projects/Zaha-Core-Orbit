@@ -564,3 +564,16 @@ NO DUAL-WRITE WAS INTRODUCED
 
 PHASE 2.6 REMAINS INCOMPLETE
 PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
+
+
+## 23. Phase 2.15 Annual Agenda request namespace outcome (2026-09-20)
+
+`PHASE 2.15 COMPLETE — SOURCE IMPLEMENTATION / STAGING PENDING`
+
+The Annual Agenda edit/delete request pair now has one production definition each under `App\Modules\Events\Models`; the old model files are absent. The legacy names remain literal identity data in `EventRequestModelIdentity`, while both legacy and canonical workflow values resolve to the canonical installed classes. `currentWriteType()` is intentionally asymmetric: canonical for the Annual Agenda pair, legacy for the untouched Monthly pair.
+
+Request relationships still dual-read the exact identity pair. `DynamicWorkflowService` reuses either identity, creates only canonical Annual Agenda request workflow rows when none exists, and rejects a mixed duplicate. New request rows continue storing canonical `AgendaEvent` aggregate identity in their own `entity_type`; this is separate from request workflow identity. Admin reporting now includes and normalizes both Annual Agenda workflow identities.
+
+No route, table, migration, backfill, dual-write, approval rule, authorization rule, action-log meaning, notification meaning, queue compatibility layer, Monthly model, PostExecutionVerification model, or Ramadan source was changed. Staging must execute mixed-history, binding, reporting and rollback checks.
+
+Remaining Events-owned models under `App\Models`: `MonthlyActivity`, `MonthlyPlanEditRequest`, `MonthlyPlanDeleteRequest`, and `PostExecutionVerification`. The next source slice is Phase 2.16, the Monthly Plan request pair cutover.

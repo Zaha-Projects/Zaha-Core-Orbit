@@ -146,6 +146,8 @@ class AdminReportsService
                 EventAggregateIdentity::acceptedTypes(AgendaEvent::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanEditRequest::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanDeleteRequest::class),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_EDIT_CANONICAL),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_DELETE_CANONICAL),
             ))
             ->whereNotNull('started_at')
             ->whereNotNull('completed_at')
