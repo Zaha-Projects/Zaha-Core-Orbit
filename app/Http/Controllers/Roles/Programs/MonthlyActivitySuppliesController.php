@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Roles\Programs;
 
 use App\Http\Controllers\Controller;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\EventSupply;
 use Illuminate\Http\Request;
 

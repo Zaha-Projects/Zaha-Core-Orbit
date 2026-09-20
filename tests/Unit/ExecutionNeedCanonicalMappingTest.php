@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Modules\Events\Models\ExecutionNeedType;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use PHPUnit\Framework\TestCase;
 
 class ExecutionNeedCanonicalMappingTest extends TestCase

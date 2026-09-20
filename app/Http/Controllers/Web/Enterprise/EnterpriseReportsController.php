@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web\Enterprise;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\AgendaEvent;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\WorkflowLog;
 use App\Models\WorkflowStep;
 use App\Services\AgendaWorkflowPresenter;

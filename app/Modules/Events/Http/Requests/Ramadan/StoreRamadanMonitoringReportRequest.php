@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Http\Requests\Ramadan;
 
-use App\Models\PostExecutionVerification;
+use App\Modules\Events\Models\PostExecutionVerification;
 use App\Modules\Events\Models\RamadanIftar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

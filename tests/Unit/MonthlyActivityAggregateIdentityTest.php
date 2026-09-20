@@ -2,13 +2,13 @@
 
 namespace Tests\Unit;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use PHPUnit\Framework\TestCase;
 
 class MonthlyActivityAggregateIdentityTest extends TestCase
 {
-    public function test_monthly_activity_is_compatibility_ready_but_not_cut_over(): void
+    public function test_monthly_activity_is_cut_over_with_legacy_read_compatibility(): void
     {
         $legacy = EventAggregateIdentity::MONTHLY_ACTIVITY_LEGACY;
         $canonical = EventAggregateIdentity::MONTHLY_ACTIVITY_CANONICAL;
@@ -20,7 +20,7 @@ class MonthlyActivityAggregateIdentityTest extends TestCase
         $this->assertSame(MonthlyActivity::class, EventAggregateIdentity::installedModelFor($legacy));
         $this->assertSame(MonthlyActivity::class, EventAggregateIdentity::installedModelFor($canonical));
         $this->assertSame(MonthlyActivity::class, EventAggregateIdentity::currentWriteType($canonical));
-        $this->assertTrue(class_exists($legacy));
-        $this->assertFalse(class_exists($canonical));
+        $this->assertFalse(class_exists($legacy));
+        $this->assertTrue(class_exists($canonical));
     }
 }

@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Modules\Events\Models\AgendaEvent;
 use App\Models\User;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\WorkflowInstance;
 use App\Models\WorkflowLog;
 use App\Models\WorkflowStep;

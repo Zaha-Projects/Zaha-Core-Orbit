@@ -48,10 +48,10 @@ The unsafe implicit `event_guidance_acknowledgements_event_guidance_version_id_f
 | Model | Current namespace | Table | Identity sensitive? | Status / remaining action |
 |---|---|---|:---:|---|
 | AgendaEvent | `App\Modules\Events\Models` | `agenda_events` | yes | **SOURCE COMPLETE**; sole production definition; stage old/new identities |
-| MonthlyActivity | `App\Models` | `monthly_activities` | yes, including correspondence morph | **CUTOVER NOT STARTED** |
+| MonthlyActivity | `App\Modules\Events\Models` | `monthly_activities` | yes, including correspondence morph | **SOURCE COMPLETE / STAGING PENDING** |
 | AnnualAgendaEditRequest / DeleteRequest | `App\Modules\Events\Models` | `annual_agenda_edit_requests` / `annual_agenda_delete_requests` | yes | **SOURCE COMPLETE / STAGING PENDING**; sole canonical definitions |
-| MonthlyPlanEditRequest / DeleteRequest | `App\Models` | `monthly_plan_edit_requests` / `monthly_plan_delete_requests` | yes | **COMPATIBILITY READY**; later pair |
-| PostExecutionVerification | `App\Models` | `post_execution_verifications` | yes (audit identity) | **CUTOVER NOT STARTED** |
+| MonthlyPlanEditRequest / DeleteRequest | `App\Modules\Events\Models` | `monthly_plan_edit_requests` / `monthly_plan_delete_requests` | yes | **SOURCE COMPLETE / STAGING PENDING** |
+| PostExecutionVerification | `App\Modules\Events\Models` | `post_execution_verifications` | yes (audit identity) | **SOURCE COMPLETE / STAGING PENDING** |
 | ExecutionNeedType | `App\Modules\Events\Models` | `execution_need_types` | no FQCN dependency found | moved/current |
 | TargetGroup | same | `target_groups` | no | moved/current |
 | SubjectTargetGroup | same | **`event_target_group`** | stable subject alias | moved/current; no alternate table |
@@ -73,7 +73,7 @@ There is no production `app/Models/AgendaEvent.php`. Exact `App\Models\AgendaEve
 | 2.14A Agenda compatibility | DONE IN SOURCE / STAGING PENDING | exact Agenda pair resolves to installed model and protects uniqueness |
 | 2.14B AgendaEvent cutover | DONE IN SOURCE / STAGING PENDING | canonical class is sole production definition; new class-derived writes canonical |
 
-Annual Agenda and Monthly Plan request models are **SOURCE COMPLETE / STAGING PENDING**. `MonthlyActivity` and `PostExecutionVerification` are **CUTOVER NOT STARTED**. Source work is not blocked merely because completed slices also carry staging debt.
+Annual Agenda and Monthly Plan request models, `MonthlyActivity`, and `PostExecutionVerification` are **SOURCE COMPLETE / STAGING PENDING**. No Events-owned identity-sensitive model remains under `App\Models`; completed slices retain their staging debt.
 
 ## Ramadan architecture and form
 
@@ -193,15 +193,15 @@ The panel requires an active period and Ramadan view permission (or super admin)
 | Agenda request pair cutover | DONE IN SOURCE / STAGING PENDING | sole canonical model definitions and dual-read compatibility | stage mixed identity, binding and workflow regressions; no backfill | yes |
 | Monthly request pair cutover | DONE IN SOURCE / STAGING PENDING | canonical models and writers; legacy workflow dual-read | staging verification only | yes |
 | MonthlyActivity compatibility preparation | DONE IN SOURCE / STAGING PENDING | aggregate helper, workflow/report dual-read, correspondence resolver and duplicate guard | Phase 2.18 model move only after staging | yes |
-| PostExecutionVerification cutover | NOT STARTED | audit identity; model still legacy | focused inventory/helper then move | yes |
+| PostExecutionVerification cutover | DONE IN SOURCE / STAGING PENDING | focused audit identity helper; sole canonical model | stage legacy/canonical audit visibility and Monthly/Ramadan regressions | yes |
 | Monthly need transaction normalization | PARTIAL / DEFERRED | shared catalogue, legacy JSON transactions | separately authorized business/data migration | yes |
 | Phase 2.6/general runtime gate | NOT STARTED here | missing vendor and DB | consolidated staging run later | yes |
 
 ## Remaining source work and exactly one next slice
 
-Dependency order: (1) MonthlyActivity compatibility including `official_correspondences.correspondable_type`; (2) a later, separate MonthlyActivity cutover; (3) focused PostExecutionVerification compatibility then move; (4) only separately authorize Monthly transaction normalization.
+The aggregate/request/verification namespace cutovers are complete in source. Monthly transaction normalization remains separately authorized work and is not part of identity cleanup.
 
-**Recommended next slice: Phase 2.18 — MonthlyActivity namespace cutover.** Use the prepared identity boundaries, retain mixed-history reads, and switch the installed/current writer only with the sole model move.
+**Recommended next slice: final Events identity cleanup and staging cutover runbook preparation.** Preserve all historical compatibility identities until the staged inventory and observation gates are complete.
 
 Do **not** include MonthlyActivity, PostExecutionVerification, backfills, broad morph maps, dual writes, workflow/business changes, or Ramadan features.
 
@@ -247,3 +247,44 @@ DONE IN SOURCE / STAGING PENDING. `EventAggregateIdentity` recognizes legacy and
 ## 2026-09-20 Admin navigation and lookup-management UX slice
 
 DONE IN SOURCE / STAGING PENDING. Ramadan dashboard visibility is now a persisted, default-enabled setting and an additional gate ahead of Ramadan period/metric work. The main header has an application-timezone live clock plus Gregorian and display-only ICU Umm al-Qura Hijri dates; approved `RamadanPeriod` dates remain the sole operational authority. Shared and Ramadan-specific lookup management is inventoried in `docs/admin-reference-data-and-navigation-audit.md` and grouped in the Admin navigation. No Events aggregate identity, MonthlyActivity, PostExecutionVerification, backfill, approval, monitoring, closure, period-rule, or guidance-acknowledgement change was made. The next source slice remains Phase 2.18 — MonthlyActivity namespace cutover.
+
+## Phase 2.18 — MonthlyActivity namespace cutover
+
+DONE IN SOURCE / STAGING PENDING. `MonthlyActivity` now has one installed model at
+`App\Modules\Events\Models\MonthlyActivity`; its removed `App\Models` name is
+retained only as a historical compatibility identity. New workflow,
+workflow-action, official-correspondence, Monthly request aggregate, audit, and
+class-derived metadata writes are canonical. Workflow, Monthly request, and
+official-correspondence readers still accept both identities, reuse a single
+historical row, and reject mixed logical duplicates where creation is guarded.
+The focused correspondence inverse resolver maps both stored identities to the
+canonical model without a global morph map. Stable `monthly_activity` subject
+aliases are unchanged. No migration, backfill, dual write, business-rule,
+Ramadan, or PostExecutionVerification change was made. PostExecutionVerification
+remains NOT CUT OVER.
+
+## Phase 2.19 — PostExecutionVerification identity review and safe cutover
+
+SOURCE COMPLETE — DIRECT CUTOVER COMPLETE / STAGING PENDING. The audit confirmed
+that `audit_logs.entity_type` is the sole persisted PostExecutionVerification
+self-FQCN boundary and that the existing focused identity helper already accepts
+both historical and canonical values. The sole model moved to
+`App\Modules\Events\Models\PostExecutionVerification`, and new verification
+audit writes now use the canonical identity. Monthly ownership remains the
+direct `monthly_activity_id` foreign key; Ramadan ownership remains the direct
+`monitoring_report_id` foreign key with stable `ramadan_iftar` parent subject and
+detail aliases. No verification workflow identity, polymorphic model identity,
+route binding, queued model serialization, migration, backfill, dual write, or
+business-rule change was introduced. No Events-owned identity-sensitive models
+remain under `App\Models`.
+
+## Final Events identity source cleanup
+
+DONE IN SOURCE / STAGING PENDING. The authoritative identity matrix is now
+`docs/events-identity-cutover-final-state.md`; the executable staging gate is
+`docs/events-staging-cutover-runbook.md`. AgendaEvent, both Annual request
+models, both Monthly request models, MonthlyActivity, and
+PostExecutionVerification are canonical. Older phase sections in this document
+are historical chronology, not current TODOs. Legacy stored identities remain
+supported and unmodified. Remaining work is STAGING / RUNTIME VERIFICATION ONLY;
+no additional identity namespace source cutover remains.

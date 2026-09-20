@@ -4,7 +4,7 @@ namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
 use App\Models\ActivityNote;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\MonthlyActivityApproval;
 use App\Modules\Events\Models\MonthlyActivityAttachment;
 use App\Models\WorkflowActionLog;

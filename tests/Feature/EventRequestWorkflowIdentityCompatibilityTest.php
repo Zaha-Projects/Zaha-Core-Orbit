@@ -143,7 +143,7 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
 
     public function test_legacy_monthly_activity_relations_target_canonical_request_models(): void
     {
-        $activity = new \App\Models\MonthlyActivity();
+        $activity = new \App\Modules\Events\Models\MonthlyActivity();
 
         $this->assertInstanceOf(MonthlyPlanEditRequest::class, $activity->editRequests()->getRelated());
         $this->assertInstanceOf(MonthlyPlanDeleteRequest::class, $activity->deleteRequests()->getRelated());

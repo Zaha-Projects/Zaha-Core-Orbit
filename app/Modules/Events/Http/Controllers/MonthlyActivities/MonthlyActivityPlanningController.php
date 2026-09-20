@@ -10,7 +10,7 @@ use App\Models\Branch;
 use App\Modules\Events\Models\MonthlyActivityChangeLog;
 use App\Modules\Events\Models\MonthlyActivityPartner;
 use App\Modules\Events\Models\MonthlyActivitySponsor;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Models\WorkflowInstance;

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use PHPUnit\Framework\TestCase;
 
 class MonthlyActivityExecutionStatusTest extends TestCase

@@ -10,7 +10,7 @@ use App\Models\ActivityEvaluation;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\EvaluationForm;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Services\ActivityEvaluationService;
 use Illuminate\Http\Request;
 

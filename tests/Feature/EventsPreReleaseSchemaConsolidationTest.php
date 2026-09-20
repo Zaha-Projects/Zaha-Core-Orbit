@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\ExecutionTeamMember;
-use App\Models\PostExecutionVerification;
+use App\Modules\Events\Models\PostExecutionVerification;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\EventSubjectTypes;

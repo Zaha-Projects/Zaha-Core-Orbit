@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Roles\FollowupOfficer;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityEvaluation;
 use App\Models\EvaluationForm;
-use App\Models\MonthlyActivity;
-use App\Models\PostExecutionVerification;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\PostExecutionVerification;
 use Illuminate\Http\Request;
 
 class FollowupWorkspaceController extends Controller

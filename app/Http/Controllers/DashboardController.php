@@ -6,7 +6,7 @@ use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\CommunicationsRequest;
 use App\Models\DepartmentUnit;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\Setting;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\MonitoringReport;

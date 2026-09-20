@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Modules\Events\Models;
 
+use App\Models\Branch;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,5 +27,5 @@ class PostExecutionVerification extends Model
     public function activity() { return $this->belongsTo(MonthlyActivity::class, 'monthly_activity_id'); }
     public function branch() { return $this->belongsTo(Branch::class); }
     public function verifier() { return $this->belongsTo(User::class, 'verified_by'); }
-    public function monitoringReport() { return $this->belongsTo(\App\Modules\Events\Models\MonitoringReport::class); }
+    public function monitoringReport() { return $this->belongsTo(MonitoringReport::class); }
 }

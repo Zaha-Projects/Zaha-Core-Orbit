@@ -21,11 +21,20 @@ class PostExecutionVerificationIdentityTest extends TestCase
         $this->assertFalse(PostExecutionVerificationIdentity::accepts('PostExecutionVerification'));
     }
 
-    public function test_writer_remains_on_the_legacy_identity_before_cutover(): void
+    public function test_writer_uses_canonical_identity_after_cutover(): void
     {
         $this->assertSame(
-            'App\\Models\\PostExecutionVerification',
+            'App\\Modules\\Events\\Models\\PostExecutionVerification',
             PostExecutionVerificationIdentity::currentWriteType()
         );
     }
+
+    public function test_only_the_canonical_model_class_is_installed(): void
+    {
+        $this->assertFalse(class_exists(PostExecutionVerificationIdentity::LEGACY));
+        $this->assertTrue(class_exists(PostExecutionVerificationIdentity::CANONICAL));
+        $model = new (PostExecutionVerificationIdentity::CANONICAL)();
+        $this->assertSame('post_execution_verifications', $model->getTable());
+    }
+
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use Illuminate\Http\Request;
 
 class MonthlyReportsController extends Controller

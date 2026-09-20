@@ -1076,3 +1076,23 @@ Ramadan planning now uses version-bound persisted guidance acknowledgement, auth
 ### Ramadan source consistency and dashboard (2026-09-15)
 
 Hard review reconfirmed `SubjectTargetGroup` -> `event_target_group`, the single canonical execution-need catalogue, planning-only version copies, and persistent per-version guidance acceptance. The main dashboard now has a permission/period/branch-scoped Ramadan summary. Runtime remains pending, not a source-development blocker.
+
+
+## Phase 2.18 MonthlyActivity cutover handover addendum (2026-09-20)
+
+`PHASE 2.18 SOURCE COMPLETE — STAGING PENDING`
+
+The sole MonthlyActivity model is canonical under Events. Preserve the legacy
+storage identity in compatibility readers; do not restore a wrapper, backfill
+history, or alter stable `monthly_activity` aliases. PostExecutionVerification
+remains under `App\Models` and is NOT CUT OVER. Its compatibility sufficiency
+must be reviewed before the next cutover.
+
+## Final Events identity handover (2026-09-20)
+
+Source namespace work is complete for AgendaEvent, Annual Agenda requests,
+Monthly requests, MonthlyActivity, and PostExecutionVerification. Use
+`docs/events-identity-cutover-final-state.md` as the authoritative matrix and
+`docs/events-staging-cutover-runbook.md` as the next action. Do not remove legacy
+compatibility, backfill identities, add wrappers, or begin another namespace
+phase. Remaining identity work is staging/runtime verification only.

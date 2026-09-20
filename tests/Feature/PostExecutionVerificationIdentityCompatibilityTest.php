@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Modules\Events\Models\MonitoringReport;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\PostExecutionVerification;
 use App\Modules\Events\Support\PostExecutionVerificationIdentity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -41,4 +44,18 @@ class PostExecutionVerificationIdentityCompatibilityTest extends TestCase
             $logs->pluck('entity_type')->all()
         );
     }
+
+    public function test_canonical_model_keeps_table_and_id_based_parent_relationships(): void
+    {
+        $verification = new PostExecutionVerification();
+
+        $this->assertSame('post_execution_verifications', $verification->getTable());
+        $this->assertInstanceOf(MonthlyActivity::class, $verification->activity()->getRelated());
+        $this->assertSame('monthly_activity_id', $verification->activity()->getForeignKeyName());
+        $this->assertInstanceOf(MonitoringReport::class, $verification->monitoringReport()->getRelated());
+        $this->assertSame('monitoring_report_id', $verification->monitoringReport()->getForeignKeyName());
+        $this->assertInstanceOf(PostExecutionVerification::class, (new MonthlyActivity())->postExecutionVerifications()->getRelated());
+        $this->assertInstanceOf(PostExecutionVerification::class, (new MonitoringReport())->verifications()->getRelated());
+    }
+
 }

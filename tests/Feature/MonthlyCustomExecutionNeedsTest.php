@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\EventGuidanceAcknowledgement;

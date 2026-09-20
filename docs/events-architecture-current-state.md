@@ -266,7 +266,7 @@ Agenda owns `agenda_events`, targets, participations, approvals, partner departm
 | Flow | Workflow module/code | Stored entity identity | Steps/decision owner | Risk / final identity |
 |---|---|---|---|---|
 | Agenda planning | `agenda` / `agenda_approval` | `App\Models\AgendaEvent` FQCN in instances | Relations Officer → Relations Manager → Executive Manager | High namespace-move risk; retain stored identity |
-| Monthly planning | `monthly_activities` / `monthly_activity_approval` | `App\Models\MonthlyActivity` FQCN | Relations Officer; conditional Supervisor/Coordinator; Relations Manager; conditional Executive | High namespace-move risk; legacy status mirror remains |
+| Monthly planning | `monthly_activities` / `monthly_activity_approval` | `App\Modules\Events\Models\MonthlyActivity` canonical FQCN; legacy identity read-compatible | Relations Officer; conditional Supervisor/Coordinator; Relations Manager; conditional Executive | High namespace-move risk; legacy status mirror remains |
 | Monthly edit/delete requests | request tables + `PlanChangeRequestWorkflowService` | request/entity type strings | existing Monthly/Agenda semantics | High; not interchangeable with Ramadan |
 | Ramadan planning | `ramadan_iftars` / `ramadan_iftar_approval` | `App\Modules\Events\Models\RamadanIftar` | five seeded steps | Final identity; per-version instance |
 | Ramadan monitoring | no DynamicWorkflow definition | report ID in action-log metadata | Follow-up submit; Supervisor review | Do not invent workflow instance; report status is authoritative |
@@ -933,3 +933,21 @@ The canonical execution-needs catalogue now owns context applicability and manda
 ### Ramadan dashboard integration hard review (2026-09-15)
 
 The general dashboard exposes its seasonal Ramadan panel only for an active configured period and a user with `ramadan_iftars.view` (or super admin). Queries use the same scoped-branch rule as the Ramadan workspace, one conditional aggregate query, and one five-row eager-loaded upcoming query. Branch 23 is not referenced outside opt-in demo data.
+
+
+## Phase 2.19 PostExecutionVerification cutover update (2026-09-20)
+
+The Phase 2.8C/2.8D paragraphs above are historical records. Phase 2.19 supersedes
+their namespace status: the sole model is now
+`App\Modules\Events\Models\PostExecutionVerification`, the focused audit
+identity writer is canonical, and both exact audit identities remain accepted.
+No migration or backfill occurred; staging verification remains pending.
+
+## Final Events identity authority (2026-09-20)
+
+`docs/events-identity-cutover-final-state.md` supersedes older phase-specific
+namespace status statements. All seven identity-sensitive Events models are
+canonical in source; exact legacy identities remain only for persisted-history
+compatibility. No backfill or identity migration has occurred. Execute
+`docs/events-staging-cutover-runbook.md`; staging/runtime verification is the
+only remaining identity gate.

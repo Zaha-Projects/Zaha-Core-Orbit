@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Roles\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 

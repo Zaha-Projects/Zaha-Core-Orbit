@@ -11,7 +11,7 @@ use App\Models\Department;
 use App\Models\DepartmentUnit;
 use App\Modules\Events\Models\EventCategory;
 use App\Modules\Events\Models\EventStatusLookup;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\WorkflowLog;

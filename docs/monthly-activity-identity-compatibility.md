@@ -2,62 +2,41 @@
 
 ## Status
 
-Phase 2.17 is **DONE IN SOURCE / STAGING PENDING**. `MonthlyActivity` remains
-installed at `App\Models\MonthlyActivity`; the future canonical identity is
-`App\Modules\Events\Models\MonthlyActivity`. Both are recognized by
-`EventAggregateIdentity`, while `installedModelFor()` and `currentWriteType()`
-still select the legacy class. No wrapper, alias, model move, migration, or
-backfill exists.
+Phase 2.18 is **DONE IN SOURCE / STAGING PENDING**. The sole installed model is
+`App\Modules\Events\Models\MonthlyActivity`; `App\Models\MonthlyActivity` is a
+permanent historical storage identity only. No wrapper or class alias exists.
+No migration or historical backfill was performed.
 
 ## Persisted identity inventory
 
-| Boundary | Storage | Current writer | Compatibility reader |
-|---|---|---|---|
-| activity workflow | `workflow_instances.entity_type` | legacy | aggregate identity pair; conflict on two logical rows |
-| workflow action history | `workflow_action_logs.entity_type` | legacy | exact Monthly filters use the aggregate identity pair |
-| official correspondence | `official_correspondences.correspondable_type` | legacy | relationship/service accept the pair; conflict on duplicates |
-| Monthly request aggregate | `monthly_plan_*_requests.entity_type` | legacy | business workflow lookup accepts the pair; request workflow identity remains separate |
-| evaluation audit | `audit_logs.entity_type` | legacy | no exact Monthly audit reader was found; no speculative reader added |
-| notifications | JSON metadata may copy request aggregate identity | legacy | navigation uses `action_url`; no dynamic FQCN instantiation found |
-| common event children | stable `subject_type = monthly_activity` | stable alias | excluded from FQCN compatibility |
+| Boundary | New writer | Historical read contract |
+|---|---|---|
+| `workflow_instances.entity_type` | canonical MonthlyActivity FQCN | legacy and canonical; reuse one and reject mixed duplicates |
+| `workflow_action_logs.entity_type` | canonical when class-derived | exact Monthly readers accept both identities |
+| `official_correspondences.correspondable_type` | canonical MonthlyActivity FQCN | focused inverse resolution maps either identity to the canonical model; reuse one and reject mixed duplicates |
+| `monthly_plan_*_requests.entity_type` | canonical aggregate FQCN | legacy and canonical aggregate identities remain readable; request workflow identity is separate |
+| `audit_logs.entity_type` | canonical when class-derived | no exact Monthly audit reader was found; historical rows remain unchanged |
+| notification JSON | canonical when class-derived | historical JSON remains unchanged and navigation remains `action_url` based |
+| shared Events subject columns | stable `monthly_activity` alias | deliberately not an FQCN and unchanged |
 
-## Workflow contract
+## Compatibility contract
 
-`DynamicWorkflowService` already centralizes aggregate find-before-create. It
-queries both accepted MonthlyActivity identities, reuses exactly one, throws on
-a mixed legacy/canonical duplicate, and creates with the current legacy writer.
-Reports and exact workflow/action-log readers use the same accepted pair.
+`EventAggregateIdentity` accepts both MonthlyActivity FQCNs and resolves both to
+the canonical installed model. Its current writer is canonical. Workflow and
+official-correspondence creation retain find-before-create semantics: no match
+creates canonical, exactly one legacy/canonical match is reused without changing
+its stored type, and a mixed pair throws `LogicException`. No dual write occurs.
 
-## Official correspondence decision
+`OfficialCorrespondence::correspondable()` uses focused MonthlyActivity handling;
+no unrestricted global morph map was introduced. Monthly request relationships
+use the canonical model while request rows with the historical aggregate FQCN
+remain readable. Stable business aliases including `monthly_activity` were not
+changed.
 
-No global morph map is installed. The public `MonthlyActivity::officialCorrespondence`
-relationship is a focused `hasOne` constrained by correspondence ID and both
-accepted types. `OfficialCorrespondence::correspondable()` returns a normal
-`belongsTo` to the currently installed MonthlyActivity model when either exact
-Monthly identity is stored; unrelated polymorphic records continue through
-Laravel's existing `morphTo()` behavior. These relationship APIs exist in
-Laravel 8.83 and require no newer morph-map feature.
+## Staging gate
 
-All operational correspondence writes go through
-`MonthlyActivityOfficialCorrespondenceService`. It searches both identities
-before write/delete, reuses one row, throws `LogicException` when both logical
-identities exist, and creates with `currentWriteType()`, which remains legacy in
-this preparation phase. The database unique key on `(correspondable_type,
-correspondable_id)` remains useful but is not treated as logical duplicate
-protection across FQCNs.
-
-## Audit, notification, and aliases
-
-Monthly evaluation audit writes currently store the legacy FQCN. No production
-reader filters audit logs by the exact MonthlyActivity FQCN, so no speculative
-resolver was added. Notification navigation is URL-based and does not dynamically
-instantiate the copied aggregate identity. Stable common Events aliases such as
-`monthly_activity` are business discriminators, not PHP identities, and remain
-unchanged.
-
-## Future Phase 2.18 requirements
-
-The cutover must move the sole model definition, switch the aggregate helper's
-installed/current writer to canonical, update PHP imports, retain all dual-read
-boundaries, and stage mixed-history workflow/correspondence/report checks. It
-must not backfill stored identities as part of the model move.
+Exercise legacy-only, canonical-only, absent, and mixed-duplicate workflow and
+correspondence records; verify request history and new canonical request writes;
+verify route model binding, approval/planning/execution flows, branch scope,
+reports, audit emission, and action-log history against staging data.
+`PostExecutionVerification` is **NOT CUT OVER** and is the next identity review.

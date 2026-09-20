@@ -318,3 +318,13 @@ STAGING VERIFICATION REQUIRED: migrate the execution-need metadata, guidance ack
 ## Ramadan source hard-review and dashboard ledger (2026-09-15)
 
 ADDED / STAGING EXECUTION REQUIRED: target-table negative assertion; mandatory need tamper tests; exact-version acknowledgement; clean/partial/inactive period bootstrap; planning-only version deep copy; double-run child counts; dashboard inactive-period and unauthorized absence; scoped-branch aggregation; period bounds; metric values; five-row upcoming bound; dashboard RTL/responsive links and empty state.
+
+## Final Events identity staging gate (2026-09-20)
+
+All Events identity cutovers are complete in source and unverified at runtime.
+The prior phase-specific matrices remain historical evidence. The consolidated,
+executable verification procedure is now
+`docs/events-staging-cutover-runbook.md`, backed by the authoritative source
+matrix in `docs/events-identity-cutover-final-state.md`. No runtime success is
+claimed, no historical identity was backfilled, and no compatibility was
+retired. The next required action is execution of the staging runbook.

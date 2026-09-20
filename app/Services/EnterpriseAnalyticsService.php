@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 
 class EnterpriseAnalyticsService
 {
