@@ -3,12 +3,7 @@
 @section('page_title', 'البيانات المرجعية للإفطارات')
 @section('content')
 @php
-$titles = [
-'target_groups' => 'الفئات المستهدفة',
-    'beneficiary_segments' => 'شرائح المستفيدين والفئات العمرية',
-    'execution_need_types' => 'أنواع احتياجات التنفيذ', 'community_organizations' => 'الجمعيات والمراكز',
-    'local_communities' => 'المجتمعات المحلية', 'monitoring_methods' => 'طرق المتابعة',
-];
+$titles = ['community_organizations' => 'المؤسسات والمراكز', 'local_communities' => 'المجتمعات المحلية'];
 @endphp
 <div class="container py-4" dir="rtl">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -20,6 +15,7 @@ $titles = [
     <ul class="nav nav-tabs mb-3" role="tablist">
         @foreach($titles as $key => $title)<li class="nav-item"><button class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#ref-{{ $key }}" type="button">{{ $title }}</button></li>@endforeach
     </ul>
+    <div class="mb-3"><a class="btn btn-outline-success" href="{{ route('events.ramadan.admin.mobilization-methods.index') }}">طرق الحشد والاستقطاب</a></div>
     <div class="tab-content">
         @foreach($titles as $resource => $title)
         <section class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="ref-{{ $resource }}">

@@ -94,6 +94,7 @@ use App\Modules\Events\Http\Controllers\Ramadan\RamadanMonitoringReviewControlle
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarClosureController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarChangeRequestController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarChangeRequestReviewController;
+use App\Modules\Events\Http\Controllers\Ramadan\RamadanReferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -181,6 +182,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/guidance/{guidance}', [RamadanGuidanceAdminController::class, 'update'])->name('guidance.update');
         Route::patch('/guidance/{guidance}/publish', [RamadanGuidanceAdminController::class, 'publish'])->name('guidance.publish');
         Route::patch('/guidance/{guidance}/deactivate', [RamadanGuidanceAdminController::class, 'deactivate'])->name('guidance.deactivate');
+        Route::get('/reference-data/mobilization-methods', [MobilizationMethodController::class, 'index'])->name('mobilization-methods.index');
         Route::post('/mobilization-methods', [MobilizationMethodController::class, 'store'])->name('mobilization-methods.store');
         Route::put('/mobilization-methods/{method}', [MobilizationMethodController::class, 'update'])->name('mobilization-methods.update');
         Route::patch('/mobilization-methods/{method}/toggle', [MobilizationMethodController::class, 'toggle'])->name('mobilization-methods.toggle');
@@ -251,6 +253,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
     Route::prefix('dashboard/events/ramadan/iftars')->name('events.ramadan.iftars.')->middleware('branch.isolation')->group(function () {
+        Route::get('/references/organizations', [RamadanReferenceController::class, 'organizations'])->name('references.organizations.index');
+        Route::post('/references/organizations', [RamadanReferenceController::class, 'storeOrganization'])->name('references.organizations.store');
+        Route::get('/references/local-communities', [RamadanReferenceController::class, 'localCommunities'])->name('references.local-communities.index');
+        Route::post('/references/local-communities', [RamadanReferenceController::class, 'storeLocalCommunity'])->name('references.local-communities.store');
         Route::get('/', [RamadanIftarWorkspaceController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|executive_manager|followup_officer|super_admin|ramadan_iftars.view')->name('index');
         Route::get('/calendar', [RamadanIftarWorkspaceController::class, 'calendar'])->middleware('role_or_permission:relations_manager|relations_officer|supervisor|branch_coordinator|executive_manager|followup_officer|super_admin|ramadan_iftars.view')->name('calendar');
         Route::get('/create', [RamadanIftarController::class, 'create'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create')->name('create');

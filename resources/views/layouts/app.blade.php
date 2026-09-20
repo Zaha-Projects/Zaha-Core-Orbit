@@ -118,7 +118,9 @@
                 <li class="side-item {{ request()->routeIs('role.super_admin.approvals*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.approvals') }}"><i class="fas fa-list-check"></i><span>{{ __('app.roles.super_admin.sidebar.approvals') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.reports') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.reports') }}"><i class="fas fa-chart-simple"></i><span>تقارير الإدارة</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.site_settings.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.site_settings.index') }}"><i class="fas fa-gear"></i><span>إعدادات الموقع</span></a></li>
-                <li class="side-item {{ request()->routeIs('events.ramadan.admin.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.index') }}"><i class="fas fa-moon"></i><span>إدارة إفطارات رمضان</span></a></li>
+                <li class="side-item {{ request()->routeIs('events.ramadan.admin.index') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.index') }}"><i class="fas fa-sliders"></i><span>إفطارات رمضان — الإعدادات</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.ramadan_reference_data.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}"><i class="fas fa-database"></i><span>البيانات المرجعية</span></a></li>
+                <li class="side-item {{ request()->routeIs('events.ramadan.admin.mobilization-methods.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.mobilization-methods.index') }}"><i class="fas fa-bullhorn"></i><span>طرق الحشد والاستقطاب</span></a></li>
             @endif
 
             @if(! $isCommunicationHeadOnly)
@@ -133,6 +135,7 @@
             @endcanany
             @can('ramadan_iftars.view')
                 <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('events.ramadan.iftars.calendar') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.calendar') }}"><i class="fas fa-calendar-days"></i><span>تقويم الإفطارات</span></a></li>
             @endcan
             @can('ramadan_iftars.approve')
                 <li class="side-item {{ request()->routeIs('events.ramadan.approvals.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('ramadan_iftars.navigation.approvals') }}</span></a></li>

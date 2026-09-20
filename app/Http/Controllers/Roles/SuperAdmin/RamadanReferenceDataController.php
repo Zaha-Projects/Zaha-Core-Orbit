@@ -8,6 +8,7 @@ use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\LocalCommunity;
+use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\MonitoringMethod;
 use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,7 @@ class RamadanReferenceDataController extends Controller
         'execution_need_types' => ExecutionNeedType::class,
         'community_organizations' => CommunityOrganization::class,
         'local_communities' => LocalCommunity::class,
+        'mobilization_methods' => MobilizationMethod::class,
         'monitoring_methods' => MonitoringMethod::class,
     ];
 
@@ -92,6 +94,7 @@ class RamadanReferenceDataController extends Controller
             'beneficiary_segments' => ['code' => $commonCode, 'name_ar' => $uniqueName('name_ar'), 'name_en' => ['required', 'string', 'max:255'], 'dimension' => ['required', Rule::in(BeneficiarySegment::dimensions())], 'minimum_age' => ['nullable', 'integer', 'min:0', 'max:120'], 'maximum_age' => ['nullable', 'integer', 'min:0', 'max:120', 'gte:minimum_age'], 'is_other' => ['required', 'boolean'], 'is_active' => ['required', 'boolean'], 'sort_order' => ['required', 'integer', 'min:0']],
             'execution_need_types' => ['code' => $commonCode, 'name' => $uniqueName('name'), 'description' => ['nullable', 'string'], 'usage_scope' => ['required', Rule::in(ExecutionNeedType::usageScopes())], 'mandatory_for_ramadan' => ['required', 'boolean'], 'is_active' => ['required', 'boolean'], 'sort_order' => ['required', 'integer', 'min:0']],
             'community_organizations', 'local_communities' => ['branch_id' => ['required', 'integer', 'exists:branches,id'], 'name' => ['required', 'string', 'max:255', Rule::unique($table, 'name')->where(fn ($query) => $query->where('branch_id', (int) $request->input('branch_id')))->ignore($id)], 'contact_name' => ['nullable', 'string', 'max:255'], 'contact_phone' => ['nullable', 'string', 'max:50'], 'location_name' => ['nullable', 'string', 'max:255'], 'address' => ['nullable', 'string'], 'google_maps_url' => ['nullable', 'url', 'max:2048'], 'is_active' => ['required', 'boolean']],
+            'mobilization_methods' => ['code' => $commonCode, 'name_ar' => $uniqueName('name_ar'), 'name_en' => ['required', 'string', 'max:255'], 'is_other' => ['required', 'boolean'], 'is_active' => ['required', 'boolean'], 'sort_order' => ['required', 'integer', 'min:0']],
             'monitoring_methods' => ['code' => $commonCode, 'name_ar' => $uniqueName('name_ar'), 'name_en' => ['required', 'string', 'max:255'], 'is_active' => ['required', 'boolean'], 'sort_order' => ['required', 'integer', 'min:0']],
         };
 

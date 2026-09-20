@@ -9,6 +9,13 @@ use Illuminate\Validation\Rule;
 
 class MobilizationMethodController extends Controller
 {
+    public function index()
+    {
+        return view('pages.events.ramadan.admin.mobilization-methods', [
+            'mobilizationMethods' => MobilizationMethod::query()->ordered()->get(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         MobilizationMethod::query()->create($this->validated($request));
