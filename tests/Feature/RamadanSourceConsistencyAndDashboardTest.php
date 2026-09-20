@@ -39,7 +39,7 @@ class RamadanSourceConsistencyAndDashboardTest extends TestCase
     {
         $source = file_get_contents(app_path('Http/Controllers/DashboardController.php'));
 
-        $this->assertStringContainsString('RamadanPeriod::active()', $source);
+        $this->assertStringContainsString('RamadanPeriod::current()', $source);
         $this->assertStringContainsString("can('ramadan_iftars.view')", $source);
         $this->assertStringContainsString("can('branches.view.all')", $source);
         $this->assertStringContainsString('scopedBranchIds()', $source);

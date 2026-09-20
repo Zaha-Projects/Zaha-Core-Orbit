@@ -118,6 +118,7 @@
                 <li class="side-item {{ request()->routeIs('role.super_admin.approvals*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.approvals') }}"><i class="fas fa-list-check"></i><span>{{ __('app.roles.super_admin.sidebar.approvals') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.reports') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.reports') }}"><i class="fas fa-chart-simple"></i><span>تقارير الإدارة</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.site_settings.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.site_settings.index') }}"><i class="fas fa-gear"></i><span>إعدادات الموقع</span></a></li>
+                <li class="side-item {{ request()->routeIs('events.ramadan.admin.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.index') }}"><i class="fas fa-moon"></i><span>إدارة إفطارات رمضان</span></a></li>
             @endif
 
             @if(! $isCommunicationHeadOnly)

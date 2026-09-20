@@ -26,7 +26,7 @@ use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\TargetGroup;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\RamadanIftarMealItem;
-use App\Modules\Events\Support\RamadanPeriod;
+use App\Modules\Events\Models\RamadanPeriod;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
@@ -43,7 +43,7 @@ class RamadanIftarDemoSeeder extends Seeder
         $branch = Branch::query()->find(self::BRANCH_ID);
         if (! $branch) throw new RuntimeException('Ramadan demo requires branch_id = 23. Seed the approved branch catalogue first.');
         $user = $this->demoUsers();
-        $period = RamadanPeriod::active();
+        $period = RamadanPeriod::current();
         if (! $period) throw new RuntimeException('Ramadan demo requires an active administratively configurable Ramadan period.');
         $guidance = EventGuidanceVersion::currentForRamadan();
         if (! $guidance) throw new RuntimeException('Ramadan demo requires published Ramadan guidance.');
@@ -67,12 +67,12 @@ class RamadanIftarDemoSeeder extends Seeder
         ];
 
         foreach ($scenarios as $index => $scenario) {
-            $date = $period['start']->addDays($scenario['day']);
-            if ($date->gt($period['end'])) $date = $period['end'];
+            $date = $period->start_date->addDays($scenario['day']);
+            if ($date->gt($period->end_date)) $date = $period->end_date;
             $iftar = RamadanIftar::query()->updateOrCreate(
                 ['branch_id' => self::BRANCH_ID, 'title' => $scenario['title']],
                 [
-                    'relations_officer_id'=>$user->id, 'created_by'=>$user->id,
+                    'ramadan_period_id'=>$period->id, 'relations_officer_id'=>$user->id, 'created_by'=>$user->id,
                     'description'=>'بيانات عرض اصطناعية لتجربة واجهات إفطارات رمضان.',
                     'planned_date'=>$date->toDateString(), 'actual_date'=>$scenario['execution']==='completed'?$date->toDateString():null,
                     'time_from'=>'17:00', 'time_to'=>'20:00', 'location_type'=>RamadanIftar::LOCATION_INSIDE_CENTER,

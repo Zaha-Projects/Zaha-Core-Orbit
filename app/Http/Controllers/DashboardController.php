@@ -10,7 +10,7 @@ use App\Models\MonthlyActivity;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\RamadanIftar;
-use App\Modules\Events\Support\RamadanPeriod;
+use App\Modules\Events\Models\RamadanPeriod;
 use Carbon\Carbon;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
@@ -209,14 +209,14 @@ class DashboardController extends Controller
 
     private function ramadanDashboard($user): ?array
     {
-        $period = RamadanPeriod::active();
+        $period = RamadanPeriod::current();
         if (! $period || ! $user || (! $user->hasRole('super_admin') && ! $user->can('ramadan_iftars.view'))) {
             return null;
         }
 
         $base = RamadanIftar::query()
             ->whereDoesntHave('versions')
-            ->whereBetween('planned_date', [$period['start']->toDateString(), $period['end']->toDateString()]);
+            ->whereBetween('planned_date', [$period->start_date->toDateString(), $period->end_date->toDateString()]);
         if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
             $branchIds = $user->scopedBranchIds();
             $branchIds === [] ? $base->whereRaw('1 = 0') : $base->whereIn('branch_id', $branchIds);

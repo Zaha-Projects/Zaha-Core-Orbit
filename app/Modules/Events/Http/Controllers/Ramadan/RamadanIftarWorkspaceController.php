@@ -5,7 +5,7 @@ namespace App\Modules\Events\Http\Controllers\Ramadan;
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Services\DynamicWorkflowService;
-use App\Modules\Events\Support\RamadanPeriod;
+use App\Modules\Events\Models\RamadanPeriod;
 use Illuminate\Http\Request;
 
 class RamadanIftarWorkspaceController extends Controller
@@ -101,7 +101,7 @@ class RamadanIftarWorkspaceController extends Controller
         }
         $recordYears = (clone $query)->selectRaw('YEAR(planned_date) as year')->distinct()->pluck('year');
         $years = $periods->pluck('year')->merge($recordYears)->filter()->unique()->sortDesc()->values();
-        $defaultYear = RamadanPeriod::defaultYear();
+        $defaultYear = RamadanPeriod::current()?->year ?? now()->year;
         $selectedYear = (int) $request->input('year', $years->contains($defaultYear) ? $defaultYear : ($years->first() ?? $defaultYear));
         $season = $periods->firstWhere('year', $selectedYear);
         $records = $query->whereBetween('planned_date', [$selectedYear.'-01-01', $selectedYear.'-12-31'])

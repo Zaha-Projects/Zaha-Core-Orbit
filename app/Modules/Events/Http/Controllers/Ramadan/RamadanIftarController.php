@@ -17,7 +17,7 @@ use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Services\RamadanIftarPlanningService;
 use App\Modules\Events\Services\RamadanGuidanceAcceptanceService;
 use Illuminate\Http\Request;
-use App\Modules\Events\Support\RamadanPeriod;
+use App\Modules\Events\Models\RamadanPeriod;
 
 class RamadanIftarController extends Controller
 {
@@ -117,8 +117,8 @@ class RamadanIftarController extends Controller
                 if ($iftar) $query->orWhereIn('code', $iftar->gifts()->pluck('gift_type'));
             })->orderBy('sort_order')->orderBy('id')->get(),
             'executionNeedTypes' => ExecutionNeedType::ramadanAvailableTypes(),
-            'ramadanPeriod' => RamadanPeriod::active(),
-            'ramadanPeriods' => \App\Modules\Events\Models\RamadanPeriod::query()->active()->orderBy('start_date')->get(),
+            'ramadanPeriod' => RamadanPeriod::current(),
+            'ramadanPeriods' => RamadanPeriod::query()->active()->orderBy('start_date')->get(),
         ];
     }
 }

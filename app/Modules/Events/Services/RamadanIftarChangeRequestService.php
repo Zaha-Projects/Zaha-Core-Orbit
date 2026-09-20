@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 class RamadanIftarChangeRequestService
 {
     private const CORE_FIELDS = [
-        'agenda_event_id', 'branch_id', 'title', 'description', 'relations_officer_id', 'planned_date',
+        'agenda_event_id', 'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id', 'planned_date',
         'time_from', 'time_to', 'location_type', 'location_name', 'address', 'google_maps_url',
         'contact_name', 'contact_phone', 'supporting_entity_name', 'host_type',
         'community_organization_id', 'local_community_id', 'mobilization_method_id',

@@ -210,3 +210,8 @@ Do **not** include Monthly request models, MonthlyActivity, PostExecutionVerific
 **SOURCE STATUS:** Agenda cutover and reviewed Ramadan implementation are complete as described; remaining namespace work is ordered above.
 
 **STAGING VERIFICATION STATUS:** pending. Restore lock-authoritative dependencies and a configured database; run migration status/migrations and identifier inspection, relevant PHPUnit, reference preflight/staging seeder/idempotency, identity duplicate/orphan inventories, full Ramadan lifecycle/version copy, branch/permission checks, and browser/RTL checks. This audit does not create the final runbook or claim the period error was observed as resolved.
+
+
+## 2026-09-20 Ramadan Admin configuration slice
+
+DONE IN SOURCE / STAGING PENDING. Ramadan periods now carry explicit Hijri years and Iftars have a nullable, backfill-aware period FK. One model owns active lookup/activation. A focused super-admin area manages annual periods, immutable versioned guidance, and mobilization methods. Legacy setting readers were removed while keys remain preserved for deployment inventory. Reference seeders preserve administrator changes; demo orchestration stays separate. The next source slice returns to the Annual Agenda request-model namespace cutover after staging debt is recorded.

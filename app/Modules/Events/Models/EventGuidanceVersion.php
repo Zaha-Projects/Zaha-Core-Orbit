@@ -35,7 +35,7 @@ class EventGuidanceVersion extends Model
         static::updating(function (self $version): void {
             $meaningfulFields = ['code', 'version_number', 'title', 'content', 'published_at', 'created_by'];
 
-            if ($version->isDirty($meaningfulFields) && $version->ramadanIftars()->exists()) {
+            if ($version->getOriginal('published_at') !== null && $version->isDirty($meaningfulFields)) {
                 throw new LogicException('An accepted guidance version cannot be changed. Create a new version instead.');
             }
         });
