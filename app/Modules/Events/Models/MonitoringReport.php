@@ -2,7 +2,7 @@
 
 namespace App\Modules\Events\Models;
 
-use App\Models\PostExecutionVerification;
+use App\Modules\Events\Models\PostExecutionVerification;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

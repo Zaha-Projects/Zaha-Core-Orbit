@@ -9,7 +9,7 @@ use App\Models\Branch;
 use App\Models\CommunicationsRequest;
 use App\Models\DonationCash;
 use App\Models\OfficialCorrespondence;
-use App\Models\PostExecutionVerification;
+use App\Modules\Events\Models\PostExecutionVerification;
 use App\Models\User;
 use App\Models\WorkflowInstance;
 use App\Models\WorkshopsRequest;

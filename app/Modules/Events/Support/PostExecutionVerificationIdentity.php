@@ -19,14 +19,11 @@ final class PostExecutionVerificationIdentity
     }
 
     /**
-     * Identity emitted before the Phase 2.8D namespace cutover.
-     *
-     * Phase 2.8D must change this single boundary to CANONICAL only when the
-     * model moves and the rollback-safe deployment prerequisites are met.
+     * Identity emitted after the PostExecutionVerification namespace cutover.
      */
     public static function currentWriteType(): string
     {
-        return self::LEGACY;
+        return self::CANONICAL;
     }
 
     public static function accepts(string $type): bool

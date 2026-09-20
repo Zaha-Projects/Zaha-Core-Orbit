@@ -933,3 +933,12 @@ The canonical execution-needs catalogue now owns context applicability and manda
 ### Ramadan dashboard integration hard review (2026-09-15)
 
 The general dashboard exposes its seasonal Ramadan panel only for an active configured period and a user with `ramadan_iftars.view` (or super admin). Queries use the same scoped-branch rule as the Ramadan workspace, one conditional aggregate query, and one five-row eager-loaded upcoming query. Branch 23 is not referenced outside opt-in demo data.
+
+
+## Phase 2.19 PostExecutionVerification cutover update (2026-09-20)
+
+The Phase 2.8C/2.8D paragraphs above are historical records. Phase 2.19 supersedes
+their namespace status: the sole model is now
+`App\Modules\Events\Models\PostExecutionVerification`, the focused audit
+identity writer is canonical, and both exact audit identities remain accepted.
+No migration or backfill occurred; staging verification remains pending.
