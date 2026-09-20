@@ -11,6 +11,7 @@
         option.classList.toggle('is-active', active);
         var details = option.querySelector('.ramadan-need-details');
         if (details) details.hidden = !active;
+        toggle.setAttribute('aria-expanded', active ? 'true' : 'false');
         var badge = option.querySelector('[data-enabled-badge]');
         if (badge) badge.hidden = !active;
         option.querySelectorAll('.ramadan-need-details [name]').forEach(function (input) {
@@ -23,10 +24,26 @@
         syncNeed(toggle);
         toggle.addEventListener('change', function () { syncNeed(toggle); });
     });
+    document.querySelectorAll('#ramadan-planning-form .ramadan-form-section').forEach(function (section) {
+        var invalid = section.querySelector('.is-invalid, [aria-invalid="true"]');
+        section.classList.toggle('has-validation-error', Boolean(invalid));
+        if (invalid && !section.querySelector('[data-section-error-badge]')) {
+            var header = section.querySelector('.card-header');
+            if (header) {
+                var badge = document.createElement('span');
+                badge.className = 'badge ramadan-section-error-badge';
+                badge.dataset.sectionErrorBadge = '';
+                badge.textContent = 'يحتاج مراجعة';
+                header.appendChild(badge);
+            }
+        }
+    });
     var firstInvalid = document.querySelector('.ramadan-module .is-invalid, .ramadan-module [aria-invalid="true"]');
     if (firstInvalid) {
         firstInvalid.closest('.card')?.scrollIntoView({behavior:'smooth', block:'center'});
         firstInvalid.focus({preventScroll:true});
+    } else {
+        document.querySelector('[data-validation-summary]')?.focus();
     }
 })();
 

@@ -50,17 +50,22 @@ class RamadanReferenceController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'contact_name' => ['nullable', 'string', 'max:255'],
-            'contact_phone' => ['nullable', 'string', 'max:50'],
+            'contact_phone' => ['required', 'string', 'min:7', 'max:25', 'regex:/^[0-9+()\-\s]+$/'],
             'location_name' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
-            'google_maps_url' => ['nullable', 'url', 'max:2048'],
+        ], [
+            'name.required' => 'الاسم مطلوب لإضافة السجل.',
+            'contact_phone.required' => 'رقم التواصل مطلوب لإضافة السجل.',
+            'contact_phone.min' => 'رقم التواصل قصير جدًا.',
+            'contact_phone.max' => 'رقم التواصل طويل جدًا.',
+            'contact_phone.regex' => 'أدخل رقم تواصل صالحًا باستخدام الأرقام والمسافات و + أو - أو الأقواس فقط.',
         ]);
         $normalized = $this->normalize($data['name']);
         $duplicate = $model::query()->where('branch_id', $branchId)->get(['id', 'name'])->first(
             fn (Model $record) => $this->normalize($record->name) === $normalized
         );
         if ($duplicate) {
-            throw ValidationException::withMessages(['name' => 'يوجد سجل بهذا الاسم في فرعك بالفعل. اختره من نتائج البحث.']);
+            throw ValidationException::withMessages(['name' => 'يوجد سجل بنفس الاسم في هذا الفرع. يمكنك اختياره من نتائج البحث.']);
         }
 
         $record = $model::query()->create($data + ['branch_id' => $branchId, 'is_active' => true]);
@@ -80,7 +85,9 @@ class RamadanReferenceController extends Controller
 
     private function normalize(string $name): string
     {
-        return mb_strtolower(trim(preg_replace('/[\s\x{0640}]+/u', ' ', $name)));
+        $withoutTatweel = str_replace("ـ", '', $name);
+
+        return mb_strtolower(trim(preg_replace('/\s+/u', ' ', $withoutTatweel)));
     }
 
     private function payload(Model $record): array

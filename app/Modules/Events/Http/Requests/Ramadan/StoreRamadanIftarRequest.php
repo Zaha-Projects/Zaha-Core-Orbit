@@ -20,7 +20,7 @@ use Illuminate\Validation\Validator;
 
 class StoreRamadanIftarRequest extends FormRequest
 {
-    private const JORDAN_MOBILE_PHONE_REGEX = '/^(?:\+962|0)7[789]\d{7}$/';
+    private const CONTACT_PHONE_REGEX = '/^[0-9+()\-\s]{7,25}$/';
     private bool $prepared = false;
     private array $submittedNeedDetails = [];
     public function authorize(): bool
@@ -111,7 +111,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'address' => ['nullable', 'string'],
             'google_maps_url' => ['nullable', 'url', 'max:2048'],
             'contact_name' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => in_array($this->input('host_type'), [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true))],
-            'contact_phone' => ['nullable', 'string', 'max:50', 'regex:'.self::JORDAN_MOBILE_PHONE_REGEX, Rule::requiredIf(fn () => in_array($this->input('host_type'), [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true))],
+            'contact_phone' => ['nullable', 'string', 'max:25', 'regex:'.self::CONTACT_PHONE_REGEX, Rule::requiredIf(fn () => in_array($this->input('host_type'), [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true))],
             'supporting_entity_name' => ['nullable', 'string', 'max:255'],
             'host_type' => ['required', Rule::in(RamadanIftar::hostTypes())],
             'community_organization_id' => ['nullable', 'integer', 'exists:community_organizations,id'],
@@ -121,7 +121,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'attendees' => ['array'],
             'attendees.*.id' => ['nullable', 'integer'],
             'attendees.*.full_name' => ['required', 'string', 'max:255'],
-            'attendees.*.phone' => ['required', 'string', 'max:50', 'regex:'.self::JORDAN_MOBILE_PHONE_REGEX],
+            'attendees.*.phone' => ['required', 'string', 'max:25', 'regex:'.self::CONTACT_PHONE_REGEX],
             'attendees.*.age' => ['required', 'integer', 'min:0', 'max:120'],
             'target_groups' => ['present', 'array'],
             'target_groups.*.id' => ['nullable', 'integer'],
@@ -138,7 +138,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.source_type' => ['nullable', 'string', 'max:50'],
             'meals.*.source_name' => ['nullable', 'string', 'max:255'],
             'meals.*.restaurant_name' => ['required', 'string', 'max:255'],
-            'meals.*.restaurant_contact' => ['required', 'string', 'max:50', 'regex:'.self::JORDAN_MOBILE_PHONE_REGEX],
+            'meals.*.restaurant_contact' => ['required', 'string', 'max:25', 'regex:'.self::CONTACT_PHONE_REGEX],
             'meals.*.estimated_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'meals.*.items' => ['required', 'array', 'min:1'],
             'meals.*.items.*.id' => ['nullable', 'integer'],
@@ -228,6 +228,26 @@ class StoreRamadanIftarRequest extends FormRequest
             'volunteer_requirements.*.gender' => 'جنس المتطوعين',
             'volunteer_requirements.*.planned_count' => 'عدد المتطوعين',
             'volunteer_requirements.*.tasks_summary' => 'مهام المتطوعين',
+            'target_groups.*.target_group_id' => 'الفئة المستهدفة',
+            'target_groups.*.beneficiary_segment_id' => 'شريحة المستفيدين',
+            'target_groups.*.planned_count' => 'العدد المخطط للفئة',
+            'execution_teams.*.name' => 'اسم فريق التنفيذ',
+            'execution_teams.*.members.*.member_name' => 'اسم عضو فريق التنفيذ',
+            'program_segments.*.name' => 'اسم فقرة البرنامج',
+            'supplies.*.item_name' => 'اسم المستلزم',
+            'supplies.*.planned_quantity' => 'كمية المستلزم',
+            'gifts.*.description' => 'وصف الهدية أو الدرع',
+            'gifts.*.planned_quantity' => 'كمية الهدايا أو الدروع',
+            'execution_needs.*.execution_need_type_id' => 'احتياج التنفيذ',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'contact_phone.regex' => 'أدخل رقم تواصل صالحًا باستخدام الأرقام والمسافات و + أو - أو الأقواس فقط.',
+            'attendees.*.phone.regex' => 'أدخل رقم تواصل صالحًا للحاضر.',
+            'meals.*.restaurant_contact.regex' => 'أدخل رقم تواصل صالحًا للمطعم.',
         ];
     }
 
@@ -320,7 +340,7 @@ class StoreRamadanIftarRequest extends FormRequest
             foreach ($team['members'] ?? [] as $j => $member) if (! empty($member['user_id'])) $paths["execution_teams.$i.members.$j.user_id"] = $member['user_id'];
         }
         foreach ($paths as $path => $id) {
-            if ($id && ! User::query()->whereKey($id)->where('status', 'active')->where(function ($q) use ($branchId) { $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)); })->exists()) $validator->errors()->add($path, __('validation.exists', ['attribute' => $path]));
+            if ($id && ! User::query()->whereKey($id)->where('status', 'active')->where(function ($q) use ($branchId) { $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)); })->exists()) $validator->errors()->add($path, 'المستخدم المحدد غير متاح لهذا الفرع.');
         }
     }
 
@@ -349,21 +369,21 @@ class StoreRamadanIftarRequest extends FormRequest
             $group = TargetGroup::query()->whereKey($row['target_group_id'])->where(function ($query) use ($existingTargetIds) {
                 $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingTargetIds);
             })->first();
-            if (! $group) $validator->errors()->add("target_groups.$i.target_group_id", __('validation.exists', ['attribute' => 'target group']));
-            elseif ($group->is_other && blank($row['target_group_custom_text'] ?? null)) $validator->errors()->add("target_groups.$i.target_group_custom_text", __('validation.required', ['attribute' => 'target group other']));
+            if (! $group) $validator->errors()->add("target_groups.$i.target_group_id", __('validation.exists', ['attribute' => 'الفئة المستهدفة']));
+            elseif ($group->is_other && blank($row['target_group_custom_text'] ?? null)) $validator->errors()->add("target_groups.$i.target_group_custom_text", __('validation.required', ['attribute' => 'تفصيل الفئة الأخرى']));
             if ($segmentId = ($row['beneficiary_segment_id'] ?? null)) {
                 $segment = BeneficiarySegment::query()->whereKey($segmentId)->where(fn ($query) => $query->active()->orWhereIn('id', $existingSegmentIds))->first();
-                if (! $segment) $validator->errors()->add("target_groups.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'beneficiary segment']));
-                elseif ($segment->is_other && blank($row['segment_custom_text'] ?? null)) $validator->errors()->add("target_groups.$i.segment_custom_text", __('validation.required', ['attribute' => 'segment other']));
+                if (! $segment) $validator->errors()->add("target_groups.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'شريحة المستفيدين']));
+                elseif ($segment->is_other && blank($row['segment_custom_text'] ?? null)) $validator->errors()->add("target_groups.$i.segment_custom_text", __('validation.required', ['attribute' => 'تفصيل الشريحة الأخرى']));
             }
         }
         foreach ($this->input('volunteer_requirements', []) as $i => $requirement) {
             $segmentId = $requirement['beneficiary_segment_id'] ?? null;
             if ($segmentId && ! BeneficiarySegment::query()->whereKey($segmentId)->where(fn ($query) => $query->active()->orWhereIn('id', $existingSegmentIds))->exists()) {
-                $validator->errors()->add("volunteer_requirements.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'beneficiary segment']));
+                $validator->errors()->add("volunteer_requirements.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'الفئة العمرية للمتطوعين']));
             }
         }
-        foreach ($this->input('gifts', []) as $i => $gift) if (($gift['has_supporting_entity'] ?? false) && blank($gift['supporting_entity_name'] ?? null)) $validator->errors()->add("gifts.$i.supporting_entity_name", __('validation.required', ['attribute' => 'supporting entity']));
+        foreach ($this->input('gifts', []) as $i => $gift) if (($gift['has_supporting_entity'] ?? false) && blank($gift['supporting_entity_name'] ?? null)) $validator->errors()->add("gifts.$i.supporting_entity_name", __('validation.required', ['attribute' => 'اسم الجهة الداعمة']));
         foreach ($this->input('program_segments', []) as $i => $segment) if (! empty($segment['executor_user_id']) && filled($segment['external_executor_name'] ?? null)) $validator->errors()->add("program_segments.$i.external_executor_name", 'اختر منفذًا داخليًا أو خارجيًا، وليس كليهما.');
         foreach ($this->input('execution_teams', []) as $i => $team) foreach ($team['members'] ?? [] as $j => $member) if (empty($member['user_id']) && blank($member['member_name'] ?? null)) $validator->errors()->add("execution_teams.$i.members.$j.member_name", 'يجب اختيار مستخدم أو إدخال اسم عضو الفريق.');
     }

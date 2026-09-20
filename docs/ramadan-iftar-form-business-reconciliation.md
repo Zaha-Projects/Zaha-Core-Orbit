@@ -105,3 +105,38 @@ All created children use stable natural keys under the stable demo Iftar: attend
 ### Dashboard contract
 
 The general dashboard panel requires an active Ramadan period and `ramadan_iftars.view` (or super admin). Normal users are constrained by `scopedBranchIds`; broad users follow `branches.view.all`. One conditional aggregate query computes bounded lifecycle metrics and one eager-loaded query returns at most five upcoming Iftars. No demo branch constant participates in dashboard queries.
+
+## Form UX and inline-reference contract (2026-09-20)
+
+Create and edit continue to share `_form.blade.php`, but the planning experience
+is now organized into numbered, navigable cards for core data, host/attendance,
+targets, meals, execution needs, program/volunteers, and final review. A summary
+explains failed validation, invalid controls retain row-level messages and old
+input, invalid cards are visibly marked, and the first invalid control is focused
+when practical. Conditional host and need panels disable hidden inputs so
+inactive sections are not validated accidentally; existing server-side create/edit
+rules and inactive historical-reference allowances remain authoritative.
+
+Relations Officer reference pickers retain search, select, and create. Both
+`CommunityOrganization` and `LocalCommunity` quick creation require only `name`
+and `contact_phone`. Contact name, location name, and address are optional behind
+“إضافة تفاصيل إضافية”. Google Maps URL is deliberately absent from quick-create
+validation and payloads; its database column and the full Iftar/Admin forms remain
+unchanged. Branch ownership is server-derived, search/create stay branch-scoped,
+and normalized same-branch duplicates (whitespace, case, and Arabic tatweel) are
+rejected with an Arabic select-the-existing-record message. Successful creation
+auto-selects the new record and closes the editor.
+
+Execution needs use responsive selection cards showing an icon, name,
+description when available, mandatory/optional badge, current enabled state, and
+the relevant detail form inside the selected card. Mandatory execution team is
+shown as `إلزامي`, permanently enabled, and cannot be deselected. Inactive
+historical selections remain in the existing read-only historical-needs display.
+
+The form palette is scoped to `.ramadan-module`: Light Mode uses neutral page
+backgrounds, white surfaces, dark text, and restrained gold emphasis; Dark Mode
+uses distinct charcoal/navy surfaces, warm gold, off-white text, readable muted
+text, and visible focus/error states. Cards collapse to one column on mobile,
+actions remain reachable, RTL is preserved, and reduced-motion behavior remains
+in force. No workflow, approval, monitoring, closure, persistence, period,
+guidance, branch, or versioning rule changed.
