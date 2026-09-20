@@ -8,15 +8,22 @@ use Illuminate\Support\Facades\DB;
 
 class RamadanPeriod extends Model
 {
-    protected $fillable = ['year', 'hijri_year', 'start_date', 'end_date', 'is_active'];
+    protected $fillable = ['year', 'hijri_year', 'start_date', 'end_date', 'suggested_start_date', 'suggested_end_date', 'calculation_source', 'synced_at', 'is_confirmed', 'is_active'];
 
     protected $casts = [
         'year' => 'integer', 'hijri_year' => 'integer',
-        'start_date' => 'immutable_date', 'end_date' => 'immutable_date', 'is_active' => 'boolean',
+        'start_date' => 'immutable_date', 'end_date' => 'immutable_date',
+        'suggested_start_date' => 'immutable_date', 'suggested_end_date' => 'immutable_date', 'synced_at' => 'datetime',
+        'is_confirmed' => 'boolean', 'is_active' => 'boolean',
     ];
 
     protected static function booted(): void
     {
+        static::saving(function (self $period): void {
+            if ($period->is_active && ! $period->is_confirmed) {
+                throw new \LogicException('A Ramadan period must be confirmed before activation.');
+            }
+        });
         static::saved(function (self $period): void {
             if ($period->is_active) {
                 static::query()->whereKeyNot($period->getKey())->where('is_active', true)->update(['is_active' => false]);
@@ -46,8 +53,21 @@ class RamadanPeriod extends Model
         return static::query()->active()->whereDate('start_date', '<=', $date)->whereDate('end_date', '>=', $date)->exists();
     }
 
+    public function useSuggestedDates(): void
+    {
+        if (! $this->suggested_start_date || ! $this->suggested_end_date) throw new \LogicException('No suggested Ramadan dates are available.');
+        $this->forceFill(['start_date' => $this->suggested_start_date, 'end_date' => $this->suggested_end_date, 'is_confirmed' => false])->save();
+    }
+
+    public function confirm(): void
+    {
+        if (! $this->hijri_year || ! $this->start_date || ! $this->end_date || $this->start_date->gt($this->end_date)) throw new \LogicException('Valid operational dates and Hijri year are required.');
+        $this->forceFill(['is_confirmed' => true])->save();
+    }
+
     public function activate(): void
     {
+        if (! $this->is_confirmed) throw new \LogicException('Confirm the Ramadan period before activation.');
         DB::transaction(function (): void {
             static::query()->orderBy('id')->lockForUpdate()->get();
             static::query()->where('is_active', true)->whereKeyNot($this->getKey())->update(['is_active' => false]);

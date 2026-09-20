@@ -9,18 +9,18 @@ if (! app()->environment('testing') || ! in_array($db, ['zaha_review_test_202609
     throw new RuntimeException('Refusing DDL outside the isolated review test databases.');
 }
 $migration = require database_path('migrations/2026_09_18_000100_add_reference_name_uniqueness.php');
-$indexes = ['community_org_branch_name_uq','local_community_branch_name_uq','mobilization_methods_name_ar_uq','target_groups_name_uq','beneficiary_segments_name_ar_uq','ramadan_iftar_gift_types_name_ar_uq','execution_need_types_name_uq','monitoring_methods_name_ar_uq'];
+$indexes = ['community_org_branch_name_uq','local_community_branch_name_uq','mobilization_methods_name_ar_uq','target_groups_name_uq','beneficiary_segments_name_ar_uq','execution_need_types_name_uq','monitoring_methods_name_ar_uq'];
 $check = function (bool $condition, string $message): void { if (! $condition) throw new RuntimeException($message); };
 $count = fn () => (int) DB::table('information_schema.STATISTICS')->whereRaw('TABLE_SCHEMA = DATABASE()')->whereIn('INDEX_NAME', $indexes)->distinct()->count('INDEX_NAME');
-$check($count() === 8, 'Run feature suite migrations first.');
+$check($count() === 7, 'Run feature suite migrations first.');
 $branch = App\Models\Branch::factory()->create();
 $tables = ['community_organizations', 'local_communities'];
 try {
     $migration->down();
-    $check($count() === 0, 'down did not remove all eight indexes');
+    $check($count() === 0, 'down did not remove all seven indexes');
     foreach ($tables as $table) DB::table($table)->insert(['branch_id'=>$branch->id,'name'=>'QA migration unique']);
     $migration->up();
-    $check($count() === 8, 'healthy up failed');
+    $check($count() === 7, 'healthy up failed');
     foreach ($tables as $table) $check(DB::table($table)->where('branch_id',$branch->id)->value('name') === 'QA migration unique', 'migration changed data');
     $migration->down();
     $check($count() === 0, 'healthy rollback failed');
@@ -47,7 +47,7 @@ try {
         }
     }
     $migration->up();
-    $check($count() === 8, 'final up failed');
+    $check($count() === 7, 'final up failed');
     $check(max(array_map('strlen',$indexes)) <= 64, 'index name exceeds MySQL limit');
     echo "PASS reapply; all index names within MySQL 64-character limit\n";
 } finally {

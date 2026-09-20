@@ -236,7 +236,7 @@ class RamadanScopePreservationTest extends TestCase
         $this->post(route('events.ramadan.iftars.store'), $payload)->assertSessionHasNoErrors();
         $iftar = RamadanIftar::query()->sole();
         RamadanPeriod::where('year', 2026)->update(['is_active' => false, 'start_date' => '2026-02-25']);
-        RamadanPeriod::create(['year' => 2027, 'start_date' => '2027-02-08', 'end_date' => '2027-03-09', 'is_active' => true]);
+        RamadanPeriod::create(['year' => 2027, 'start_date' => '2027-02-08', 'end_date' => '2027-03-09', 'is_confirmed' => true, 'is_active' => true]);
         Setting::updateOrCreate(['key' => 'ramadan_default_year'], ['value' => '2027']);
         $this->get(route('events.ramadan.iftars.calendar', ['year' => 2026]))->assertOk()->assertSee('Original title')->assertSee('غير فعالة');
         $this->get(route('events.ramadan.iftars.calendar', ['year' => 2027]))->assertOk()->assertDontSee('Original title');

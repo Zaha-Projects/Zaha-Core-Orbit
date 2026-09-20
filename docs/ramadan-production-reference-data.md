@@ -28,7 +28,7 @@
 
 - Seeders تستخدم الإدخال الآمن عند غياب المفتاح (`insertOrIgnore`) مع unique constraints، وتحافظ على تعديلات الأسماء والتفعيل والترتيب والأعمار.
 - أُضيف `target_groups.code` كرمز فريد nullable. تُربط التسميات الأصلية بالسجل الأقدم عند وجود تكرار قديم، دون حذف أو دمج IDs مستخدمة. تبقى السجلات المخصصة القديمة دون رمز؛ لا تُفترض مطابقة أسماء عُدلت سابقًا.
-- أُضيف `ramadan_iftar_gift_types` للقيم الموجودة فقط: `gifts`, `shields`, `both`. حُفظ حقل `ramadan_iftar_gifts.gift_type` وقيمه العامة، وأصبحت خيارات النموذج والتحقق تُقرأ من المرجع الفعال. تُدرج migration القيم الحالية للحفاظ على عمل النموذج دون انتظار Seeder.
+- أُلغي تصميم مرجع أنواع الهدايا قبل النشر. القيم البنيوية الثلاث محفوظة مركزيًا في `RamadanIftarGift` ويستمر الحقل `ramadan_iftar_gifts.gift_type`. تُدرج migration القيم الحالية للحفاظ على عمل النموذج دون انتظار Seeder.
 - أُضيف `RamadanReferenceDataSeeder` لتجميع Seeders المطلوبة فقط؛ لا ينشئ مستخدمين أو إفطارات تجريبية أو فروعًا أو workflows.
 
 ### نطاق احتياجات التنفيذ
@@ -66,14 +66,12 @@ Migrations جديدة:
 - `database/migrations/2026_09_16_000200_add_guidance_source_hash.php`
 - `database/migrations/2026_09_16_000300_preserve_monthly_execution_need_catalogue.php`
 - `database/migrations/2026_09_16_000400_add_target_group_reference_codes.php`
-- `database/migrations/2026_09_16_000500_create_ramadan_iftar_gift_types_table.php`
 
 Models وSupport:
 
 - `app/Modules/Events/Models/ExecutionNeedType.php`
 - `app/Modules/Events/Models/TargetGroup.php`
 - `app/Modules/Events/Models/RamadanIftarGift.php`
-- `app/Modules/Events/Models/RamadanIftarGiftType.php` (جديد)
 - `app/Modules/Events/Models/RamadanPeriod.php` (جديد)
 - `app/Modules/Events/Support/RamadanPeriod.php`
 
@@ -85,7 +83,7 @@ Controllers وRequests وServices:
 - `app/Modules/Events/Http/Requests/Ramadan/StoreRamadanIftarRequest.php`
 - `app/Modules/Events/Services/RamadanIftarSubmissionService.php`
 
-Seeders: `BeneficiarySegmentSeeder`, `CanonicalExecutionNeedTypeSeeder`, `MobilizationMethodSeeder`, `MonitoringMethodSeeder`, `RamadanIftarGuidanceSeeder`, `RamadanPeriodSeeder`, `TargetGroupSeeder`؛ والجديدان `RamadanIftarGiftTypeSeeder`, `RamadanReferenceDataSeeder`، وملف النص المراجع JSON.
+Seeders: `BeneficiarySegmentSeeder`, `CanonicalExecutionNeedTypeSeeder`, `MobilizationMethodSeeder`, `MonitoringMethodSeeder`, `RamadanIftarGuidanceSeeder`, `RamadanPeriodSeeder`, `TargetGroupSeeder`؛ والجديد `RamadanReferenceDataSeeder`، وملف النص المراجع JSON.
 
 الواجهات:
 

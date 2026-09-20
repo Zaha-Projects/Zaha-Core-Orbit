@@ -15,7 +15,7 @@ class RamadanReferencePreflight extends Command
         $tables = [
             'community_organizations' => 'name', 'local_communities' => 'name',
             'mobilization_methods' => 'name_ar', 'target_groups' => 'name',
-            'beneficiary_segments' => 'name_ar', 'ramadan_iftar_gift_types' => 'name_ar',
+            'beneficiary_segments' => 'name_ar',
             'execution_need_types' => 'name', 'monitoring_methods' => 'name_ar',
         ];
         $report = ['server' => DB::selectOne('SELECT VERSION() AS version, DATABASE() AS db'), 'tables' => []];

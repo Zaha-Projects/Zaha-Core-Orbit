@@ -21,7 +21,6 @@ class RamadanPeriodAndGuidanceTest extends TestCase
 
         $this->assertSame('2026-02-20', RamadanPeriod::query()->where('year', 2026)->firstOrFail()->start_date->toDateString());
         $this->assertDatabaseCount('ramadan_periods', 1);
-        $this->assertSame(4, Setting::query()->whereIn('key', [RamadanPeriod::YEAR_KEY, RamadanPeriod::START_KEY, RamadanPeriod::END_KEY, RamadanPeriod::ACTIVE_KEY])->count());
         $this->assertTrue(RamadanPeriod::contains('2026-02-20'));
         $this->assertFalse(RamadanPeriod::contains('2026-01-01'));
     }

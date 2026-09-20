@@ -13,7 +13,6 @@ return new class extends Migration
             'mobilization_methods' => 'name_ar',
             'target_groups' => 'name',
             'beneficiary_segments' => 'name_ar',
-            'ramadan_iftar_gift_types' => 'name_ar',
             'execution_need_types' => 'name',
             'monitoring_methods' => 'name_ar',
         ];
@@ -53,7 +52,6 @@ return new class extends Migration
             'mobilization_methods' => 'name_ar',
             'target_groups' => 'name',
             'beneficiary_segments' => 'name_ar',
-            'ramadan_iftar_gift_types' => 'name_ar',
             'execution_need_types' => 'name',
             'monitoring_methods' => 'name_ar',
         ] as $table => $column) {

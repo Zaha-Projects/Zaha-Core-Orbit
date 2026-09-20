@@ -215,3 +215,8 @@ Do **not** include Monthly request models, MonthlyActivity, PostExecutionVerific
 ## 2026-09-20 Ramadan Admin configuration slice
 
 DONE IN SOURCE / STAGING PENDING. Ramadan periods now carry explicit Hijri years and Iftars have a nullable, backfill-aware period FK. One model owns active lookup/activation. A focused super-admin area manages annual periods, immutable versioned guidance, and mobilization methods. Legacy setting readers were removed while keys remain preserved for deployment inventory. Reference seeders preserve administrator changes; demo orchestration stays separate. The next source slice returns to the Annual Agenda request-model namespace cutover after staging debt is recorded.
+
+
+## 2026-09-20 Ramadan period proposal and gift simplification
+
+DONE IN SOURCE / STAGING PENDING. Gift/shield types are again the three-value `RamadanIftarGift` structural enum; the recent unshipped reference table/model/seeder/Admin CRUD were removed. Native IntlCalendar/ICU Umm al-Qura calculation now produces stored proposals only. Operational dates remain Admin-reviewed `start_date`/`end_date`; confirmation and activation are separate, and resync preserves confirmed values. Admin and `ramadan:sync-period` share one service; no scheduler or external API was added. The next source slice remains the Annual Agenda request-model namespace cutover.

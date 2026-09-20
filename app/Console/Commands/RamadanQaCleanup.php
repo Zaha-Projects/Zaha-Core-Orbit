@@ -28,7 +28,6 @@ class RamadanQaCleanup extends Command
                 'mobilization_methods' => ['code', [22 => 'qa_preprod_mobilization_20260918', 23 => 'qa_preprod_mobilization_dup_20260918']],
                 'target_groups' => ['code', [25 => 'qa_preprod_target_both_20260918', 26 => 'qa_preprod_target_iftar_20260918', 27 => 'qa_preprod_target_monthly_20260918', 28 => 'qa_preprod_target_none_20260918']],
                 'beneficiary_segments' => ['code', [21 => 'qa_preprod_age_20260918']],
-                'ramadan_iftar_gift_types' => ['code', [13 => 'qa_preprod_gift_20260918']],
                 'execution_need_types' => ['code', [76 => 'qa_preprod_need_both_20260918', 77 => 'qa_preprod_need_iftar_20260918', 78 => 'qa_preprod_need_monthly_20260918', 79 => 'qa_preprod_need_none_20260918', 80 => 'qa_custom_monthly_20260919']],
                 'community_organizations' => ['name', [2 => 'جمعية اختبار QA قبل الإنتاج - معدلة']],
                 'local_communities' => ['name', [2 => 'مجتمع اختبار QA قبل الإنتاج - معدل']],
@@ -92,9 +91,6 @@ class RamadanQaCleanup extends Command
                 $linked = DB::table($fk->TABLE_NAME)->whereIn($fk->COLUMN_NAME, $deletions[$fk->REFERENCED_TABLE_NAME])->pluck('id')->all();
                 if (array_diff($linked, $deletions[$fk->TABLE_NAME] ?? [])) throw new RuntimeException("External reference in {$fk->TABLE_NAME}.{$fk->COLUMN_NAME}; nothing deleted.");
             }
-            // Gift codes are a legacy string reference rather than an FK.
-            $giftCodes = DB::table('ramadan_iftar_gift_types')->whereIn('id', $roots['ramadan_iftar_gift_types'])->pluck('code');
-            if (DB::table('ramadan_iftar_gifts')->whereIn('gift_type', $giftCodes)->whereNotIn('id', $deletions['ramadan_iftar_gifts'])->exists()) throw new RuntimeException('QA gift type is used outside QA.');
             $this->line(json_encode(['mode' => $this->option('execute') ? 'execute' : 'preview', 'records' => $deletions], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             if (! $this->option('execute')) return 0;
             foreach ($deletions as $table => $ids) DB::table($table)->whereIn('id', $ids)->delete();

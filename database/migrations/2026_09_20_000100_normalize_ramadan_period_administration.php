@@ -11,7 +11,14 @@ return new class extends Migration
     {
         Schema::table('ramadan_periods', function (Blueprint $table) {
             $table->unsignedSmallInteger('hijri_year')->nullable()->after('year');
+            $table->date('suggested_start_date')->nullable()->after('end_date');
+            $table->date('suggested_end_date')->nullable()->after('suggested_start_date');
+            $table->string('calculation_source', 40)->nullable()->after('suggested_end_date');
+            $table->timestamp('synced_at')->nullable()->after('calculation_source');
+            $table->boolean('is_confirmed')->default(false)->after('synced_at');
         });
+        DB::table('ramadan_periods')->where('is_active', true)->update(['is_confirmed' => true]);
+
         Schema::table('ramadan_iftars', function (Blueprint $table) {
             $table->unsignedBigInteger('ramadan_period_id')->nullable()->after('branch_id');
             $table->foreign('ramadan_period_id', 'ri_period_fk')->references('id')->on('ramadan_periods')->nullOnDelete();
@@ -38,6 +45,6 @@ return new class extends Migration
             $table->dropIndex('ri_period_date_idx');
             $table->dropColumn('ramadan_period_id');
         });
-        Schema::table('ramadan_periods', fn (Blueprint $table) => $table->dropColumn('hijri_year'));
+        Schema::table('ramadan_periods', fn (Blueprint $table) => $table->dropColumn(['hijri_year', 'suggested_start_date', 'suggested_end_date', 'calculation_source', 'synced_at', 'is_confirmed']));
     }
 };

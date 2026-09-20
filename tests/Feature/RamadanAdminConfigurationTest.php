@@ -18,8 +18,8 @@ class RamadanAdminConfigurationTest extends TestCase
 
     public function test_period_activation_preserves_history_and_deactivates_previous_period(): void
     {
-        $old = RamadanPeriod::query()->create(['year'=>2025,'hijri_year'=>1446,'start_date'=>'2025-03-01','end_date'=>'2025-03-30','is_active'=>true]);
-        $current = RamadanPeriod::query()->create(['year'=>2026,'hijri_year'=>1447,'start_date'=>'2026-02-18','end_date'=>'2026-03-19','is_active'=>false]);
+        $old = RamadanPeriod::query()->create(['year'=>2025,'hijri_year'=>1446,'start_date'=>'2025-03-01','end_date'=>'2025-03-30','is_confirmed'=>true,'is_active'=>true]);
+        $current = RamadanPeriod::query()->create(['year'=>2026,'hijri_year'=>1447,'start_date'=>'2026-02-18','end_date'=>'2026-03-19','is_confirmed'=>true,'is_active'=>false]);
         $current->activate();
 
         $this->assertFalse($old->fresh()->is_active);

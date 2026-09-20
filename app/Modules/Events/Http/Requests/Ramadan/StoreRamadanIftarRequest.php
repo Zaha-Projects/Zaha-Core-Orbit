@@ -149,10 +149,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.items.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'gifts' => ['present', 'array'],
             'gifts.*.id' => ['nullable', 'integer'],
-            'gifts.*.gift_type' => ['required', Rule::in(array_values(array_unique(array_merge(
-                RamadanIftarGift::types(),
-                $this->route('ramadanIftar') instanceof RamadanIftar ? $this->route('ramadanIftar')->gifts()->pluck('gift_type')->all() : []
-            ))))],
+            'gifts.*.gift_type' => ['required', Rule::in(RamadanIftarGift::types())],
             'gifts.*.description' => ['required', 'string'],
             'gifts.*.planned_quantity' => ['required', 'integer', 'min:0'],
             'gifts.*.has_supporting_entity' => ['required', 'boolean'],
