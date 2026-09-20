@@ -1,5 +1,7 @@
 # Events architecture — current state
 
+> **Status synchronization (2026-09-20):** this remains the architecture reference. The authoritative continuation/TODO ledger is [`events-ramadan-current-state-audit.md`](events-ramadan-current-state-audit.md), including the completed AgendaEvent cutover, Ramadan reconciliation/dashboard, remaining identity-sensitive models, and consolidated staging debt.
+
 **Status: AUTHORITATIVE_CURRENT**
 
 **Reconciled:** 2026-09-13

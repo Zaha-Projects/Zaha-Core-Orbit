@@ -1,5 +1,7 @@
 # Events branch developer handover
 
+> **2026-09-20 synchronization notice:** the authoritative current milestone, TODO matrix, runtime debt, and next source slice are maintained in [`events-ramadan-current-state-audit.md`](events-ramadan-current-state-audit.md). This document remains detailed context, but its original tip, phase table, model-location, and “next” wording are historical when conflicting. `AgendaEvent` and the Ramadan form/dashboard reconciliation are complete in source; staging remains pending.
+
 Date: 2026-09-14
 
 Branch: `work`

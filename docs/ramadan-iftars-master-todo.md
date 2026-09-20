@@ -2,7 +2,7 @@
 
 **Status: HISTORICAL_RECORD**
 
-Current source of truth: `docs/events-architecture-current-state.md`.
+Current source of truth for status/TODOs: `docs/events-ramadan-current-state-audit.md`. This checklist is superseded and must not be used to select the next phase.
 
 - **Last updated:** 2026-09-13
 - **Current phase:** Phase 1.14 — approved-plan change requests and versioning complete
