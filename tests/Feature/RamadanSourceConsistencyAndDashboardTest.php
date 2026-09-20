@@ -56,4 +56,16 @@ class RamadanSourceConsistencyAndDashboardTest extends TestCase
         $this->assertStringContainsString('لا توجد إفطارات مسجلة ضمن فترة رمضان الحالية.', $source);
         $this->assertStringContainsString("events.ramadan.iftars.calendar", $source);
     }
+
+    public function test_ramadan_visual_theme_stays_scoped_responsive_and_motion_safe(): void
+    {
+        $theme = file_get_contents(public_path('assets/css/ramadan-iftars.css'));
+        $calendar = file_get_contents(resource_path('views/pages/events/ramadan/calendar.blade.php'));
+
+        $this->assertStringContainsString('.ramadan-module .ramadan-hero', $theme);
+        $this->assertStringContainsString('.ramadan-module .ramadan-calendar-shell', $theme);
+        $this->assertStringContainsString('@media(max-width:767.98px)', $theme);
+        $this->assertStringContainsString('@media(prefers-reduced-motion:reduce)', $theme);
+        $this->assertStringContainsString('ramadan-day--today', $calendar);
+    }
 }

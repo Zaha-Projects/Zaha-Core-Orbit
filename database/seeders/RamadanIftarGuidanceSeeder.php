@@ -27,7 +27,7 @@ class RamadanIftarGuidanceSeeder extends Seeder
                 'code' => EventGuidanceVersion::RAMADAN_IFTAR,
                 'version_number' => ((int) $versions->max('version_number')) + 1,
                 'source_sha256' => $document['source_sha256'],
-                'title' => 'تعليمات عامة لإفطارات رمضان',
+                'title' => $document['title'],
                 'content' => json_encode($document['sections'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
                 // Seeders provide initial content; they never displace an administrator's current version.
                 'is_active' => $versions->isEmpty(), 'published_at' => $versions->isEmpty() ? now() : null,

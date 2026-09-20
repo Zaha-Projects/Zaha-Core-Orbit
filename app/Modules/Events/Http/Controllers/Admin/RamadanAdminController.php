@@ -4,8 +4,8 @@ namespace App\Modules\Events\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\EventGuidanceVersion;
-use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\RamadanPeriod;
+use App\Models\Setting;
 
 class RamadanAdminController extends Controller
 {
@@ -16,7 +16,7 @@ class RamadanAdminController extends Controller
             'activePeriod' => RamadanPeriod::current(),
             'guidanceVersions' => EventGuidanceVersion::query()->where('code', EventGuidanceVersion::RAMADAN_IFTAR)->orderByDesc('version_number')->get(),
             'currentGuidance' => EventGuidanceVersion::currentForRamadan(),
-            'mobilizationMethods' => MobilizationMethod::query()->ordered()->get(),
+            'ramadanDashboardEnabled' => Setting::valueOf('ramadan_dashboard_enabled', '1') === '1',
         ]);
     }
 }

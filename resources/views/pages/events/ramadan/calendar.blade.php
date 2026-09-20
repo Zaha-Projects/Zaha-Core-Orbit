@@ -24,17 +24,17 @@
     @if(!$period)
         <div class="alert alert-warning"><i class="fas fa-circle-exclamation"></i> لا توجد فترة محددة أو إفطارات مسجلة لهذه السنة.</div>
     @else
-        <div class="ramadan-calendar" aria-label="تقويم فترة رمضان">
+        <div class="ramadan-calendar-shell"><div class="ramadan-calendar" aria-label="تقويم فترة رمضان">
         @foreach($period['start']->toPeriod($period['end']) as $day)
             @php($dayRows = $iftars->get($day->format('Y-m-d'), collect()))
-            <section class="ramadan-day" aria-label="{{ $day->format('Y-m-d') }}">
-                <div class="ramadan-day__date">{{ $day->locale(app()->getLocale())->translatedFormat('D d M') }}</div>
+            <section class="ramadan-day {{ $day->isToday() ? 'ramadan-day--today' : '' }}" aria-label="{{ $day->format('Y-m-d') }}">
+                <div class="ramadan-day__date"><span>{{ $day->locale(app()->getLocale())->translatedFormat('D M') }}</span><span class="ramadan-day__number">{{ $day->format('d') }}</span></div>
                 @forelse($dayRows as $iftar)
                     <a class="ramadan-calendar-event" href="{{ route('events.ramadan.iftars.show',$iftar) }}"><strong>{{ $iftar->title }}</strong><br><span>{{ optional($iftar->branch)->name }} · {{ $iftar->expected_attendance }} مستفيد</span></a>
-                @empty <div class="small text-muted">لا توجد إفطارات</div> @endforelse
+                @empty <div class="small text-muted ramadan-day__empty">لا توجد إفطارات</div> @endforelse
             </section>
         @endforeach
-        </div>
+        </div></div>
     @endif
 </div>
 @endsection

@@ -1,9 +1,7 @@
 @php
 $value = fn (string $field, $default = '') => old($field, data_get($ramadanIftar, $field, $default));
 $needsAreConfigured = $executionNeedTypes->isNotEmpty();
-$selectedHostType = in_array($value('host_type'), [\App\Modules\Events\Models\RamadanIftar::HOST_ASSOCIATION, \App\Modules\Events\Models\RamadanIftar::HOST_CENTER], true)
-    ? 'organization'
-    : $value('host_type');
+$selectedHostType = $value('host_type');
 $collections = [
     'attendees' => old('attendees', $ramadanIftar ? $ramadanIftar->attendees->toArray() : [[]]),
     'target_groups' => old('target_groups', $ramadanIftar ? $ramadanIftar->targetGroupSelections->toArray() : [[]]),
@@ -35,11 +33,11 @@ $collections = [
         </div></div>
         <div class="card shadow-sm mb-3" id="iftar-location"><div class="card-header fw-semibold"><i class="fas fa-location-dot text-success"></i> {{ __('ramadan_iftars.planning.location_host') }}</div><div class="card-body row g-3">
             <div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.location_type') }}</label><select class="form-select" name="location_type">@foreach($locationTypes as $type)<option value="{{ $type }}" {{ $value('location_type') === $type ? 'selected' : '' }}>{{ __('ramadan_iftars.options.'.$type) }}</option>@endforeach</select></div>
-            <div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.host_type') }} <span class="text-danger">*</span></label><select class="form-select @error('host_type') is-invalid @enderror" name="host_type">@foreach($hostTypes as $type)<option value="{{ $type }}" {{ $selectedHostType === $type ? 'selected' : '' }}>{{ $type === 'organization' ? 'جمعية / مركز' : __('ramadan_iftars.options.'.$type) }}</option>@endforeach</select>@error('host_type')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.host_type') }} <span class="text-danger">*</span></label><select class="form-select @error('host_type') is-invalid @enderror" name="host_type">@foreach($hostTypes as $type)<option value="{{ $type }}" {{ $selectedHostType === $type ? 'selected' : '' }}>{{ __('ramadan_iftars.options.'.$type) }}</option>@endforeach</select>@error('host_type')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.location_name') }} <span class="text-danger">*</span></label><input class="form-control @error('location_name') is-invalid @enderror" name="location_name" value="{{ $value('location_name') }}">@error('location_name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.labels.address') }}</label><input class="form-control" name="address" value="{{ $value('address') }}"></div><div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.labels.google_maps_url') }}</label><input class="form-control" name="google_maps_url" value="{{ $value('google_maps_url') }}"></div>
-            <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.labels.community_organization') }} <span class="text-danger">*</span></label><select class="form-select @error('community_organization_id') is-invalid @enderror" name="community_organization_id" data-reference-contact><option value="">{{ __('ramadan_iftars.options.none') }}</option>@foreach($communityOrganizations as $item)<option value="{{ $item->id }}" data-contact-name="{{ $item->contact_name }}" data-contact-phone="{{ $item->contact_phone }}" data-location-name="{{ $item->location_name }}" data-address="{{ $item->address }}" data-google-maps-url="{{ $item->google_maps_url }}" {{ $value('community_organization_id') == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>@endforeach</select>@error('community_organization_id')<div class="invalid-feedback">{{ $message }}</div>@enderror @if($communityOrganizations->isEmpty())<div class="form-text">لا توجد جمعيات أو مراكز مسجلة حاليًا. يرجى التواصل مع الإدارة لإضافتها</div>@endif</div>
-            <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.labels.local_community') }} <span class="text-danger">*</span></label><select class="form-select @error('local_community_id') is-invalid @enderror" name="local_community_id" data-reference-contact><option value="">{{ __('ramadan_iftars.options.none') }}</option>@foreach($localCommunities as $item)<option value="{{ $item->id }}" data-contact-name="{{ $item->contact_name }}" data-contact-phone="{{ $item->contact_phone }}" data-location-name="{{ $item->location_name }}" data-address="{{ $item->address }}" data-google-maps-url="{{ $item->google_maps_url }}" {{ $value('local_community_id') == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>@endforeach</select>@error('local_community_id')<div class="invalid-feedback">{{ $message }}</div>@enderror @if($localCommunities->isEmpty())<div class="form-text">لا توجد مجتمعات محلية مسجلة حاليًا. يرجى التواصل مع الإدارة لإضافتها</div>@endif</div>
+            <div class="col-md-6 position-relative">@include('pages.events.ramadan._reference_picker', ['field' => 'community_organization_id', 'label' => __('ramadan_iftars.labels.community_organization'), 'selected' => $selectedCommunityOrganization, 'searchUrl' => route('events.ramadan.iftars.references.organizations.index'), 'createUrl' => route('events.ramadan.iftars.references.organizations.store')])</div>
+            <div class="col-md-6 position-relative">@include('pages.events.ramadan._reference_picker', ['field' => 'local_community_id', 'label' => __('ramadan_iftars.labels.local_community'), 'selected' => $selectedLocalCommunity, 'searchUrl' => route('events.ramadan.iftars.references.local-communities.index'), 'createUrl' => route('events.ramadan.iftars.references.local-communities.store')])</div>
             @foreach(['contact_name','contact_phone','supporting_entity_name'] as $field)<div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.'.$field) }} @if(in_array($field, ['contact_name','contact_phone'], true))<span class="text-danger">*</span>@endif</label><input class="form-control @error($field) is-invalid @enderror" name="{{ $field }}" value="{{ $value($field) }}">@error($field)<div class="invalid-feedback">{{ $message }}</div>@enderror</div>@endforeach
             <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.labels.mobilization_method') }} <span class="text-danger">*</span></label><select class="form-select @error('mobilization_method_id') is-invalid @enderror" name="mobilization_method_id"><option value="">{{ __('ramadan_iftars.options.none') }}</option>@foreach($mobilizationMethods as $item)<option value="{{ $item->id }}" {{ $value('mobilization_method_id') == $item->id ? 'selected' : '' }}>{{ app()->getLocale()==='ar' ? $item->name_ar : ($item->name_en ?: $item->name_ar) }}</option>@endforeach</select>@error('mobilization_method_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</div><div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.labels.mobilization_method_other') }}</label><input class="form-control @error('mobilization_method_other') is-invalid @enderror" name="mobilization_method_other" value="{{ $value('mobilization_method_other') }}">@error('mobilization_method_other')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
         </div></div>
@@ -58,6 +56,32 @@ $collections = [
     </form>
 </div>
 <script>
+
+(function () {
+    var token=document.querySelector('meta[name="csrf-token"]')?.content;
+    document.querySelectorAll('[data-reference-picker]').forEach(function (picker) {
+        var search=picker.querySelector('[data-reference-search]'), id=picker.querySelector('[data-reference-id]'), results=picker.querySelector('[data-reference-results]'), create=picker.querySelector('[data-reference-create]'), panel=picker.querySelector('[data-reference-create-form]'), timer;
+        function select(item) {
+            id.value=item.id; search.value=item.name; results.classList.add('d-none'); create.classList.add('d-none');
+            ['contact_name','contact_phone','location_name','address','google_maps_url'].forEach(function(field){ var target=document.querySelector('[name="'+field+'"]'); if(target && item[field]) target.value=item[field]; });
+        }
+        search.addEventListener('input', function () {
+            id.value=''; clearTimeout(timer); var term=search.value.trim();
+            if(term.length<2){ results.classList.add('d-none'); create.classList.add('d-none'); return; }
+            timer=setTimeout(function(){ fetch(picker.dataset.searchUrl+'?q='+encodeURIComponent(term), {headers:{'Accept':'application/json'}}).then(function(r){return r.json()}).then(function(body){
+                results.innerHTML=''; (body.data||[]).forEach(function(item){ var button=document.createElement('button'); button.type='button'; button.className='list-group-item list-group-item-action'; button.textContent=item.label; button.addEventListener('click',function(){select(item)}); results.appendChild(button); });
+                results.classList.toggle('d-none', !(body.data||[]).length); create.classList.toggle('d-none', (body.data||[]).length>0); create.querySelector('[data-reference-name]').textContent=term; picker.querySelector('[data-create-field="name"]').value=term;
+            }); },250);
+        });
+        create.addEventListener('click',function(){ panel.classList.remove('d-none'); results.classList.add('d-none'); });
+        picker.querySelector('[data-reference-cancel]').addEventListener('click',function(){panel.classList.add('d-none')});
+        picker.querySelector('[data-reference-save]').addEventListener('click',function(){
+            var payload={}; picker.querySelectorAll('[data-create-field]').forEach(function(input){payload[input.dataset.createField]=input.value});
+            fetch(picker.dataset.createUrl,{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':token},body:JSON.stringify(payload)}).then(async function(response){var body=await response.json(); if(!response.ok) throw body; return body}).then(function(item){select(item);panel.classList.add('d-none')}).catch(function(error){picker.querySelector('[data-reference-error]').textContent=error.errors?.name?.[0]||'تعذر حفظ الجهة.'});
+        });
+    });
+})();
+
 document.addEventListener('click', function (event) {
     if (event.target.matches('.remove-row')) event.target.closest('.planning-row').remove();
     if (event.target.matches('.add-row')) {

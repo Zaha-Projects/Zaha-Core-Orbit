@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\CommunicationsRequest;
 use App\Models\DepartmentUnit;
 use App\Models\MonthlyActivity;
+use App\Models\Setting;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\RamadanIftar;
@@ -202,9 +203,18 @@ class DashboardController extends Controller
             'top_branch_count' => (int) ($topBranch->first() ?? 0),
         ];
 
-        $ramadanDashboard = $this->ramadanDashboard($user);
+        $ramadanDashboard = $this->configuredRamadanDashboard($user);
 
         return view('dashboard', compact('cards', 'calendarEvents', 'dashboardCalendarStats', 'ramadanDashboard'));
+    }
+
+    private function configuredRamadanDashboard($user): ?array
+    {
+        if (Setting::valueOf('ramadan_dashboard_enabled', '1') !== '1') {
+            return null;
+        }
+
+        return $this->ramadanDashboard($user);
     }
 
     private function ramadanDashboard($user): ?array
