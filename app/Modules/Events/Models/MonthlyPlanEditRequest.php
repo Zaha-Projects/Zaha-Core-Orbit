@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Modules\Events\Models;
 
 use App\Modules\Events\Support\EventRequestModelIdentity;
+use App\Models\MonthlyActivity;
+use App\Models\User;
+use App\Models\WorkflowInstance;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

@@ -2,7 +2,9 @@
 
 **Phase:** 2.13
 **Scope:** four Monthly/Agenda edit/delete request models and directly required workflow infrastructure
-**Outcome:** design only; no namespace, writer, route, workflow, schema, or data change
+**Outcome:** compatibility design implemented; Annual and Monthly request pairs cut over in source, with staging verification pending
+
+> Sections 1–13 preserve the pre-cutover design record. The Phase 2.15 and 2.16 status sections at the end are authoritative for the installed/writer state.
 
 ## 1. Executive conclusion
 
@@ -521,6 +523,8 @@ PHASE 2.8D REMAINS INCOMPLETE / BLOCKED
 
 ## 22. Phase 2.13A compatibility infrastructure outcome (2026-09-15)
 
+> **Historical Phase 2.13A deployment record (superseded for current installed/writer status by Phases 2.15 and 2.16 below).** The statements in this subsection describe the compatibility-first state before either namespace cutover.
+
 `PHASE 2.13A COMPLETE`
 
 `App\Modules\Events\Support\EventRequestModelIdentity` now contains exactly the
@@ -577,3 +581,21 @@ Request relationships still dual-read the exact identity pair. `DynamicWorkflowS
 No route, table, migration, backfill, dual-write, approval rule, authorization rule, action-log meaning, notification meaning, queue compatibility layer, Monthly model, PostExecutionVerification model, or Ramadan source was changed. Staging must execute mixed-history, binding, reporting and rollback checks.
 
 Remaining Events-owned models under `App\Models`: `MonthlyActivity`, `MonthlyPlanEditRequest`, `MonthlyPlanDeleteRequest`, and `PostExecutionVerification`. The next source slice is Phase 2.16, the Monthly Plan request pair cutover.
+
+## Phase 2.16 source cutover status (2026-09-20)
+
+**DONE IN SOURCE / STAGING PENDING.** `MonthlyPlanEditRequest` and
+`MonthlyPlanDeleteRequest` now have their sole production definitions in
+`App\Modules\Events\Models`. The removed `App\Models` FQCNs remain accepted
+historical workflow identities, while new workflow rows use canonical request
+FQCNs. Both request tables and their `entity_type` contract remain unchanged:
+new request rows still identify the aggregate as `App\Models\MonthlyActivity`.
+`MonthlyActivity`, its audit/action-log identities, and
+`official_correspondences.correspondable_type` were not moved or rewritten.
+No migration, backfill, dual write, route change, authorization change, or
+request business-rule change is part of this phase.
+
+The next source slice is **MonthlyActivity aggregate identity compatibility
+preparation**, specifically inventorying and dual-read planning for
+`official_correspondences.correspondable_type` and every other persisted
+MonthlyActivity identity. It must not move `MonthlyActivity` itself.

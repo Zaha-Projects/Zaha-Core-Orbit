@@ -4,8 +4,8 @@ namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
 use App\Services\MonthlyWorkflowPresenter;

@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
 use App\Modules\Events\Models\AnnualAgendaEditRequest;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
@@ -54,7 +54,7 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
         }
     }
 
-    public function test_for_model_reuses_either_identity_and_creates_only_the_legacy_identity(): void
+    public function test_monthly_for_model_reuses_either_identity_and_creates_only_the_canonical_identity(): void
     {
         $workflow = $this->workflow('monthly_activities');
         $request = $this->request(
@@ -85,8 +85,8 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
 
         $canonical->delete();
         $created = $service->forModel('monthly_activities', $request);
-        $this->assertSame(EventRequestModelIdentity::MONTHLY_EDIT_LEGACY, $created?->entity_type);
-        $this->assertNotSame(EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL, $created?->entity_type);
+        $this->assertSame(EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL, $created?->entity_type);
+        $this->assertNotSame(EventRequestModelIdentity::MONTHLY_EDIT_LEGACY, $created?->entity_type);
         $this->assertSame(1, WorkflowInstance::query()->count());
     }
 
@@ -139,6 +139,14 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
         $this->expectExceptionMessage('Conflicting workflow identities exist');
 
         app(DynamicWorkflowService::class)->forModel('monthly_activities', $request);
+    }
+
+    public function test_legacy_monthly_activity_relations_target_canonical_request_models(): void
+    {
+        $activity = new \App\Models\MonthlyActivity();
+
+        $this->assertInstanceOf(MonthlyPlanEditRequest::class, $activity->editRequests()->getRelated());
+        $this->assertInstanceOf(MonthlyPlanDeleteRequest::class, $activity->deleteRequests()->getRelated());
     }
 
     public function test_admin_report_combines_legacy_and_canonical_monthly_request_identities(): void

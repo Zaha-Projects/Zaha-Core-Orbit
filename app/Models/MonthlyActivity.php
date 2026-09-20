@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\EventType;
 use App\Modules\Events\Models\EventSupply;

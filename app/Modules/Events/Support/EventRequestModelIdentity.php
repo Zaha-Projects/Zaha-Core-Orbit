@@ -2,17 +2,17 @@
 
 namespace App\Modules\Events\Support;
 
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
 use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
 use App\Modules\Events\Models\AnnualAgendaEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 
 final class EventRequestModelIdentity
 {
-    public const MONTHLY_EDIT_LEGACY = MonthlyPlanEditRequest::class;
-    public const MONTHLY_EDIT_CANONICAL = 'App\\Modules\\Events\\Models\\MonthlyPlanEditRequest';
-    public const MONTHLY_DELETE_LEGACY = MonthlyPlanDeleteRequest::class;
-    public const MONTHLY_DELETE_CANONICAL = 'App\\Modules\\Events\\Models\\MonthlyPlanDeleteRequest';
+    public const MONTHLY_EDIT_LEGACY = 'App\\Models\\MonthlyPlanEditRequest';
+    public const MONTHLY_EDIT_CANONICAL = MonthlyPlanEditRequest::class;
+    public const MONTHLY_DELETE_LEGACY = 'App\\Models\\MonthlyPlanDeleteRequest';
+    public const MONTHLY_DELETE_CANONICAL = MonthlyPlanDeleteRequest::class;
     public const AGENDA_EDIT_LEGACY = 'App\\Models\\AnnualAgendaEditRequest';
     public const AGENDA_EDIT_CANONICAL = AnnualAgendaEditRequest::class;
     public const AGENDA_DELETE_LEGACY = 'App\\Models\\AnnualAgendaDeleteRequest';
@@ -48,9 +48,7 @@ final class EventRequestModelIdentity
     {
         $legacy = self::legacyFor($storedIdentity);
         if ($legacy === null) return null;
-        return in_array($legacy, [self::AGENDA_EDIT_LEGACY, self::AGENDA_DELETE_LEGACY], true)
-            ? self::IDENTITIES[$legacy]
-            : $legacy;
+        return self::IDENTITIES[$legacy];
     }
 
     public static function currentWriteType(string $modelClass): string

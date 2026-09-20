@@ -4,8 +4,8 @@ namespace Tests\Unit;
 
 use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
 use App\Modules\Events\Models\AnnualAgendaEditRequest;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Modules\Events\Support\EventRequestModelIdentity;
 use PHPUnit\Framework\TestCase;
 
@@ -32,10 +32,14 @@ class EventRequestModelIdentityTest extends TestCase
         }
     }
 
-    public function test_annual_agenda_legacy_classes_are_not_installed(): void
+    public function test_legacy_request_classes_are_not_installed(): void
     {
+        $this->assertFalse(class_exists(EventRequestModelIdentity::MONTHLY_EDIT_LEGACY));
+        $this->assertFalse(class_exists(EventRequestModelIdentity::MONTHLY_DELETE_LEGACY));
         $this->assertFalse(class_exists(EventRequestModelIdentity::AGENDA_EDIT_LEGACY));
         $this->assertFalse(class_exists(EventRequestModelIdentity::AGENDA_DELETE_LEGACY));
+        $this->assertTrue(class_exists(EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL));
+        $this->assertTrue(class_exists(EventRequestModelIdentity::MONTHLY_DELETE_CANONICAL));
         $this->assertTrue(class_exists(EventRequestModelIdentity::AGENDA_EDIT_CANONICAL));
         $this->assertTrue(class_exists(EventRequestModelIdentity::AGENDA_DELETE_CANONICAL));
     }

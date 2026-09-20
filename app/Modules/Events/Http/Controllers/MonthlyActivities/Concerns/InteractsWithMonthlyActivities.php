@@ -4,8 +4,8 @@ namespace App\Modules\Events\Http\Controllers\MonthlyActivities\Concerns;
 
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\WorkflowLog;
 use App\Models\WorkflowInstance;
 use App\Modules\Events\Models\EventStatusLookup;

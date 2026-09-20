@@ -73,7 +73,7 @@ There is no production `app/Models/AgendaEvent.php`. Exact `App\Models\AgendaEve
 | 2.14A Agenda compatibility | DONE IN SOURCE / STAGING PENDING | exact Agenda pair resolves to installed model and protects uniqueness |
 | 2.14B AgendaEvent cutover | DONE IN SOURCE / STAGING PENDING | canonical class is sole production definition; new class-derived writes canonical |
 
-Annual Agenda request models are **SOURCE COMPLETE / STAGING PENDING**. Monthly request models are **COMPATIBILITY READY / NOT CUT OVER**. `MonthlyActivity` and `PostExecutionVerification` are **CUTOVER NOT STARTED**. Source work is not blocked merely because completed slices also carry staging debt.
+Annual Agenda and Monthly Plan request models are **SOURCE COMPLETE / STAGING PENDING**. `MonthlyActivity` and `PostExecutionVerification` are **CUTOVER NOT STARTED**. Source work is not blocked merely because completed slices also carry staging debt.
 
 ## Ramadan architecture and form
 
@@ -191,7 +191,7 @@ The panel requires an active period and Ramadan view permission (or super admin)
 | Ramadan UX/period/guidance/form/reference/dashboard | DONE IN SOURCE / STAGING PENDING | source artifacts/tests | migrate, seed, PHPUnit, browser/RTL/lifecycle | yes |
 | `subject_target_groups` plan | SUPERSEDED | generalized pivot and negative tests | never recreate | no |
 | Agenda request pair cutover | DONE IN SOURCE / STAGING PENDING | sole canonical model definitions and dual-read compatibility | stage mixed identity, binding and workflow regressions; no backfill | yes |
-| Monthly request pair cutover | NOT STARTED (compatibility ready) | helper supports pair | separate later pair | later |
+| Monthly request pair cutover | DONE IN SOURCE / STAGING PENDING | canonical models and writers; legacy workflow dual-read | staging verification only | yes |
 | MonthlyActivity compatibility/cutover | NOT STARTED | audited identity plus correspondence morph | compatibility then separate move; preserve JSON/status | yes |
 | PostExecutionVerification cutover | NOT STARTED | audit identity; model still legacy | focused inventory/helper then move | yes |
 | Monthly need transaction normalization | PARTIAL / DEFERRED | shared catalogue, legacy JSON transactions | separately authorized business/data migration | yes |
@@ -199,9 +199,9 @@ The panel requires an active period and Ramadan view permission (or super admin)
 
 ## Remaining source work and exactly one next slice
 
-Dependency order: (1) Monthly request pair after Agenda request observation; (2) MonthlyActivity compatibility including `official_correspondences.correspondable_type`, then cutover; (3) focused PostExecutionVerification compatibility then move; (4) only separately authorize Monthly transaction normalization.
+Dependency order: (1) MonthlyActivity compatibility including `official_correspondences.correspondable_type`; (2) a later, separate MonthlyActivity cutover; (3) focused PostExecutionVerification compatibility then move; (4) only separately authorize Monthly transaction normalization.
 
-**Recommended next slice: Phase 2.16 — Monthly Plan request-model namespace cutover (edit and delete together).** Reuse the existing compatibility map while leaving `MonthlyActivity`, correspondence morph identity, PostExecutionVerification, and all Ramadan behavior unchanged.
+**Recommended next slice: MonthlyActivity aggregate identity compatibility preparation.** Inventory and prepare dual-read handling for `official_correspondences.correspondable_type` and every persisted MonthlyActivity identity without moving MonthlyActivity.
 
 Do **not** include MonthlyActivity, PostExecutionVerification, backfills, broad morph maps, dual writes, workflow/business changes, or Ramadan features.
 
@@ -225,3 +225,16 @@ DONE IN SOURCE / STAGING PENDING. Gift/shield types are again the three-value `R
 ## Phase 2.15 — Annual Agenda request model namespace cutover
 
 DONE IN SOURCE / STAGING PENDING. `AnnualAgendaEditRequest` and `AnnualAgendaDeleteRequest` now have one production definition each under `App\Modules\Events\Models`. The exact removed `App\Models` names remain only as compatibility strings. Dynamic workflow reads/reuses both identities, resolves both to canonical installed models, creates only canonical Annual Agenda request workflow identities, and still detects mixed duplicates. Monthly request installed/writer identities remain legacy. Request-row `entity_type` remains the AgendaEvent aggregate identity, with no schema migration, data backfill, dual write, or business-rule change. Phase 2.16 is next.
+
+## Phase 2.16 — Monthly Plan request model namespace cutover
+
+DONE IN SOURCE / STAGING PENDING. `MonthlyPlanEditRequest` and
+`MonthlyPlanDeleteRequest` now exist only under `App\Modules\Events\Models`.
+Legacy and canonical workflow identities dual-read and resolve to the canonical
+installed models; new workflow writers are canonical and mixed duplicates still
+fail explicitly. Request-row `entity_type` remains
+`App\Models\MonthlyActivity`. `MonthlyActivity`, PostExecutionVerification, and
+the official-correspondence morph boundary remain unchanged. No schema migration,
+historical backfill, dual write, or Ramadan change was made. The next source
+slice is MonthlyActivity aggregate identity compatibility preparation; it must
+prepare persisted readers/writers before any MonthlyActivity move.
