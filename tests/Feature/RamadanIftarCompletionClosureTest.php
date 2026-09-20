@@ -74,7 +74,12 @@ class RamadanIftarCompletionClosureTest extends TestCase
         [$iftar, $actor] = $this->readyIftar();
         $service = app(RamadanIftarExecutionService::class);
         $service->complete($iftar, $actor);
-        $this->assertCompletionRejected($service, $iftar->fresh(), $actor);
+        try {
+            $service->complete($iftar->fresh(), $actor);
+            $this->fail('Completion should have been rejected.');
+        } catch (ValidationException) {
+            $this->assertSame(RamadanIftar::EXECUTION_STATUS_COMPLETED, $iftar->fresh()->execution_status);
+        }
         $this->assertDatabaseCount('workflow_action_logs', 1);
         $this->assertDatabaseHas('workflow_action_logs', ['action_type' => 'execution_completed']);
     }
@@ -150,7 +155,12 @@ class RamadanIftarCompletionClosureTest extends TestCase
         $closer = $this->closureActor($iftar);
         $service->close($iftar->fresh(), $closer);
         $closedAt = $iftar->fresh()->closed_at->toDateTimeString();
-        $this->assertClosureRejected($service, $iftar->fresh(), $closer);
+        try {
+            $service->close($iftar->fresh(), $closer);
+            $this->fail('Closure should have been rejected.');
+        } catch (ValidationException) {
+            $this->assertSame($closedAt, $iftar->fresh()->closed_at->toDateTimeString());
+        }
         $this->assertSame($closedAt, $iftar->fresh()->closed_at->toDateTimeString());
         $this->assertSame(1, \App\Models\WorkflowActionLog::query()->where('action_type', 'iftar_closed')->count());
     }
@@ -222,7 +232,7 @@ class RamadanIftarCompletionClosureTest extends TestCase
             'expected_attendance' => 0, 'actual_attendance' => 0, 'status' => RamadanIftar::STATUS_APPROVED,
             'execution_status' => RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, 'approved_at' => now(),
         ]);
-        $type = ExecutionNeedType::query()->create(['code' => 'required-'.$iftar->id, 'name' => 'Required need']);
+        $type = ExecutionNeedType::query()->create(['code' => 'required-'.$iftar->id, 'name' => 'Required need '.$iftar->id]);
         $need = SubjectExecutionNeed::query()->create([
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id,
             'execution_need_type_id' => $type->id, 'is_required' => true, 'planned_details' => 'Required',
@@ -255,7 +265,7 @@ class RamadanIftarCompletionClosureTest extends TestCase
     {
         $method = MonitoringMethod::query()->create([
             'code' => 'closure-'.$iftar->id.'-'.MonitoringMethod::query()->count(),
-            'name_ar' => 'متابعة الإغلاق', 'name_en' => 'Closure monitoring',
+            'name_ar' => 'متابعة الإغلاق '.$iftar->id, 'name_en' => 'Closure monitoring '.$iftar->id,
         ]);
 
         return $iftar->monitoringReports()->create([

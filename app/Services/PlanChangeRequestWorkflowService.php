@@ -443,6 +443,7 @@ class PlanChangeRequestWorkflowService
             $values['previous_version_id'] = $source->id;
             $values['parent_version_id'] = $source->id;
             $version = MonthlyActivity::create(Arr::only($values, (new MonthlyActivity())->getFillable()));
+            $version->syncCustomExecutionNeedPlan($request->new_values['custom_execution_needs'] ?? $source->customExecutionNeedPlan());
             $source->forceFill(['status' => 'archived', 'lifecycle_status' => 'Closed', 'is_archived' => true])->save();
             $request->forceFill(['approved_version_id' => $version->id])->save();
             return;

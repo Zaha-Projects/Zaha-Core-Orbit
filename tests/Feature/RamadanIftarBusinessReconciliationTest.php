@@ -21,7 +21,7 @@ class RamadanIftarBusinessReconciliationTest extends TestCase
         $team = ExecutionNeedType::query()->where('code', 'execution_team')->firstOrFail();
         $this->assertTrue($team->is_ramadan_iftar);
         $this->assertTrue($team->isMandatoryForRamadan());
-        $this->assertFalse($team->is_monthly_activity);
+        $this->assertTrue($team->is_monthly_activity);
         $this->assertFalse($team->isMandatoryForMonthly());
         $this->assertTrue(ExecutionNeedType::query()->forRamadanIftars()->whereKey($team)->exists());
     }

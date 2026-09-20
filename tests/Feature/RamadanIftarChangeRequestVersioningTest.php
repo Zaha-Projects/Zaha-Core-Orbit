@@ -12,6 +12,7 @@ use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarChangeRequest;
 use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\SubjectExecutionNeed;
+use App\Modules\Events\Models\TargetGroup;
 use App\Modules\Events\Services\RamadanIftarChangeRequestService;
 use App\Modules\Events\Services\RamadanIftarExecutionService;
 use App\Modules\Events\Services\RamadanIftarSubmissionService;
@@ -109,7 +110,8 @@ class RamadanIftarChangeRequestVersioningTest extends TestCase
         $source->programSegments()->create(['name' => 'Welcome', 'sort_order' => 1, 'execution_status' => 'completed', 'actual_notes' => 'Done']);
         $team = $source->executionTeams()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'name' => 'Hosts', 'planned_members_count' => 2, 'actual_members_count' => 2]);
         $team->members()->create(['member_name' => 'Member', 'task_description' => 'Welcome', 'task_completed' => true]);
-        $source->targetGroupSelections()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'target_group_custom_text' => 'Guests', 'planned_count' => 20, 'actual_count' => 18]);
+        $targetGroup = TargetGroup::query()->create(['name' => 'Revision guests', 'code' => 'revision-guests']);
+        $source->targetGroupSelections()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'target_group_id' => $targetGroup->id, 'target_group_custom_text' => 'Guests', 'planned_count' => 20, 'actual_count' => 18]);
         $source->volunteerRequirements()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'planned_count' => 3, 'actual_count' => 2, 'status' => 'pending']);
         $source->supplies()->create(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'item_name' => 'Water', 'planned_quantity' => 20, 'actual_quantity' => 18, 'status' => 'pending']);
         $type = ExecutionNeedType::query()->create(['code' => 'revision-need', 'name' => 'Transport', 'is_canonical' => true, 'is_active' => true, 'is_ramadan_iftar' => true]);
@@ -165,7 +167,9 @@ class RamadanIftarChangeRequestVersioningTest extends TestCase
         $this->assertSame($revision->id, $revision->executionNeeds->first()->subject_id);
         $this->assertSame(SubjectExecutionNeed::STATUS_PENDING, $revision->executionNeeds->first()->status);
         $this->assertNull($revision->executionNeeds->first()->actual_details);
-        $this->assertCount(0, $revision->attendees);
+        $this->assertCount(1, $revision->attendees);
+        $this->assertSame('Attendee', $revision->attendees->first()->full_name);
+        $this->assertFalse((bool) $revision->attendees->first()->attended);
         $this->assertCount(0, $revision->monitoringReports);
         $this->assertNull($revision->workflowInstance);
         $this->assertSame(RamadanIftar::STATUS_APPROVED, $source->fresh()->status);

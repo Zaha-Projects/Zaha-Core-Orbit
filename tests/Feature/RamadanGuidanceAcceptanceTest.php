@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\RamadanIftar;
+use App\Modules\Events\Models\RamadanPeriod;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
 use Spatie\Permission\Models\Permission;
@@ -53,7 +54,7 @@ class RamadanGuidanceAcceptanceTest extends TestCase
             'guidance_accepted_at' => '2000-01-01 00:00:00',
         ];
 
-        $this->actingAs($user)->post(route('events.ramadan.iftars.store'), $payload)->assertRedirect();
+        $this->actingAs($user)->post(route('events.ramadan.iftars.store'), $payload)->assertSessionHasNoErrors()->assertRedirect();
 
         $iftar = RamadanIftar::query()->sole();
         $this->assertSame($current->id, $iftar->guidance_version_id);
@@ -110,7 +111,7 @@ class RamadanGuidanceAcceptanceTest extends TestCase
         $first = $this->guidance(1, true, null, $user);
         $this->actingAs($user)->get(route('events.ramadan.guidance.show'))->assertOk();
         $this->actingAs($user)->post(route('events.ramadan.guidance.accept'), ['accept_guidance' => '1'])->assertRedirect();
-        $this->actingAs($user)->post(route('events.ramadan.iftars.store'), $this->payload($branch, $user, $organization))->assertRedirect();
+        $this->actingAs($user)->post(route('events.ramadan.iftars.store'), $this->payload($branch, $user, $organization))->assertSessionHasNoErrors()->assertRedirect();
         $iftar = RamadanIftar::query()->sole();
 
         $first->update(['is_active' => false]);
@@ -138,6 +139,10 @@ class RamadanGuidanceAcceptanceTest extends TestCase
     private function planningActor(): array
     {
         $branch = Branch::factory()->create();
+        RamadanPeriod::query()->firstOrCreate(
+            ['year' => 2027],
+            ['start_date' => '2027-02-01', 'end_date' => '2027-03-10', 'is_active' => true]
+        );
         $role = Role::findOrCreate('relations_officer', 'web');
         $role->givePermissionTo(Permission::findOrCreate('branches.view.own', 'web'));
         $user = User::factory()->create(['branch_id' => $branch->id]);
@@ -157,13 +162,10 @@ class RamadanGuidanceAcceptanceTest extends TestCase
             'location_type' => RamadanIftar::LOCATION_OUTSIDE_CENTER,
             'host_type' => RamadanIftar::HOST_ASSOCIATION,
             'community_organization_id' => $organization->id,
+            'contact_name' => 'Test liaison', 'contact_phone' => '0790000000', 'location_name' => 'Test location',
             'target_groups' => [],
             'meals' => [],
-            'gifts' => [],
             'program_segments' => [],
-            'execution_teams' => [],
-            'volunteer_requirements' => [],
-            'supplies' => [],
         ];
     }
 }

@@ -61,10 +61,11 @@ class RamadanIftarWorkspaceMonitoringTest extends TestCase
         $executor = User::factory()->create(['branch_id' => $branch->id, 'status' => 'active']);
         $executor->givePermissionTo(['ramadan_iftars.view', 'ramadan_iftars.execute', 'branches.view.own']);
         $draft->update(['status' => RamadanIftar::STATUS_APPROVED, 'execution_status' => RamadanIftar::EXECUTION_STATUS_PLANNED]);
-        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee(__('ramadan_iftars.actions.start_execution'))->assertDontSee(__('ramadan_iftars.actions.monitoring'));
+        $monitoringUrl = route('events.ramadan.iftars.monitoring.index', $draft);
+        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee(__('ramadan_iftars.actions.start_execution'))->assertDontSee($monitoringUrl, false);
         $executor->givePermissionTo('ramadan_iftars.monitor');
         $draft->update(['execution_status' => RamadanIftar::EXECUTION_STATUS_IN_PROGRESS]);
-        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee(__('ramadan_iftars.actions.view_execution'))->assertSee(__('ramadan_iftars.actions.monitoring'));
+        $this->actingAs($executor)->get(route('events.ramadan.iftars.show', $draft))->assertOk()->assertSee(__('ramadan_iftars.actions.view_execution'))->assertSee($monitoringUrl, false);
 
         $wrongBranch = User::factory()->create(['branch_id' => Branch::factory()->create()->id, 'status' => 'active']);
         $wrongBranch->givePermissionTo(['ramadan_iftars.view', 'branches.view.own']);
@@ -97,7 +98,7 @@ class RamadanIftarWorkspaceMonitoringTest extends TestCase
         ]]];
         $report = $service->save($iftar, new MonitoringReport(), $data, $monitor);
         $verification = $report->verifications()->sole();
-        $this->assertSame('Attendance', $verification->field_label);
+        $this->assertSame(__('ramadan_iftars.verification_fields.attendance'), $verification->field_label);
         $this->assertSame(20, $verification->planned_value['value']);
         $this->assertSame(8, $verification->actual_value['value']);
         $this->assertSame($monitor->id, $verification->verified_by);

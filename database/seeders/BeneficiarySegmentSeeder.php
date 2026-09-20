@@ -18,9 +18,9 @@ class BeneficiarySegmentSeeder extends Seeder
         ];
 
         foreach ($segments as $index => $segment) {
-            BeneficiarySegment::query()->updateOrCreate(
-                ['code' => $segment['code']],
+            BeneficiarySegment::query()->insertOrIgnore(
                 [
+                    'code' => $segment['code'], 'created_at' => now(), 'updated_at' => now(),
                     'name_ar' => $segment['name_ar'],
                     'name_en' => $segment['name_en'],
                     'dimension' => $segment['dimension'],

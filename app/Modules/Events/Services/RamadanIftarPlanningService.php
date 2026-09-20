@@ -31,6 +31,7 @@ class RamadanIftarPlanningService
     public function create(array $data, User $creator, EventGuidanceVersion $guidance, string $acceptedAt): RamadanIftar
     {
         return DB::transaction(function () use ($data, $creator, $guidance, $acceptedAt) {
+            ExecutionNeedType::query()->orderBy('id')->sharedLock()->get();
             $iftar = RamadanIftar::query()->create(array_merge(
                 Arr::only($data, self::CORE_FIELDS),
                 $this->derivedTotals($data),
@@ -58,6 +59,11 @@ class RamadanIftarPlanningService
         }
 
         return DB::transaction(function () use ($iftar, $data) {
+            ExecutionNeedType::query()->orderBy('id')->sharedLock()->get();
+            $iftar = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
+            if (! $iftar->isPlanningEditable()) {
+                throw ValidationException::withMessages(['status' => __('ramadan_iftars.business_errors.planning_editable')]);
+            }
             $this->assertOwnership($iftar, $data);
             $iftar->update(Arr::only($data, self::CORE_FIELDS));
             $this->syncPlanning($iftar, $data);
@@ -85,11 +91,17 @@ class RamadanIftarPlanningService
 
     private function syncPlanning(RamadanIftar $iftar, array $data): void
     {
-        $data = $this->normalizeExecutionNeeds($data);
+        $types = ExecutionNeedType::ramadanAvailableTypes()->keyBy('id');
+        foreach (ExecutionNeedType::IFTAR_DETAIL_FIELDS as $code => $field) {
+            if (! $types->contains('code', $code) && ! empty($data[$field])) {
+                throw ValidationException::withMessages([$field => 'هذا الاحتياج غير متاح للتعديل.']);
+            }
+        }
+        $data = $this->normalizeExecutionNeeds($data, $types);
         $this->syncSimple($iftar->attendees(), $data['attendees'], ['full_name', 'phone', 'age'], null, ['attended', 'checked_in_at'], fn ($model) => $model->attended || $model->checked_in_at !== null);
         $this->syncTargetGroups($iftar, $data['target_groups']);
         $this->syncMeals($iftar, $data['meals']);
-        $this->syncSimple($iftar->gifts(), $data['gifts'], [
+        if ($types->contains('code', 'gifts_shields')) $this->syncSimple($iftar->gifts(), $data['gifts'], [
             'gift_type', 'description', 'planned_quantity', 'has_supporting_entity', 'supporting_entity_name', 'unit_value',
         ], fn (array $row) => ['estimated_total_value' => $this->giftTotal($row)], ['actual_quantity'], null, true);
         $this->syncSimple($iftar->programSegments(), $data['program_segments'], [
@@ -97,14 +109,14 @@ class RamadanIftarPlanningService
         ], fn () => ['execution_status' => RamadanIftarProgramSegment::STATUS_PLANNED], ['actual_notes'], function ($model) {
             return $model->execution_status !== RamadanIftarProgramSegment::STATUS_PLANNED;
         });
-        $this->syncTeams($iftar, $data['execution_teams']);
-        $this->syncSimple($iftar->volunteerRequirements(), $data['volunteer_requirements'], [
+        if ($types->contains('code', 'execution_team')) $this->syncTeams($iftar, $data['execution_teams']);
+        if ($types->contains('code', 'volunteers')) $this->syncSimple($iftar->volunteerRequirements(), $data['volunteer_requirements'], [
             'beneficiary_segment_id', 'gender', 'planned_count', 'tasks_summary',
-        ], fn () => ['status' => SubjectVolunteerRequirement::STATUS_PENDING], ['actual_count']);
-        $this->syncSimple($iftar->supplies(), $data['supplies'], [
+        ], fn () => ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'status' => SubjectVolunteerRequirement::STATUS_PENDING], ['actual_count']);
+        if ($types->contains('code', 'supplies')) $this->syncSimple($iftar->supplies(), $data['supplies'], [
             'item_name', 'planned_quantity', 'planned_available', 'provider_type', 'provider_name', 'estimated_value', 'notes',
-        ], fn () => ['status' => EventSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
-        $this->syncSimple($iftar->executionNeeds(), array_values($data['execution_needs']), [
+        ], fn () => ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'status' => EventSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
+        $this->syncSimple($iftar->executionNeeds()->whereIn('execution_need_type_id', $types->keys()), array_values($data['execution_needs']), [
             'execution_need_type_id', 'is_required', 'planned_details',
         ], fn () => [
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
@@ -115,15 +127,19 @@ class RamadanIftarPlanningService
         });
     }
 
-    private function normalizeExecutionNeeds(array $data): array
+    private function normalizeExecutionNeeds(array $data, $types): array
     {
-        $types = ExecutionNeedType::query()->canonical()->active()->forRamadanIftars()->get()->keyBy('id');
+        foreach ($data['execution_needs'] ?? [] as $row) {
+            if (! $types->has($row['execution_need_type_id'] ?? null)) {
+                throw ValidationException::withMessages(['execution_needs' => 'هذا الاحتياج غير متاح للاختيار أو التعديل.']);
+            }
+        }
         $selected = collect($data['execution_needs'] ?? [])->filter(function (array $row) use ($types): bool {
             $type = $types->get((int) ($row['execution_need_type_id'] ?? 0));
             return $type && ($type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false));
         })->map(function (array $row) use ($types): array {
             $type = $types->get((int) $row['execution_need_type_id']);
-            $row['is_required'] = $type->isMandatoryForRamadan();
+            $row['is_required'] = $type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false);
             return $row;
         })->values();
 

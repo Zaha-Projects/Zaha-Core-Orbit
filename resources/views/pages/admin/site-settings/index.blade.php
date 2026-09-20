@@ -13,6 +13,7 @@
             <a class="btn btn-outline-primary" href="{{ route('role.super_admin.reports', ['tab' => 'relations', 'report_year' => $reportYear, 'report_month' => $reportMonth]) }}">
                 الرجوع للتقارير
             </a>
+            <a class="btn btn-outline-success" href="{{ route('role.super_admin.ramadan_reference_data.index') }}">إدارة البيانات المرجعية</a>
         </div>
     </div>
 
@@ -30,7 +31,8 @@
                         @method('PUT')
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="admin_reports_cache_enabled" name="admin_reports_cache_enabled" value="1" @checked($cacheConfig['enabled'])>
+                                <input type="hidden" name="admin_reports_cache_enabled" value="0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="admin_reports_cache_enabled" name="admin_reports_cache_enabled" value="1" {{ (string) old('admin_reports_cache_enabled', $cacheConfig['enabled'] ? '1' : '0') === '1' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="admin_reports_cache_enabled">تفعيل كاش تقارير الأدمن</label>
                             </div>
                         </div>
@@ -47,10 +49,27 @@
                             <input class="form-control" type="number" name="monthly_plan_lock_days" value="{{ \App\Models\Setting::valueOf('monthly_plan_lock_days', '5') }}" min="0" max="31">
                         </div>
                         <div class="col-12"><hr><h3 class="h6 mb-0"><i class="fas fa-moon text-warning"></i> فترة رمضان المعتمدة</h3><p class="small text-muted">تحدد نطاق تقويم إفطارات رمضان والتاريخ المسموح به عند الإنشاء والتعديل.</p></div>
-                        <div class="col-12 col-md-3"><label class="form-label" for="ramadan_period_year">الموسم / السنة</label><input id="ramadan_period_year" class="form-control @error('ramadan_period_year') is-invalid @enderror" type="number" name="ramadan_period_year" value="{{ old('ramadan_period_year', \App\Models\Setting::valueOf('ramadan_period_year', now()->year)) }}" min="2020" max="2100" required>@error('ramadan_period_year')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-                        <div class="col-12 col-md-3"><label class="form-label" for="ramadan_period_start_date">تاريخ البداية</label><input id="ramadan_period_start_date" class="form-control @error('ramadan_period_start_date') is-invalid @enderror" type="date" name="ramadan_period_start_date" value="{{ old('ramadan_period_start_date', \App\Models\Setting::valueOf('ramadan_period_start_date')) }}" required>@error('ramadan_period_start_date')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-                        <div class="col-12 col-md-3"><label class="form-label" for="ramadan_period_end_date">تاريخ النهاية</label><input id="ramadan_period_end_date" class="form-control @error('ramadan_period_end_date') is-invalid @enderror" type="date" name="ramadan_period_end_date" value="{{ old('ramadan_period_end_date', \App\Models\Setting::valueOf('ramadan_period_end_date')) }}" required>@error('ramadan_period_end_date')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-                        <div class="col-12 col-md-3 d-flex align-items-end"><div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="ramadan_period_is_active" name="ramadan_period_is_active" value="1" @checked(old('ramadan_period_is_active', \App\Models\Setting::valueOf('ramadan_period_is_active','0')) == '1')><label class="form-check-label" for="ramadan_period_is_active">الفترة فعالة</label></div></div>
+                        <div class="col-12"><span class="small text-muted">اختر سنة لعرض أو تعديل فترة رمضان</span>
+                            @foreach($ramadanPeriods as $period)
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.super_admin.site_settings.index', ['ramadan_year' => $period->year]) }}">{{ $period->year }}</a>
+                            @endforeach
+                        </div>
+                        <div class="col-12"><div class="alert alert-light border mb-0">المصدر المعتمد لتواريخ رمضان هو سجلات الفترة حسب السنة أعلاه</div></div>
+                        <div class="col-12">
+                            <label class="form-label" for="ramadan-default-year">السنة الافتراضية للتقويم</label>
+                            <select id="ramadan-default-year" name="ramadan_default_year" class="form-select">
+                                <option value="">الإبقاء على الاختيار الحالي</option>
+                                @foreach($ramadanPeriods as $savedPeriod)
+                                    <option value="{{ $savedPeriod->year }}" {{ (int) old('ramadan_default_year', $ramadanDefaultYear) === $savedPeriod->year ? 'selected' : '' }}>{{ $savedPeriod->year }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">التواريخ ميلادية ومدخلة يدويًا وتحتاج اعتماد الإدارة. تعديل تواريخ سنة أدناه لا يغيّر السنة الافتراضية.</div>
+                            @error('ramadan_default_year')<div class="text-danger">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12 col-md-3"><label class="form-label" for="ramadan_period_year">السنة الميلادية</label><input id="ramadan_period_year" class="form-control @error('ramadan_period_year') is-invalid @enderror" type="number" name="ramadan_period_year" value="{{ old('ramadan_period_year', $ramadanPeriod?->year ?? request('ramadan_year', now()->year)) }}" min="2020" max="2100" required>@error('ramadan_period_year')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                        <div class="col-12 col-md-3"><label class="form-label" for="ramadan_period_start_date">تاريخ البداية</label><input id="ramadan_period_start_date" class="form-control @error('ramadan_period_start_date') is-invalid @enderror" type="date" name="ramadan_period_start_date" value="{{ old('ramadan_period_start_date', $ramadanPeriod?->start_date?->format('Y-m-d')) }}" required>@error('ramadan_period_start_date')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                        <div class="col-12 col-md-3"><label class="form-label" for="ramadan_period_end_date">تاريخ النهاية</label><input id="ramadan_period_end_date" class="form-control @error('ramadan_period_end_date') is-invalid @enderror" type="date" name="ramadan_period_end_date" value="{{ old('ramadan_period_end_date', $ramadanPeriod?->end_date?->format('Y-m-d')) }}" required>@error('ramadan_period_end_date')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                        <div class="col-12 col-md-3 d-flex align-items-end"><div class="form-check form-switch mb-2"><input type="hidden" name="ramadan_period_is_active" value="0"><input class="form-check-input" type="checkbox" role="switch" id="ramadan_period_is_active" name="ramadan_period_is_active" value="1" {{ (string) old('ramadan_period_is_active', $ramadanPeriod?->is_active ? '1' : '0') === '1' ? 'checked' : '' }}><label class="form-check-label" for="ramadan_period_is_active">الفترة فعالة</label></div></div>
                         <div class="col-12 col-md-4">
                             <label class="form-label">وزن الرضا الشهري</label>
                             <input class="form-control" type="number" name="branch_monthly_score_weight_satisfaction" value="{{ \App\Models\Setting::valueOf('branch_monthly_score_weight_satisfaction', '40') }}" min="0" max="100">
@@ -59,6 +78,23 @@
                             <label class="form-label">وزن الالتزام الشهري</label>
                             <input class="form-control" type="number" name="branch_monthly_score_weight_commitment" value="{{ \App\Models\Setting::valueOf('branch_monthly_score_weight_commitment', '60') }}" min="0" max="100">
                         </div>
+                        <div class="col-12"><hr><h3 class="h6">نطاق احتياجات التنفيذ</h3></div>
+                        @foreach($executionNeedTypes as $needType)
+                            <div class="col-12 col-md-6">
+                                @if($needType->code === 'execution_team' && ! $needType->scope_configured_at && ! $needType->is_monthly_activity)
+                                    <div class="alert alert-warning">نطاق فريق التنفيذ موروث ولم يوثّق كاختيار إداري. الافتراضي الجديد «كلاهما»؛ راجع الاختيار ثم احفظ لتأكيده.</div>
+                                @endif
+                                <input type="hidden" name="execution_need_scopes[{{ $loop->index }}][id]" value="{{ $needType->id }}">
+                                <label class="form-label" for="need-scope-{{ $needType->id }}">{{ $needType->name }}</label>
+                                <select id="need-scope-{{ $needType->id }}" class="form-select" name="execution_need_scopes[{{ $loop->index }}][usage_scope]">
+                                    @foreach(['monthly_plans' => 'الخطط الشهرية', 'iftars' => 'الإفطارات', 'both' => 'كلاهما', 'none' => 'غير متاح'] as $scope => $label)
+                                        <option value="{{ $scope }}" {{ old('execution_need_scopes.'.$loop->parent->index.'.usage_scope', $needType->usage_scope) === $scope ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="form-check mt-1"><input class="form-check-input" type="checkbox" value="1" id="need-scope-confirm-{{ $needType->id }}" name="execution_need_scopes[{{ $loop->index }}][confirm_scope]" {{ old('execution_need_scopes.'.$loop->index.'.confirm_scope') ? 'checked' : '' }}><label class="form-check-label small" for="need-scope-confirm-{{ $needType->id }}">تأكيد هذا النطاق دون تغييره</label></div>
+                                @error('execution_need_scopes.'.$loop->index.'.usage_scope')<div class="text-danger">{{ $message }}</div>@enderror
+                            </div>
+                        @endforeach
                         <div class="col-12 d-flex justify-content-end">
                             <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
                         </div>
@@ -120,7 +156,7 @@
                 <table class="table table-sm align-middle">
                     <thead><tr><th>Key</th><th>Value</th></tr></thead>
                     <tbody>
-                    @forelse($settings as $setting)
+                    @forelse($settings->reject(fn ($setting) => in_array($setting->key, ['ramadan_period_year', 'ramadan_period_start_date', 'ramadan_period_end_date', 'ramadan_period_is_active', 'ramadan_default_year'], true)) as $setting)
                         <tr><td><code>{{ $setting->key }}</code></td><td>{{ $setting->value }}</td></tr>
                     @empty
                         <tr><td colspan="2" class="text-muted">لا توجد إعدادات محفوظة.</td></tr>

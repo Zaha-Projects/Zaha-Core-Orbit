@@ -19,10 +19,10 @@ class MobilizationMethodSeeder extends Seeder
             'other' => 'أخرى',
         ];
 
-        foreach ($methods as $order => $name) {
-            $code = is_string($order) ? $order : 'other';
-            MobilizationMethod::query()->updateOrCreate(['code' => $code], [
-                'name_ar' => $name, 'is_other' => $code === 'other', 'is_active' => true,
+        foreach ($methods as $code => $name) {
+            MobilizationMethod::query()->insertOrIgnore([
+                'code' => $code, 'created_at' => now(), 'updated_at' => now(),
+                'name_ar' => $name, 'name_en' => $code, 'is_other' => $code === 'other', 'is_active' => true,
                 'sort_order' => (array_search($code, array_keys($methods), true) + 1) * 10,
             ]);
         }

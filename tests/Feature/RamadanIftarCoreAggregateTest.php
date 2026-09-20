@@ -99,7 +99,7 @@ class RamadanIftarCoreAggregateTest extends TestCase
             'event_name' => 'Versioned Iftar',
             'created_by' => $user->id,
         ]);
-        $parent = $this->createIftar($branch, $user, $user, ['agenda_event_id' => $agendaEvent->id]);
+        $parent = $this->createIftar($branch, $user, $user, ['agenda_event_id' => $agendaEvent->id, 'version_number' => 1]);
         $version = $this->createIftar($branch, $user, $user, [
             'agenda_event_id' => $agendaEvent->id,
             'parent_version_id' => $parent->id,
