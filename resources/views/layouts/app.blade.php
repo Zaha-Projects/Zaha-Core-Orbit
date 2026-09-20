@@ -11,6 +11,7 @@
     $user = auth()->user();
     $displayName = $user?->name ?? config('app.name', __('app.common.app_name'));
     $currentRoute = request()->route()?->getName();
+    $isRamadanPage = request()->routeIs('events.ramadan.*') || request()->routeIs('role.super_admin.ramadan_reference_data.*');
     $isFollowupOfficer = $user?->hasRole('followup_officer') && ! $user?->hasRole('super_admin');
     $isRelationsManagerSidebar = $user?->hasRole('relations_manager') && ! $user?->hasRole('super_admin');
     $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
@@ -79,12 +80,12 @@
     @if(request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*'))
         <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/evaluation-visual-identity.css') }}">
     @endif
-    @if(request()->routeIs('events.ramadan.*'))
+    @if($isRamadanPage)
         <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/ramadan-iftars.css') }}">
     @endif
     @stack('styles')
 </head>
-<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }} {{ request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*') ? 'evaluation-visual-identity' : '' }} {{ request()->routeIs('events.ramadan.*') ? 'ramadan-module' : '' }}">
+<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }} {{ request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*') ? 'evaluation-visual-identity' : '' }} {{ $isRamadanPage ? 'ramadan-module' : '' }}">
 <div class="layout-shell">
     <aside id="appSidebar" class="sidebar-original">
         <div class="sidebar-brand">
@@ -307,7 +308,7 @@
 })();
 </script>
 @stack('scripts')
-@if(request()->routeIs('events.ramadan.*'))
+@if($isRamadanPage)
 <script src="{{ \App\Support\AssetVersion::url('assets/js/ramadan-iftars.js') }}"></script>
 @endif
 </body>

@@ -1,5 +1,9 @@
 (function () {
     'use strict';
+    document.querySelectorAll('.ramadan-module .ramadan-hero, .ramadan-module .ramadan-card, .ramadan-module .guidance-section, .ramadan-module .ramadan-day').forEach(function (element, index) {
+        element.classList.add('ramadan-reveal');
+        element.style.setProperty('--ramadan-delay', Math.min(index * 35, 280) + 'ms');
+    });
     function syncNeed(toggle) {
         var option = toggle.closest('.ramadan-need-option');
         if (!option) return;
