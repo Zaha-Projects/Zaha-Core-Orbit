@@ -149,7 +149,7 @@ class MonthlyCustomExecutionNeedsTest extends TestCase
         $workflows->recordDecision($sourceWorkflow, $workflows->currentStepForUser($sourceWorkflow, $reviewer), $reviewer, 'approved');
         $payload['custom_execution_needs'][0]['planned_details'] = 'Proposed new detail';
         $this->put(route('role.relations.activities.update', $source), $payload)->assertSessionHasNoErrors();
-        $change = \App\Models\MonthlyPlanEditRequest::sole();
+        $change = \App\Modules\Events\Models\MonthlyPlanEditRequest::sole();
         $this->assertSame('Approved detail', $source->executionNeeds()->sole()->planned_details);
         $this->assertSame('Proposed new detail', $change->new_values['custom_execution_needs'][0]['planned_details']);
         app(\App\Services\PlanChangeRequestWorkflowService::class)->decide($change, 'monthly_activities', $reviewer, 'approved');

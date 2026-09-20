@@ -2,34 +2,46 @@
 
 namespace Tests\Unit;
 
-use App\Models\AnnualAgendaDeleteRequest;
-use App\Models\AnnualAgendaEditRequest;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
+use App\Modules\Events\Models\AnnualAgendaEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Modules\Events\Support\EventRequestModelIdentity;
 use PHPUnit\Framework\TestCase;
 
 class EventRequestModelIdentityTest extends TestCase
 {
-    public function test_each_request_has_an_exact_legacy_and_canonical_identity_pair(): void
+    public function test_each_request_has_the_expected_installed_and_writer_identity(): void
     {
         $pairs = [
-            MonthlyPlanEditRequest::class => EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL,
-            MonthlyPlanDeleteRequest::class => EventRequestModelIdentity::MONTHLY_DELETE_CANONICAL,
-            AnnualAgendaEditRequest::class => EventRequestModelIdentity::AGENDA_EDIT_CANONICAL,
-            AnnualAgendaDeleteRequest::class => EventRequestModelIdentity::AGENDA_DELETE_CANONICAL,
+            [EventRequestModelIdentity::MONTHLY_EDIT_LEGACY, EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL, MonthlyPlanEditRequest::class],
+            [EventRequestModelIdentity::MONTHLY_DELETE_LEGACY, EventRequestModelIdentity::MONTHLY_DELETE_CANONICAL, MonthlyPlanDeleteRequest::class],
+            [EventRequestModelIdentity::AGENDA_EDIT_LEGACY, EventRequestModelIdentity::AGENDA_EDIT_CANONICAL, AnnualAgendaEditRequest::class],
+            [EventRequestModelIdentity::AGENDA_DELETE_LEGACY, EventRequestModelIdentity::AGENDA_DELETE_CANONICAL, AnnualAgendaDeleteRequest::class],
         ];
 
-        foreach ($pairs as $legacy => $canonical) {
+        foreach ($pairs as [$legacy, $canonical, $installed]) {
             $this->assertSame([$legacy, $canonical], EventRequestModelIdentity::acceptedTypes($legacy));
             $this->assertSame([$legacy, $canonical], EventRequestModelIdentity::acceptedTypes($canonical));
             $this->assertSame($legacy, EventRequestModelIdentity::legacyFor($canonical));
             $this->assertSame($canonical, EventRequestModelIdentity::canonicalFor($legacy));
-            $this->assertSame($legacy, EventRequestModelIdentity::installedModelFor($legacy));
-            $this->assertSame($legacy, EventRequestModelIdentity::installedModelFor($canonical));
-            $this->assertSame($legacy, EventRequestModelIdentity::currentWriteType($legacy));
-            $this->assertSame($legacy, EventRequestModelIdentity::currentWriteType($canonical));
+            $this->assertSame($installed, EventRequestModelIdentity::installedModelFor($legacy));
+            $this->assertSame($installed, EventRequestModelIdentity::installedModelFor($canonical));
+            $this->assertSame($installed, EventRequestModelIdentity::currentWriteType($legacy));
+            $this->assertSame($installed, EventRequestModelIdentity::currentWriteType($canonical));
         }
+    }
+
+    public function test_legacy_request_classes_are_not_installed(): void
+    {
+        $this->assertFalse(class_exists(EventRequestModelIdentity::MONTHLY_EDIT_LEGACY));
+        $this->assertFalse(class_exists(EventRequestModelIdentity::MONTHLY_DELETE_LEGACY));
+        $this->assertFalse(class_exists(EventRequestModelIdentity::AGENDA_EDIT_LEGACY));
+        $this->assertFalse(class_exists(EventRequestModelIdentity::AGENDA_DELETE_LEGACY));
+        $this->assertTrue(class_exists(EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL));
+        $this->assertTrue(class_exists(EventRequestModelIdentity::MONTHLY_DELETE_CANONICAL));
+        $this->assertTrue(class_exists(EventRequestModelIdentity::AGENDA_EDIT_CANONICAL));
+        $this->assertTrue(class_exists(EventRequestModelIdentity::AGENDA_DELETE_CANONICAL));
     }
 
     public function test_unknown_identities_retain_the_existing_identity_behavior(): void

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Modules\Events\Support\EventAggregateIdentity;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class OfficialCorrespondence extends Model
 {
@@ -15,9 +15,12 @@ class OfficialCorrespondence extends Model
         'brief',
     ];
 
-    public function correspondable(): MorphTo
+    public function correspondable()
     {
+        if (EventAggregateIdentity::legacyFor((string) $this->correspondable_type) === EventAggregateIdentity::MONTHLY_ACTIVITY_LEGACY) {
+            return $this->belongsTo(MonthlyActivity::class, 'correspondable_id');
+        }
+
         return $this->morphTo();
     }
 }
-

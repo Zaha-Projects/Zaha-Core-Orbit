@@ -98,8 +98,8 @@
                         <div class="col-md-3">
                             <label class="form-label">النوع</label>
                             <select class="form-select" name="gifts[{{ $i }}][gift_type]">
-                                @foreach($giftTypes as $giftType)
-                                    <option value="{{ $giftType->code }}" {{ ($row['gift_type'] ?? '') === $giftType->code ? 'selected' : '' }}>{{ $giftType->name_ar }}</option>
+                                @foreach($giftTypes as $giftType => $giftLabel)
+                                    <option value="{{ $giftType }}" {{ ($row['gift_type'] ?? '') === $giftType ? 'selected' : '' }}>{{ $giftLabel }}</option>
                                 @endforeach
                             </select>
                         </div>

@@ -141,7 +141,7 @@ class RamadanGuidanceAcceptanceTest extends TestCase
         $branch = Branch::factory()->create();
         RamadanPeriod::query()->firstOrCreate(
             ['year' => 2027],
-            ['start_date' => '2027-02-01', 'end_date' => '2027-03-10', 'is_active' => true]
+            ['start_date' => '2027-02-01', 'end_date' => '2027-03-10', 'is_confirmed' => true, 'is_active' => true]
         );
         $role = Role::findOrCreate('relations_officer', 'web');
         $role->givePermissionTo(Permission::findOrCreate('branches.view.own', 'web'));

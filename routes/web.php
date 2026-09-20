@@ -22,6 +22,10 @@ use App\Http\Controllers\Web\Access\WorkflowsController as SuperAdminWorkflowsCo
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
 use App\Http\Controllers\Roles\SuperAdmin\SiteSettingsController as SuperAdminSiteSettingsController;
 use App\Http\Controllers\Roles\SuperAdmin\RamadanReferenceDataController;
+use App\Modules\Events\Http\Controllers\Admin\RamadanAdminController;
+use App\Modules\Events\Http\Controllers\Admin\RamadanPeriodController;
+use App\Modules\Events\Http\Controllers\Admin\RamadanGuidanceAdminController;
+use App\Modules\Events\Http\Controllers\Admin\MobilizationMethodController;
 use App\Http\Controllers\Roles\SuperAdmin\EvaluationAssignmentsController as SuperAdminEvaluationAssignmentsController;
 use App\Http\Controllers\Web\Access\BranchesController as SuperAdminBranchesManagementController;
 use App\Http\Controllers\Roles\TransportOfficer\DashboardController as TransportOfficerDashboardController;
@@ -164,6 +168,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');
     Route::get('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.site_settings.index');
     Route::put('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.site_settings.update');
+    Route::prefix('/dashboard/events/ramadan/admin')->name('events.ramadan.admin.')->middleware('role:super_admin')->group(function () {
+        Route::get('/', [RamadanAdminController::class, 'index'])->name('index');
+        Route::post('/periods', [RamadanPeriodController::class, 'store'])->name('periods.store');
+        Route::post('/periods/sync', [RamadanPeriodController::class, 'sync'])->name('periods.sync');
+        Route::put('/periods/{period}', [RamadanPeriodController::class, 'update'])->name('periods.update');
+        Route::patch('/periods/{period}/use-suggested', [RamadanPeriodController::class, 'useSuggested'])->name('periods.use-suggested');
+        Route::patch('/periods/{period}/confirm', [RamadanPeriodController::class, 'confirm'])->name('periods.confirm');
+        Route::patch('/periods/{period}/activate', [RamadanPeriodController::class, 'activate'])->name('periods.activate');
+        Route::patch('/periods/{period}/deactivate', [RamadanPeriodController::class, 'deactivate'])->name('periods.deactivate');
+        Route::post('/guidance', [RamadanGuidanceAdminController::class, 'store'])->name('guidance.store');
+        Route::put('/guidance/{guidance}', [RamadanGuidanceAdminController::class, 'update'])->name('guidance.update');
+        Route::patch('/guidance/{guidance}/publish', [RamadanGuidanceAdminController::class, 'publish'])->name('guidance.publish');
+        Route::patch('/guidance/{guidance}/deactivate', [RamadanGuidanceAdminController::class, 'deactivate'])->name('guidance.deactivate');
+        Route::post('/mobilization-methods', [MobilizationMethodController::class, 'store'])->name('mobilization-methods.store');
+        Route::put('/mobilization-methods/{method}', [MobilizationMethodController::class, 'update'])->name('mobilization-methods.update');
+        Route::patch('/mobilization-methods/{method}/toggle', [MobilizationMethodController::class, 'toggle'])->name('mobilization-methods.toggle');
+    });
     Route::get('/dashboard/admin/ramadan-reference-data', [RamadanReferenceDataController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.index');
     Route::post('/dashboard/admin/ramadan-reference-data/{resource}', [RamadanReferenceDataController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.store');
     Route::put('/dashboard/admin/ramadan-reference-data/{resource}/{id}', [RamadanReferenceDataController::class, 'update'])->whereNumber('id')->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.update');

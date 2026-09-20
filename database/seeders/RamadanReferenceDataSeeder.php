@@ -13,7 +13,6 @@ class RamadanReferenceDataSeeder extends Seeder
             BeneficiarySegmentSeeder::class,
             MonitoringMethodSeeder::class,
             MobilizationMethodSeeder::class,
-            RamadanIftarGiftTypeSeeder::class,
             CanonicalExecutionNeedTypeSeeder::class,
             RamadanPeriodSeeder::class,
             RamadanIftarGuidanceSeeder::class,

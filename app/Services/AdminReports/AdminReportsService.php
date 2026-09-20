@@ -12,8 +12,8 @@ use App\Models\Branch;
 use App\Models\DonationCash;
 use App\Models\MaintenanceRequest;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\Trip;
@@ -83,7 +83,7 @@ class AdminReportsService
         $branchActivityRows = MonthlyActivity::query()
             ->leftJoin('workflow_instances', function ($join): void {
                 $join->on('workflow_instances.entity_id', '=', 'monthly_activities.id')
-                    ->where('workflow_instances.entity_type', '=', MonthlyActivity::class);
+                    ->whereIn('workflow_instances.entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class));
             })
             ->leftJoin('workflow_steps', 'workflow_steps.id', '=', 'workflow_instances.current_step_id')
             ->select('monthly_activities.branch_id')
@@ -142,10 +142,12 @@ class AdminReportsService
 
         $approvalWorkflows = WorkflowInstance::query()
             ->whereIn('entity_type', array_merge(
-                [MonthlyActivity::class],
+                EventAggregateIdentity::acceptedTypes(MonthlyActivity::class),
                 EventAggregateIdentity::acceptedTypes(AgendaEvent::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanEditRequest::class),
                 EventRequestModelIdentity::acceptedTypes(MonthlyPlanDeleteRequest::class),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_EDIT_CANONICAL),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_DELETE_CANONICAL),
             ))
             ->whereNotNull('started_at')
             ->whereNotNull('completed_at')

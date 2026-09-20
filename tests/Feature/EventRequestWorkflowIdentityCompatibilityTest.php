@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\AnnualAgendaDeleteRequest;
-use App\Models\AnnualAgendaEditRequest;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
+use App\Modules\Events\Models\AnnualAgendaEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
@@ -54,7 +54,7 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
         }
     }
 
-    public function test_for_model_reuses_either_identity_and_creates_only_the_legacy_identity(): void
+    public function test_monthly_for_model_reuses_either_identity_and_creates_only_the_canonical_identity(): void
     {
         $workflow = $this->workflow('monthly_activities');
         $request = $this->request(
@@ -85,9 +85,36 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
 
         $canonical->delete();
         $created = $service->forModel('monthly_activities', $request);
-        $this->assertSame(EventRequestModelIdentity::MONTHLY_EDIT_LEGACY, $created?->entity_type);
-        $this->assertNotSame(EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL, $created?->entity_type);
+        $this->assertSame(EventRequestModelIdentity::MONTHLY_EDIT_CANONICAL, $created?->entity_type);
+        $this->assertNotSame(EventRequestModelIdentity::MONTHLY_EDIT_LEGACY, $created?->entity_type);
         $this->assertSame(1, WorkflowInstance::query()->count());
+    }
+
+    public function test_agenda_request_reuses_old_or_new_identity_and_creates_canonical(): void
+    {
+        $workflow = $this->workflow('agenda');
+        $request = $this->request(AnnualAgendaEditRequest::class, 'edit', 'App\\Modules\\Events\\Models\\AgendaEvent');
+        $service = app(DynamicWorkflowService::class);
+        foreach ([EventRequestModelIdentity::AGENDA_EDIT_LEGACY, EventRequestModelIdentity::AGENDA_EDIT_CANONICAL] as $identity) {
+            $instance = WorkflowInstance::query()->create(['workflow_id'=>$workflow->id,'entity_type'=>$identity,'entity_id'=>$request->id,'status'=>'pending']);
+            $this->assertSame($instance->id, $service->forModel('agenda', $request)?->id);
+            $instance->delete();
+        }
+        $created = $service->forModel('agenda', $request);
+        $this->assertSame(EventRequestModelIdentity::AGENDA_EDIT_CANONICAL, $created?->entity_type);
+        $this->assertSame('App\\Modules\\Events\\Models\\AgendaEvent', $request->entity_type);
+    }
+
+    public function test_agenda_request_fails_when_both_identities_exist(): void
+    {
+        $workflow = $this->workflow('agenda');
+        $request = $this->request(AnnualAgendaDeleteRequest::class, 'delete', 'App\\Models\\AgendaEvent');
+        foreach (EventRequestModelIdentity::acceptedTypes(AnnualAgendaDeleteRequest::class) as $identity) {
+            WorkflowInstance::query()->create(['workflow_id'=>$workflow->id,'entity_type'=>$identity,'entity_id'=>$request->id,'status'=>'pending']);
+        }
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Conflicting workflow identities exist');
+        app(DynamicWorkflowService::class)->forModel('agenda', $request);
     }
 
     public function test_for_model_fails_when_both_request_identities_exist(): void
@@ -112,6 +139,14 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
         $this->expectExceptionMessage('Conflicting workflow identities exist');
 
         app(DynamicWorkflowService::class)->forModel('monthly_activities', $request);
+    }
+
+    public function test_legacy_monthly_activity_relations_target_canonical_request_models(): void
+    {
+        $activity = new \App\Models\MonthlyActivity();
+
+        $this->assertInstanceOf(MonthlyPlanEditRequest::class, $activity->editRequests()->getRelated());
+        $this->assertInstanceOf(MonthlyPlanDeleteRequest::class, $activity->deleteRequests()->getRelated());
     }
 
     public function test_admin_report_combines_legacy_and_canonical_monthly_request_identities(): void
@@ -140,6 +175,21 @@ class EventRequestWorkflowIdentityCompatibilityTest extends TestCase
         $this->assertNotNull($requestSpeed);
         $this->assertSame(2, $requestSpeed['total']);
         $this->assertSame(1, $report['approval_speed']->where('module', 'MonthlyPlanEditRequest')->count());
+    }
+
+    public function test_admin_report_combines_legacy_and_canonical_agenda_request_identities(): void
+    {
+        $workflow = $this->workflow('agenda');
+        foreach ([[EventRequestModelIdentity::AGENDA_EDIT_LEGACY, 2001], [EventRequestModelIdentity::AGENDA_EDIT_CANONICAL, 2002]] as [$identity, $entityId]) {
+            WorkflowInstance::query()->create(['workflow_id'=>$workflow->id,'entity_type'=>$identity,'entity_id'=>$entityId,'status'=>'approved','started_at'=>now()->subHour(),'completed_at'=>now()]);
+        }
+        $method = new ReflectionMethod(AdminReportsService::class, 'relationsReport');
+        $method->setAccessible(true);
+        $report = $method->invoke(app(AdminReportsService::class), (int) now()->year, (int) now()->month, null);
+        $requestSpeed = $report['approval_speed']->firstWhere('module', 'AnnualAgendaEditRequest');
+        $this->assertNotNull($requestSpeed);
+        $this->assertSame(2, $requestSpeed['total']);
+        $this->assertSame(1, $report['approval_speed']->where('module', 'AnnualAgendaEditRequest')->count());
     }
 
     /**

@@ -276,7 +276,7 @@ class RamadanIftarPlanningFlowTest extends TestCase
     {
         \App\Modules\Events\Models\RamadanPeriod::query()->firstOrCreate(
             ['year' => 2027],
-            ['start_date' => '2027-02-01', 'end_date' => '2027-03-10', 'is_active' => true]
+            ['start_date' => '2027-02-01', 'end_date' => '2027-03-10', 'is_confirmed' => true, 'is_active' => true]
         );
         $guidance = EventGuidanceVersion::query()->create([
             'code' => EventGuidanceVersion::RAMADAN_IFTAR,

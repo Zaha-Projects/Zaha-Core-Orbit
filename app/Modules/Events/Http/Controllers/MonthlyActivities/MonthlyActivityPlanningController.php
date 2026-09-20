@@ -2,6 +2,8 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
+use App\Modules\Events\Support\EventAggregateIdentity;
+use App\Modules\Events\Services\MonthlyActivityOfficialCorrespondenceService;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
@@ -1268,7 +1270,7 @@ class MonthlyActivityPlanningController extends Controller
                 ]);
 
                 WorkflowInstance::query()
-                    ->where('entity_type', MonthlyActivity::class)
+                    ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
                     ->where('entity_id', $lockedCurrent->id)
                     ->update([
                         'status' => 'rejected',
@@ -1449,7 +1451,7 @@ class MonthlyActivityPlanningController extends Controller
     protected function activityHasApprovalTrail(MonthlyActivity $monthlyActivity): bool
     {
         $instance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $monthlyActivity->id)
             ->withCount('logs')
             ->first();
@@ -2040,22 +2042,17 @@ class MonthlyActivityPlanningController extends Controller
 
     protected function syncOfficialCorrespondence(MonthlyActivity $monthlyActivity, array $data): void
     {
+        $correspondence = app(MonthlyActivityOfficialCorrespondenceService::class);
         if (! (bool) ($data['needs_official_correspondence'] ?? false)) {
-            $monthlyActivity->officialCorrespondence()->delete();
+            $correspondence->delete($monthlyActivity);
             return;
         }
 
-        $monthlyActivity->officialCorrespondence()->updateOrCreate(
-            [
-                'correspondable_type' => MonthlyActivity::class,
-                'correspondable_id' => $monthlyActivity->id,
-            ],
-            [
-                'reason' => $data['official_correspondence_reason'] ?? null,
-                'target' => $data['official_correspondence_target'] ?? null,
-                'brief' => $data['official_correspondence_brief'] ?? null,
-            ]
-        );
+        $correspondence->sync($monthlyActivity, [
+            'reason' => $data['official_correspondence_reason'] ?? null,
+            'target' => $data['official_correspondence_target'] ?? null,
+            'brief' => $data['official_correspondence_brief'] ?? null,
+        ]);
     }
 
     protected function syncVolunteerNeed(MonthlyActivity $monthlyActivity, array $data): void

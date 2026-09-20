@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\MonthlyActivity;
 use App\Modules\Events\Models\EventSupply;
 use App\Modules\Events\Models\ExecutionTeamMember;
+use App\Modules\Events\Services\MonthlyActivityOfficialCorrespondenceService;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -92,11 +93,8 @@ class PostExecutionShowcaseSeeder extends Seeder
             ]
         );
 
-        $activity->officialCorrespondence()->updateOrCreate(
-            [
-                'correspondable_type' => \App\Models\MonthlyActivity::class,
-                'correspondable_id' => $activity->id,
-            ],
+        app(MonthlyActivityOfficialCorrespondenceService::class)->sync(
+            $activity,
             [
                 'reason' => 'Official coordination letter',
                 'target' => 'Zarqa Municipality',

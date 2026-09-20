@@ -15,7 +15,12 @@ class RamadanIftarGift extends Model
 
     public static function types(): array
     {
-        return RamadanIftarGiftType::query()->active()->orderBy('sort_order')->orderBy('id')->pluck('code')->all();
+        return [self::TYPE_GIFTS, self::TYPE_SHIELDS, self::TYPE_BOTH];
+    }
+
+    public static function typeLabels(): array
+    {
+        return [self::TYPE_GIFTS => 'هدايا', self::TYPE_SHIELDS => 'دروع', self::TYPE_BOTH => 'هدايا ودروع'];
     }
 
     protected $fillable = [

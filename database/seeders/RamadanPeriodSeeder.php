@@ -3,41 +3,30 @@
 namespace Database\Seeders;
 
 use App\Models\Setting;
-use App\Modules\Events\Support\RamadanPeriod;
-use App\Modules\Events\Models\RamadanPeriod as Period;
+use App\Modules\Events\Models\RamadanPeriod;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Database\Seeder;
 
 class RamadanPeriodSeeder extends Seeder
 {
     public function run(): void
     {
-        $defaults = [
-            RamadanPeriod::YEAR_KEY => '2026',
-            RamadanPeriod::START_KEY => '2026-02-18',
-            RamadanPeriod::END_KEY => '2026-03-19',
-            RamadanPeriod::ACTIVE_KEY => '1',
-        ];
+        $legacy = Setting::query()->whereIn('key', [
+            'ramadan_period_year', 'ramadan_period_start_date', 'ramadan_period_end_date', 'ramadan_period_is_active',
+        ])->pluck('value', 'key');
+        if ($legacy->isNotEmpty() && $legacy->count() < 4) {
+            throw new \RuntimeException('Incomplete legacy Ramadan settings; configure the normalized period in Admin.');
+        }
 
-        DB::transaction(function () use ($defaults): void {
-            $settings = Setting::query()->whereIn('key', array_keys($defaults))->pluck('value', 'key');
-            if ($settings->isNotEmpty() && $settings->count() < count($defaults)) {
-                throw new \RuntimeException('Incomplete legacy Ramadan period settings. Configure all four ramadan_period_* settings before seeding; dates will not be guessed.');
-            }
-            $values = $settings->isEmpty() ? $defaults : $settings->all();
-            $data = [
-                'year' => $values[RamadanPeriod::YEAR_KEY],
-                'start_date' => $values[RamadanPeriod::START_KEY],
-                'end_date' => $values[RamadanPeriod::END_KEY],
-                'is_active' => $values[RamadanPeriod::ACTIVE_KEY],
-            ];
-            Validator::make($data, Period::rules())->validate();
-            Setting::query()->insertOrIgnore(collect($values)->map(fn ($value, $key) => [
-                'key' => $key, 'value' => $value, 'created_at' => now(), 'updated_at' => now(),
-            ])->values()->all());
-            // A rerun must never replace administrator-maintained dates.
-            Period::query()->insertOrIgnore(array_merge($data, ['created_at' => now(), 'updated_at' => now()]));
+        $initial = $legacy->isEmpty()
+            ? ['year' => 2026, 'hijri_year' => 1447, 'start_date' => '2026-02-18', 'end_date' => '2026-03-19', 'is_active' => true, 'is_confirmed' => true]
+            : ['year' => (int) $legacy['ramadan_period_year'], 'hijri_year' => null, 'start_date' => $legacy['ramadan_period_start_date'], 'end_date' => $legacy['ramadan_period_end_date'], 'is_active' => $legacy['ramadan_period_is_active'] === '1', 'is_confirmed' => true];
+        Validator::make($initial, array_merge(RamadanPeriod::rules(), ['hijri_year' => ['nullable', 'integer', 'min:1400', 'max:1600']]))->validate();
+
+        DB::transaction(function () use ($initial): void {
+            $period = RamadanPeriod::query()->firstOrCreate(['year' => $initial['year']], $initial);
+            if ($initial['is_active'] && ! RamadanPeriod::query()->where('is_active', true)->exists()) $period->activate();
         }, 5);
     }
 }

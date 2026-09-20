@@ -4,8 +4,8 @@
 @section('content')
 @php
 $titles = [
-    'mobilization_methods' => 'طرق الحشد والاستقطاب', 'target_groups' => 'الفئات المستهدفة',
-    'beneficiary_segments' => 'شرائح المستفيدين والفئات العمرية', 'gift_types' => 'أنواع الهدايا والدروع',
+'target_groups' => 'الفئات المستهدفة',
+    'beneficiary_segments' => 'شرائح المستفيدين والفئات العمرية',
     'execution_need_types' => 'أنواع احتياجات التنفيذ', 'community_organizations' => 'الجمعيات والمراكز',
     'local_communities' => 'المجتمعات المحلية', 'monitoring_methods' => 'طرق المتابعة',
 ];
@@ -13,7 +13,7 @@ $titles = [
 <div class="container py-4" dir="rtl">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <div><h1 class="h3 mb-1">البيانات المرجعية للإفطارات</h1><p class="text-muted mb-0">يمكن التعطيل بدل الحذف للحفاظ على السجلات التاريخية.</p></div>
-        <a class="btn btn-outline-secondary" href="{{ route('role.super_admin.site_settings.index') }}">إعدادات رمضان</a>
+        <a class="btn btn-outline-secondary" href="{{ route('events.ramadan.admin.index') }}">إدارة إفطارات رمضان</a>
     </div>
     @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif

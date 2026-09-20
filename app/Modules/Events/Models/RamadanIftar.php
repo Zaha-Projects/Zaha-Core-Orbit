@@ -43,6 +43,7 @@ class RamadanIftar extends Model
     protected $fillable = [
         'agenda_event_id',
         'branch_id',
+        'ramadan_period_id',
         'title',
         'description',
         'relations_officer_id',
@@ -81,6 +82,7 @@ class RamadanIftar extends Model
     protected $casts = [
         'agenda_event_id' => 'integer',
         'branch_id' => 'integer',
+        'ramadan_period_id' => 'integer',
         'relations_officer_id' => 'integer',
         'created_by' => 'integer',
         'planned_date' => 'date',
@@ -100,6 +102,11 @@ class RamadanIftar extends Model
     public function agendaEvent()
     {
         return $this->belongsTo(AgendaEvent::class);
+    }
+
+    public function ramadanPeriod()
+    {
+        return $this->belongsTo(RamadanPeriod::class);
     }
 
     public function branch()

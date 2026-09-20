@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Support\EventRequestModelIdentity;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
@@ -577,7 +577,7 @@ class DynamicWorkflowService
     private function approvedWorkflowStepKeysForMonthlyActivity(int $activityId): array
     {
         $instance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $activityId)
             ->latest('id')
             ->first();

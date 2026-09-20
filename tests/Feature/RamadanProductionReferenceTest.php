@@ -9,10 +9,8 @@ use App\Modules\Events\Models\EventGuidanceVersion;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\RamadanIftarGift;
-use App\Modules\Events\Models\RamadanIftarGiftType;
 use App\Modules\Events\Models\RamadanPeriod;
 use App\Modules\Events\Models\TargetGroup;
-use App\Modules\Events\Support\RamadanPeriod as PeriodSupport;
 use Database\Seeders\RamadanReferenceDataSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,13 +26,12 @@ class RamadanProductionReferenceTest extends TestCase
     public function test_reference_seeders_are_repeatable_and_preserve_admin_changes(): void
     {
         $this->seed(RamadanReferenceDataSeeder::class);
-        $tables = ['target_groups', 'beneficiary_segments', 'monitoring_methods', 'mobilization_methods', 'execution_need_types', 'ramadan_periods', 'event_guidance_versions', 'ramadan_iftar_gift_types'];
+        $tables = ['target_groups', 'beneficiary_segments', 'monitoring_methods', 'mobilization_methods', 'execution_need_types', 'ramadan_periods', 'event_guidance_versions'];
         $counts = collect($tables)->mapWithKeys(fn ($table) => [$table => \DB::table($table)->count()]);
         MobilizationMethod::query()->where('code', 'direct_contact')->update(['name_ar' => 'تسمية الإدارة', 'is_active' => false]);
         BeneficiarySegment::query()->where('code', 'children')->update(['minimum_age' => 6, 'maximum_age' => 12]);
         TargetGroup::query()->where('code', 'children')->update(['name' => 'فئة معدلة', 'is_active' => false]);
         ExecutionNeedType::query()->where('code', 'transport')->firstOrFail()->update(['usage_scope' => 'none']);
-        RamadanIftarGiftType::query()->where('code', 'gifts')->update(['name_ar' => 'هدية معدلة', 'is_active' => false]);
         RamadanPeriod::query()->where('year', 2026)->update(['start_date' => '2026-02-20']);
         $this->seed(RamadanReferenceDataSeeder::class);
         $this->seed(RamadanReferenceDataSeeder::class);
@@ -46,8 +43,8 @@ class RamadanProductionReferenceTest extends TestCase
         $this->assertDatabaseHas('beneficiary_segments', ['code' => 'children', 'minimum_age' => 6, 'maximum_age' => 12]);
         $this->assertDatabaseHas('target_groups', ['code' => 'children', 'name' => 'فئة معدلة', 'is_active' => false]);
         $this->assertSame('none', ExecutionNeedType::query()->where('code', 'transport')->firstOrFail()->usage_scope);
-        $this->assertNotContains('gifts', RamadanIftarGift::types());
-        $this->assertFalse(PeriodSupport::contains('2026-02-19'));
+        $this->assertSame(['gifts', 'shields', 'both'], RamadanIftarGift::types());
+        $this->assertFalse(RamadanPeriod::contains('2026-02-19'));
     }
 
     public function test_all_four_scopes_map_to_existing_flags_and_queries(): void
@@ -88,7 +85,7 @@ class RamadanProductionReferenceTest extends TestCase
 
     public function test_ramadan_year_is_unique_at_database_level(): void
     {
-        $period = ['year' => 2026, 'start_date' => '2026-02-18', 'end_date' => '2026-03-19'];
+        $period = ['year' => 2026, 'hijri_year' => 1447, 'start_date' => '2026-02-18', 'end_date' => '2026-03-19'];
         RamadanPeriod::query()->create($period);
         $this->expectException(QueryException::class);
         RamadanPeriod::query()->create($period);
@@ -97,14 +94,14 @@ class RamadanProductionReferenceTest extends TestCase
     public function test_period_validation_rejects_invalid_dates_and_reversed_ranges(): void
     {
         foreach ([['2026-02-30', '2026-03-19'], ['2026-03-19', '2026-02-18']] as [$start, $end]) {
-            $this->assertTrue(Validator::make(['year' => 2026, 'start_date' => $start, 'end_date' => $end], RamadanPeriod::rules())->fails());
+            $this->assertTrue(Validator::make(['year' => 2026, 'hijri_year' => 1447, 'start_date' => $start, 'end_date' => $end], RamadanPeriod::rules())->fails());
         }
-        $this->assertTrue(Validator::make(['year' => 1447, 'start_date' => '2026-02-18', 'end_date' => '2026-03-19'], RamadanPeriod::rules())->fails());
+        $this->assertTrue(Validator::make(['year' => 1447, 'hijri_year' => 1447, 'start_date' => '2026-02-18', 'end_date' => '2026-03-19'], RamadanPeriod::rules())->fails());
     }
 
     public function test_partial_legacy_period_settings_are_not_completed_with_guessed_dates(): void
     {
-        \App\Models\Setting::query()->create(['key' => PeriodSupport::YEAR_KEY, 'value' => '2027']);
+        \App\Models\Setting::query()->create(['key' => 'ramadan_period_year', 'value' => '2027']);
         try {
             $this->seed(\Database\Seeders\RamadanPeriodSeeder::class);
             $this->fail('Partial settings should require administrator correction.');
@@ -112,21 +109,22 @@ class RamadanProductionReferenceTest extends TestCase
             $this->assertStringContainsString('Incomplete legacy Ramadan period', $exception->getMessage());
         }
         $this->assertDatabaseCount('ramadan_periods', 0);
-        $this->assertNull(\App\Models\Setting::valueOf(PeriodSupport::START_KEY));
+        $this->assertNull(\App\Models\Setting::valueOf('ramadan_period_start_date'));
     }
 
-    public function test_period_validation_uses_all_active_years_and_inclusive_boundaries(): void
+    public function test_period_validation_uses_the_single_active_year_and_inclusive_boundaries(): void
     {
-        RamadanPeriod::query()->create(['year' => 2026, 'start_date' => '2026-02-18', 'end_date' => '2026-03-19', 'is_active' => true]);
+        RamadanPeriod::query()->create(['year' => 2026, 'hijri_year' => 1447, 'start_date' => '2026-02-18', 'end_date' => '2026-03-19', 'is_confirmed' => true, 'is_active' => true]);
         // Test-only dates, not a seeded assertion about Ramadan in this year.
-        RamadanPeriod::query()->create(['year' => 2027, 'start_date' => '2027-02-01', 'end_date' => '2027-03-01', 'is_active' => true]);
-        foreach (['2026-02-18', '2026-03-19', '2027-02-01', '2027-03-01'] as $date) {
-            $this->assertTrue(PeriodSupport::contains($date));
+        RamadanPeriod::query()->create(['year' => 2027, 'hijri_year' => 1448, 'start_date' => '2027-02-01', 'end_date' => '2027-03-01', 'is_confirmed' => true, 'is_active' => true]);
+        $this->assertFalse(RamadanPeriod::contains('2026-02-18'));
+        foreach (['2027-02-01', '2027-03-01'] as $date) {
+            $this->assertTrue(RamadanPeriod::contains($date));
         }
-        $this->assertFalse(PeriodSupport::contains('2026-03-20'));
-        $this->assertFalse(PeriodSupport::contains('invalid'));
+        $this->assertFalse(RamadanPeriod::contains('2026-03-20'));
+        $this->assertFalse(RamadanPeriod::contains('invalid'));
         RamadanPeriod::query()->where('year', 2027)->update(['is_active' => false]);
-        $this->assertFalse(PeriodSupport::contains('2027-02-01'));
+        $this->assertFalse(RamadanPeriod::contains('2027-02-01'));
     }
 
     public function test_guidance_publishes_new_version_without_rewriting_old_content(): void
@@ -135,23 +133,22 @@ class RamadanProductionReferenceTest extends TestCase
         $this->seed(\Database\Seeders\RamadanIftarGuidanceSeeder::class);
         $this->seed(\Database\Seeders\RamadanIftarGuidanceSeeder::class);
         $this->assertSame('Historical accepted content', $old->fresh()->content);
-        $this->assertFalse($old->fresh()->is_active);
+        $this->assertTrue($old->fresh()->is_active);
         $this->assertDatabaseCount('event_guidance_versions', 2);
-        $current = EventGuidanceVersion::currentForRamadan();
-        $this->assertSame(2, $current->version_number);
-        $this->assertStringContainsString('عدم اخراج الاثاث', $current->content);
-        $this->assertStringContainsString('عدم تخصيص', $current->content);
-        $this->assertSame(hash_file('sha256', public_path('تعليمات افطارات رمضان 2026.pdf')), $current->source_sha256);
+        $this->assertSame($old->id, EventGuidanceVersion::currentForRamadan()->id);
+        $seeded = EventGuidanceVersion::query()->where('version_number', 2)->firstOrFail();
+        $this->assertFalse($seeded->is_active);
+        $this->assertNull($seeded->published_at);
+        $this->assertStringContainsString('عدم اخراج الاثاث', $seeded->content);
+        $this->assertSame(hash_file('sha256', public_path('تعليمات افطارات رمضان 2026.pdf')), $seeded->source_sha256);
     }
 
-    public function test_gift_validation_reads_active_reference_values(): void
+    public function test_gift_validation_uses_the_structural_enum(): void
     {
-        RamadanIftarGiftType::query()->where('code', 'gifts')->update(['is_active' => false]);
         $request = new StoreRamadanIftarRequest;
         $rules = ['gift_type' => $request->rules()['gifts.*.gift_type']];
-        $this->assertTrue(Validator::make(['gift_type' => 'gifts'], $rules)->fails());
+        foreach (RamadanIftarGift::types() as $type) $this->assertTrue(Validator::make(['gift_type' => $type], $rules)->passes());
         $this->assertTrue(Validator::make(['gift_type' => 'unknown'], $rules)->fails());
-        $this->assertTrue(Validator::make(['gift_type' => 'shields'], $rules)->passes());
     }
 
     public function test_reference_codes_are_unique(): void
@@ -234,7 +231,7 @@ class RamadanProductionReferenceTest extends TestCase
             ->assertSee('name="execution_need_scopes[0][usage_scope]"', false);
     }
 
-    public function test_admin_can_update_period_and_scopes_and_regular_user_cannot(): void
+    public function test_admin_can_update_scopes_and_regular_user_cannot(): void
     {
         Role::findOrCreate('super_admin', 'web');
         $admin = User::factory()->create();
@@ -244,9 +241,7 @@ class RamadanProductionReferenceTest extends TestCase
         $url = route('role.super_admin.site_settings.update');
         $this->actingAs($admin)->put($url, $payload)->assertSessionHasNoErrors()->assertRedirect();
         $this->actingAs($admin)->put($url, $payload)->assertSessionHasNoErrors();
-        $this->assertDatabaseCount('ramadan_periods', 1);
         $this->assertSame('none', $type->fresh()->usage_scope);
-        $this->actingAs($admin)->put($url, array_replace($payload, ['ramadan_period_end_date' => '2026-01-01']))->assertSessionHasErrors('ramadan_period_end_date');
         $payload['execution_need_scopes'][0]['usage_scope'] = 'invalid';
         $this->actingAs($admin)->put($url, $payload)->assertSessionHasErrors('execution_need_scopes.0.usage_scope');
         $this->actingAs(User::factory()->create())->put($url, $this->settingsPayload())->assertForbidden();
@@ -265,12 +260,12 @@ class RamadanProductionReferenceTest extends TestCase
         $this->actingAs($admin)->get(route('role.super_admin.site_settings.index'))
             ->assertOk()
             ->assertSee('value="iftars" selected', false)
-            ->assertSee('id="ramadan_period_is_active" name="ramadan_period_is_active" value="1" checked', false)
+            ->assertDontSee('name="ramadan_period_is_active"', false)
             ->assertDontSee('@selected', false)
             ->assertDontSee('parent->index', false);
     }
 
-    public function test_period_only_update_preserves_scopes_and_does_not_mark_them_configured(): void
+    public function test_site_settings_update_preserves_unsubmitted_scopes(): void
     {
         Role::findOrCreate('super_admin', 'web');
         $admin = User::factory()->create();
@@ -282,15 +277,12 @@ class RamadanProductionReferenceTest extends TestCase
 
         $this->assertSame('iftars', $type->fresh()->usage_scope);
         $this->assertNull($type->fresh()->scope_configured_at);
-        $this->assertDatabaseHas('ramadan_periods', ['year' => 2026, 'is_active' => true]);
     }
 
     private function settingsPayload(): array
     {
         return [
             'admin_reports_cache_ttl_minutes' => 10, 'admin_reports_cache_prefix' => 'test',
-            'ramadan_period_year' => 2026, 'ramadan_period_start_date' => '2026-02-18',
-            'ramadan_period_end_date' => '2026-03-19', 'ramadan_period_is_active' => 1,
         ];
     }
 }

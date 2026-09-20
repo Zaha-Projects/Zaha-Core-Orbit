@@ -20,11 +20,7 @@ class RamadanIftarGuidanceSeeder extends Seeder
             $versions = DB::table('event_guidance_versions')
                 ->where('code', EventGuidanceVersion::RAMADAN_IFTAR)->lockForUpdate()->get();
             if ($versions->contains('source_sha256', $document['source_sha256'])) {
-                DB::table('event_guidance_versions')
-                    ->where('code', EventGuidanceVersion::RAMADAN_IFTAR)
-                    ->where('source_sha256', $document['source_sha256'])
-                    ->update(['title' => 'تعليمات عامة لإفطارات رمضان', 'updated_at' => now()]);
-                return;
+                return; // Administrator ownership begins after the initial insert.
             }
 
             $inserted = DB::table('event_guidance_versions')->insertOrIgnore([
@@ -33,14 +29,10 @@ class RamadanIftarGuidanceSeeder extends Seeder
                 'source_sha256' => $document['source_sha256'],
                 'title' => 'تعليمات عامة لإفطارات رمضان',
                 'content' => json_encode($document['sections'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-                'is_active' => true, 'published_at' => now(),
+                // Seeders provide initial content; they never displace an administrator's current version.
+                'is_active' => $versions->isEmpty(), 'published_at' => $versions->isEmpty() ? now() : null,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
-            if ($inserted) {
-                // Preserve historical text and acknowledgements; publish a new version.
-                DB::table('event_guidance_versions')->whereIn('id', $versions->pluck('id'))
-                    ->update(['is_active' => false, 'updated_at' => now()]);
-            }
         }, 5);
     }
 }

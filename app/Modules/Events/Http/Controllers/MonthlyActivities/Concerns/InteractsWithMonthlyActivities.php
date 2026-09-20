@@ -2,10 +2,11 @@
 
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities\Concerns;
 
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Models\Branch;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\WorkflowLog;
 use App\Models\WorkflowInstance;
 use App\Modules\Events\Models\EventStatusLookup;
@@ -72,7 +73,7 @@ trait InteractsWithMonthlyActivities
     protected function isApprovedVersion(MonthlyActivity $monthlyActivity): bool
     {
         $workflowInstance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $monthlyActivity->id)
             ->latest('id')
             ->first();

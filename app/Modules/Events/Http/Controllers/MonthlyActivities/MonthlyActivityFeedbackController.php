@@ -3,8 +3,8 @@
 namespace App\Modules\Events\Http\Controllers\MonthlyActivities;
 
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Http\Controllers\MonthlyActivities\Concerns\InteractsWithMonthlyActivities;

@@ -13,7 +13,7 @@ use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Models\RamadanIftarGift;
-use App\Modules\Events\Support\RamadanPeriod;
+use App\Modules\Events\Models\RamadanPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -57,9 +57,13 @@ class StoreRamadanIftarRequest extends FormRequest
                 ? RamadanIftar::HOST_CENTER
                 : RamadanIftar::HOST_ASSOCIATION;
         }
+        $periodId = $this->route('ramadanIftar')?->ramadan_period_id;
+        if (! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')) {
+            $periodId = RamadanPeriod::current()?->getKey();
+        }
         $this->merge(array_merge(
             $rows,
-            ['branch_id' => $branchId, 'host_type' => $hostType]
+            ['branch_id' => $branchId, 'ramadan_period_id' => $periodId, 'host_type' => $hostType]
         ));
     }
 
@@ -94,6 +98,7 @@ class StoreRamadanIftarRequest extends FormRequest
     {
         return [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'ramadan_period_id' => [Rule::requiredIf(fn () => ! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')), 'nullable', 'integer', 'exists:ramadan_periods,id'],
             'agenda_event_id' => ['nullable', 'integer', 'exists:agenda_events,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -144,10 +149,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.items.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'gifts' => ['present', 'array'],
             'gifts.*.id' => ['nullable', 'integer'],
-            'gifts.*.gift_type' => ['required', Rule::in(array_values(array_unique(array_merge(
-                RamadanIftarGift::types(),
-                $this->route('ramadanIftar') instanceof RamadanIftar ? $this->route('ramadanIftar')->gifts()->pluck('gift_type')->all() : []
-            ))))],
+            'gifts.*.gift_type' => ['required', Rule::in(RamadanIftarGift::types())],
             'gifts.*.description' => ['required', 'string'],
             'gifts.*.planned_quantity' => ['required', 'integer', 'min:0'],
             'gifts.*.has_supporting_entity' => ['required', 'boolean'],

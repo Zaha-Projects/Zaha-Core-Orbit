@@ -24,7 +24,7 @@
                 <div>
                     <span class="dashboard-ramadan__eyebrow"><i class="fas fa-moon" aria-hidden="true"></i> موسم رمضان</span>
                     <h2 class="h4 mb-1" id="dashboard-ramadan-title">إفطارات رمضان</h2>
-                    <p class="mb-0">{{ $ramadanDashboard['period']['start']->format('Y-m-d') }} — {{ $ramadanDashboard['period']['end']->format('Y-m-d') }}</p>
+                    <p class="mb-0">{{ $ramadanDashboard['period']->start_date->format('Y-m-d') }} — {{ $ramadanDashboard['period']->end_date->format('Y-m-d') }}</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <a class="btn btn-light btn-sm" href="{{ route('events.ramadan.iftars.index') }}">عرض البطاقات</a>

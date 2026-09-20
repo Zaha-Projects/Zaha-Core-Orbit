@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Models\AgendaEvent;
-use App\Models\AnnualAgendaDeleteRequest;
-use App\Models\AnnualAgendaEditRequest;
+use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
+use App\Modules\Events\Models\AnnualAgendaEditRequest;
 use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\User;
 use App\Models\WorkflowActionLog;
 use App\Models\WorkflowInstance;
@@ -214,7 +215,7 @@ class PlanChangeRequestWorkflowService
         }
 
         $activityWorkflowInstance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $activity->id)
             ->latest('id')
             ->first();
