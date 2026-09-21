@@ -1,0 +1,292 @@
+/* Ramadan workspace visual system. Deliberately scoped to .ramadan-module. */
+.ramadan-module {
+    --ramadan-bg: #f5f6f8;
+    --ramadan-surface: #ffffff;
+    --ramadan-surface-soft: #faf8f2;
+    --ramadan-text: #25282d;
+    --ramadan-danger: #b4232f;
+    --ramadan-success: #25704a;
+    --ramadan-night: #15181c;
+    --ramadan-night-2: #20242a;
+    --ramadan-night-3: #292d32;
+    --ramadan-gold: #d7a726;
+    --ramadan-gold-bright: #f4cd62;
+    --ramadan-gold-soft: #fff4cc;
+    --ramadan-cream: #fffaf0;
+    --ramadan-ink: #29261e;
+    --ramadan-muted: #746d5d;
+    --ramadan-border: rgba(183, 132, 18, .28);
+    --ramadan-shadow: 0 18px 45px rgba(18, 18, 18, .12);
+    --ramadan-radius: 18px;
+}
+.ramadan-module .content-main {
+    position: relative;
+    isolation: isolate;
+    min-height: calc(100vh - 76px);
+    color: var(--ramadan-text);
+    background:
+        radial-gradient(circle at 12% 7%, rgba(215, 167, 38, .09) 0 1px, transparent 2px),
+        radial-gradient(circle at 84% 13%, rgba(215, 167, 38, .07) 0 1px, transparent 2px),
+        linear-gradient(155deg, #f7f8fa 0, #f1f2f4 50%, #f8f7f3 100%);
+    background-size: 58px 58px, 83px 83px, auto;
+}
+.ramadan-module .content-main::before,
+.ramadan-module .content-main::after {
+    position: fixed;
+    z-index: -1;
+    color: rgba(183, 132, 18, .09);
+    pointer-events: none;
+    font-family: Georgia, serif;
+    line-height: 1;
+}
+.ramadan-module .content-main::before { content: "☾"; inset-inline-end: 2vw; top: 7rem; font-size: clamp(7rem, 16vw, 15rem); transform: rotate(-12deg); }
+.ramadan-module .content-main::after { content: "✦  ·  ✧  ·  ✦"; inset-inline-start: 3vw; bottom: 2rem; font-size: 1.25rem; letter-spacing: .7rem; }
+.ramadan-module .container { max-width: 1440px; }
+.ramadan-module .content-main > .container > .d-flex:has(h1) { padding:1rem 1.15rem; margin-bottom:1.25rem; border:1px solid rgba(183,132,18,.25); border-radius:16px; background:rgba(255,255,255,.96); box-shadow:0 12px 28px rgba(33,38,45,.08); }
+.ramadan-module .content-main > .container > h1,
+.ramadan-module .content-main > .container > h2,
+.ramadan-module .content-main > .container > .d-flex h1,
+.ramadan-module .content-main > .container > .d-flex h2 { color:var(--ramadan-text); text-shadow:none; }
+.ramadan-module .content-main > .container > .d-flex .text-muted,
+.ramadan-module .content-main > .container > p.text-muted { color:var(--ramadan-muted)!important; }
+.ramadan-module .content-main > .container > form:not(.card) .form-label { color:#514832; }
+
+/* Hero: dark arch, moon, lanterns and restrained gold filigree. */
+.ramadan-module .ramadan-hero {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    min-height: 148px;
+    color: #fff;
+    border: 1px solid rgba(244, 205, 98, .55) !important;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 75% 34%, rgba(244,205,98,.18), transparent 18%),
+        linear-gradient(135deg, #131518 0%, #26282a 52%, #17191d 100%);
+    box-shadow: 0 22px 55px rgba(11, 12, 14, .24), inset 0 0 0 1px rgba(255,255,255,.03) !important;
+}
+.ramadan-module .ramadan-hero::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    z-index: -1;
+    border: 1px solid rgba(215,167,38,.35);
+    border-radius: 18px 18px 42% 42% / 18px 18px 28px 28px;
+    background:
+        radial-gradient(circle, var(--ramadan-gold-bright) 0 1px, transparent 2px) 0 0/42px 42px,
+        linear-gradient(90deg, transparent, rgba(215,167,38,.06), transparent);
+}
+.ramadan-module .ramadan-hero::after {
+    content: "☾";
+    position: absolute;
+    z-index: -1;
+    inset-inline-end: clamp(1.5rem, 6vw, 5rem);
+    top: 50%;
+    transform: translateY(-50%) rotate(-14deg);
+    color: transparent;
+    -webkit-text-stroke: 2px rgba(244,205,98,.55);
+    font-family: Georgia, serif;
+    font-size: clamp(6rem, 12vw, 10rem);
+    filter: drop-shadow(0 0 15px rgba(215,167,38,.22));
+}
+.ramadan-module .ramadan-hero > * { position: relative; z-index: 1; }
+.ramadan-module .ramadan-hero h1,
+.ramadan-module .ramadan-hero h2 { color: #fff; font-weight: 800; text-shadow: 0 2px 15px rgba(0,0,0,.45); }
+.ramadan-module .ramadan-hero .card-body::before,
+.ramadan-module .ramadan-hero .card-body::after {
+    content: "✦";
+    position: absolute;
+    top: -1.35rem;
+    width: 1.65rem;
+    height: 3.8rem;
+    padding-top: 2.5rem;
+    color: var(--ramadan-gold-bright);
+    text-align: center;
+    border-inline: 1px solid rgba(215,167,38,.62);
+    border-bottom: 2px solid var(--ramadan-gold);
+    border-radius: 0 0 50% 50%;
+    filter: drop-shadow(0 8px 7px rgba(244,205,98,.35));
+    animation: ramadanLanternFloat 4.8s ease-in-out infinite;
+}
+.ramadan-module .ramadan-hero .card-body::before { inset-inline-start: 8%; }
+.ramadan-module .ramadan-hero .card-body::after { inset-inline-start: 17%; animation-delay: -2.2s; transform: scale(.78); }
+
+/* Surfaces */
+.ramadan-module .card:not(.ramadan-hero),
+.ramadan-module .modal-content {
+    overflow: hidden;
+    border: 1px solid var(--ramadan-border);
+    border-radius: var(--ramadan-radius);
+    background: rgba(255,255,255,.96);
+    box-shadow: var(--ramadan-shadow);
+}
+.ramadan-module .card:not(.ramadan-hero)::before {
+    content: "";
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--ramadan-gold), var(--ramadan-gold-bright), var(--ramadan-gold), transparent);
+}
+.ramadan-module .card-header,
+.ramadan-module .modal-header {
+    color: #fff;
+    border-bottom: 1px solid rgba(215,167,38,.35);
+    background: linear-gradient(110deg, var(--ramadan-night), var(--ramadan-night-3));
+}
+.ramadan-module .card-header strong,
+.ramadan-module .card-header h2,
+.ramadan-module .modal-title { color: #fff; }
+.ramadan-module .card-footer { background: #fffbf1; border-top-color: var(--ramadan-border); }
+.ramadan-module .ramadan-card { transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease; }
+.ramadan-module .ramadan-card:hover { transform: translateY(-6px); border-color: rgba(215,167,38,.72); box-shadow: 0 24px 46px rgba(25,22,15,.18)!important; }
+.ramadan-module .ramadan-card h2 a { color: var(--ramadan-ink)!important; transition: color .2s ease; }
+.ramadan-module .ramadan-card:hover h2 a { color: #9b6c08!important; }
+
+/* Buttons, inputs, tabs and navigation */
+.ramadan-module .btn { border-radius: 10px; font-weight: 700; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.ramadan-module .btn:hover { transform: translateY(-1px); }
+.ramadan-module .btn-primary,
+.ramadan-module .btn-success { color: #17130b; border-color: #bd8916; background: linear-gradient(135deg, var(--ramadan-gold-bright), var(--ramadan-gold)); box-shadow: 0 7px 18px rgba(183,132,18,.18); }
+.ramadan-module .btn-primary:hover,
+.ramadan-module .btn-success:hover { color: #0d0b07; border-color: var(--ramadan-gold); background: linear-gradient(135deg, #ffe291, #d9a31e); box-shadow: 0 9px 22px rgba(183,132,18,.3); }
+.ramadan-module .btn-outline-primary,
+.ramadan-module .btn-outline-success { color: #8a6009; border-color: var(--ramadan-gold); }
+.ramadan-module .btn-outline-primary:hover,
+.ramadan-module .btn-outline-success:hover { color: #16120a; background: var(--ramadan-gold-soft); border-color: #b47f0c; }
+.ramadan-module .btn-warning { color: #16120a; border-color: var(--ramadan-gold-bright); background: var(--ramadan-gold-bright); box-shadow: 0 0 18px rgba(244,205,98,.2); }
+.ramadan-module .form-control,
+.ramadan-module .form-select { min-height: 43px; color: var(--ramadan-ink); border-color: rgba(155,108,8,.28); border-radius: 11px; background-color: #fffefa; }
+.ramadan-module .form-control:focus,
+.ramadan-module .form-select:focus { border-color: var(--ramadan-gold); box-shadow: 0 0 0 .2rem rgba(215,167,38,.15); }
+.ramadan-module .form-label { color: #514832; font-weight: 700; }
+.ramadan-module .form-check-input:checked { border-color: var(--ramadan-gold); background-color: #b98616; }
+.ramadan-module .nav-tabs { gap: .45rem; border: 0; padding: .45rem; border-radius: 14px; background: #ece6d8; }
+.ramadan-module .nav-tabs .nav-link { color: #5d5546; border: 0; border-radius: 10px; font-weight: 700; }
+.ramadan-module .nav-tabs .nav-link.active { color: #fff; background: linear-gradient(120deg,var(--ramadan-night),var(--ramadan-night-3)); box-shadow: 0 7px 18px rgba(20,20,20,.16); }
+.ramadan-module .breadcrumb { padding: .6rem .9rem; border: 1px solid rgba(215,167,38,.2); border-radius: 12px; background: rgba(255,255,255,.72); }
+.ramadan-module .breadcrumb a { color: #8d630c; }
+.ramadan-module .ramadan-section-nav { position: sticky; top: .75rem; z-index: 8; padding: .65rem; border: 1px solid var(--ramadan-border); border-radius: 14px; background: rgba(255,251,241,.94); box-shadow: 0 8px 25px rgba(35,29,17,.09); backdrop-filter: blur(10px); }
+
+/* Statuses, feedback and tables */
+.ramadan-module .ramadan-status,
+.ramadan-module .badge { display: inline-flex; align-items: center; gap: .3rem; border-radius: 999px; padding: .4rem .7rem; font-size: .75rem; font-weight: 800; }
+.ramadan-module .ramadan-status--draft,
+.ramadan-module .ramadan-status--planned { color: #53565a; background: #eceff2; }
+.ramadan-module .ramadan-status--submitted,
+.ramadan-module .ramadan-status--in_progress { color: #714d00; background: #fff0ba; }
+.ramadan-module .ramadan-status--approved,
+.ramadan-module .ramadan-status--completed { color: #235c3f; background: #dff4e7; }
+.ramadan-module .ramadan-status--changes_requested,
+.ramadan-module .ramadan-status--returned { color: #922d35; background: #fde4e5; }
+.ramadan-module .alert { border: 0; border-inline-start: 4px solid var(--ramadan-gold); border-radius: 12px; box-shadow: 0 8px 20px rgba(45,39,24,.07); }
+.ramadan-module .table { --bs-table-striped-bg: rgba(215,167,38,.045); }
+.ramadan-module .table thead th { color: #fff; border-color: rgba(244,205,98,.28); background: var(--ramadan-night-2); white-space: nowrap; }
+.ramadan-module .table tbody tr { transition: background-color .18s ease; }
+.ramadan-module .table tbody tr:hover { background: #fff8e4; }
+.ramadan-module .list-group-item { border-color: rgba(183,132,18,.17); }
+.ramadan-module .list-group-item.active { color: #fff; border-color: var(--ramadan-gold); background: var(--ramadan-night-2); }
+
+/* Planning and guidance */
+.ramadan-module .ramadan-needs-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.ramadan-module .ramadan-need-option { position:relative; padding:1rem; border:1px solid var(--ramadan-border); border-radius:14px; background:linear-gradient(145deg,#fff,#fffaf0); transition:.2s ease; }
+.ramadan-module .ramadan-need-option:hover { transform:translateY(-2px); border-color:var(--ramadan-gold); }
+.ramadan-module .ramadan-need-option.is-active { border-color:var(--ramadan-gold); box-shadow:0 0 0 3px rgba(215,167,38,.12),0 10px 25px rgba(71,51,9,.08); }
+.ramadan-module .ramadan-need-details[hidden] { display:none!important; }
+.ramadan-module .ramadan-need-detail-group { padding-top:.25rem; }
+.ramadan-module [data-ramadan-need-toggle][data-mandatory="1"] { cursor:not-allowed; opacity:1; }
+.ramadan-module #ramadan-planning-form { color:var(--ramadan-text); padding:clamp(.25rem,1vw,1rem); border-radius:20px; background:var(--ramadan-bg); }
+.ramadan-module #ramadan-planning-form .card:not(.ramadan-hero) { color:var(--ramadan-text); background:var(--ramadan-surface); }
+.ramadan-module .ramadan-form-section .card-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1rem; }
+.ramadan-module .ramadan-form-section .card-header > span { display:flex; flex-direction:column; gap:.2rem; }
+.ramadan-module .ramadan-form-section .card-header small { color:#655f52; font-weight:500; }
+.ramadan-module .ramadan-form-section.has-validation-error { border-color:var(--ramadan-danger); box-shadow:0 0 0 3px rgba(180,35,47,.1); }
+.ramadan-module .ramadan-section-error-badge { color:#fff; background:var(--ramadan-danger); }
+.ramadan-module .ramadan-validation-summary { color:#721c24; background:#fff1f2; border:1px solid #e8aab0; border-inline-start-width:5px; }
+.ramadan-module .ramadan-quick-create { border:1px solid var(--ramadan-border); border-radius:14px; background:var(--ramadan-surface-soft); }
+.ramadan-module .ramadan-reference-picker .list-group { inset-inline:0; z-index:12; }
+.ramadan-module .ramadan-reference-selected { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.8rem 1rem; border:1px solid var(--ramadan-gold); border-radius:12px; background:#fffaf0; }
+.ramadan-module .ramadan-reference-selected > div { display:flex; flex-direction:column; gap:.2rem; }
+.ramadan-module .ramadan-reference-selected strong { color:#423510; }
+.ramadan-module .ramadan-reference-selected small { color:#625d51; text-align:start; }
+.ramadan-module .ramadan-picker-results { max-height:16rem; overflow:auto; }
+.ramadan-module .ramadan-picker-results .list-group-item { display:flex; flex-direction:column; gap:.15rem; }
+.ramadan-module .ramadan-picker-empty { padding:.8rem; color:var(--ramadan-muted); background:var(--ramadan-surface); }
+.ramadan-module .ramadan-need-heading { display:flex; align-items:flex-start; gap:.75rem; }
+.ramadan-module .ramadan-need-icon { display:grid; flex:0 0 2.5rem; width:2.5rem; height:2.5rem; place-items:center; color:#76520a; border-radius:12px; background:var(--ramadan-gold-soft); }
+.ramadan-module .ramadan-badge-required { color:#fff; background:var(--ramadan-danger); }
+.ramadan-module .ramadan-badge-optional { color:#57430f; border:1px solid #dec57f; background:#fff8e3; }
+.ramadan-module .ramadan-badge-enabled { color:#fff; background:var(--ramadan-success); }
+.ramadan-module .ramadan-form-actions { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-top:1.25rem; padding:1rem; border:1px solid var(--ramadan-border); border-radius:14px; background:var(--ramadan-surface); }
+.ramadan-module .invalid-feedback { color:var(--ramadan-danger); font-weight:600; }
+.ramadan-module .planning-row { border-color:rgba(183,132,18,.23)!important; border-radius:13px!important; background:#fffdf8; }
+.ramadan-module .guidance-section { break-inside:avoid; transition:transform .22s ease,box-shadow .22s ease; }
+.ramadan-module .guidance-section:hover { transform:translateY(-3px); box-shadow:0 19px 34px rgba(34,29,17,.13)!important; }
+.ramadan-module .guidance-section .fa-solid,
+.ramadan-module .guidance-section .fas { color:var(--ramadan-gold)!important; }
+
+/* Calendar */
+.ramadan-module .ramadan-calendar-shell { position:relative; padding:1rem; border:1px solid rgba(215,167,38,.45); border-radius:24px; background:linear-gradient(145deg,#17191d,#292b2f); box-shadow:0 24px 55px rgba(12,12,13,.22); }
+.ramadan-module .ramadan-calendar-shell::before { content:"☾  ✦  ✧"; position:absolute; inset-inline-end:1.25rem; top:-.55rem; color:rgba(244,205,98,.72); font-size:1.5rem; letter-spacing:.55rem; text-shadow:0 0 12px rgba(244,205,98,.34); }
+.ramadan-module .ramadan-calendar { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.7rem; }
+.ramadan-module .ramadan-day { position:relative; min-height:164px; overflow:hidden; padding:.75rem; border:1px solid rgba(244,205,98,.25); border-radius:14px; background:linear-gradient(160deg,#fffdf7,#f5eedc); box-shadow:0 7px 18px rgba(0,0,0,.16); transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+.ramadan-module .ramadan-day::after { content:"✦"; position:absolute; inset-inline-end:.55rem; bottom:.25rem; color:rgba(183,132,18,.13); font-size:2rem; }
+.ramadan-module .ramadan-day:hover { z-index:2; transform:translateY(-4px); border-color:var(--ramadan-gold-bright); box-shadow:0 14px 27px rgba(0,0,0,.24); }
+.ramadan-module .ramadan-day--today { border:2px solid var(--ramadan-gold); box-shadow:0 0 0 3px rgba(244,205,98,.15),0 10px 25px rgba(0,0,0,.23); }
+.ramadan-module .ramadan-day__date { display:flex; justify-content:space-between; align-items:center; color:#76520a; font-weight:800; border-bottom:1px dashed rgba(155,108,8,.3); padding-bottom:.5rem; margin-bottom:.55rem; }
+.ramadan-module .ramadan-day__number { display:inline-grid; place-items:center; min-width:1.9rem; height:1.9rem; color:#fff; border-radius:50%; background:var(--ramadan-night-2); }
+.ramadan-module .ramadan-calendar-event { position:relative; display:block; margin-bottom:.45rem; padding:.55rem .65rem; color:#fff; text-decoration:none; font-size:.78rem; border:1px solid rgba(244,205,98,.3); border-inline-start:3px solid var(--ramadan-gold-bright); border-radius:9px; background:linear-gradient(120deg,#27292d,#35373b); transition:transform .18s ease,box-shadow .18s ease; }
+.ramadan-module .ramadan-calendar-event:hover { color:#fff; transform:translateX(-2px); box-shadow:0 5px 14px rgba(0,0,0,.22); }
+.ramadan-module .ramadan-calendar-event span { color:#e9dbb6; }
+.ramadan-module .ramadan-day__empty { color:#817967!important; }
+
+/* Motion is decorative and optional. */
+.ramadan-module .ramadan-reveal { animation:ramadanReveal .5s both; animation-delay:var(--ramadan-delay,0ms); }
+@keyframes ramadanReveal { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes ramadanLanternFloat { 0%,100% { margin-top:0; } 50% { margin-top:.35rem; } }
+
+[data-theme="dark"] .ramadan-module .content-main { color:#f7edd2; background:radial-gradient(circle at 1px 1px,rgba(244,205,98,.08) 1px,transparent 0) 0 0/34px 34px,linear-gradient(180deg,#111316,#1b1d21); }
+[data-theme="dark"] .ramadan-module { --ramadan-bg:#16191e; --ramadan-surface:#24282f; --ramadan-surface-soft:#1e2228; --ramadan-text:#f7f1e3; --ramadan-muted:#c5bda9; --ramadan-border:rgba(224,181,73,.34); --ramadan-danger:#ff8d98; --ramadan-success:#66c995; }
+[data-theme="dark"] .ramadan-module .card:not(.ramadan-hero),
+[data-theme="dark"] .ramadan-module .modal-content,
+[data-theme="dark"] .ramadan-module .ramadan-need-option,
+[data-theme="dark"] .ramadan-module .planning-row { color:#f4ead0; background:#24272b; }
+[data-theme="dark"] .ramadan-module .form-control,
+[data-theme="dark"] .ramadan-module .form-select { color:#f7edd2; border-color:rgba(244,205,98,.32); background-color:#1b1d21; }
+[data-theme="dark"] .ramadan-module .text-muted { color:#c0b69d!important; }
+[data-theme="dark"] .ramadan-module .ramadan-card h2 a { color:#fff7e2!important; }
+[data-theme="dark"] .ramadan-module #ramadan-planning-form,
+[data-theme="dark"] .ramadan-module #ramadan-planning-form .card:not(.ramadan-hero),
+[data-theme="dark"] .ramadan-module .ramadan-quick-create,
+[data-theme="dark"] .ramadan-module .ramadan-form-actions { color:var(--ramadan-text); background:var(--ramadan-surface); }
+[data-theme="dark"] .ramadan-module .ramadan-quick-create { background:var(--ramadan-surface-soft); }
+[data-theme="dark"] .ramadan-module .ramadan-reference-selected { border-color:rgba(244,205,98,.5); background:#202329; }
+[data-theme="dark"] .ramadan-module .ramadan-reference-selected strong { color:#fff2ce; }
+[data-theme="dark"] .ramadan-module .ramadan-reference-selected small { color:#cbc2ae; }
+[data-theme="dark"] .ramadan-module .ramadan-picker-results .list-group-item,
+[data-theme="dark"] .ramadan-module .ramadan-picker-empty { color:#f7edd2; border-color:#4f4939; background:#24282f; }
+[data-theme="dark"] .ramadan-module .ramadan-badge-optional { color:#f6e7b9; border-color:#806728; background:#352f20; }
+[data-theme="dark"] .ramadan-module .ramadan-validation-summary { color:#ffe5e8; border-color:#91444c; background:#421f24; }
+[data-theme="dark"] .ramadan-module .ramadan-section-nav { background:rgba(30,34,40,.96); }
+[data-theme="dark"] .ramadan-module .breadcrumb { background:rgba(36,40,47,.9); }
+[data-theme="dark"] .ramadan-module .form-label { color:#f1e5c6; }
+[data-theme="dark"] .ramadan-module .form-control:focus,
+[data-theme="dark"] .ramadan-module .form-select:focus { border-color:var(--ramadan-gold-bright); box-shadow:0 0 0 .22rem rgba(244,205,98,.2); }
+
+@media(max-width:1199.98px){.ramadan-module .ramadan-calendar{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:767.98px){
+    .ramadan-module .container{padding-inline:.75rem}
+    .ramadan-module .ramadan-hero{min-height:unset;border-radius:18px}
+    .ramadan-module .ramadan-hero .card-body{padding:1.25rem!important}
+    .ramadan-module .ramadan-hero::after{opacity:.5}
+    .ramadan-module .ramadan-hero .card-body::after{display:none}
+    .ramadan-module .ramadan-calendar,.ramadan-module .ramadan-needs-grid{grid-template-columns:1fr}
+    .ramadan-module .ramadan-calendar-shell{padding:.65rem;border-radius:17px}
+    .ramadan-module .ramadan-day{min-height:auto}
+    .ramadan-module .ramadan-section-nav{position:static}
+    .ramadan-module .card:not(.ramadan-hero){border-radius:14px}
+    .ramadan-module .ramadan-form-actions{align-items:stretch;flex-direction:column}
+    .ramadan-module .ramadan-form-actions .btn{width:100%}
+    .ramadan-module .ramadan-quick-create .btn{flex:1 1 auto}
+    .ramadan-module .planning-row .remove-row{min-width:4.5rem}
+}
+@media(prefers-reduced-motion:reduce){.ramadan-module *{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media print{.ramadan-module .sidebar-original,.ramadan-module header,.ramadan-module .ramadan-no-print{display:none!important}.ramadan-module .content-main{background:#fff!important}.ramadan-module .guidance-section{box-shadow:none!important;border:1px solid #bbb!important}.ramadan-module .layout-main{margin:0!important}.ramadan-module .card-header{color:#000!important;background:#fff!important}}

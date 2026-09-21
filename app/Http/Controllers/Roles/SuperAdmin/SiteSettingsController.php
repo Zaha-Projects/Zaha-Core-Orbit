@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Roles\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Modules\Events\Models\ExecutionNeedType;
 use App\Services\AdminReports\AdminReportsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SiteSettingsController extends Controller
 {
@@ -18,8 +21,9 @@ class SiteSettingsController extends Controller
         $cacheConfig = $reportsService->cacheConfig();
         $reportCacheKey = $reportsService->cacheKey($reportYear, $reportMonth);
         $settings = Setting::query()->orderBy('key')->get();
+        $executionNeedTypes = ExecutionNeedType::query()->orderBy('sort_order')->get();
 
-        return view('pages.admin.site-settings.index', compact('settings', 'cacheConfig', 'reportCacheKey', 'reportYear', 'reportMonth'));
+        return view('pages.admin.site-settings.index', compact('settings', 'cacheConfig', 'reportCacheKey', 'reportYear', 'reportMonth', 'executionNeedTypes'));
     }
 
     public function update(Request $request)
@@ -31,15 +35,34 @@ class SiteSettingsController extends Controller
             'monthly_plan_lock_days' => ['nullable', 'integer', 'min:0', 'max:31'],
             'branch_monthly_score_weight_satisfaction' => ['nullable', 'integer', 'min:0', 'max:100'],
             'branch_monthly_score_weight_commitment' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'execution_need_scopes' => ['sometimes', 'array'],
+            'execution_need_scopes.*.id' => ['required', 'integer', 'distinct', 'exists:execution_need_types,id'],
+            'execution_need_scopes.*.usage_scope' => ['required', Rule::in(ExecutionNeedType::usageScopes())],
+            'execution_need_scopes.*.confirm_scope' => ['nullable', 'boolean'],
         ]);
 
         $data['admin_reports_cache_enabled'] = $request->boolean('admin_reports_cache_enabled') ? '1' : '0';
 
-        foreach ($data as $key => $value) {
-            if ($value !== null) {
-                Setting::query()->updateOrCreate(['key' => $key], ['value' => (string) $value]);
+        DB::transaction(function () use ($data): void {
+            $types = ExecutionNeedType::query()->whereIn('id', collect($data['execution_need_scopes'] ?? [])->pluck('id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            foreach ($data['execution_need_scopes'] ?? [] as $row) {
+                $type = $types->get($row['id']);
+                $scopeChanged = $type->usage_scope !== $row['usage_scope'];
+                $confirmed = (bool) ($row['confirm_scope'] ?? false);
+                if ($scopeChanged || $confirmed) {
+                    $type->update([
+                        'usage_scope' => $row['usage_scope'],
+                        'scope_configured_at' => now(),
+                    ]);
+                }
             }
-        }
+            unset($data['execution_need_scopes']);
+            foreach ($data as $key => $value) {
+                if ($value !== null) {
+                    Setting::query()->upsert([['key' => $key, 'value' => (string) $value]], ['key'], ['value', 'updated_at']);
+                }
+            }
+        }, 5);
 
         return redirect()->route('role.super_admin.site_settings.index')->with('status', 'تم تحديث إعدادات الموقع.');
     }

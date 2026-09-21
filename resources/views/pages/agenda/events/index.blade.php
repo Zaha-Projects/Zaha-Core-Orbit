@@ -29,8 +29,8 @@
         $normalizedStatus = $normalizeAgendaPageStatus($status);
 
         return $agendaStatusLabels[$normalizedStatus]
-            ?? \App\Models\EventStatusLookup::labelFor('agenda', $normalizedStatus ?: $status)
-            ?? \App\Models\EventStatusLookup::labelFor('agenda', $status);
+            ?? \App\Modules\Events\Models\EventStatusLookup::labelFor('agenda', $normalizedStatus ?: $status)
+            ?? \App\Modules\Events\Models\EventStatusLookup::labelFor('agenda', $status);
     };
     $eventTypeFilterOptions = [
         ['value' => 'mandatory', 'label' => __('app.roles.relations.agenda.types.mandatory')],

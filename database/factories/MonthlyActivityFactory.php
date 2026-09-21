@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

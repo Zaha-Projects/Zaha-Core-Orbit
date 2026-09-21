@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Roles\FollowupOfficer;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityEvaluation;
 use App\Models\EvaluationForm;
-use App\Models\MonthlyActivity;
-use App\Models\PostExecutionVerification;
-use App\Http\Controllers\Web\MonthlyActivities\MonthlyActivitiesController;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\PostExecutionVerification;
 use Illuminate\Http\Request;
 
 class FollowupWorkspaceController extends Controller
@@ -44,11 +43,6 @@ class FollowupWorkspaceController extends Controller
         $verificationSummary = (clone $verifications)->selectRaw('status, count(*) total')->groupBy('status')->pluck('total', 'status');
 
         return view('roles.followup_officer.dashboard', compact('user', 'stats', 'workflow', 'urgent', 'recentEvaluations', 'upcoming', 'verificationSummary'));
-    }
-
-    public function monthlyPlans(Request $request)
-    {
-        return app(MonthlyActivitiesController::class)->index($request);
     }
 
     public function showPlan(Request $request, MonthlyActivity $monthlyActivity)

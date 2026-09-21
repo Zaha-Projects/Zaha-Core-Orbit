@@ -2,20 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Database\Seeder;
 
 class TargetGroupSeeder extends Seeder
 {
     public function run(): void
     {
-        $groups = ['أطفال', 'شباب', 'سيدات', 'ذوي إعاقة', 'مجتمع محلي', 'أخرى'];
+        $groups = ['children' => 'أطفال', 'youth' => 'شباب', 'women' => 'سيدات', 'disabilities' => 'ذوي إعاقة', 'local_community' => 'مجتمع محلي', 'other' => 'أخرى'];
 
-        foreach ($groups as $index => $name) {
-            TargetGroup::updateOrCreate(
-                ['name' => $name],
+        foreach ($groups as $code => $name) {
+            TargetGroup::query()->insertOrIgnore(
                 [
-                    'sort_order' => $index + 1,
+                    'code' => $code, 'created_at' => now(), 'updated_at' => now(),
+                    'name' => $name,
+                    'sort_order' => array_search($code, array_keys($groups), true) + 1,
                     'is_other' => $name === 'أخرى',
                     'is_active' => true,
                 ]

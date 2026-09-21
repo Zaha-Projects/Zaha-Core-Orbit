@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Roles\Programs;
 
 use App\Http\Controllers\Controller;
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityAttachment;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivityAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 

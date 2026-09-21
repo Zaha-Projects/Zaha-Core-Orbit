@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\AgendaApproval;
-use App\Models\AgendaEvent;
-use App\Models\AgendaParticipation;
+use App\Modules\Events\Models\AgendaApproval;
+use App\Modules\Events\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
-use App\Models\EventCategory;
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityApproval;
+use App\Modules\Events\Models\EventCategory;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivityApproval;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;

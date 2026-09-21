@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityEvaluationResponse;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivityEvaluationResponse;
 use App\Models\WorkflowLog;
 use App\Models\User;
 use App\Models\Setting;

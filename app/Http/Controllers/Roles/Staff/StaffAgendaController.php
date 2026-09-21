@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Roles\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 

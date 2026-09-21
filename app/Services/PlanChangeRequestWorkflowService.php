@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\AgendaEvent;
-use App\Models\AnnualAgendaDeleteRequest;
-use App\Models\AnnualAgendaEditRequest;
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Support\EventAggregateIdentity;
+use App\Modules\Events\Models\AgendaEvent;
+use App\Modules\Events\Models\AnnualAgendaDeleteRequest;
+use App\Modules\Events\Models\AnnualAgendaEditRequest;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\User;
 use App\Models\WorkflowActionLog;
 use App\Models\WorkflowInstance;
@@ -214,7 +215,7 @@ class PlanChangeRequestWorkflowService
         }
 
         $activityWorkflowInstance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $activity->id)
             ->latest('id')
             ->first();
@@ -443,6 +444,7 @@ class PlanChangeRequestWorkflowService
             $values['previous_version_id'] = $source->id;
             $values['parent_version_id'] = $source->id;
             $version = MonthlyActivity::create(Arr::only($values, (new MonthlyActivity())->getFillable()));
+            $version->syncCustomExecutionNeedPlan($request->new_values['custom_execution_needs'] ?? $source->customExecutionNeedPlan());
             $source->forceFill(['status' => 'archived', 'lifecycle_status' => 'Closed', 'is_archived' => true])->save();
             $request->forceFill(['approved_version_id' => $version->id])->save();
             return;

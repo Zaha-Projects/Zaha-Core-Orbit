@@ -1,5 +1,9 @@
 # TODO إعادة هيكلة مشروع Zaha OPS (Controllers + Views فقط حالياً)
 
+**Status: HISTORICAL_RECORD**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 > **النطاق الحالي:** في هذه المرحلة سنركز فقط على تنظيم **Controllers** و **Views** بدون تغيير طبقات Domain/Application/Infrastructure وبدون إعادة توزيع routes بشكل جذري.
 
 ## 1) الهدف من المرحلة الحالية

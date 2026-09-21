@@ -11,6 +11,7 @@
     $user = auth()->user();
     $displayName = $user?->name ?? config('app.name', __('app.common.app_name'));
     $currentRoute = request()->route()?->getName();
+    $isRamadanPage = request()->routeIs('events.ramadan.*') || request()->routeIs('role.super_admin.ramadan_reference_data.*');
     $isFollowupOfficer = $user?->hasRole('followup_officer') && ! $user?->hasRole('super_admin');
     $isRelationsManagerSidebar = $user?->hasRole('relations_manager') && ! $user?->hasRole('super_admin');
     $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
@@ -53,12 +54,15 @@
         $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
         || $user->can('kpi.view')
     );
+    $headerNow = now(config('app.timezone'));
+    $headerHijri = app(\App\Support\HijriDateFormatter::class)->format($headerNow);
 @endphp
 <!doctype html>
 <html lang="{{ $locale }}" dir="{{ $isArabic ? 'rtl' : 'ltr' }}" data-theme="{{ $theme }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name', __('app.common.app_name')))</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,12 +77,16 @@
     <link rel="stylesheet" href="{{ $versionedAsset('assets/theme/css/Theme.min.css') }}">
     <link rel="stylesheet" href="{{ $versionedAsset('assets/theme/css/Style.min.css') }}">
     <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/layouts-app.min.css') }}">
+    <style>.app-date-clock{white-space:nowrap}.app-date-clock time{font-variant-numeric:tabular-nums}@media(max-width:767.98px){.topbar-pill{flex-wrap:wrap}.app-date-clock{order:3;width:100%;justify-content:center;border-top:1px solid rgba(148,163,184,.25);padding-top:.35rem;margin-top:.25rem}.app-date-clock .small{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;justify-content:center}}</style>
     @if(request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*'))
         <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/pages/evaluation-visual-identity.css') }}">
     @endif
+    @if($isRamadanPage)
+        <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/ramadan-iftars.css') }}">
+    @endif
     @stack('styles')
 </head>
-<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }} {{ request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*') ? 'evaluation-visual-identity' : '' }}">
+<body class="{{ $isArabic ? 'dir-rtl' : 'dir-ltr' }} {{ request()->routeIs('followup.*') || request()->routeIs('evaluations.*') || request()->routeIs('evaluation.*') ? 'evaluation-visual-identity' : '' }} {{ $isRamadanPage ? 'ramadan-module' : '' }}">
 <div class="layout-shell">
     <aside id="appSidebar" class="sidebar-original">
         <div class="sidebar-brand">
@@ -91,6 +99,7 @@
             @if($isFollowupOfficer)
             <li class="side-item {{ request()->routeIs('followup.dashboard') ? 'selected' : '' }}"><a href="{{ route('followup.dashboard') }}"><i class="fas fa-gauge-high"></i><span>{{ __('evaluation.followup.sidebar.dashboard') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('followup.monthly-plans*') ? 'selected' : '' }}"><a href="{{ route('followup.monthly-plans') }}"><i class="fas fa-calendar-days"></i><span>{{ __('evaluation.followup.sidebar.monthly_plans') }}</span></a></li>
+            @can('ramadan_iftars.view')<li class="side-item {{ request()->routeIs('events.ramadan.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>@endcan
             <li class="side-item {{ request()->routeIs('followup.awaiting-evaluation') || request()->routeIs('evaluations.verification.*') || request()->routeIs('evaluations.create') ? 'selected' : '' }}"><a href="{{ route('followup.awaiting-evaluation') }}"><i class="fas fa-hourglass-half"></i><span>{{ __('evaluation.followup.sidebar.awaiting_evaluation') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('followup.evaluations.*') || request()->routeIs('evaluations.show') ? 'selected' : '' }}"><a href="{{ route('followup.evaluations.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('evaluation.followup.sidebar.previous_evaluations') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}"><a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>{{ __('evaluation.followup.sidebar.user_directory') }}</span></a></li>
@@ -107,13 +116,30 @@
             </li>
 
             @if ($canAccessAdminSidebar)
+                <li class="side-comment px-3 pt-2">الإدارة والصلاحيات</li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.users*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.users') }}"><i class="fas fa-users"></i><span>{{ __('app.roles.super_admin.sidebar.users') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.roles*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.roles') }}"><i class="fas fa-user-shield"></i><span>{{ __('app.roles.super_admin.sidebar.roles') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.workflows*') || request()->routeIs('role.super_admin.workflow_steps*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.workflows') }}"><i class="fas fa-diagram-project"></i><span>{{ __('app.roles.super_admin.actions.workflows.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.branches*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.branches') }}"><i class="fas fa-building"></i><span>{{ __('app.roles.super_admin.sidebar.branches') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.approvals*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.approvals') }}"><i class="fas fa-list-check"></i><span>{{ __('app.roles.super_admin.sidebar.approvals') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.reports') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.reports') }}"><i class="fas fa-chart-simple"></i><span>تقارير الإدارة</span></a></li>
+                @if($user?->hasRole('super_admin'))
+                <li class="side-comment px-3 pt-2">الإعدادات والبيانات المرجعية</li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.site_settings.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.site_settings.index') }}"><i class="fas fa-gear"></i><span>إعدادات الموقع</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.super_admin.events_lookups.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.events_lookups.index') }}"><i class="fas fa-database"></i><span>البيانات المرجعية العامة</span></a></li>
+                @php($ramadanAdminOpen = request()->routeIs('events.ramadan.admin.*') || request()->routeIs('role.super_admin.ramadan_reference_data.*'))
+                <li class="side-item {{ $ramadanAdminOpen ? 'selected' : '' }}"><a href="#ramadanAdminMenu" data-bs-toggle="collapse" aria-expanded="{{ $ramadanAdminOpen ? 'true' : 'false' }}" aria-controls="ramadanAdminMenu"><i class="fas fa-moon"></i><span>إفطارات رمضان</span></a></li>
+                <li id="ramadanAdminMenu" class="collapse {{ $ramadanAdminOpen ? 'show' : '' }}">
+                    <ul class="list-unstyled pe-3 mb-2">
+                        <li class="side-item {{ request()->routeIs('events.ramadan.admin.index') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.index') }}"><i class="fas fa-sliders"></i><span>الإعدادات</span></a></li>
+                        <li class="side-item {{ request()->routeIs('role.super_admin.ramadan_reference_data.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}"><i class="fas fa-database"></i><span>البيانات المرجعية الرمضانية</span></a></li>
+                        <li class="side-item"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}#ref-meal_types"><i class="fas fa-utensils"></i><span>أنواع الوجبات</span></a></li>
+                        <li class="side-item"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}#ref-community_organizations"><i class="fas fa-building-circle-check"></i><span>المؤسسات والمراكز</span></a></li>
+                        <li class="side-item"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}#ref-local_communities"><i class="fas fa-people-roof"></i><span>المجتمعات المحلية</span></a></li>
+                        <li class="side-item {{ request()->routeIs('events.ramadan.admin.mobilization-methods.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.mobilization-methods.index') }}"><i class="fas fa-bullhorn"></i><span>طرق الحشد والاستقطاب</span></a></li>
+                    </ul>
+                </li>
+                @endif
             @endif
 
             @if(! $isCommunicationHeadOnly)
@@ -126,6 +152,19 @@
             @canany(['monthly_activities.view','monthly_plan.view'])
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
             @endcanany
+            @can('ramadan_iftars.view')
+                <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('events.ramadan.iftars.calendar') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.calendar') }}"><i class="fas fa-calendar-days"></i><span>تقويم الإفطارات</span></a></li>
+            @endcan
+            @can('ramadan_iftars.approve')
+                <li class="side-item {{ request()->routeIs('events.ramadan.approvals.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('ramadan_iftars.navigation.approvals') }}</span></a></li>
+            @endcan
+            @can('ramadan_iftars.monitor.review')
+                <li class="side-item {{ request()->routeIs('events.ramadan.monitoring-reviews.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.monitoring-reviews.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('ramadan_iftars.navigation.monitoring_reviews') }}</span></a></li>
+            @endcan
+            @can('ramadan_iftars.change_request.review')
+                <li class="side-item {{ request()->routeIs('events.ramadan.change-requests.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.change-requests.reviews.index') }}"><i class="fas fa-code-branch"></i><span>{{ __('ramadan_iftars.change_requests.queue') }}</span></a></li>
+            @endcan
             @if(! $isRelationsManagerSidebar && $user?->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']))
                 <li class="side-item {{ request()->routeIs('role.relations.activities.returned_feedback') ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.returned_feedback') }}"><i class="fas fa-reply-all"></i><span>طلبات راجعة للفرع</span></a></li>
             @endif
@@ -204,6 +243,11 @@
             <nav class="navbar topbar-original topbar-pill">
                 <button id="sidebarToggle" class="btn topbar-toggle" type="button"><i class="fas fa-bars"></i></button>
 
+                <div class="app-date-clock d-flex align-items-center gap-2 px-2" data-app-clock data-epoch="{{ $headerNow->getTimestamp() }}" data-timezone="{{ config('app.timezone') }}" aria-label="التاريخ والوقت الحاليان">
+                    <i class="fas fa-clock text-success" aria-hidden="true"></i>
+                    <div class="small lh-sm"><div><strong data-clock-weekday>{{ $headerNow->locale('ar')->translatedFormat('l') }}</strong> <span data-clock-time>{{ $headerNow->format('h:i A') }}</span></div><div class="text-muted"><time datetime="{{ $headerNow->toDateString() }}" data-clock-gregorian>{{ $headerNow->format('d/m/Y') }}</time> · <span data-clock-hijri>{{ $headerHijri }}</span></div></div>
+                </div>
+
                 <ul class="nav ms-auto align-items-center gap-2 topbar-actions">
                     @include('layouts.app.partials.notifications-menu', ['variant' => 'topbar'])
                     <li class="nav-item"><span class="top-avatar top-avatar-icon"><i class="fas fa-user-astronaut"></i></span></li>
@@ -255,6 +299,20 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="{{ $versionedAsset('assets/theme/js/app.min.js') }}"></script>
+<script>
+(function () {
+    var clock=document.querySelector('[data-app-clock]'); if(!clock) return;
+    var base=Number(clock.dataset.epoch)*1000, started=Date.now(), zone=clock.dataset.timezone;
+    var timeFormatter=new Intl.DateTimeFormat('ar-JO',{timeZone:zone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+    var weekdayFormatter=new Intl.DateTimeFormat('ar-JO',{timeZone:zone,weekday:'long'});
+    function tick(){var date=new Date(base+(Date.now()-started));clock.querySelector('[data-clock-time]').textContent=timeFormatter.format(date);clock.querySelector('[data-clock-weekday]').textContent=weekdayFormatter.format(date)}
+    tick(); window.setInterval(tick,1000);
+})();
+</script>
 @stack('scripts')
+@if($isRamadanPage)
+<script src="{{ \App\Support\AssetVersion::url('assets/js/ramadan-iftars.js') }}"></script>
+<script src="{{ \App\Support\AssetVersion::url('assets/js/ramadan-reference-picker.js') }}"></script>
+@endif
 </body>
 </html>

@@ -18,6 +18,46 @@
         </div>
     </section>
 
+    @if($ramadanDashboard)
+        <section class="dashboard-ramadan mb-4" aria-labelledby="dashboard-ramadan-title">
+            <div class="dashboard-ramadan__header">
+                <div>
+                    <span class="dashboard-ramadan__eyebrow"><i class="fas fa-moon" aria-hidden="true"></i> موسم رمضان</span>
+                    <h2 class="h4 mb-1" id="dashboard-ramadan-title">إفطارات رمضان</h2>
+                    <p class="mb-0">{{ $ramadanDashboard['period']->start_date->format('Y-m-d') }} — {{ $ramadanDashboard['period']->end_date->format('Y-m-d') }}</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-light btn-sm" href="{{ route('events.ramadan.iftars.index') }}">عرض البطاقات</a>
+                    <a class="btn btn-outline-light btn-sm" href="{{ route('events.ramadan.iftars.calendar') }}">التقويم</a>
+                    @if($ramadanDashboard['can_create'])<a class="btn btn-warning btn-sm" href="{{ route('events.ramadan.iftars.create') }}">إنشاء إفطار</a>@endif
+                    @if($ramadanDashboard['can_approve'])<a class="btn btn-outline-light btn-sm" href="{{ route('events.ramadan.approvals.index') }}">قائمة الاعتماد</a>@endif
+                </div>
+            </div>
+            @php $ramadanMetrics = [
+                'total' => 'الإجمالي', 'upcoming' => 'قادمة', 'today_count' => 'اليوم',
+                'draft' => 'مسودات', 'awaiting_approval' => 'بانتظار الاعتماد', 'approved' => 'معتمدة',
+                'execution_active' => 'تنفيذ مخطط/نشط', 'awaiting_monitoring' => 'بانتظار المتابعة',
+                'monitoring_submitted' => 'متابعة مقدمة', 'closed' => 'مغلقة',
+            ]; @endphp
+            <div class="dashboard-ramadan__metrics">
+                @foreach($ramadanMetrics as $key => $label)<div class="dashboard-ramadan__metric"><span>{{ $label }}</span><strong>{{ data_get($ramadanDashboard, 'metrics.'.$key, 0) }}</strong></div>@endforeach
+            </div>
+            <div class="dashboard-ramadan__upcoming">
+                <h3 class="h6 mb-3">الإفطارات القادمة</h3>
+                @forelse($ramadanDashboard['upcoming'] as $iftar)
+                    <a class="dashboard-ramadan__item" href="{{ route('events.ramadan.iftars.show', $iftar) }}">
+                        <time datetime="{{ $iftar->planned_date->format('Y-m-d') }}">{{ $iftar->planned_date->format('Y-m-d') }}</time>
+                        <span><strong>{{ $iftar->title }}</strong><small>{{ $iftar->location_name ?: optional($iftar->communityOrganization)->name ?: optional($iftar->branch)->name }}</small></span>
+                        <span>{{ $iftar->expected_attendance }} مستفيد</span>
+                        <span class="badge bg-light text-dark">{{ __('ramadan_iftars.statuses.planning.'.$iftar->status) }}</span>
+                    </a>
+                @empty
+                    <div class="alert alert-light border mb-0">لا توجد إفطارات مسجلة ضمن فترة رمضان الحالية.@if($ramadanDashboard['can_create']) <a href="{{ route('events.ramadan.iftars.create') }}">إنشاء إفطار جديد</a>@endif</div>
+                @endforelse
+            </div>
+        </section>
+    @endif
+
     <section id="cardsSection" class="row g-3 mb-4">
         @forelse($cards ?? [] as $card)
             <div class="col-md-6 col-xl-3">
@@ -90,4 +130,5 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ $versionedAsset('assets/css/dashboard-calendar.min.css') }}">
+    <link rel="stylesheet" href="{{ $versionedAsset('assets/css/dashboard-ramadan.css') }}">
 @endpush

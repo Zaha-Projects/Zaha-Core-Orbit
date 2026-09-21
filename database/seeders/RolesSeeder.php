@@ -94,6 +94,9 @@ class RolesSeeder extends Seeder
         return [
             'super_admin' => ['*'],
             'executive_manager' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.approve',
                 'monthly_activities.view',
@@ -116,6 +119,12 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'relations_manager' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.create',
+                'ramadan_iftars.edit',
+                'ramadan_iftars.submit',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.create',
                 'agenda.update',
@@ -134,6 +143,11 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'supervisor' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.monitor.review',
+                'ramadan_iftars.close',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',
@@ -146,6 +160,11 @@ class RolesSeeder extends Seeder
                 'communications.view_media',
             ],
             'relations_officer' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.create',
+                'ramadan_iftars.edit',
+                'ramadan_iftars.submit',
+                'ramadan_iftars.change_request.create',
                 'agenda.view',
                 'agenda.create',
                 'agenda.update',
@@ -160,6 +179,9 @@ class RolesSeeder extends Seeder
                 'communications.upload_media',
             ],
             'followup_officer' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.execute',
+                'ramadan_iftars.monitor',
                 'agenda.view',
                 'monthly_activities.view',
                 'monthly_activities.view_other_branches',
@@ -182,6 +204,9 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'branch_coordinator' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',

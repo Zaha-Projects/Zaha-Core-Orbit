@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 
