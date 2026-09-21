@@ -195,12 +195,19 @@
 .ramadan-module #ramadan-planning-form .card:not(.ramadan-hero) { color:var(--ramadan-text); background:var(--ramadan-surface); }
 .ramadan-module .ramadan-form-section .card-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1rem; }
 .ramadan-module .ramadan-form-section .card-header > span { display:flex; flex-direction:column; gap:.2rem; }
-.ramadan-module .ramadan-form-section .card-header small { color:#ddd2b6; font-weight:500; }
+.ramadan-module .ramadan-form-section .card-header small { color:#655f52; font-weight:500; }
 .ramadan-module .ramadan-form-section.has-validation-error { border-color:var(--ramadan-danger); box-shadow:0 0 0 3px rgba(180,35,47,.1); }
 .ramadan-module .ramadan-section-error-badge { color:#fff; background:var(--ramadan-danger); }
 .ramadan-module .ramadan-validation-summary { color:#721c24; background:#fff1f2; border:1px solid #e8aab0; border-inline-start-width:5px; }
 .ramadan-module .ramadan-quick-create { border:1px solid var(--ramadan-border); border-radius:14px; background:var(--ramadan-surface-soft); }
-.ramadan-module .ramadan-reference-picker .list-group { inset-inline:0; }
+.ramadan-module .ramadan-reference-picker .list-group { inset-inline:0; z-index:12; }
+.ramadan-module .ramadan-reference-selected { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.8rem 1rem; border:1px solid var(--ramadan-gold); border-radius:12px; background:#fffaf0; }
+.ramadan-module .ramadan-reference-selected > div { display:flex; flex-direction:column; gap:.2rem; }
+.ramadan-module .ramadan-reference-selected strong { color:#423510; }
+.ramadan-module .ramadan-reference-selected small { color:#625d51; text-align:start; }
+.ramadan-module .ramadan-picker-results { max-height:16rem; overflow:auto; }
+.ramadan-module .ramadan-picker-results .list-group-item { display:flex; flex-direction:column; gap:.15rem; }
+.ramadan-module .ramadan-picker-empty { padding:.8rem; color:var(--ramadan-muted); background:var(--ramadan-surface); }
 .ramadan-module .ramadan-need-heading { display:flex; align-items:flex-start; gap:.75rem; }
 .ramadan-module .ramadan-need-icon { display:grid; flex:0 0 2.5rem; width:2.5rem; height:2.5rem; place-items:center; color:#76520a; border-radius:12px; background:var(--ramadan-gold-soft); }
 .ramadan-module .ramadan-badge-required { color:#fff; background:var(--ramadan-danger); }
@@ -249,6 +256,11 @@
 [data-theme="dark"] .ramadan-module .ramadan-quick-create,
 [data-theme="dark"] .ramadan-module .ramadan-form-actions { color:var(--ramadan-text); background:var(--ramadan-surface); }
 [data-theme="dark"] .ramadan-module .ramadan-quick-create { background:var(--ramadan-surface-soft); }
+[data-theme="dark"] .ramadan-module .ramadan-reference-selected { border-color:rgba(244,205,98,.5); background:#202329; }
+[data-theme="dark"] .ramadan-module .ramadan-reference-selected strong { color:#fff2ce; }
+[data-theme="dark"] .ramadan-module .ramadan-reference-selected small { color:#cbc2ae; }
+[data-theme="dark"] .ramadan-module .ramadan-picker-results .list-group-item,
+[data-theme="dark"] .ramadan-module .ramadan-picker-empty { color:#f7edd2; border-color:#4f4939; background:#24282f; }
 [data-theme="dark"] .ramadan-module .ramadan-badge-optional { color:#f6e7b9; border-color:#806728; background:#352f20; }
 [data-theme="dark"] .ramadan-module .ramadan-validation-summary { color:#ffe5e8; border-color:#91444c; background:#421f24; }
 [data-theme="dark"] .ramadan-module .ramadan-section-nav { background:rgba(30,34,40,.96); }
