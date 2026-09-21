@@ -36,9 +36,6 @@ class DatabaseSeeder extends Seeder
         // $this->call(EvaluationOfficerUsersSeeder::class);
         // $this->call(ActivityEvaluationFormSeeder::class);
 
-        $this->call(EventReferenceDataSeeder::class);
-        $this->call(CanonicalExecutionNeedTypeSeeder::class);
-        $this->call(CompleteRolePermissionSeeder::class);
-        $this->call(CanonicalExecutionNeedTypeSeeder::class);
+        $this->call(rightDatabaseSeeder::class);
     }
 }

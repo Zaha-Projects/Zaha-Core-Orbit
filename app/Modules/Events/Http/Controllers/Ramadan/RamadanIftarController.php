@@ -12,8 +12,8 @@ use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;
 use App\Modules\Events\Models\MobilizationMethod;
+use App\Modules\Events\Models\MealType;
 use App\Modules\Events\Models\RamadanIftar;
-use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Services\RamadanIftarPlanningService;
 use App\Modules\Events\Services\RamadanGuidanceAcceptanceService;
 use Illuminate\Http\Request;
@@ -111,7 +111,10 @@ class RamadanIftarController extends Controller
             'users' => $users,
             'locationTypes' => RamadanIftar::locationTypes(),
             'hostTypes' => [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER, RamadanIftar::HOST_LOCAL_COMMUNITY],
-            'mealItemTypes' => RamadanIftarMealItem::types(),
+            'mealItemTypes' => MealType::query()->where(function ($query) use ($iftar) {
+                $query->active();
+                if ($iftar) $query->orWhereIn('code', $iftar->meals()->with('items')->get()->pluck('items')->flatten()->pluck('item_type'));
+            })->ordered()->get(),
             'giftTypes' => \App\Modules\Events\Models\RamadanIftarGift::typeLabels(),
             'executionNeedTypes' => ExecutionNeedType::ramadanAvailableTypes(),
             'ramadanPeriod' => RamadanPeriod::current(),

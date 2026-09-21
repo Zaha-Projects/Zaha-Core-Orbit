@@ -132,6 +132,7 @@
                     <ul class="list-unstyled pe-3 mb-2">
                         <li class="side-item {{ request()->routeIs('events.ramadan.admin.index') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.index') }}"><i class="fas fa-sliders"></i><span>الإعدادات</span></a></li>
                         <li class="side-item {{ request()->routeIs('role.super_admin.ramadan_reference_data.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}"><i class="fas fa-database"></i><span>البيانات المرجعية الرمضانية</span></a></li>
+                        <li class="side-item"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}#ref-meal_types"><i class="fas fa-utensils"></i><span>أنواع الوجبات</span></a></li>
                         <li class="side-item"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}#ref-community_organizations"><i class="fas fa-building-circle-check"></i><span>المؤسسات والمراكز</span></a></li>
                         <li class="side-item"><a href="{{ route('role.super_admin.ramadan_reference_data.index') }}#ref-local_communities"><i class="fas fa-people-roof"></i><span>المجتمعات المحلية</span></a></li>
                         <li class="side-item {{ request()->routeIs('events.ramadan.admin.mobilization-methods.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.admin.mobilization-methods.index') }}"><i class="fas fa-bullhorn"></i><span>طرق الحشد والاستقطاب</span></a></li>

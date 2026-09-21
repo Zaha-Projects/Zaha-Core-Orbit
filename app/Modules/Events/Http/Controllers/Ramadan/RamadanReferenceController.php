@@ -8,7 +8,7 @@ use App\Modules\Events\Models\LocalCommunity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
 
 class RamadanReferenceController extends Controller
 {
@@ -39,6 +39,7 @@ class RamadanReferenceController extends Controller
         $items = $model::query()->select(['id', 'name', 'contact_name', 'contact_phone', 'location_name', 'address', 'google_maps_url'])
             ->where('branch_id', $branchId)->active()
             ->when($term !== '', fn ($query) => $query->where('name', 'like', '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%'))
+            ->when($term !== '', fn ($query) => $query->orderByRaw('CASE WHEN name = ? THEN 0 WHEN name LIKE ? THEN 1 ELSE 2 END', [$term, $term.'%']))
             ->orderBy('name')->limit(15)->get()->map(fn (Model $record) => $this->payload($record));
 
         return response()->json(['data' => $items]);
@@ -47,12 +48,13 @@ class RamadanReferenceController extends Controller
     private function store(Request $request, string $model): JsonResponse
     {
         $branchId = $this->branchId($request);
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'min:7', 'max:25', 'regex:/^[0-9+()\-\s]+$/'],
             'location_name' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
+            'google_maps_url' => ['nullable', 'url', 'max:2048'],
         ], [
             'name.required' => 'الاسم مطلوب لإضافة السجل.',
             'contact_phone.required' => 'رقم التواصل مطلوب لإضافة السجل.',
@@ -60,17 +62,29 @@ class RamadanReferenceController extends Controller
             'contact_phone.max' => 'رقم التواصل طويل جدًا.',
             'contact_phone.regex' => 'أدخل رقم تواصل صالحًا باستخدام الأرقام والمسافات و + أو - أو الأقواس فقط.',
         ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()->toArray(),
+            ], 422);
+        }
+        $data = $validator->validated();
         $normalized = $this->normalize($data['name']);
         $duplicate = $model::query()->where('branch_id', $branchId)->get(['id', 'name'])->first(
             fn (Model $record) => $this->normalize($record->name) === $normalized
         );
         if ($duplicate) {
-            throw ValidationException::withMessages(['name' => 'يوجد سجل بنفس الاسم في هذا الفرع. يمكنك اختياره من نتائج البحث.']);
+            return response()->json([
+                'success' => false,
+                'message' => 'يوجد سجل بنفس الاسم في هذا الفرع. يمكنك اختياره من نتائج البحث.',
+                'errors' => ['name' => ['يوجد سجل بنفس الاسم في هذا الفرع. يمكنك اختياره من نتائج البحث.']],
+            ], 422);
         }
 
         $record = $model::query()->create($data + ['branch_id' => $branchId, 'is_active' => true]);
 
-        return response()->json($this->payload($record), 201);
+        return response()->json(['success' => true, 'data' => $this->payload($record)], 201);
     }
 
     private function branchId(Request $request): int
