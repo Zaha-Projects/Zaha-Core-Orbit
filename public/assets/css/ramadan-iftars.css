@@ -191,6 +191,8 @@
 .ramadan-module .ramadan-need-option:hover { transform:translateY(-2px); border-color:var(--ramadan-gold); }
 .ramadan-module .ramadan-need-option.is-active { border-color:var(--ramadan-gold); box-shadow:0 0 0 3px rgba(215,167,38,.12),0 10px 25px rgba(71,51,9,.08); }
 .ramadan-module .ramadan-need-details[hidden] { display:none!important; }
+.ramadan-module .ramadan-need-detail-group { padding-top:.25rem; }
+.ramadan-module [data-ramadan-need-toggle][data-mandatory="1"] { cursor:not-allowed; opacity:1; }
 .ramadan-module #ramadan-planning-form { color:var(--ramadan-text); padding:clamp(.25rem,1vw,1rem); border-radius:20px; background:var(--ramadan-bg); }
 .ramadan-module #ramadan-planning-form .card:not(.ramadan-hero) { color:var(--ramadan-text); background:var(--ramadan-surface); }
 .ramadan-module .ramadan-form-section .card-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1rem; }

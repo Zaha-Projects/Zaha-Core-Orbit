@@ -243,6 +243,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'target_groups.*.beneficiary_segment_id' => 'شريحة المستفيدين',
             'target_groups.*.planned_count' => 'العدد المخطط للفئة',
             'execution_teams.*.name' => 'اسم فريق التنفيذ',
+            'execution_teams' => 'فريق التنفيذ',
             'execution_teams.*.members.*.member_name' => 'اسم عضو فريق التنفيذ',
             'program_segments.*.name' => 'اسم فقرة البرنامج',
             'supplies.*.item_name' => 'اسم المستلزم',
@@ -259,6 +260,9 @@ class StoreRamadanIftarRequest extends FormRequest
             'contact_phone.regex' => 'أدخل رقم تواصل صالحًا باستخدام الأرقام والمسافات و + أو - أو الأقواس فقط.',
             'attendees.*.phone.regex' => 'أدخل رقم تواصل صالحًا للحاضر.',
             'meals.*.restaurant_contact.regex' => 'أدخل رقم تواصل صالحًا للمطعم.',
+            'execution_teams.present' => 'يجب تحديد فريق التنفيذ.',
+            'execution_teams.array' => 'بيانات فريق التنفيذ غير صالحة.',
+            'execution_teams.*.name.required' => 'يجب إدخال اسم فريق التنفيذ.',
         ];
     }
 
@@ -296,7 +300,7 @@ class StoreRamadanIftarRequest extends FormRequest
             foreach ($types->filter->isMandatoryForRamadan() as $type) {
                 if (! $selected->contains((int) $type->id)) $validator->errors()->add('execution_needs', "متطلب التنفيذ {$type->name} إجباري.");
             }
-            if ($types->firstWhere('code', 'execution_team') && empty($this->input('execution_teams'))) $validator->errors()->add('execution_teams', 'فريق التنفيذ إجباري.');
+            if ($types->firstWhere('code', 'execution_team') && empty($this->input('execution_teams'))) $validator->errors()->add('execution_teams', 'يجب تحديد فريق التنفيذ وإدخال اسمه.');
             $this->validateConditionalDetails($validator, $types);
         });
     }
