@@ -1,6 +1,7 @@
 @if($needCode === 'execution_team')
-    <div class="mt-3" data-repeat="execution_teams">
-        <h6>بيانات فريق التنفيذ</h6>
+    <div class="ramadan-need-detail-group" data-repeat="execution_teams">
+        <h6 class="mb-3">بيانات فريق التنفيذ</h6>
+        @error('execution_teams')<div class="alert alert-danger py-2" role="alert">{{ $message }}</div>@enderror
         <div class="card-body p-0">
             @foreach($collections['execution_teams'] as $i=>$team)
                 <div class="planning-row border rounded p-2 mb-2" data-execution-team>
@@ -46,8 +47,49 @@
             @endforeach
         </div>
     </div>
+@elseif($needCode === 'volunteers')
+    <div class="ramadan-need-detail-group" data-repeat="volunteer_requirements">
+        <h6 class="mb-3">بيانات الفرق التطوعية</h6>
+        @error('volunteer_requirements')<div class="alert alert-danger py-2" role="alert">{{ $message }}</div>@enderror
+        <div class="card-body p-0">
+            @foreach($collections['volunteer_requirements'] as $i => $row)
+                <div class="planning-row border rounded p-2 mb-2">
+                    <input type="hidden" name="volunteer_requirements[{{ $i }}][id]" value="{{ $row['id'] ?? '' }}">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label">{{ __('ramadan_iftars.labels.beneficiary_segment') }}</label>
+                            <select class="form-select @error('volunteer_requirements.'.$i.'.beneficiary_segment_id') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][beneficiary_segment_id]">
+                                <option value="">{{ __('ramadan_iftars.options.none') }}</option>
+                                @foreach($beneficiarySegments as $segment)
+                                    <option value="{{ $segment->id }}" {{ ($row['beneficiary_segment_id'] ?? null) == $segment->id ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? $segment->name_ar : ($segment->name_en ?: $segment->name_ar) }}</option>
+                                @endforeach
+                            </select>
+                            @error('volunteer_requirements.'.$i.'.beneficiary_segment_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ __('ramadan_iftars.labels.gender') }}</label>
+                            <select class="form-select @error('volunteer_requirements.'.$i.'.gender') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][gender]">
+                                @foreach(['male', 'female', 'mixed'] as $option)<option value="{{ $option }}" {{ ($row['gender'] ?? null) === $option ? 'selected' : '' }}>{{ __('ramadan_iftars.options.'.$option) }}</option>@endforeach
+                            </select>
+                            @error('volunteer_requirements.'.$i.'.gender')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">{{ __('ramadan_iftars.labels.planned_count') }}</label>
+                            <input type="number" min="1" class="form-control @error('volunteer_requirements.'.$i.'.planned_count') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][planned_count]" value="{{ $row['planned_count'] ?? 1 }}">
+                            @error('volunteer_requirements.'.$i.'.planned_count')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('ramadan_iftars.labels.tasks_summary') }}</label>
+                            <input class="form-control @error('volunteer_requirements.'.$i.'.tasks_summary') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][tasks_summary]" value="{{ $row['tasks_summary'] ?? '' }}">
+                            @error('volunteer_requirements.'.$i.'.tasks_summary')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
 @elseif($needCode === 'supplies')
-    <div class="mt-3" data-repeat="supplies" data-supplies>
+    <div class="ramadan-need-detail-group" data-repeat="supplies" data-supplies>
         <h6>المستلزمات واللوازم</h6>
         <div class="mb-2"><label class="form-label">عدد بنود المستلزمات</label><input class="form-control" type="number" min="1" data-supplies-count value="{{ max(1, count($collections['supplies'])) }}"></div>
         <div class="card-body p-0">
@@ -88,7 +130,7 @@
         </div>
     </div>
 @elseif($needCode === 'gifts_shields')
-    <div class="mt-3" data-repeat="gifts">
+    <div class="ramadan-need-detail-group" data-repeat="gifts">
         <h6>الهدايا والدروع</h6>
         <div class="card-body p-0">
             @foreach($collections['gifts'] as $i=>$row)
@@ -130,6 +172,12 @@
                 </div>
             @endforeach
         </div>
+    </div>
+@elseif(in_array($needCode, ['official_correspondence', 'media_coverage', 'official_sponsorship', 'external_partners', 'ceremony_agenda', 'transport', 'maintenance_workers', 'programs_participation', 'certificates', 'thanks_letters', 'invitations'], true))
+    <div class="ramadan-need-detail-group">
+        <label class="form-label" for="need-details-{{ $needId }}">{{ __('ramadan_iftars.planning.planning_details') }}</label>
+        <textarea id="need-details-{{ $needId }}" class="form-control @error('execution_needs.'.$needId.'.planned_details') is-invalid @enderror" name="execution_needs[{{ $needId }}][planned_details]" rows="2">{{ $selectedNeed['planned_details'] ?? '' }}</textarea>
+        @error('execution_needs.'.$needId.'.planned_details')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 @endif
 <script>
