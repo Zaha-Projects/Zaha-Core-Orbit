@@ -4,6 +4,7 @@
 @section('content')
 @php
 $titles = [
+    'meal_types' => 'أنواع الوجبات',
     'community_organizations' => 'المؤسسات والمراكز',
     'local_communities' => 'المجتمعات المحلية',
     'target_groups' => 'الفئات المستهدفة',
@@ -46,5 +47,5 @@ $titles = [
         @endforeach
     </div>
 </div>
-<script>document.querySelectorAll('.tab-pane').forEach(function(pane){var search=pane.querySelector('[data-reference-filter-search]'),status=pane.querySelector('[data-reference-filter-status]');if(!search||!status)return;function filter(){var visible=0,term=search.value.trim().toLocaleLowerCase('ar');pane.querySelectorAll('[data-reference-row]').forEach(function(row){var show=(!term||row.dataset.referenceText.includes(term))&&(status.value==='all'||row.dataset.referenceStatus===status.value);row.classList.toggle('d-none',!show);if(show)visible++});pane.querySelector('[data-reference-filter-empty]').classList.toggle('d-none',visible!==0)}search.addEventListener('input',filter);status.addEventListener('change',filter)});</script>
+<script>document.querySelectorAll('.tab-pane').forEach(function(pane){var search=pane.querySelector('[data-reference-filter-search]'),status=pane.querySelector('[data-reference-filter-status]');if(!search||!status)return;function filter(){var visible=0,term=search.value.trim().toLocaleLowerCase('ar');pane.querySelectorAll('[data-reference-row]').forEach(function(row){var show=(!term||row.dataset.referenceText.includes(term))&&(status.value==='all'||row.dataset.referenceStatus===status.value);row.classList.toggle('d-none',!show);if(show)visible++});pane.querySelector('[data-reference-filter-empty]').classList.toggle('d-none',visible!==0)}search.addEventListener('input',filter);status.addEventListener('change',filter)});if(location.hash){var trigger=document.querySelector('[data-bs-target="'+CSS.escape(location.hash)+'"]');if(trigger&&window.bootstrap)bootstrap.Tab.getOrCreateInstance(trigger).show()}</script>
 @endsection

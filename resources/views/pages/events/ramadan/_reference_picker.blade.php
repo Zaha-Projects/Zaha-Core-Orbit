@@ -2,10 +2,11 @@
 <div class="ramadan-reference-picker" data-reference-picker data-search-url="{{ $searchUrl }}" data-create-url="{{ $createUrl }}">
     <input type="hidden" name="{{ $field }}" value="{{ old($field, $selected?->id) }}" data-reference-id>
     <label class="form-label" for="{{ $pickerId }}-search">{{ $label }} <span class="text-danger">*</span></label>
-    <input id="{{ $pickerId }}-search" class="form-control @error($field) is-invalid @enderror" type="search" autocomplete="off" placeholder="ابحث بالاسم..." value="{{ $selected?->name }}" data-reference-search>
+    <div class="input-group"><input id="{{ $pickerId }}-search" class="form-control @error($field) is-invalid @enderror" type="search" autocomplete="off" placeholder="ابدأ الكتابة للبحث..." value="{{ $selected?->name }}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ $pickerId }}-results" data-reference-search><button class="btn btn-outline-secondary" type="button" aria-label="مسح الاختيار" data-reference-clear>مسح</button></div>
     @error($field)<div class="invalid-feedback">{{ $message }}</div>@enderror
     @if($selected && ! $selected->is_active)<div class="form-text text-warning">القيمة الحالية غير فعالة ومحفوظة للسجل التاريخي. اختر قيمة أخرى فقط إذا أردت تغييرها.</div>@endif
-    <div class="list-group position-absolute shadow-sm d-none" style="z-index:1050;max-height:16rem;overflow:auto" data-reference-results></div>
+    <div id="{{ $pickerId }}-results" class="ramadan-picker-results list-group position-absolute shadow-sm d-none" role="listbox" data-reference-results></div>
+    <div class="small text-muted mt-2 d-none" aria-live="polite" data-reference-loading><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> جارٍ البحث...</div>
     <button type="button" class="btn btn-sm btn-outline-success mt-2 d-none" data-reference-create>إضافة <span data-reference-name></span> كجهة جديدة</button>
     <div class="ramadan-quick-create p-3 mt-2 d-none" data-reference-create-form aria-live="polite">
         <p class="small text-muted mb-3">أدخل الاسم ورقم التواصل فقط. يمكنك إضافة التفاصيل الاختيارية عند الحاجة.</p>

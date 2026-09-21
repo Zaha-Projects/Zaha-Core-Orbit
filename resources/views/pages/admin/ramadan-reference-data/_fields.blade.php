@@ -13,7 +13,7 @@
         <div class="col-md-4"><label class="form-label">الاسم *</label><input class="form-control" name="name" value="{{ $fieldValue('name') }}" required></div>
     @else
         <div class="col-md-3"><label class="form-label">الاسم العربي *</label><input class="form-control" name="name_ar" value="{{ $fieldValue('name_ar') }}" required></div>
-        @if(!in_array($resource, ['gift_types'], true))<div class="col-md-3"><label class="form-label">الاسم الإنجليزي *</label><input class="form-control" name="name_en" value="{{ $fieldValue('name_en') }}" required></div>@endif
+        @if(!in_array($resource, ['gift_types', 'meal_types'], true))<div class="col-md-3"><label class="form-label">الاسم الإنجليزي *</label><input class="form-control" name="name_en" value="{{ $fieldValue('name_en') }}" required></div>@endif
     @endif
     @if($resource === 'beneficiary_segments')
         <div class="col-md-2"><label class="form-label">التصنيف *</label><select class="form-select" name="dimension">@foreach($segmentDimensions as $dimension)<option value="{{ $dimension }}" {{ $fieldValue('dimension') === $dimension ? 'selected' : '' }}>{{ $dimension }}</option>@endforeach</select></div>
@@ -23,6 +23,9 @@
         <div class="col-md-3"><label class="form-label">نطاق الظهور *</label><select class="form-select" name="usage_scope">@foreach($usageScopes as $scope)<option value="{{ $scope }}" {{ $fieldValue('usage_scope', 'none') === $scope ? 'selected' : '' }}>{{ $scope }}</option>@endforeach</select></div>
         <div class="col-md-4"><label class="form-label">الوصف</label><input class="form-control" name="description" value="{{ $fieldValue('description') }}"></div>
         <input type="hidden" name="mandatory_for_ramadan" value="0"><div class="col-md-2 form-check mt-4"><input class="form-check-input" type="checkbox" name="mandatory_for_ramadan" value="1" {{ $fieldValue('mandatory_for_ramadan', false) ? 'checked' : '' }}><label class="form-check-label">إلزامي للإفطار</label></div>
+    @endif
+    @if($resource === 'meal_types')
+        <div class="col-md-4"><label class="form-label">الوصف</label><input class="form-control" name="description" value="{{ $fieldValue('description') }}"></div>
     @endif
     @if($resource === 'target_groups')
         <input type="hidden" name="is_monthly_activity" value="0"><div class="col-md-2 form-check mt-4"><input class="form-check-input" type="checkbox" name="is_monthly_activity" value="1" {{ $fieldValue('is_monthly_activity', true) ? 'checked' : '' }}><label class="form-check-label">الخطط الشهرية</label></div>

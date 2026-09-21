@@ -9,9 +9,9 @@ use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;
+use App\Modules\Events\Models\MealType;
 use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\RamadanIftar;
-use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Models\RamadanIftarGift;
 use App\Modules\Events\Models\RamadanPeriod;
 use Illuminate\Foundation\Http\FormRequest;
@@ -61,9 +61,15 @@ class StoreRamadanIftarRequest extends FormRequest
         if (! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')) {
             $periodId = RamadanPeriod::current()?->getKey();
         }
+        $locationType = $this->input('location_type');
         $this->merge(array_merge(
             $rows,
-            ['branch_id' => $branchId, 'ramadan_period_id' => $periodId, 'host_type' => $hostType]
+            [
+                'branch_id' => $branchId,
+                'ramadan_period_id' => $periodId,
+                'host_type' => $hostType,
+                'google_maps_url' => $locationType === RamadanIftar::LOCATION_INSIDE_CENTER ? null : $this->input('google_maps_url'),
+            ]
         ));
     }
 
@@ -96,6 +102,11 @@ class StoreRamadanIftarRequest extends FormRequest
 
     public function rules(): array
     {
+        $historicalMealTypes = $this->route('ramadanIftar') instanceof RamadanIftar
+            ? $this->route('ramadanIftar')->meals()->with('items')->get()->pluck('items')->flatten()->pluck('item_type')
+            : collect();
+        $allowedMealTypes = MealType::query()->active()->pluck('code')->merge($historicalMealTypes)->unique()->values()->all();
+
         return [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'ramadan_period_id' => [Rule::requiredIf(fn () => ! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')), 'nullable', 'integer', 'exists:ramadan_periods,id'],
@@ -143,7 +154,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.items' => ['required', 'array', 'min:1'],
             'meals.*.items.*.id' => ['nullable', 'integer'],
             'meals.*.items.*.name' => ['required', 'string', 'max:255'],
-            'meals.*.items.*.item_type' => ['required', Rule::in(RamadanIftarMealItem::types())],
+            'meals.*.items.*.item_type' => ['required', Rule::in($allowedMealTypes)],
             'meals.*.items.*.quantity' => ['nullable', 'integer', 'min:0'],
             'meals.*.items.*.notes' => ['required', 'string'],
             'meals.*.items.*.sort_order' => ['nullable', 'integer', 'min:0'],
