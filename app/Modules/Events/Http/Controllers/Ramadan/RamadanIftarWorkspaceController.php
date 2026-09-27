@@ -21,7 +21,11 @@ class RamadanIftarWorkspaceController extends Controller
             $branchIds === [] ? $query->whereRaw('1 = 0') : $query->whereIn('branch_id', $branchIds);
         }
 
-        $filters = $request->only(['search', 'branch_id', 'status', 'execution_status', 'closure']);
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'], 'branch_id' => ['nullable', 'integer'],
+            'status' => ['nullable', 'string', 'max:30'], 'execution_status' => ['nullable', 'string', 'max:30'],
+            'monitoring_status' => ['nullable', 'in:pending,returned,submitted,approved'], 'closure' => ['nullable', 'in:open,closed'],
+        ]);
         $query->when(filled($filters['search'] ?? null), function ($query) use ($filters) {
             $search = trim($filters['search']);
             $query->where(function ($query) use ($search) {
@@ -33,6 +37,8 @@ class RamadanIftarWorkspaceController extends Controller
         })->when(filled($filters['branch_id'] ?? null), fn ($query) => $query->where('branch_id', $filters['branch_id']))
             ->when(filled($filters['status'] ?? null), fn ($query) => $query->where('status', $filters['status']))
             ->when(filled($filters['execution_status'] ?? null), fn ($query) => $query->where('execution_status', $filters['execution_status']))
+            ->when(($filters['monitoring_status'] ?? null) === 'pending', fn ($query) => $query->where('execution_status', RamadanIftar::EXECUTION_STATUS_COMPLETED)->doesntHave('monitoringReports'))
+            ->when(in_array($filters['monitoring_status'] ?? null, ['returned', 'submitted', 'approved'], true), fn ($query) => $query->whereHas('monitoringReports', fn ($reports) => $reports->where('status', $filters['monitoring_status'])))
             ->when(($filters['closure'] ?? null) === 'open', fn ($query) => $query->whereNull('closed_at'))
             ->when(($filters['closure'] ?? null) === 'closed', fn ($query) => $query->whereNotNull('closed_at'));
 
@@ -68,8 +74,10 @@ class RamadanIftarWorkspaceController extends Controller
         $canCompleteExecution = $ramadanIftar->closed_at === null
             && $ramadanIftar->execution_status === RamadanIftar::EXECUTION_STATUS_IN_PROGRESS
             && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute'));
+        $canExecute = $canExecute || ($ramadanIftar->needsPostExecutionCorrection()
+            && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.execute')));
         $canMonitor = $ramadanIftar->status === RamadanIftar::STATUS_APPROVED
-            && in_array($ramadanIftar->execution_status, [RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED], true)
+            && $ramadanIftar->execution_status === RamadanIftar::EXECUTION_STATUS_COMPLETED
             && ($user->hasRole('super_admin') || $user->can('ramadan_iftars.monitor'));
         $canReviewMonitoring = ($user->hasRole('super_admin') || $user->can('ramadan_iftars.monitor.review'))
             && $ramadanIftar->monitoringReports->contains('status', \App\Modules\Events\Models\MonitoringReport::STATUS_SUBMITTED);

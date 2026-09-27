@@ -7,6 +7,9 @@ use App\Models\ActivityEvaluation;
 use App\Models\EvaluationForm;
 use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Events\Models\PostExecutionVerification;
+use App\Modules\Events\Models\EventSubjectTypes;
+use App\Modules\Events\Models\MonitoringReport;
+use App\Modules\Events\Models\RamadanIftar;
 use Illuminate\Http\Request;
 
 class FollowupWorkspaceController extends Controller
@@ -18,11 +21,19 @@ class FollowupWorkspaceController extends Controller
         $activities = MonthlyActivity::query()->notArchived()->whereIn('branch_id', $branchIds);
         $evaluations = ActivityEvaluation::query()->whereIn('branch_id', $branchIds);
         $verifications = PostExecutionVerification::query()->whereIn('branch_id', $branchIds);
+        $ramadan = RamadanIftar::query()->whereIn('branch_id', $branchIds)->whereNull('closed_at');
+        $ramadanReports = MonitoringReport::query()->where('subject_type', EventSubjectTypes::RAMADAN_IFTAR)
+            ->whereHas('ramadanIftar', fn ($query) => $query->whereIn('branch_id', $branchIds));
         $stats = [
             'all_plans' => (clone $activities)->count(),
             'awaiting_post_review' => (clone $verifications)->where('status', 'pending')->distinct()->count('monthly_activity_id'),
             'awaiting_evaluation' => (clone $activities)->awaitingEvaluation()->whereHas('postExecutionVerifications')->whereDoesntHave('postExecutionVerifications', fn ($q) => $q->where('status', 'pending'))->count(),
             'evaluated' => (clone $evaluations)->count(),
+            'ramadan_pending' => (clone $ramadan)->where('execution_status', RamadanIftar::EXECUTION_STATUS_COMPLETED)
+                ->doesntHave('monitoringReports')->count(),
+            'ramadan_returned' => (clone $ramadanReports)->where('status', MonitoringReport::STATUS_RETURNED)->count(),
+            'ramadan_submitted' => (clone $ramadanReports)->where('status', MonitoringReport::STATUS_SUBMITTED)->count(),
+            'ramadan_approved' => (clone $ramadanReports)->where('status', MonitoringReport::STATUS_APPROVED)->count(),
         ];
 
         $workflow = [
@@ -92,7 +103,7 @@ class FollowupWorkspaceController extends Controller
     private function branchIds($user): array
     {
         $ids = $user->scopedBranchIds();
-        abort_if(count($ids) !== 1, 403, __('evaluation.validation.single_branch'));
+        abort_if($ids === [], 403);
         return $ids;
     }
 }

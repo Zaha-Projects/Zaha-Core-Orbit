@@ -12,9 +12,19 @@ use App\Modules\Events\Models\RamadanIftar;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Services\NotificationService;
 
 class RamadanIftarMonitoringService
 {
+    public function saveAndSubmit(RamadanIftar $iftar, MonitoringReport $report, array $data, User $actor): MonitoringReport
+    {
+        return DB::transaction(function () use ($iftar, $report, $data, $actor) {
+            $report = $this->save($iftar, $report, $data, $actor);
+
+            return $this->submit($iftar, $report, $actor);
+        });
+    }
+
     public function save(RamadanIftar $iftar, MonitoringReport $report, array $data, User $actor): MonitoringReport
     {
         return DB::transaction(function () use ($iftar, $report, $data, $actor) {
@@ -27,6 +37,9 @@ class RamadanIftarMonitoringService
                     $this->invalid('status', __('ramadan_iftars.business_errors.report_read_only'));
                 }
             } else {
+                if ($locked->monitoringReports()->whereIn('status', [MonitoringReport::STATUS_DRAFT, MonitoringReport::STATUS_SUBMITTED, MonitoringReport::STATUS_RETURNED, MonitoringReport::STATUS_APPROVED])->exists()) {
+                    $this->invalid('report', __('ramadan_iftars.business_errors.report_duplicate'));
+                }
                 $report = new MonitoringReport([
                     'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
                     'subject_id' => $locked->id,
@@ -40,8 +53,6 @@ class RamadanIftarMonitoringService
             $report->monitor_user_id = $actor->id;
             $report->save();
             $this->syncVerifications($locked, $report, $data['verifications'], $actor);
-            $this->audit($locked, $actor, 'monitoring_report_saved', $report);
-
             return $report->fresh('verifications');
         });
     }
@@ -58,9 +69,19 @@ class RamadanIftarMonitoringService
             if (! $report->verifications()->exists()) {
                 $this->invalid('verifications', __('ramadan_iftars.business_errors.verification_required'));
             }
+            if ($report->verifications()->where('match_status', PostExecutionVerification::MISMATCHED)->where(function ($query) {
+                $query->whereNull('note')->orWhere('note', '');
+            })->exists()) {
+                $this->invalid('verifications', __('ramadan_iftars.errors.mismatch_note_required'));
+            }
             $resubmitted = $report->status === MonitoringReport::STATUS_RETURNED;
             $report->update(['status' => MonitoringReport::STATUS_SUBMITTED, 'submitted_at' => now(), 'monitor_user_id' => $actor->id]);
-            $this->audit($locked, $actor, $resubmitted ? 'monitoring_resubmitted' : 'monitoring_report_submitted', $report);
+            $this->audit($locked, $actor, $resubmitted ? 'monitoring_resubmitted' : 'monitoring_verification_submitted', $report);
+            $reviewers = User::role('supervisor')->where('status', 'active')->where(function ($query) use ($locked) {
+                $query->whereHas('assignedBranches', fn ($branch) => $branch->whereKey($locked->branch_id))
+                    ->orWhere(fn ($fallback) => $fallback->whereDoesntHave('assignedBranches')->where('branch_id', $locked->branch_id));
+            })->get();
+            app(NotificationService::class)->notifyUsers($reviewers, 'ramadan_monitoring_submitted', 'متابعة إفطار بانتظار الاعتماد', "اكتملت مراجعة المتابعة للإفطار ({$locked->title}).", route('events.ramadan.monitoring-reviews.show', $report), ['ramadan_iftar_id' => $locked->id, 'monitoring_report_id' => $report->id]);
 
             return $report->fresh();
         });
@@ -95,6 +116,9 @@ class RamadanIftarMonitoringService
 
             $report->update(['status' => $decision]);
             $this->audit($locked, $reviewer, $decision === MonitoringReport::STATUS_APPROVED ? 'monitoring_approved' : 'monitoring_returned', $report, $comment);
+            if ($decision === MonitoringReport::STATUS_RETURNED && $locked->relationsOfficer) {
+                app(NotificationService::class)->notifyUsers(collect([$locked->relationsOfficer]), 'ramadan_post_execution_correction_requested', 'طلب تصحيح بيانات تنفيذ إفطار', $comment, route('events.ramadan.iftars.execution.show', $locked), ['ramadan_iftar_id' => $locked->id, 'monitoring_report_id' => $report->id]);
+            }
 
             return $report->fresh('verifications');
         });
@@ -107,11 +131,18 @@ class RamadanIftarMonitoringService
             $this->candidate(null, null, 'meals', __('ramadan_iftars.verification_fields.meals'), $iftar->planned_meals_count, $iftar->actual_meals_count),
             $this->candidate(null, null, 'date', __('ramadan_iftars.verification_fields.date'), optional($iftar->planned_date)->format('Y-m-d'), optional($iftar->actual_date)->format('Y-m-d')),
         ];
+        foreach ($iftar->targetGroupSelections as $row) {
+            $actual = $iftar->attendees->where('target_group_id', $row->target_group_id)->where('attended', true)->count();
+            $rows[] = $this->candidate('target_group', $row->id, 'attendance', __('ramadan_iftars.verification_fields.target_group', ['name' => optional($row->targetGroup)->name ?: $row->target_group_custom_text]), $row->planned_count, $actual);
+        }
+        foreach ($iftar->volunteerRequirements as $row) {
+            $label = optional($row->beneficiarySegment)->name_ar ?: optional($row->beneficiarySegment)->name_en ?: '#'.$row->id;
+            $rows[] = $this->candidate('volunteer_requirement', $row->id, 'count', __('ramadan_iftars.verification_fields.volunteer', ['name' => $label]), $row->planned_count, $row->actual_count);
+        }
         foreach ($iftar->meals as $row) $rows[] = $this->candidate('meal', $row->id, 'quantity', __('ramadan_iftars.verification_fields.meal', ['name' => $row->description]), $row->planned_quantity, $row->actual_quantity);
         foreach ($iftar->gifts as $row) $rows[] = $this->candidate('gift', $row->id, 'quantity', __('ramadan_iftars.verification_fields.gift', ['name' => $row->description]), $row->planned_quantity, $row->actual_quantity);
         foreach ($iftar->programSegments as $row) $rows[] = $this->candidate('program_segment', $row->id, 'execution_status', __('ramadan_iftars.verification_fields.program', ['name' => $row->name]), 'planned', $row->execution_status);
         foreach ($iftar->executionTeams as $row) $rows[] = $this->candidate('execution_team', $row->id, 'members_count', __('ramadan_iftars.verification_fields.team', ['name' => $row->name]), $row->planned_members_count, $row->actual_members_count);
-        foreach ($iftar->volunteerRequirements as $row) $rows[] = $this->candidate('volunteer_requirement', $row->id, 'count', __('ramadan_iftars.verification_fields.volunteer', ['id' => $row->id]), $row->planned_count, $row->actual_count);
         foreach ($iftar->supplies as $row) $rows[] = $this->candidate('supply', $row->id, 'quantity', __('ramadan_iftars.verification_fields.supply', ['name' => $row->item_name]), $row->planned_quantity, $row->actual_quantity);
         foreach ($iftar->executionNeeds as $row) $rows[] = $this->candidate('execution_need', $row->id, 'result', __('ramadan_iftars.verification_fields.execution_need', ['name' => optional($row->executionNeedType)->name]), $row->planned_details, $row->actual_details);
 
@@ -154,7 +185,7 @@ class RamadanIftarMonitoringService
 
     private function assertMonitorable(RamadanIftar $iftar): void
     {
-        if ($iftar->status !== RamadanIftar::STATUS_APPROVED || ! in_array($iftar->execution_status, [RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED], true) || $iftar->closed_at !== null) {
+        if ($iftar->status !== RamadanIftar::STATUS_APPROVED || $iftar->execution_status !== RamadanIftar::EXECUTION_STATUS_COMPLETED || $iftar->closed_at !== null) {
             $this->invalid('status', __('ramadan_iftars.business_errors.monitoring_eligibility'));
         }
     }

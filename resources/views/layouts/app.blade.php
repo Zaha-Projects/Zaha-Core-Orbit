@@ -99,11 +99,12 @@
             @if($isFollowupOfficer)
             <li class="side-item {{ request()->routeIs('followup.dashboard') ? 'selected' : '' }}"><a href="{{ route('followup.dashboard') }}"><i class="fas fa-gauge-high"></i><span>{{ __('evaluation.followup.sidebar.dashboard') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('followup.monthly-plans*') ? 'selected' : '' }}"><a href="{{ route('followup.monthly-plans') }}"><i class="fas fa-calendar-days"></i><span>{{ __('evaluation.followup.sidebar.monthly_plans') }}</span></a></li>
-            @can('ramadan_iftars.view')<li class="side-item {{ request()->routeIs('events.ramadan.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>@endcan
+            @can('ramadan_iftars.monitor')<li class="side-item {{ request()->routeIs('events.ramadan.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index',['monitoring_status'=>'pending']) }}"><i class="fas fa-moon"></i><span>إفطارات بانتظار المتابعة</span></a></li>@endcan
             <li class="side-item {{ request()->routeIs('followup.awaiting-evaluation') || request()->routeIs('evaluations.verification.*') || request()->routeIs('evaluations.create') ? 'selected' : '' }}"><a href="{{ route('followup.awaiting-evaluation') }}"><i class="fas fa-hourglass-half"></i><span>{{ __('evaluation.followup.sidebar.awaiting_evaluation') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('followup.evaluations.*') || request()->routeIs('evaluations.show') ? 'selected' : '' }}"><a href="{{ route('followup.evaluations.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('evaluation.followup.sidebar.previous_evaluations') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}"><a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>{{ __('evaluation.followup.sidebar.user_directory') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('profile.*') ? 'selected' : '' }}"><a href="{{ route('profile.show') }}"><i class="fas fa-user"></i><span>{{ __('evaluation.followup.sidebar.profile') }}</span></a></li>
+            <li class="side-item {{ request()->routeIs('site-guide.*') ? 'selected' : '' }}"><a href="{{ route('site-guide.index') }}"><i class="fas fa-book-open"></i><span>دليل الموقع</span></a></li>
             @else
             <li class="side-item {{ $currentRoute === 'dashboard' ? 'selected' : '' }}">
                 <a href="{{ route('dashboard') }}"><i class="fas fa-gauge-high"></i><span data-i18n="menu_dashboard">{{ __('app.common.dashboard') }}</span></a>
@@ -114,6 +115,7 @@
             <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}">
                 <a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>دليل المستخدمين</span></a>
             </li>
+            <li class="side-item {{ request()->routeIs('site-guide.*') ? 'selected' : '' }}"><a href="{{ route('site-guide.index') }}"><i class="fas fa-book-open"></i><span>دليل الموقع</span></a></li>
 
             @if ($canAccessAdminSidebar)
                 <li class="side-comment px-3 pt-2">الإدارة والصلاحيات</li>

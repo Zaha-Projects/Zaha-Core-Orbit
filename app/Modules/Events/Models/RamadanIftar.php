@@ -205,7 +205,15 @@ class RamadanIftar extends Model
         return $this->status === self::STATUS_APPROVED
             && $this->closed_at === null
             && ! $this->isSuperseded()
-            && in_array($this->execution_status, [self::EXECUTION_STATUS_PLANNED, self::EXECUTION_STATUS_IN_PROGRESS], true);
+            && (in_array($this->execution_status, [self::EXECUTION_STATUS_PLANNED, self::EXECUTION_STATUS_IN_PROGRESS], true)
+                || $this->needsPostExecutionCorrection());
+    }
+
+    public function needsPostExecutionCorrection(): bool
+    {
+        return $this->execution_status === self::EXECUTION_STATUS_COMPLETED
+            && $this->monitoringReports()->where('status', MonitoringReport::STATUS_RETURNED)->exists()
+            && ! $this->monitoringReports()->where('status', MonitoringReport::STATUS_APPROVED)->exists();
     }
 
     public function canViewExecution(): bool

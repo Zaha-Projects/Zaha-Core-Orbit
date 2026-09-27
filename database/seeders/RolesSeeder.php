@@ -54,6 +54,15 @@ class RolesSeeder extends Seeder
             // another module merely because they are absent from this catalogue.
             $role->givePermissionTo($permissions);
         }
+
+        // Execution actuals belong to the branch Relations Officer. Explicitly
+        // remove the historical Follow-up grant even though this seeder is
+        // otherwise additive, so deployed role state matches the workflow.
+        $followup = Role::query()->where('guard_name', 'web')->where('name', 'followup_officer')->first();
+        $executionPermission = Permission::query()->where('guard_name', 'web')->where('name', 'ramadan_iftars.execute')->first();
+        if ($followup && $executionPermission) {
+            $followup->revokePermissionTo($executionPermission);
+        }
     }
 
     /**
@@ -164,6 +173,7 @@ class RolesSeeder extends Seeder
                 'ramadan_iftars.create',
                 'ramadan_iftars.edit',
                 'ramadan_iftars.submit',
+                'ramadan_iftars.execute',
                 'ramadan_iftars.change_request.create',
                 'agenda.view',
                 'agenda.create',
@@ -180,7 +190,6 @@ class RolesSeeder extends Seeder
             ],
             'followup_officer' => [
                 'ramadan_iftars.view',
-                'ramadan_iftars.execute',
                 'ramadan_iftars.monitor',
                 'agenda.view',
                 'monthly_activities.view',
