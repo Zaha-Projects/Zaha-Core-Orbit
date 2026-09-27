@@ -12,6 +12,12 @@
     const empty = page.querySelector('#guide-empty');
     const results = page.querySelector('#guide-results');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const modal = page.querySelector('#role-guide-modal');
+    const dialog = modal?.querySelector('.role-guide-modal__dialog');
+    const guideData = JSON.parse(page.querySelector('#role-guide-data')?.textContent || '[]');
+    const guides = guideData.flatMap((role, roleIndex) => role.tasks.map((task, taskIndex) => ({ role, roleIndex, task, taskIndex })));
+    let activeGuide = -1;
+    let guideTrigger = null;
     let category = '';
 
     const normalize = value => String(value || '').trim().toLocaleLowerCase('ar');
@@ -78,6 +84,80 @@
         target.focus({ preventScroll: true });
         history.replaceState(null, '', link.getAttribute('href'));
     }));
+
+    const fillList = (element, items, tag) => {
+        element.replaceChildren(...items.map((item, index) => {
+            const node = document.createElement(tag);
+            if (tag === 'li') node.style.setProperty('--step-order', index);
+            node.textContent = item;
+            return node;
+        }));
+    };
+
+    const showGuide = index => {
+        const entry = guides[index];
+        if (!entry || !modal || !dialog) return;
+        activeGuide = index;
+        const { role, task } = entry;
+        const detail = task.guide;
+        page.querySelector('#role-guide-modal-role').textContent = role.title;
+        page.querySelector('#role-guide-modal-title').textContent = task.title;
+        page.querySelector('#role-guide-modal-summary').textContent = task.summary;
+        page.querySelector('#role-guide-modal-goal').textContent = detail.goal;
+        page.querySelector('#role-guide-modal-when').textContent = detail.when;
+        page.querySelector('#role-guide-modal-after').textContent = detail.after;
+        page.querySelector('#role-guide-modal-returned').textContent = detail.returned_flow;
+        fillList(page.querySelector('#role-guide-modal-steps'), detail.steps, 'li');
+        fillList(page.querySelector('#role-guide-modal-notes'), detail.notes, 'li');
+
+        const flow = page.querySelector('#role-guide-modal-flow');
+        flow.replaceChildren(...detail.timeline.map((step, stepIndex) => {
+            const item = document.createElement('span');
+            item.className = step.owned ? 'is-owned' : '';
+            item.style.setProperty('--step-order', stepIndex);
+            item.innerHTML = `<i aria-hidden="true">${stepIndex + 1}</i>${step.label}`;
+            return item;
+        }));
+        const handoff = page.querySelector('#role-guide-modal-handoff');
+        handoff.replaceChildren(...['from', 'action', 'to'].map((key, index) => {
+            const item = document.createElement('span');
+            item.innerHTML = `<i class="fas ${index === 1 ? 'fa-arrow-left' : 'fa-circle-user'}" aria-hidden="true"></i><strong>${detail.handoff[key]}</strong>`;
+            return item;
+        }));
+        page.querySelector('#role-guide-modal-position').textContent = `${index + 1} من ${guides.length}`;
+        modal.hidden = false;
+        document.body.classList.add('guide-modal-open');
+        requestAnimationFrame(() => modal.classList.add('is-open'));
+        dialog.focus();
+    };
+
+    const closeGuide = () => {
+        if (!modal || modal.hidden) return;
+        modal.classList.remove('is-open');
+        document.body.classList.remove('guide-modal-open');
+        const finish = () => { modal.hidden = true; guideTrigger?.focus(); };
+        reduceMotion ? finish() : window.setTimeout(finish, 180);
+    };
+
+    page.querySelectorAll('[data-guide-open]').forEach(button => button.addEventListener('click', () => {
+        guideTrigger = button;
+        const index = guides.findIndex(entry => entry.roleIndex === Number(button.dataset.roleIndex) && entry.taskIndex === Number(button.dataset.taskIndex));
+        showGuide(index);
+    }));
+    page.querySelectorAll('[data-guide-close]').forEach(button => button.addEventListener('click', closeGuide));
+    page.querySelector('[data-guide-previous]')?.addEventListener('click', () => showGuide((activeGuide - 1 + guides.length) % guides.length));
+    page.querySelector('[data-guide-next]')?.addEventListener('click', () => showGuide((activeGuide + 1) % guides.length));
+    document.addEventListener('keydown', event => {
+        if (!modal || modal.hidden) return;
+        if (event.key === 'Escape') closeGuide();
+        if (event.key !== 'Tab') return;
+        const focusable = Array.from(dialog.querySelectorAll('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'));
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
 
     if (!reduceMotion && 'IntersectionObserver' in window) {
         const observer = new IntersectionObserver(entries => entries.forEach(entry => {
