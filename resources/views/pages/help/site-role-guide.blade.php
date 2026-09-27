@@ -82,7 +82,7 @@
         <main class="role-guide-grid" id="guide-roles">
             @foreach($guide as $role)
                 @php
-                    $searchText = collect([$role['title'], $role['key'], $role['purpose'], ...$role['modules'], ...$role['responsibilities'], ...$role['monthly'], ...$role['ramadan']])->join(' ');
+                    $searchText = collect([$role['title'], $role['key'], $role['purpose'], ...$role['modules'], ...$role['responsibilities'], ...$role['monthly'], ...$role['ramadan'], ...collect($role['tasks'])->flatten()->filter(fn ($value) => is_string($value))->all()])->join(' ');
                     $accent = $role['presentation']['accent'];
                 @endphp
                 <article id="role-{{ $role['key'] }}" class="role-guide-card role-accent--{{ $accent }}" data-role="{{ $role['key'] }}" data-category="{{ $role['presentation']['category'] }}" data-search="{{ $searchText }}" style="--reveal-order: {{ $loop->index }}" tabindex="-1">
@@ -107,6 +107,29 @@
                     </section>
 
                     <div class="role-guide-card__body">
+                        <section class="role-guide-panel role-guide-panel--tasks">
+                            <h3><span><i class="fas fa-map-signs" aria-hidden="true"></i></span>أدلة الاستخدام العملية</h3>
+                            <p class="role-task-intro"><strong>ابدأ من هنا:</strong> اختر المهمة التي تريد تنفيذها، وستجد الخطوات والحالات وما يحدث بعدها.</p>
+                            <div class="role-task-grid">
+                                @foreach($role['tasks'] as $taskIndex => $task)
+                                    <article class="role-task-card">
+                                        <span class="role-task-card__icon"><i class="fas {{ $task['icon'] }}" aria-hidden="true"></i></span>
+                                        <div class="role-task-card__content">
+                                            <h4>{{ $task['title'] }}</h4>
+                                            <p>{{ $task['summary'] }}</p>
+                                            <div class="role-task-capabilities" aria-label="قدرات الدور في هذه المهمة">
+                                                @foreach($capabilityLabels as $capability => [$label, $icon])
+                                                    @if($role['capabilities'][$capability])<span><i class="fas {{ $icon }}" aria-hidden="true"></i>{{ $label }}</span>@endif
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        <button type="button" class="role-task-open" data-guide-open data-role-index="{{ $loop->parent->index }}" data-task-index="{{ $taskIndex }}" aria-haspopup="dialog">
+                                            <i class="fas fa-book-open" aria-hidden="true"></i> شرح الاستخدام
+                                        </button>
+                                    </article>
+                                @endforeach
+                            </div>
+                        </section>
                         <section class="role-guide-panel role-guide-panel--primary">
                             <h3><span><i class="fas fa-list-check" aria-hidden="true"></i></span>المهام الرئيسية</h3>
                             <ul class="role-checklist">@foreach($role['responsibilities'] as $item)<li><i class="fas fa-circle-check" aria-hidden="true"></i><span>{{ $item }}</span></li>@endforeach</ul>
@@ -144,6 +167,31 @@
             </section>
         @endif
     </div>
+
+    <div class="role-guide-modal" id="role-guide-modal" hidden>
+        <div class="role-guide-modal__backdrop" data-guide-close></div>
+        <section class="role-guide-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="role-guide-modal-title" tabindex="-1">
+            <header class="role-guide-modal__header">
+                <div class="role-guide-modal__identity"><span class="role-guide-modal__icon"><i class="fas fa-book-open" aria-hidden="true"></i></span><div><small id="role-guide-modal-role"></small><h2 id="role-guide-modal-title"></h2></div></div>
+                <button type="button" class="role-guide-modal__close" data-guide-close aria-label="إغلاق شرح الاستخدام"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+            </header>
+            <div class="role-guide-modal__body">
+                <p class="role-guide-modal__summary" id="role-guide-modal-summary"></p>
+                <div class="role-guide-flow" id="role-guide-modal-flow" aria-label="مسار المهمة"></div>
+                <div class="role-guide-detail-grid">
+                    <section class="role-guide-detail role-guide-detail--goal"><span class="guide-helper-label">ابدأ من هنا</span><h3><i class="fas fa-bullseye" aria-hidden="true"></i> ما الهدف من هذه المهمة؟</h3><p id="role-guide-modal-goal"></p></section>
+                    <section class="role-guide-detail role-guide-detail--when"><span class="guide-helper-label">متى أستخدمها؟</span><h3><i class="fas fa-clock" aria-hidden="true"></i> متى أستخدمها؟</h3><p id="role-guide-modal-when"></p></section>
+                    <section class="role-guide-detail role-guide-detail--steps"><span class="guide-helper-label">خطوتك التالية</span><h3><i class="fas fa-list-ol" aria-hidden="true"></i> كيفية التنفيذ</h3><ol id="role-guide-modal-steps"></ol></section>
+                    <section class="role-guide-detail"><h3><i class="fas fa-arrow-left-long" aria-hidden="true"></i> ماذا يحدث بعد الحفظ؟</h3><p id="role-guide-modal-after"></p></section>
+                    <section class="role-guide-detail"><h3><i class="fas fa-rotate-left" aria-hidden="true"></i> إذا تم إرجاع الطلب</h3><p id="role-guide-modal-returned"></p></section>
+                    <section class="role-guide-detail role-guide-detail--notes"><span class="guide-helper-label">تنبيه ونصيحة</span><h3><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> ملاحظات مهمة</h3><ul id="role-guide-modal-notes"></ul></section>
+                </div>
+                <div class="role-guide-handoff-visual" id="role-guide-modal-handoff" aria-label="انتقال المهمة"></div>
+            </div>
+            <footer class="role-guide-modal__footer"><button type="button" data-guide-previous><i class="fas fa-arrow-right" aria-hidden="true"></i> الدليل السابق</button><span id="role-guide-modal-position"></span><button type="button" data-guide-next>الدليل التالي <i class="fas fa-arrow-left" aria-hidden="true"></i></button></footer>
+        </section>
+    </div>
+    <script type="application/json" id="role-guide-data">{!! json_encode($guide->map(fn ($role) => ['title' => $role['title'], 'tasks' => $role['tasks']])->values(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 </div>
 @endsection
 
