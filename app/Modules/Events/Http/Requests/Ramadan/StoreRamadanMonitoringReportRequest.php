@@ -52,4 +52,16 @@ class StoreRamadanMonitoringReportRequest extends FormRequest
             }
         });
     }
+
+    public function attributes(): array
+    {
+        return [
+            'monitoring_method_id' => 'آلية الرصد',
+            'observed_at' => 'تاريخ الرصد',
+            'general_notes' => 'ملاحظات المتابعة',
+            'verifications' => 'بنود التحقق',
+            'verifications.*.match_status' => 'نتيجة المطابقة',
+            'verifications.*.note' => 'سبب عدم المطابقة',
+        ];
+    }
 }

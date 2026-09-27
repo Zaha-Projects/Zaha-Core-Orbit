@@ -53,8 +53,6 @@ class RamadanIftarMonitoringService
             $report->monitor_user_id = $actor->id;
             $report->save();
             $this->syncVerifications($locked, $report, $data['verifications'], $actor);
-            $this->audit($locked, $actor, 'monitoring_report_saved', $report);
-
             return $report->fresh('verifications');
         });
     }
@@ -78,7 +76,7 @@ class RamadanIftarMonitoringService
             }
             $resubmitted = $report->status === MonitoringReport::STATUS_RETURNED;
             $report->update(['status' => MonitoringReport::STATUS_SUBMITTED, 'submitted_at' => now(), 'monitor_user_id' => $actor->id]);
-            $this->audit($locked, $actor, $resubmitted ? 'monitoring_resubmitted' : 'monitoring_report_submitted', $report);
+            $this->audit($locked, $actor, $resubmitted ? 'monitoring_resubmitted' : 'monitoring_verification_submitted', $report);
             $reviewers = User::role('supervisor')->where('status', 'active')->where(function ($query) use ($locked) {
                 $query->whereHas('assignedBranches', fn ($branch) => $branch->whereKey($locked->branch_id))
                     ->orWhere(fn ($fallback) => $fallback->whereDoesntHave('assignedBranches')->where('branch_id', $locked->branch_id));

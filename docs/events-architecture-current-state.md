@@ -951,3 +951,9 @@ canonical in source; exact legacy identities remain only for persisted-history
 compatibility. No backfill or identity migration has occurred. Execute
 `docs/events-staging-cutover-runbook.md`; staging/runtime verification is the
 only remaining identity gate.
+
+## Follow-up/monitoring and role-guide audit — 2026-09-27
+
+The project-wide Follow-up audit is recorded in `docs/follow-up-monitoring-audit.md`; the complete active role inventory and handoffs are recorded in `docs/site-role-responsibility-guide.md`. Monthly continues to use direct `PostExecutionVerification` plus `ActivityEvaluation`. Ramadan continues to use `MonitoringReport` as report owner and canonical `PostExecutionVerification` children, with Relations-owned actual data, Follow-up-owned monitoring, supervisor review, and supervisor closure. Annual Agenda has no post-execution Follow-up stage.
+
+The Follow-up dashboard now exposes bounded Ramadan pending/returned/submitted/approved work alongside the preserved Monthly workflow. The existing Ramadan list supplies these queues through an added filter rather than duplicate pages or state columns. Obsolete Ramadan report-edit and standalone-submit surfaces were removed after route/link analysis. The authenticated Arabic-first site guide is driven from one configuration source; actual technical permission lists are visible only to Super Admin. Branch isolation and Events identities are unchanged.

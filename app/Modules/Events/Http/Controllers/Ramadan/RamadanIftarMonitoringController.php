@@ -38,32 +38,9 @@ class RamadanIftarMonitoringController extends Controller
         return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)->with('success', __('ramadan_iftars.messages.monitoring_submitted'));
     }
 
-    public function edit(Request $request, RamadanIftar $ramadanIftar, MonitoringReport $monitoringReport, RamadanIftarMonitoringService $monitoring)
-    {
-        $this->authorizeMonitoring($request, $ramadanIftar, false);
-        abort_unless($ramadanIftar->monitoringReports()->whereKey($monitoringReport->id)->exists(), 404);
-        $ramadanIftar->load(['targetGroupSelections.targetGroup', 'targetGroupSelections.beneficiarySegment', 'attendees', 'meals', 'gifts', 'programSegments', 'executionTeams', 'volunteerRequirements.beneficiarySegment', 'supplies', 'executionNeeds.executionNeedType']);
-        $monitoringReport->load('verifications');
-
-        return view('pages.events.ramadan.monitoring.edit', [
-            'ramadanIftar' => $ramadanIftar, 'monitoringReport' => $monitoringReport,
-            'monitoringMethods' => MonitoringMethod::query()->active()->ordered()->get(),
-            'candidates' => $monitoring->candidates($ramadanIftar),
-            'monitoringWritable' => in_array($ramadanIftar->execution_status, [RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED], true) && $ramadanIftar->closed_at === null,
-        ]);
-    }
-
     public function update(StoreRamadanMonitoringReportRequest $request, RamadanIftar $ramadanIftar, MonitoringReport $monitoringReport, RamadanIftarMonitoringService $monitoring)
     {
         $monitoring->saveAndSubmit($ramadanIftar, $monitoringReport, $request->validated(), $request->user());
-
-        return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)->with('success', __('ramadan_iftars.messages.monitoring_submitted'));
-    }
-
-    public function submit(Request $request, RamadanIftar $ramadanIftar, MonitoringReport $monitoringReport, RamadanIftarMonitoringService $monitoring)
-    {
-        $this->authorizeMonitoring($request, $ramadanIftar);
-        $monitoring->submit($ramadanIftar, $monitoringReport, $request->user());
 
         return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)->with('success', __('ramadan_iftars.messages.monitoring_submitted'));
     }
