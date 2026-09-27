@@ -288,3 +288,11 @@ PostExecutionVerification are canonical. Older phase sections in this document
 are historical chronology, not current TODOs. Legacy stored identities remain
 supported and unmodified. Remaining work is STAGING / RUNTIME VERIFICATION ONLY;
 no additional identity namespace source cutover remains.
+
+## 2026-09-27 execution/post-execution/monitoring responsibility correction
+
+The full Monthly and Ramadan source lifecycles were audited before modification. The focused correction is documented in `docs/ramadan-execution-monitoring-flow.md`.
+
+Ramadan actual execution/post-execution entry is now owned by the branch Relations Officer through the existing `ramadan_iftars.execute` permission. Monitoring begins only after completed execution and uses one consolidated `MonitoringMethod` plus planned/actual verification submission. The previous Monitoring-user execution entry and create/save/edit/submit report sequence were removed from the active UI. The existing independent supervisor monitoring review and final closure boundaries remain.
+
+Returned monitoring now requests correction from the assigned Relations Officer rather than allowing Monitoring to edit actual source data. Repeatable comparisons retain stable detail identity in canonical `PostExecutionVerification`; Ramadan report ownership remains in `monitoring_reports`. Monthly behavior, branch isolation, event identities, and database schema are unchanged. **NO DATABASE MIGRATION REQUIRED.**

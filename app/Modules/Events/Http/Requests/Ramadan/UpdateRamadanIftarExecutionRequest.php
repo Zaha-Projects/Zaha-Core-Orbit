@@ -31,6 +31,7 @@ class UpdateRamadanIftarExecutionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'submit_for_monitoring' => ['nullable', 'boolean'],
             'actual_date' => ['nullable', 'date'],
             'attendees' => ['present', 'array'],
             'attendees.*.id' => ['nullable', 'integer', 'distinct'],

@@ -6,6 +6,7 @@ use App\Modules\Events\Models\PostExecutionVerification;
 use App\Modules\Events\Models\RamadanIftar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreRamadanMonitoringReportRequest extends FormRequest
 {
@@ -32,12 +33,23 @@ class StoreRamadanMonitoringReportRequest extends FormRequest
             'general_notes' => ['nullable', 'string', 'max:5000'],
             'verifications' => ['present', 'array'],
             'verifications.*.id' => ['nullable', 'integer', 'distinct'],
-            'verifications.*.detail_type' => ['nullable', Rule::in(['meal', 'gift', 'program_segment', 'execution_team', 'volunteer_requirement', 'supply', 'execution_need'])],
+            'verifications.*.detail_type' => ['nullable', Rule::in(['target_group', 'meal', 'gift', 'program_segment', 'execution_team', 'volunteer_requirement', 'supply', 'execution_need'])],
             'verifications.*.detail_id' => ['nullable', 'integer'],
             'verifications.*.field_key' => ['required', 'string', 'max:100'],
             'verifications.*.field_label' => ['required', 'string', 'max:255'],
             'verifications.*.match_status' => ['required', Rule::in(PostExecutionVerification::matchStatuses())],
             'verifications.*.note' => ['nullable', 'string', 'max:2000'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            foreach ($this->input('verifications', []) as $index => $verification) {
+                if (($verification['match_status'] ?? null) === PostExecutionVerification::MISMATCHED && blank($verification['note'] ?? null)) {
+                    $validator->errors()->add("verifications.$index.note", __('ramadan_iftars.errors.mismatch_note_required'));
+                }
+            }
+        });
     }
 }

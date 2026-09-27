@@ -24,7 +24,8 @@ class RamadanIftarExecutionController extends Controller
         $targetGroups = TargetGroup::query()->active()->forRamadanIftars()->orderBy('sort_order')->get();
         $beneficiarySegments = BeneficiarySegment::query()->active()->ordered()->get();
 
-        $executionWritable = $ramadanIftar->execution_status !== RamadanIftar::EXECUTION_STATUS_COMPLETED && $ramadanIftar->closed_at === null;
+        $executionWritable = $ramadanIftar->closed_at === null
+            && ($ramadanIftar->execution_status !== RamadanIftar::EXECUTION_STATUS_COMPLETED || $ramadanIftar->needsPostExecutionCorrection());
 
         return view('pages.events.ramadan.execution', compact('ramadanIftar', 'targetGroups', 'beneficiarySegments', 'executionWritable'));
     }
@@ -40,7 +41,14 @@ class RamadanIftarExecutionController extends Controller
 
     public function update(UpdateRamadanIftarExecutionRequest $request, RamadanIftar $ramadanIftar, RamadanIftarExecutionService $execution)
     {
-        $execution->update($ramadanIftar, $request->validated(), $request->user());
+        $data = $request->validated();
+        $execution->update($ramadanIftar, $data, $request->user());
+        if ($request->boolean('submit_for_monitoring') && $ramadanIftar->execution_status !== RamadanIftar::EXECUTION_STATUS_COMPLETED) {
+            $execution->complete($ramadanIftar->fresh(), $request->user());
+
+            return redirect()->route('events.ramadan.iftars.show', $ramadanIftar)
+                ->with('success', __('ramadan_iftars.messages.execution_completed'));
+        }
 
         return redirect()->route('events.ramadan.iftars.execution.show', $ramadanIftar)
             ->with('success', __('ramadan_iftars.messages.execution_updated'));

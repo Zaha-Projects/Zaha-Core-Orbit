@@ -164,6 +164,7 @@ class RolesSeeder extends Seeder
                 'ramadan_iftars.create',
                 'ramadan_iftars.edit',
                 'ramadan_iftars.submit',
+                'ramadan_iftars.execute',
                 'ramadan_iftars.change_request.create',
                 'agenda.view',
                 'agenda.create',
@@ -180,7 +181,6 @@ class RolesSeeder extends Seeder
             ],
             'followup_officer' => [
                 'ramadan_iftars.view',
-                'ramadan_iftars.execute',
                 'ramadan_iftars.monitor',
                 'agenda.view',
                 'monthly_activities.view',

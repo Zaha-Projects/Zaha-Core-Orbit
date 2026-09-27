@@ -16,5 +16,5 @@
         </tr>
     @endforeach
     </tbody></table></div></div>
-    @if($editable)<button class="btn btn-primary">{{ __('ramadan_iftars.actions.save') }}</button>@endif
+    @if($editable)<button class="btn btn-success">{{ __('ramadan_iftars.actions.submit_monitoring') }}</button>@endif
 </form>

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Services\NotificationService;
 
 class RamadanIftarExecutionService
 {
@@ -34,7 +35,8 @@ class RamadanIftarExecutionService
         return DB::transaction(function () use ($iftar, $data, $actor) {
             $locked = RamadanIftar::query()->lockForUpdate()->findOrFail($iftar->getKey());
             $this->assertApproved($locked);
-            if ($locked->execution_status !== RamadanIftar::EXECUTION_STATUS_IN_PROGRESS) {
+            $isCorrection = $locked->needsPostExecutionCorrection();
+            if ($locked->execution_status !== RamadanIftar::EXECUTION_STATUS_IN_PROGRESS && ! $isCorrection) {
                 throw ValidationException::withMessages(['execution_status' => __('ramadan_iftars.business_errors.execution_start_required')]);
             }
 
@@ -53,7 +55,13 @@ class RamadanIftarExecutionService
                 'actual_meals_count' => $locked->meals()->whereNotNull('actual_quantity')->exists()
                     ? (int) $locked->meals()->sum('actual_quantity') : null,
             ]);
-            $this->audit($locked, $actor, 'execution_updated');
+            $this->audit($locked, $actor, $isCorrection ? 'post_execution_correction_resubmitted' : 'execution_updated');
+            if ($isCorrection) {
+                $report = $locked->monitoringReports()->where('status', \App\Modules\Events\Models\MonitoringReport::STATUS_RETURNED)->latest('updated_at')->first();
+                if ($report?->monitor) {
+                    app(NotificationService::class)->notifyUsers(collect([$report->monitor]), 'ramadan_post_execution_corrected', 'تم تصحيح بيانات تنفيذ الإفطار', "صحح مسؤول العلاقات بيانات التنفيذ الفعلية للإفطار ({$locked->title}).", route('events.ramadan.iftars.monitoring.index', $locked), ['ramadan_iftar_id' => $locked->id, 'monitoring_report_id' => $report->id]);
+                }
+            }
 
             return $locked->fresh();
         });
@@ -70,6 +78,18 @@ class RamadanIftarExecutionService
             $this->assertCompletionReady($locked);
             $locked->update(['execution_status' => RamadanIftar::EXECUTION_STATUS_COMPLETED]);
             $this->audit($locked, $actor, 'execution_completed');
+            $monitors = User::role('followup_officer')->where('status', 'active')->where(function ($query) use ($locked) {
+                $query->whereHas('assignedBranches', fn ($branch) => $branch->whereKey($locked->branch_id))
+                    ->orWhere(fn ($fallback) => $fallback->whereDoesntHave('assignedBranches')->where('branch_id', $locked->branch_id));
+            })->get();
+            app(NotificationService::class)->notifyUsers(
+                $monitors,
+                'ramadan_post_execution_submitted',
+                'اكتمل ما بعد تنفيذ الإفطار الرمضاني',
+                "أرسل مسؤول العلاقات بيانات التنفيذ الفعلية للإفطار ({$locked->title}) للمراجعة.",
+                route('events.ramadan.iftars.monitoring.index', $locked),
+                ['ramadan_iftar_id' => $locked->id]
+            );
 
             return $locked->fresh();
         });
