@@ -3,7 +3,6 @@
 namespace App\Modules\Events\Http\Controllers\Ramadan;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\ExecutionNeedType;
@@ -94,7 +93,6 @@ class RamadanIftarController extends Controller
         return [
             'ramadanIftar' => $iftar,
             'authorizedBranchId' => (int) $selectedBranchId,
-            'agendaEvents' => AgendaEvent::query()->when($selectedBranchId, fn ($q, $id) => $q->forBranchAudience([(int) $id]))->orderBy('event_date')->get(),
             'targetGroups' => TargetGroup::query()->where(function ($query) use ($iftar) {
                 $query->where(fn ($available) => $available->active()->forRamadanIftars());
                 if ($iftar) {
@@ -109,7 +107,6 @@ class RamadanIftarController extends Controller
             'selectedCommunityOrganization' => $iftar?->community_organization_id ? CommunityOrganization::query()->where('branch_id', $selectedBranchId)->find($iftar->community_organization_id) : null,
             'selectedLocalCommunity' => $iftar?->local_community_id ? LocalCommunity::query()->where('branch_id', $selectedBranchId)->find($iftar->local_community_id) : null,
             'users' => $users,
-            'locationTypes' => RamadanIftar::locationTypes(),
             'hostTypes' => [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER, RamadanIftar::HOST_LOCAL_COMMUNITY],
             'mealItemTypes' => MealType::query()->where(function ($query) use ($iftar) {
                 $query->active();

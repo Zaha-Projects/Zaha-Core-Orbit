@@ -3,9 +3,10 @@
     <input type="hidden" name="{{ $field }}" value="{{ old($field, $selected?->id) }}" data-reference-id>
     <label class="form-label" for="{{ $pickerId }}-search">{{ $label }} <span class="text-danger">*</span></label>
 
+    <p class="small text-muted mb-2">ابحث أولًا في الجهات المحفوظة، اختر نتيجة مطابقة، أو أنشئ سجلًا جديدًا إذا لم تجد الجهة.</p>
     <div data-reference-search-state @class(['d-none' => $selected])>
         <div class="input-group">
-            <input id="{{ $pickerId }}-search" class="form-control @error($field) is-invalid @enderror" type="search" autocomplete="off" placeholder="بحث عن الجهة..." role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ $pickerId }}-results" data-reference-search>
+            <input id="{{ $pickerId }}-search" class="form-control @error($field) is-invalid @enderror" type="search" autocomplete="off" placeholder="اكتب اسم الجهة للبحث أو لإضافة جهة جديدة..." role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ $pickerId }}-results" data-reference-search>
             <button class="btn btn-outline-secondary" type="button" data-reference-clear>مسح</button>
         </div>
         <div id="{{ $pickerId }}-results" class="ramadan-picker-results list-group position-absolute shadow-sm d-none" role="listbox" data-reference-results></div>
@@ -14,7 +15,7 @@
     </div>
 
     <div class="ramadan-reference-selected @unless($selected) d-none @endunless" data-reference-selected-state>
-        <div><strong><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-reference-selected-name>{{ $selected?->name }}</span></strong><small dir="ltr" data-reference-selected-phone>{{ $selected?->contact_phone }}</small><small class="text-success" data-reference-success></small></div>
+        <div><strong><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-reference-selected-name>{{ $selected?->name }}</span></strong><small data-reference-selected-contact>{{ collect([$selected?->contact_name, $selected?->contact_phone])->filter()->join(' · ') ?: 'لا توجد بيانات اتصال محفوظة' }}</small><small class="text-success" data-reference-success></small></div>
         <button class="btn btn-sm btn-outline-secondary" type="button" data-reference-change>تغيير</button>
     </div>
     @error($field)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror

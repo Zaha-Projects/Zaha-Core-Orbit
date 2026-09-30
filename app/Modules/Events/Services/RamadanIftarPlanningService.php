@@ -21,10 +21,9 @@ use Illuminate\Validation\ValidationException;
 class RamadanIftarPlanningService
 {
     private const CORE_FIELDS = [
-        'agenda_event_id', 'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id',
-        'planned_date', 'time_from', 'time_to', 'location_type', 'location_name',
-        'address', 'google_maps_url', 'contact_name', 'contact_phone',
-        'supporting_entity_name', 'host_type', 'community_organization_id',
+        'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id',
+        'planned_date', 'location_type', 'location_name', 'address',
+        'host_type', 'community_organization_id',
         'local_community_id', 'mobilization_method_id', 'mobilization_method_other',
     ];
 
@@ -160,8 +159,7 @@ class RamadanIftarPlanningService
     private function syncTargetGroups(RamadanIftar $iftar, array $rows): void
     {
         $this->syncSimple($iftar->targetGroupSelections(), $rows, [
-            'target_group_id', 'target_group_custom_text', 'beneficiary_segment_id',
-            'segment_custom_text', 'planned_count', 'notes',
+            'target_group_id', 'beneficiary_segment_id', 'planned_count', 'notes',
         ], fn () => [
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
             'subject_id' => $iftar->getKey(),
@@ -175,7 +173,7 @@ class RamadanIftarPlanningService
         foreach ($rows as $row) {
             $meal = isset($row['id']) ? $existing->get((int) $row['id']) : new RamadanIftarMeal(['ramadan_iftar_id' => $iftar->getKey()]);
             if (! $meal) $this->invalidOwnedId('meals');
-            $meal->fill(Arr::only($row, ['description', 'planned_quantity', 'source_type', 'source_name', 'restaurant_name', 'restaurant_contact', 'estimated_value']))->save();
+            $meal->fill(Arr::only($row, ['description', 'planned_quantity', 'source_type', 'source_name', 'restaurant_name', 'restaurant_contact']))->save();
             $kept[] = $meal->getKey();
             $this->syncSimple($meal->items(), $row['items'] ?? [], ['name', 'item_type', 'quantity', 'notes', 'sort_order']);
         }

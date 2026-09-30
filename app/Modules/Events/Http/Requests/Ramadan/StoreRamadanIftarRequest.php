@@ -2,7 +2,6 @@
 
 namespace App\Modules\Events\Http\Requests\Ramadan;
 
-use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\ExecutionNeedType;
@@ -61,14 +60,13 @@ class StoreRamadanIftarRequest extends FormRequest
         if (! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')) {
             $periodId = RamadanPeriod::current()?->getKey();
         }
-        $locationType = $this->input('location_type');
         $this->merge(array_merge(
             $rows,
             [
                 'branch_id' => $branchId,
                 'ramadan_period_id' => $periodId,
                 'host_type' => $hostType,
-                'google_maps_url' => $locationType === RamadanIftar::LOCATION_INSIDE_CENTER ? null : $this->input('google_maps_url'),
+                'location_type' => RamadanIftar::LOCATION_INSIDE_CENTER,
             ]
         ));
     }
@@ -110,20 +108,13 @@ class StoreRamadanIftarRequest extends FormRequest
         return [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'ramadan_period_id' => [Rule::requiredIf(fn () => ! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')), 'nullable', 'integer', 'exists:ramadan_periods,id'],
-            'agenda_event_id' => ['nullable', 'integer', 'exists:agenda_events,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'relations_officer_id' => ['required', 'integer', 'exists:users,id'],
             'planned_date' => ['required', 'date'],
-            'time_from' => ['nullable', 'date_format:H:i,H:i:s'],
-            'time_to' => ['nullable', 'date_format:H:i,H:i:s', 'after_or_equal:time_from'],
-            'location_type' => ['required', Rule::in(RamadanIftar::locationTypes())],
-            'location_name' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => in_array($this->input('host_type'), [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true))],
+            'location_type' => ['required', Rule::in([RamadanIftar::LOCATION_INSIDE_CENTER])],
+            'location_name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
-            'google_maps_url' => ['nullable', 'url', 'max:2048'],
-            'contact_name' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => in_array($this->input('host_type'), [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true))],
-            'contact_phone' => ['nullable', 'string', 'max:25', 'regex:'.self::CONTACT_PHONE_REGEX, Rule::requiredIf(fn () => in_array($this->input('host_type'), [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true))],
-            'supporting_entity_name' => ['nullable', 'string', 'max:255'],
             'host_type' => ['required', Rule::in(RamadanIftar::hostTypes())],
             'community_organization_id' => ['nullable', 'integer', 'exists:community_organizations,id'],
             'local_community_id' => ['nullable', 'integer', 'exists:local_communities,id'],
@@ -137,9 +128,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'target_groups' => ['present', 'array'],
             'target_groups.*.id' => ['nullable', 'integer'],
             'target_groups.*.target_group_id' => ['required', 'integer', 'exists:target_groups,id'],
-            'target_groups.*.target_group_custom_text' => ['nullable', 'string'],
             'target_groups.*.beneficiary_segment_id' => ['nullable', 'integer', 'exists:beneficiary_segments,id'],
-            'target_groups.*.segment_custom_text' => ['nullable', 'string'],
             'target_groups.*.planned_count' => ['required', 'integer', 'min:0'],
             'target_groups.*.notes' => ['nullable', 'string'],
             'meals' => ['present', 'array'],
@@ -150,7 +139,6 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.source_name' => ['nullable', 'string', 'max:255'],
             'meals.*.restaurant_name' => ['required', 'string', 'max:255'],
             'meals.*.restaurant_contact' => ['required', 'string', 'max:25', 'regex:'.self::CONTACT_PHONE_REGEX],
-            'meals.*.estimated_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'meals.*.items' => ['required', 'array', 'min:1'],
             'meals.*.items.*.id' => ['nullable', 'integer'],
             'meals.*.items.*.name' => ['required', 'string', 'max:255'],
@@ -214,9 +202,8 @@ class StoreRamadanIftarRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'title' => __('ramadan_iftars.labels.name'),
+            'title' => __('ramadan_iftars.fields.title'),
             'branch_id' => __('ramadan_iftars.fields.branch'),
-            'agenda_event_id' => __('ramadan_iftars.labels.agenda_event'),
             'relations_officer_id' => __('ramadan_iftars.fields.relations_officer'),
             'planned_date' => __('ramadan_iftars.fields.planned_date'),
             'community_organization_id' => __('ramadan_iftars.labels.community_organization'),
@@ -224,8 +211,6 @@ class StoreRamadanIftarRequest extends FormRequest
             'mobilization_method_id' => __('ramadan_iftars.labels.mobilization_method'),
             'mobilization_method_other' => __('ramadan_iftars.labels.mobilization_method_other'),
             'location_name' => __('ramadan_iftars.labels.location_name'),
-            'contact_name' => __('ramadan_iftars.labels.contact_name'),
-            'contact_phone' => __('ramadan_iftars.labels.contact_phone'),
             'attendees.*.full_name' => 'اسم الحاضر',
             'attendees.*.phone' => 'هاتف الحاضر',
             'attendees.*.age' => 'عمر الحاضر',
@@ -257,7 +242,6 @@ class StoreRamadanIftarRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'contact_phone.regex' => 'أدخل رقم تواصل صالحًا باستخدام الأرقام والمسافات و + أو - أو الأقواس فقط.',
             'attendees.*.phone.regex' => 'أدخل رقم تواصل صالحًا للحاضر.',
             'meals.*.restaurant_contact.regex' => 'أدخل رقم تواصل صالحًا للمطعم.',
             'execution_teams.present' => 'يجب تحديد فريق التنفيذ.',
@@ -277,10 +261,6 @@ class StoreRamadanIftarRequest extends FormRequest
                 $validator->errors()->add('planned_date', 'تاريخ الإفطار يجب أن يكون ضمن فترة شهر رمضان المحددة من الإدارة.');
             }
             if (! $this->canAccessBranch($branchId)) $validator->errors()->add('branch_id', __('validation.exists', ['attribute' => __('ramadan_iftars.fields.branch')]));
-            $agendaId = $this->input('agenda_event_id');
-            if ($agendaId && ! AgendaEvent::query()->whereKey($agendaId)->forBranchAudience([$branchId])->exists()) {
-                $validator->errors()->add('agenda_event_id', __('validation.exists', ['attribute' => __('ramadan_iftars.labels.agenda_event')]));
-            }
             $this->validateBranchReference($validator, CommunityOrganization::class, 'community_organization_id', $branchId);
             $this->validateBranchReference($validator, LocalCommunity::class, 'local_community_id', $branchId);
             $this->validateBranchUsers($validator, $branchId);
@@ -385,11 +365,9 @@ class StoreRamadanIftarRequest extends FormRequest
                 $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingTargetIds);
             })->first();
             if (! $group) $validator->errors()->add("target_groups.$i.target_group_id", __('validation.exists', ['attribute' => 'الفئة المستهدفة']));
-            elseif ($group->is_other && blank($row['target_group_custom_text'] ?? null)) $validator->errors()->add("target_groups.$i.target_group_custom_text", __('validation.required', ['attribute' => 'تفصيل الفئة الأخرى']));
             if ($segmentId = ($row['beneficiary_segment_id'] ?? null)) {
                 $segment = BeneficiarySegment::query()->whereKey($segmentId)->where(fn ($query) => $query->active()->orWhereIn('id', $existingSegmentIds))->first();
                 if (! $segment) $validator->errors()->add("target_groups.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'شريحة المستفيدين']));
-                elseif ($segment->is_other && blank($row['segment_custom_text'] ?? null)) $validator->errors()->add("target_groups.$i.segment_custom_text", __('validation.required', ['attribute' => 'تفصيل الشريحة الأخرى']));
             }
         }
         foreach ($this->input('volunteer_requirements', []) as $i => $requirement) {

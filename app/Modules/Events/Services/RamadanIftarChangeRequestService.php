@@ -20,9 +20,8 @@ use Illuminate\Validation\ValidationException;
 class RamadanIftarChangeRequestService
 {
     private const CORE_FIELDS = [
-        'agenda_event_id', 'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id', 'planned_date',
-        'time_from', 'time_to', 'location_type', 'location_name', 'address', 'google_maps_url',
-        'contact_name', 'contact_phone', 'supporting_entity_name', 'host_type',
+        'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id', 'planned_date',
+        'location_type', 'location_name', 'address', 'host_type',
         'community_organization_id', 'local_community_id', 'mobilization_method_id',
         'mobilization_method_other', 'planned_meals_count', 'expected_attendance',
         'guidance_version_id', 'guidance_accepted_at',
@@ -88,6 +87,7 @@ class RamadanIftarChangeRequestService
         $source->load(['attendees', 'targetGroupSelections', 'meals.items', 'gifts', 'programSegments', 'executionTeams.members', 'volunteerRequirements', 'supplies', 'executionNeeds']);
         $revision = RamadanIftar::query()->create(array_merge(Arr::only($source->getAttributes(), self::CORE_FIELDS), [
             'created_by' => $actor->id, 'parent_version_id' => $source->id,
+            'location_type' => RamadanIftar::LOCATION_INSIDE_CENTER,
             'version_number' => $source->version_number + 1, 'status' => RamadanIftar::STATUS_DRAFT,
             'execution_status' => RamadanIftar::EXECUTION_STATUS_PLANNED,
             'actual_date' => null, 'actual_attendance' => null, 'actual_meals_count' => null,
@@ -95,9 +95,9 @@ class RamadanIftarChangeRequestService
         ]));
 
         foreach ($source->attendees as $row) $revision->attendees()->create(Arr::only($row->getAttributes(), ['full_name','phone','age','target_group_id','beneficiary_segment_id','notes']));
-        foreach ($source->targetGroupSelections as $row) $revision->targetGroupSelections()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['target_group_id','target_group_custom_text','beneficiary_segment_id','segment_custom_text','planned_count','notes'])));
+        foreach ($source->targetGroupSelections as $row) $revision->targetGroupSelections()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['target_group_id','beneficiary_segment_id','planned_count','notes'])));
         foreach ($source->meals as $row) {
-            $copy = $revision->meals()->create(Arr::only($row->getAttributes(), ['description','planned_quantity','source_type','source_name','restaurant_name','restaurant_contact','estimated_value']));
+            $copy = $revision->meals()->create(Arr::only($row->getAttributes(), ['description','planned_quantity','source_type','source_name','restaurant_name','restaurant_contact']));
             foreach ($row->items as $item) $copy->items()->create(Arr::only($item->getAttributes(), ['name','item_type','quantity','notes','sort_order']));
         }
         foreach ($source->gifts as $row) $revision->gifts()->create(Arr::only($row->getAttributes(), ['gift_type','description','planned_quantity','has_supporting_entity','supporting_entity_name','unit_value','estimated_total_value']));
