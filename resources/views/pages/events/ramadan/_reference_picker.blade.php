@@ -25,13 +25,13 @@
         <h3 class="h6 mb-1">إضافة جهة جديدة</h3>
         <p class="small text-muted mb-3">الاسم ورقم التواصل مطلوبان للحفظ.</p>
         <div class="row g-3">
-            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-name">الاسم <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-name" class="form-control" autocomplete="organization" data-create-field="name"><div class="invalid-feedback" data-create-error="name"></div></div>
-            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-phone">رقم التواصل <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-phone" class="form-control" type="tel" inputmode="tel" dir="ltr" autocomplete="tel" data-create-field="contact_phone"><div class="invalid-feedback" data-create-error="contact_phone"></div></div>
+            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-name">الاسم <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-name" class="form-control" autocomplete="organization" placeholder="مثال: جمعية الخير" data-create-field="name"><div class="invalid-feedback" data-create-error="name"></div></div>
+            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-phone">رقم التواصل <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-phone" class="form-control" type="tel" inputmode="tel" dir="ltr" autocomplete="tel" placeholder="مثال: 07XXXXXXXX" data-create-field="contact_phone"><div class="invalid-feedback" data-create-error="contact_phone"></div></div>
             <div class="col-12"><button class="btn btn-sm btn-outline-secondary" type="button" data-reference-more aria-expanded="false">إضافة تفاصيل إضافية</button></div>
             <div class="col-12 d-none" data-reference-optional><div class="row g-2">
-                <div class="col-md-4"><label class="form-label">اسم ضابط الارتباط <span class="text-muted">(اختياري)</span></label><input class="form-control" data-create-field="contact_name"></div>
-                <div class="col-md-4"><label class="form-label">اسم الموقع <span class="text-muted">(اختياري)</span></label><input class="form-control" data-create-field="location_name"></div>
-                <div class="col-md-4"><label class="form-label">العنوان <span class="text-muted">(اختياري)</span></label><input class="form-control" data-create-field="address"></div>
+                <div class="col-md-4"><label class="form-label">اسم ضابط الارتباط <span class="text-muted">(اختياري)</span></label><input class="form-control" placeholder="مثال: أحمد محمد" data-create-field="contact_name"></div>
+                <div class="col-md-4"><label class="form-label">اسم الموقع <span class="text-muted">(اختياري)</span></label><input class="form-control" placeholder="مثال: المركز الرئيسي" data-create-field="location_name"></div>
+                <div class="col-md-4"><label class="form-label">العنوان <span class="text-muted">(اختياري)</span></label><input class="form-control" placeholder="مثال: عمّان، شارع ..." data-create-field="address"></div>
             </div></div>
             <div class="col-12 d-flex flex-wrap align-items-center gap-2"><button type="button" class="btn btn-success" data-reference-save>حفظ واختيار</button><button type="button" class="btn btn-light" data-reference-cancel>إلغاء</button><span class="small" role="status" data-reference-message></span></div>
         </div>

@@ -9,7 +9,7 @@
                     <div class="row g-2">
                         <div class="col-md-5">
                             <label class="form-label">اسم الفريق</label>
-                            <input class="form-control @error('execution_teams.'.$i.'.name') is-invalid @enderror" name="execution_teams[{{ $i }}][name]" value="{{ $team['name']??'' }}" required>@error('execution_teams.'.$i.'.name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <input class="form-control @error('execution_teams.'.$i.'.name') is-invalid @enderror" name="execution_teams[{{ $i }}][name]" value="{{ $team['name']??'' }}" placeholder="مثال: فريق الاستقبال" required>@error('execution_teams.'.$i.'.name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">قائد الفريق</label>
@@ -22,7 +22,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">العدد المخطط</label>
-                            <input type="number" min="1" class="form-control" data-member-count name="execution_teams[{{ $i }}][planned_members_count]" value="{{ $team['planned_members_count']??1 }}">
+                            <input type="number" min="1" class="form-control" data-member-count name="execution_teams[{{ $i }}][planned_members_count]" value="{{ $team['planned_members_count']??1 }}" placeholder="مثال: 5">
                         </div>
                         @foreach($team['members']??[] as $j=>$member)
                             <div class="row g-2 mt-2" data-team-member>
@@ -30,15 +30,15 @@
                                 <div class="col-12 fw-semibold" data-member-title>عضو {{ $j + 1 }} من {{ max(1, (int) ($team['planned_members_count'] ?? count($team['members'] ?? []))) }}</div>
                                 <div class="col-md-4">
                                     <label class="form-label">عضو الفريق</label>
-                                    <input class="form-control @error('execution_teams.'.$i.'.members.'.$j.'.member_name') is-invalid @enderror" name="execution_teams[{{ $i }}][members][{{ $j }}][member_name]" value="{{ $member['member_name']??'' }}">@error('execution_teams.'.$i.'.members.'.$j.'.member_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    <input class="form-control @error('execution_teams.'.$i.'.members.'.$j.'.member_name') is-invalid @enderror" name="execution_teams[{{ $i }}][members][{{ $j }}][member_name]" value="{{ $member['member_name']??'' }}" placeholder="مثال: أحمد محمد">@error('execution_teams.'.$i.'.members.'.$j.'.member_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">الدور</label>
-                                    <input class="form-control" name="execution_teams[{{ $i }}][members][{{ $j }}][role_name]" value="{{ $member['role_name']??'' }}">
+                                    <input class="form-control" name="execution_teams[{{ $i }}][members][{{ $j }}][role_name]" value="{{ $member['role_name']??'' }}" placeholder="مثال: منسق الفريق">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">المهمة</label>
-                                    <input class="form-control" name="execution_teams[{{ $i }}][members][{{ $j }}][task_description]" value="{{ $member['task_description']??'' }}">
+                                    <input class="form-control" name="execution_teams[{{ $i }}][members][{{ $j }}][task_description]" value="{{ $member['task_description']??'' }}" placeholder="مثال: استقبال الحضور وتنظيم الجلوس">
                                 </div>
                             </div>
                         @endforeach
@@ -56,11 +56,11 @@
     <div class="ramadan-need-detail-group mb-3">
         <h6 class="mb-3">احتياج المتطوعين</h6>
         <div class="row g-3">
-            <div class="col-12 col-md-3"><label class="form-label">عدد المتطوعين</label><input class="form-control @error('required_volunteers') is-invalid @enderror" type="number" min="1" name="required_volunteers" value="{{ $volunteerValue('required_volunteers') }}">@error('required_volunteers')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-            <div class="col-12 col-md-3"><label class="form-label">الفترة العمرية</label><div class="row g-2"><div class="col-6"><input class="form-control" type="number" min="10" max="80" name="volunteer_age_from" placeholder="من" value="{{ $volunteerValue('volunteer_age_from') }}"></div><div class="col-6"><input class="form-control" type="number" min="10" max="80" name="volunteer_age_to" placeholder="إلى" value="{{ $volunteerValue('volunteer_age_to') }}"></div></div></div>
+            <div class="col-12 col-md-3"><label class="form-label">عدد المتطوعين</label><input class="form-control @error('required_volunteers') is-invalid @enderror" type="number" min="1" name="required_volunteers" value="{{ $volunteerValue('required_volunteers') }}" placeholder="مثال: 10">@error('required_volunteers')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-12 col-md-3"><label class="form-label">الفترة العمرية</label><div class="row g-2"><div class="col-6"><input class="form-control" type="number" min="10" max="80" name="volunteer_age_from" placeholder="مثال: 18" value="{{ $volunteerValue('volunteer_age_from') }}"></div><div class="col-6"><input class="form-control" type="number" min="10" max="80" name="volunteer_age_to" placeholder="مثال: 35" value="{{ $volunteerValue('volunteer_age_to') }}"></div></div></div>
             <div class="col-12 col-md-2"><label class="form-label">الجنس</label><select class="form-select" name="volunteer_gender"><option value="">اختر الجنس</option><option value="male" {{ $volunteerValue('volunteer_gender') === 'male' ? 'selected' : '' }}>ذكر</option><option value="female" {{ $volunteerValue('volunteer_gender') === 'female' ? 'selected' : '' }}>أنثى</option><option value="both" {{ $volunteerValue('volunteer_gender') === 'both' ? 'selected' : '' }}>كلاهما</option></select></div>
-            <div class="col-12 col-md-4"><label class="form-label">الاحتياج المختصر</label><input class="form-control" name="volunteer_need" value="{{ $volunteerValue('volunteer_need') }}"></div>
-            <div class="col-12 col-md-8"><label class="form-label">وصف مختصر عن طبيعة المهام</label><textarea class="form-control" name="volunteer_tasks_summary" rows="2">{{ $volunteerValue('volunteer_tasks_summary') }}</textarea></div>
+            <div class="col-12 col-md-4"><label class="form-label">الاحتياج المختصر</label><input class="form-control" name="volunteer_need" value="{{ $volunteerValue('volunteer_need') }}" placeholder="مثال: تنظيم دخول الأطفال"></div>
+            <div class="col-12 col-md-8"><label class="form-label">وصف مختصر عن طبيعة المهام</label><textarea class="form-control" name="volunteer_tasks_summary" rows="2" placeholder="مثال: استقبال الحضور وتنظيم الجلوس">{{ $volunteerValue('volunteer_tasks_summary') }}</textarea></div>
         </div>
     </div>
     <div class="ramadan-need-detail-group" data-repeat="volunteer_requirements">
@@ -90,12 +90,12 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">{{ __('ramadan_iftars.labels.planned_count') }}</label>
-                            <input type="number" min="1" class="form-control @error('volunteer_requirements.'.$i.'.planned_count') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][planned_count]" value="{{ $row['planned_count'] ?? 1 }}">
+                            <input type="number" min="1" class="form-control @error('volunteer_requirements.'.$i.'.planned_count') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][planned_count]" value="{{ $row['planned_count'] ?? 1 }}" placeholder="مثال: 10">
                             @error('volunteer_requirements.'.$i.'.planned_count')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{ __('ramadan_iftars.labels.tasks_summary') }}</label>
-                            <input class="form-control @error('volunteer_requirements.'.$i.'.tasks_summary') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][tasks_summary]" value="{{ $row['tasks_summary'] ?? '' }}">
+                            <input class="form-control @error('volunteer_requirements.'.$i.'.tasks_summary') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][tasks_summary]" value="{{ $row['tasks_summary'] ?? '' }}" placeholder="مثال: استقبال الحضور وتنظيم الجلوس">
                             @error('volunteer_requirements.'.$i.'.tasks_summary')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
@@ -106,7 +106,7 @@
 @elseif($needCode === 'supplies')
     <div class="ramadan-need-detail-group" data-repeat="supplies" data-supplies>
         <h6>المستلزمات واللوازم</h6>
-        <div class="mb-2"><label class="form-label">عدد بنود المستلزمات</label><input class="form-control" type="number" min="1" data-supplies-count value="{{ max(1, count($collections['supplies'])) }}"></div>
+        <div class="mb-2"><label class="form-label">عدد بنود المستلزمات</label><input class="form-control" type="number" min="1" data-supplies-count value="{{ max(1, count($collections['supplies'])) }}" placeholder="مثال: 5"></div>
         <div class="card-body p-0">
             @foreach($collections['supplies'] as $i=>$row)
                 <div class="planning-row border rounded p-2 mb-2" data-supply-row>
@@ -114,11 +114,11 @@
                     <div class="row g-2">
                         <div class="col-md-4">
                             <label class="form-label">المستلزم</label>
-                            <input class="form-control @error('supplies.'.$i.'.item_name') is-invalid @enderror" name="supplies[{{ $i }}][item_name]" value="{{ $row['item_name']??'' }}">@error('supplies.'.$i.'.item_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <input class="form-control @error('supplies.'.$i.'.item_name') is-invalid @enderror" name="supplies[{{ $i }}][item_name]" value="{{ $row['item_name']??'' }}" placeholder="مثال: طاولات تقديم">@error('supplies.'.$i.'.item_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">الكمية</label>
-                            <input type="number" min="0" class="form-control @error('supplies.'.$i.'.planned_quantity') is-invalid @enderror" name="supplies[{{ $i }}][planned_quantity]" value="{{ $row['planned_quantity']??0 }}">@error('supplies.'.$i.'.planned_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <input type="number" min="0" class="form-control @error('supplies.'.$i.'.planned_quantity') is-invalid @enderror" name="supplies[{{ $i }}][planned_quantity]" value="{{ $row['planned_quantity']??0 }}" placeholder="مثال: 10">@error('supplies.'.$i.'.planned_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">التوفر</label>
@@ -129,15 +129,15 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">الجهة المزودة</label>
-                            <input class="form-control" name="supplies[{{ $i }}][provider_name]" value="{{ $row['provider_name']??'' }}">
+                            <input class="form-control" name="supplies[{{ $i }}][provider_name]" value="{{ $row['provider_name']??'' }}" placeholder="مثال: مستودع المركز">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">القيمة التقديرية</label>
-                            <input class="form-control" name="supplies[{{ $i }}][estimated_value]" value="{{ $row['estimated_value']??'' }}">
+                            <input class="form-control" name="supplies[{{ $i }}][estimated_value]" value="{{ $row['estimated_value']??'' }}" placeholder="مثال: 100">
                         </div>
                         <div class="col-md-9">
                             <label class="form-label">ملاحظات</label>
-                            <input class="form-control" name="supplies[{{ $i }}][notes]" value="{{ $row['notes']??'' }}">
+                            <input class="form-control" name="supplies[{{ $i }}][notes]" value="{{ $row['notes']??'' }}" placeholder="اكتب أي ملاحظات إضافية">
                         </div>
                     </div>
                 </div>
@@ -162,15 +162,15 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">الوصف</label>
-                            <input class="form-control @error('gifts.'.$i.'.description') is-invalid @enderror" name="gifts[{{ $i }}][description]" value="{{ $row['description']??'' }}">@error('gifts.'.$i.'.description')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <input class="form-control @error('gifts.'.$i.'.description') is-invalid @enderror" name="gifts[{{ $i }}][description]" value="{{ $row['description']??'' }}" placeholder="مثال: حقيبة هدايا للأطفال">@error('gifts.'.$i.'.description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">العدد</label>
-                            <input type="number" min="0" class="form-control @error('gifts.'.$i.'.planned_quantity') is-invalid @enderror" name="gifts[{{ $i }}][planned_quantity]" value="{{ $row['planned_quantity']??0 }}">@error('gifts.'.$i.'.planned_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <input type="number" min="0" class="form-control @error('gifts.'.$i.'.planned_quantity') is-invalid @enderror" name="gifts[{{ $i }}][planned_quantity]" value="{{ $row['planned_quantity']??0 }}" placeholder="مثال: 10">@error('gifts.'.$i.'.planned_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">قيمة الوحدة</label>
-                            <input class="form-control" name="gifts[{{ $i }}][unit_value]" value="{{ $row['unit_value']??'' }}">
+                            <input class="form-control" name="gifts[{{ $i }}][unit_value]" value="{{ $row['unit_value']??'' }}" placeholder="مثال: 10">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">مقدمة من جهة داعمة؟</label>
@@ -181,7 +181,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">اسم الجهة الداعمة</label>
-                            <input class="form-control @error('gifts.'.$i.'.supporting_entity_name') is-invalid @enderror" name="gifts[{{ $i }}][supporting_entity_name]" value="{{ $row['supporting_entity_name']??'' }}">@error('gifts.'.$i.'.supporting_entity_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <input class="form-control @error('gifts.'.$i.'.supporting_entity_name') is-invalid @enderror" name="gifts[{{ $i }}][supporting_entity_name]" value="{{ $row['supporting_entity_name']??'' }}" placeholder="مثال: جمعية الخير">@error('gifts.'.$i.'.supporting_entity_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
                 </div>
@@ -191,7 +191,7 @@
 @elseif(in_array($needCode, ['official_correspondence', 'media_coverage', 'official_sponsorship', 'external_partners', 'ceremony_agenda', 'transport', 'maintenance_workers', 'programs_participation', 'certificates', 'thanks_letters', 'invitations'], true))
     <div class="ramadan-need-detail-group">
         <label class="form-label" for="need-details-{{ $needId }}">{{ __('ramadan_iftars.planning.planning_details') }}</label>
-        <textarea id="need-details-{{ $needId }}" class="form-control @error('execution_needs.'.$needId.'.planned_details') is-invalid @enderror" name="execution_needs[{{ $needId }}][planned_details]" rows="2">{{ $selectedNeed['planned_details'] ?? '' }}</textarea>
+        <textarea id="need-details-{{ $needId }}" class="form-control @error('execution_needs.'.$needId.'.planned_details') is-invalid @enderror" name="execution_needs[{{ $needId }}][planned_details]" rows="2" placeholder="اكتب تفاصيل الاحتياج المخطط لها">{{ $selectedNeed['planned_details'] ?? '' }}</textarea>
         @error('execution_needs.'.$needId.'.planned_details')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 @endif
