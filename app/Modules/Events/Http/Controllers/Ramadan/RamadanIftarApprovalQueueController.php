@@ -54,7 +54,7 @@ class RamadanIftarApprovalQueueController extends Controller
         abort_unless($instance && $instance->workflow->module === RamadanIftar::WORKFLOW_MODULE && $workflows->currentStepForUser($instance, $user), 403);
         $ramadanIftar->load([
             'branch', 'agendaEvent', 'relationsOfficer', 'guidanceVersion', 'targetGroupSelections.targetGroup',
-            'targetGroupSelections.beneficiarySegment', 'executionNeeds.executionNeedType', 'meals.items', 'gifts',
+            'targetGroupSelections.classificationTargetGroup', 'executionNeeds.executionNeedType', 'meals.items', 'gifts',
             'programSegments', 'executionTeams.members', 'volunteerRequirements', 'supplies',
         ]);
 

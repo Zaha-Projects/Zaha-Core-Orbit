@@ -21,10 +21,9 @@ use Illuminate\Validation\ValidationException;
 class RamadanIftarPlanningService
 {
     private const CORE_FIELDS = [
-        'agenda_event_id', 'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id',
-        'planned_date', 'time_from', 'time_to', 'location_type', 'location_name',
-        'address', 'google_maps_url', 'contact_name', 'contact_phone',
-        'supporting_entity_name', 'host_type', 'community_organization_id',
+        'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id',
+        'planned_date', 'location_type', 'location_name', 'address',
+        'host_type', 'community_organization_id',
         'local_community_id', 'mobilization_method_id', 'mobilization_method_other',
     ];
 
@@ -98,6 +97,7 @@ class RamadanIftarPlanningService
             }
         }
         $data = $this->normalizeExecutionNeeds($data, $types);
+        $data = $this->attachMonthlyVolunteerFields($data, $types);
         $this->syncSimple($iftar->attendees(), $data['attendees'], ['full_name', 'phone', 'age'], null, ['attended', 'checked_in_at'], fn ($model) => $model->attended || $model->checked_in_at !== null);
         $this->syncTargetGroups($iftar, $data['target_groups']);
         $this->syncMeals($iftar, $data['meals']);
@@ -111,13 +111,13 @@ class RamadanIftarPlanningService
         });
         if ($types->contains('code', 'execution_team')) $this->syncTeams($iftar, $data['execution_teams']);
         if ($types->contains('code', 'volunteers')) $this->syncSimple($iftar->volunteerRequirements(), $data['volunteer_requirements'], [
-            'beneficiary_segment_id', 'gender', 'planned_count', 'tasks_summary',
+            'target_group_id', 'gender', 'planned_count', 'tasks_summary',
         ], fn () => ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'status' => SubjectVolunteerRequirement::STATUS_PENDING], ['actual_count']);
         if ($types->contains('code', 'supplies')) $this->syncSimple($iftar->supplies(), $data['supplies'], [
             'item_name', 'planned_quantity', 'planned_available', 'provider_type', 'provider_name', 'estimated_value', 'notes',
         ], fn () => ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'status' => EventSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
         $this->syncSimple($iftar->executionNeeds()->whereIn('execution_need_type_id', $types->keys()), array_values($data['execution_needs']), [
-            'execution_need_type_id', 'is_required', 'planned_details',
+            'execution_need_type_id', 'is_required', 'availability', 'planned_details',
         ], fn () => [
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
             'subject_id' => $iftar->getKey(),
@@ -125,6 +125,27 @@ class RamadanIftarPlanningService
         ], ['actual_details', 'completed_at'], function ($model) {
             return $model->status !== SubjectExecutionNeed::STATUS_PENDING;
         });
+    }
+
+
+    private function attachMonthlyVolunteerFields(array $data, $types): array
+    {
+        $volunteerType = $types->firstWhere('code', 'volunteers');
+        if (! $volunteerType) return $data;
+        foreach ($data['execution_needs'] as &$need) {
+            if ((int) $need['execution_need_type_id'] !== (int) $volunteerType->id) continue;
+            $need['planned_details'] = json_encode([
+                'availability' => data_get($data, 'need_availability.volunteers', 'not_available'),
+                'required_volunteers' => $data['required_volunteers'] ?? null,
+                'volunteer_age_from' => $data['volunteer_age_from'] ?? null,
+                'volunteer_age_to' => $data['volunteer_age_to'] ?? null,
+                'volunteer_gender' => $data['volunteer_gender'] ?? null,
+                'volunteer_need' => $data['volunteer_need'] ?? null,
+                'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        unset($need);
+        return $data;
     }
 
     private function normalizeExecutionNeeds(array $data, $types): array
@@ -137,9 +158,10 @@ class RamadanIftarPlanningService
         $selected = collect($data['execution_needs'] ?? [])->filter(function (array $row) use ($types): bool {
             $type = $types->get((int) ($row['execution_need_type_id'] ?? 0));
             return $type && ($type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false));
-        })->map(function (array $row) use ($types): array {
+        })->map(function (array $row) use ($types, $data): array {
             $type = $types->get((int) $row['execution_need_type_id']);
             $row['is_required'] = $type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false);
+            $row['availability'] = data_get($data, 'need_availability.'.$type->code, $row['availability'] ?? 'not_available');
             return $row;
         })->values();
 
@@ -160,8 +182,7 @@ class RamadanIftarPlanningService
     private function syncTargetGroups(RamadanIftar $iftar, array $rows): void
     {
         $this->syncSimple($iftar->targetGroupSelections(), $rows, [
-            'target_group_id', 'target_group_custom_text', 'beneficiary_segment_id',
-            'segment_custom_text', 'planned_count', 'notes',
+            'target_group_id', 'classification_target_group_id', 'planned_count', 'notes',
         ], fn () => [
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
             'subject_id' => $iftar->getKey(),
@@ -175,7 +196,7 @@ class RamadanIftarPlanningService
         foreach ($rows as $row) {
             $meal = isset($row['id']) ? $existing->get((int) $row['id']) : new RamadanIftarMeal(['ramadan_iftar_id' => $iftar->getKey()]);
             if (! $meal) $this->invalidOwnedId('meals');
-            $meal->fill(Arr::only($row, ['description', 'planned_quantity', 'source_type', 'source_name', 'restaurant_name', 'restaurant_contact', 'estimated_value']))->save();
+            $meal->fill(Arr::only($row, ['description', 'planned_quantity', 'source_type', 'source_name', 'restaurant_name', 'restaurant_contact']))->save();
             $kept[] = $meal->getKey();
             $this->syncSimple($meal->items(), $row['items'] ?? [], ['name', 'item_type', 'quantity', 'notes', 'sort_order']);
         }

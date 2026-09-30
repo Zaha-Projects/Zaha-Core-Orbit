@@ -21,6 +21,10 @@ class CanonicalExecutionNeedTypeSeeder extends Seeder
                     'is_ramadan_iftar' => $definition['ramadan'] ?? false,
                     'mandatory_for_monthly' => $definition['mandatory_monthly'] ?? false,
                     'mandatory_for_ramadan' => $definition['mandatory_ramadan'] ?? false,
+                    'module_config' => json_encode([
+                        'monthly_activity' => ['available' => $definition['monthly'] ?? true, 'required' => $definition['mandatory_monthly'] ?? false],
+                        'ramadan_iftar' => ['available' => $definition['ramadan'] ?? false, 'required' => $definition['mandatory_ramadan'] ?? false],
+                    ], JSON_UNESCAPED_UNICODE),
                 ]
             );
             ExecutionNeedType::query()->where('code', $code)->where('is_canonical', false)->whereNull('scope_configured_at')

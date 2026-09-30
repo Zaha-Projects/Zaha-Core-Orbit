@@ -14,6 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('subject_id');
             $table->foreignId('execution_need_type_id')->constrained('execution_need_types')->restrictOnDelete();
             $table->boolean('is_required')->default(true);
+            $table->string('availability', 30)->default('not_available');
             $table->text('planned_details')->nullable();
             $table->string('status', 50)->default('pending');
             $table->text('actual_details')->nullable();

@@ -24,7 +24,6 @@ use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;
 use App\Modules\Events\Models\MobilizationMethod;
 use App\Modules\Events\Models\TargetGroup;
-use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\RamadanIftarMealItem;
 use App\Modules\Events\Models\RamadanPeriod;
 use Illuminate\Database\Seeder;
@@ -137,15 +136,14 @@ class RamadanIftarDemoSeeder extends Seeder
         ]);
         $target = TargetGroup::query()->active()->forRamadanIftars()->orderBy('sort_order')->first();
         if (! $target) throw new RuntimeException('Ramadan demo requires at least one active Ramadan target group.');
-        $segment = BeneficiarySegment::query()->active()->ordered()->first();
         $iftar->targetGroupSelections()->updateOrCreate(
             ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'target_group_id' => $target->id],
-            ['beneficiary_segment_id' => $segment?->id, 'planned_count' => $iftar->expected_attendance]
+            ['classification_target_group_id' => null, 'planned_count' => $iftar->expected_attendance]
         );
         $iftar->programSegments()->updateOrCreate(['name' => 'فقرة الترحيب'], ['starts_at' => '17:15', 'sort_order' => 10, 'external_executor_name' => 'فريق زها']);
         $iftar->volunteerRequirements()->updateOrCreate(
             ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'subject_id' => $iftar->id, 'gender' => 'mixed'],
-            ['planned_count' => 7, 'tasks_summary' => 'استقبال الأطفال', 'status' => 'pending']
+            ['target_group_id' => $target->id, 'planned_count' => 7, 'tasks_summary' => 'استقبال الأطفال', 'status' => 'pending']
         );
         if ($index % 2) {
             EventSupply::query()->updateOrCreate(

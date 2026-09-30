@@ -12,7 +12,7 @@
         <dt class="col-sm-3">{{ __('ramadan_iftars.labels.description') }}</dt><dd class="col-sm-9">{{ $ramadanIftar->description ?: '—' }}</dd>
     </dl></div></div>
     @php $sections=[
-        'targeting'=>$ramadanIftar->targetGroupSelections->map(fn($r)=>optional($r->targetGroup)->name.' — '.$r->planned_count),
+        'targeting'=>$ramadanIftar->targetGroupSelections->map(fn($r)=>optional($r->targetGroup)->name.(optional($r->classificationTargetGroup)->name ? ' ← '.optional($r->classificationTargetGroup)->name : '').' — '.$r->planned_count),
         'execution_needs'=>$ramadanIftar->executionNeeds->map(function($r) use ($ramadanIftar) { $label=optional($r->executionNeedType)->name; $code=optional($r->executionNeedType)->code; if($code==='execution_team') $label.=' — '.$ramadanIftar->executionTeams->pluck('name')->join('، '); if($code==='supplies') $label.=' — '.$ramadanIftar->supplies->pluck('item_name')->join('، '); if($code==='gifts_shields') $label.=' — '.$ramadanIftar->gifts->pluck('description')->join('، '); return $label; }),
         'meals'=>$ramadanIftar->meals->map(fn($r)=>$r->description.' — '.$r->planned_quantity),
         'programs'=>$ramadanIftar->programSegments->pluck('name'),

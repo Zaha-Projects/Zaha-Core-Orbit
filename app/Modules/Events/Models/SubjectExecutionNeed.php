@@ -22,6 +22,7 @@ class SubjectExecutionNeed extends Model
         'subject_id',
         'execution_need_type_id',
         'is_required',
+        'availability',
         'planned_details',
         'status',
         'actual_details',

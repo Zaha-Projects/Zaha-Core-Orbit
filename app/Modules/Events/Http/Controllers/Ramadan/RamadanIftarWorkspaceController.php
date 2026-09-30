@@ -57,10 +57,10 @@ class RamadanIftarWorkspaceController extends Controller
         abort_unless($user->hasRole('super_admin') || $user->can('branches.view.all') || $user->hasAccessToScopedBranch((int) $ramadanIftar->branch_id), 403);
         $ramadanIftar->load([
             'branch', 'agendaEvent', 'relationsOfficer', 'communityOrganization', 'localCommunity', 'mobilizationMethod',
-            'guidanceVersion', 'targetGroupSelections.targetGroup', 'targetGroupSelections.beneficiarySegment',
+            'guidanceVersion', 'targetGroupSelections.targetGroup', 'targetGroupSelections.classificationTargetGroup',
             'executionNeeds.executionNeedType', 'meals.items', 'gifts', 'programSegments.executor',
             'executionTeams.leader', 'executionTeams.members.user', 'executionTeams.members.confirmer',
-            'volunteerRequirements.beneficiarySegment', 'supplies', 'workflowInstance.currentStep.role',
+            'volunteerRequirements.targetGroup', 'supplies', 'workflowInstance.currentStep.role',
             'workflowInstance.logs.step', 'workflowInstance.logs.actor', 'monitoringReports.monitoringMethod', 'monitoringReports.monitor',
             'parentVersion', 'versions', 'changeRequests.requester', 'changeRequests.createdVersion',
         ]);

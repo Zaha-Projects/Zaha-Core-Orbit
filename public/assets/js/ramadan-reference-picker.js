@@ -71,11 +71,7 @@
             panel.classList.add('d-none');
             selectedState.classList.remove('d-none');
             picker.querySelector('[data-reference-selected-name]').textContent = item.name;
-            picker.querySelector('[data-reference-selected-phone]').textContent = item.contact_phone || '';
-            ['contact_name', 'contact_phone', 'location_name', 'address'].forEach(function (field) {
-                var target = document.querySelector('#ramadan-planning-form [name="' + field + '"]');
-                if (target && item[field]) target.value = item[field];
-            });
+            picker.querySelector('[data-reference-selected-contact]').textContent = [item.contact_name, item.contact_phone].filter(Boolean).join(' · ') || 'لا توجد بيانات اتصال محفوظة';
         }
         function render(items, term) {
             results.innerHTML = '';
@@ -171,7 +167,6 @@
     });
 
     var form = document.querySelector('#ramadan-planning-form');
-    var locationType = form?.querySelector('[name="location_type"]');
     var hostType = form?.querySelector('[name="host_type"]');
     function resetPicker(wrapper) {
         if (!wrapper) return;
@@ -185,10 +180,7 @@
         wrapper.querySelectorAll('[data-create-field]').forEach(function (input) { input.value = ''; input.classList.remove('is-invalid'); });
     }
     function updateConditionalFields() {
-        var inside = locationType?.value === 'inside_center';
         var local = hostType?.value === 'local_community';
-        document.querySelector('[data-outside-location]')?.classList.toggle('d-none', inside);
-        if (inside) { var map = form?.querySelector('[name="google_maps_url"]'); if (map) map.value = ''; }
         var organization = document.querySelector('[data-organization-picker]');
         var community = document.querySelector('[data-community-picker]');
         organization?.classList.toggle('d-none', local);
@@ -196,7 +188,6 @@
         document.querySelectorAll('[data-community-only]').forEach(function (element) { element.classList.toggle('d-none', !local); });
         resetPicker(local ? organization : community);
     }
-    locationType?.addEventListener('change', updateConditionalFields);
     hostType?.addEventListener('change', updateConditionalFields);
     updateConditionalFields();
 }());

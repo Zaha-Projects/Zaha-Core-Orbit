@@ -5,7 +5,7 @@
         'supplies' => $ramadanIftar->supplies->toArray(),
         'execution_teams' => $ramadanIftar->executionTeams->toArray(),
         'volunteer_requirements' => $ramadanIftar->volunteerRequirements->map(function ($requirement) {
-            return array_merge($requirement->toArray(), ['beneficiary_segment' => $requirement->beneficiarySegment?->toArray()]);
+            return array_merge($requirement->toArray(), ['target_group' => $requirement->targetGroup?->toArray(), 'beneficiary_segment' => $requirement->beneficiarySegment?->toArray()]);
         })->toArray(),
     ];
 @endphp
@@ -25,7 +25,7 @@
                         @endforeach
                     @elseif($field === 'volunteer_requirements')
                         <div>العدد المخطط: {{ $row['planned_count'] ?? '—' }} · {{ $row['gender'] ?? '' }}</div>
-                        @if(($row['beneficiary_segment']['minimum_age'] ?? null) !== null || ($row['beneficiary_segment']['maximum_age'] ?? null) !== null)<div>الفئة العمرية: {{ $row['beneficiary_segment']['minimum_age'] ?? '—' }} — {{ $row['beneficiary_segment']['maximum_age'] ?? '—' }}</div>@endif
+                        <div>الفئة المستهدفة: {{ $row['target_group']['name'] ?? $row['beneficiary_segment']['name_ar'] ?? '—' }}</div>
                         <div>{{ $row['tasks_summary'] ?? '' }}</div>
                     @else
                         <strong>{{ $row['description'] ?? $row['item_name'] ?? '' }}</strong>

@@ -13,7 +13,7 @@ class SubjectVolunteerRequirement extends Model
     public const STATUS_PENDING = 'pending';
 
     protected $fillable = [
-        'subject_type', 'subject_id', 'beneficiary_segment_id', 'gender',
+        'subject_type', 'subject_id', 'target_group_id', 'beneficiary_segment_id', 'gender',
         'planned_count', 'actual_count', 'tasks_summary', 'status',
     ];
 
@@ -28,6 +28,11 @@ class SubjectVolunteerRequirement extends Model
         EventSubjectTypes::modelFor($subjectType);
 
         return $query->where('subject_type', $subjectType)->where('subject_id', $subjectId);
+    }
+
+    public function targetGroup()
+    {
+        return $this->belongsTo(TargetGroup::class);
     }
 
     public function beneficiarySegment()

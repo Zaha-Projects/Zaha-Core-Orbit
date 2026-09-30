@@ -13,7 +13,6 @@ class EventReferenceDataSeeder extends Seeder
             DepartmentSeeder::class,
             EventTypeSeeder::class,
             TargetGroupSeeder::class,
-            BeneficiarySegmentSeeder::class,
             MonitoringMethodSeeder::class,
             EventStatusLookupSeeder::class,
             // Categories are department-owned reference data, so run them only

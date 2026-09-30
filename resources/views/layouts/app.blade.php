@@ -129,6 +129,12 @@
                 <li class="side-comment px-3 pt-2">الإعدادات والبيانات المرجعية</li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.site_settings.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.site_settings.index') }}"><i class="fas fa-gear"></i><span>إعدادات الموقع</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.events_lookups.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.events_lookups.index') }}"><i class="fas fa-database"></i><span>البيانات المرجعية العامة</span></a></li>
+                @php($relationsReferenceOpen = request()->routeIs('role.super_admin.relations_reference_data.*'))
+                <li class="side-item {{ $relationsReferenceOpen ? 'selected' : '' }}"><a href="#relationsReferenceMenu" data-bs-toggle="collapse" aria-expanded="{{ $relationsReferenceOpen ? 'true' : 'false' }}"><i class="fas fa-address-card"></i><span>البيانات المرجعية للعلاقات</span></a></li>
+                <li id="relationsReferenceMenu" class="collapse {{ $relationsReferenceOpen ? 'show' : '' }}"><ul class="list-unstyled pe-3 mb-2">
+                    <li class="side-item"><a href="{{ route('role.super_admin.relations_reference_data.index') }}#relations-target_groups"><i class="fas fa-people-group"></i><span>الفئات المستهدفة</span></a></li>
+                    <li class="side-item"><a href="{{ route('role.super_admin.relations_reference_data.index') }}#relations-execution_needs"><i class="fas fa-list-check"></i><span>احتياجات التنفيذ</span></a></li>
+                </ul></li>
                 @php($ramadanAdminOpen = request()->routeIs('events.ramadan.admin.*') || request()->routeIs('role.super_admin.ramadan_reference_data.*'))
                 <li class="side-item {{ $ramadanAdminOpen ? 'selected' : '' }}"><a href="#ramadanAdminMenu" data-bs-toggle="collapse" aria-expanded="{{ $ramadanAdminOpen ? 'true' : 'false' }}" aria-controls="ramadanAdminMenu"><i class="fas fa-moon"></i><span>إفطارات رمضان</span></a></li>
                 <li id="ramadanAdminMenu" class="collapse {{ $ramadanAdminOpen ? 'show' : '' }}">

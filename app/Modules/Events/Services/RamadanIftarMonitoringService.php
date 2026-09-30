@@ -136,7 +136,7 @@ class RamadanIftarMonitoringService
             $rows[] = $this->candidate('target_group', $row->id, 'attendance', __('ramadan_iftars.verification_fields.target_group', ['name' => optional($row->targetGroup)->name ?: $row->target_group_custom_text]), $row->planned_count, $actual);
         }
         foreach ($iftar->volunteerRequirements as $row) {
-            $label = optional($row->beneficiarySegment)->name_ar ?: optional($row->beneficiarySegment)->name_en ?: '#'.$row->id;
+            $label = optional($row->targetGroup)->name ?: optional($row->beneficiarySegment)->name_ar ?: '#'.$row->id;
             $rows[] = $this->candidate('volunteer_requirement', $row->id, 'count', __('ramadan_iftars.verification_fields.volunteer', ['name' => $label]), $row->planned_count, $row->actual_count);
         }
         foreach ($iftar->meals as $row) $rows[] = $this->candidate('meal', $row->id, 'quantity', __('ramadan_iftars.verification_fields.meal', ['name' => $row->description]), $row->planned_quantity, $row->actual_quantity);
