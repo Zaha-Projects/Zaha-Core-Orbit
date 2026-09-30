@@ -44,6 +44,9 @@ class StoreRamadanIftarRequest extends FormRequest
         $branchId = $this->route('ramadanIftar')?->branch_id
             ?? $this->user()?->branch_id
             ?? collect($this->user()?->scopedBranchIds() ?? [])->first();
+        $relationsOfficerId = $this->user()?->hasRole('relations_officer')
+            ? $this->user()->getKey()
+            : ($this->route('ramadanIftar')?->relations_officer_id ?? $this->user()?->getKey());
         $rows = collect($collections)->mapWithKeys(function (string $key): array {
             $value = $this->input($key, []);
 
@@ -64,6 +67,7 @@ class StoreRamadanIftarRequest extends FormRequest
             [
                 'branch_id' => $branchId,
                 'ramadan_period_id' => $periodId,
+                'relations_officer_id' => $relationsOfficerId,
                 'host_type' => $hostType,
                 'location_type' => RamadanIftar::LOCATION_INSIDE_CENTER,
             ]
@@ -336,7 +340,11 @@ class StoreRamadanIftarRequest extends FormRequest
 
     private function validateBranchUsers(Validator $validator, int $branchId): void
     {
-        $paths = ['relations_officer_id' => $this->input('relations_officer_id')];
+        $relationsOfficerId = $this->input('relations_officer_id');
+        if ($relationsOfficerId && ! User::query()->whereKey($relationsOfficerId)->where('status', 'active')->exists()) {
+            $validator->errors()->add('relations_officer_id', 'مستخدم العلاقات المحدد غير فعال.');
+        }
+        $paths = [];
         foreach ($this->input('program_segments', []) as $i => $row) if (! empty($row['executor_user_id'])) $paths["program_segments.$i.executor_user_id"] = $row['executor_user_id'];
         foreach ($this->input('execution_teams', []) as $i => $team) {
             if (! empty($team['leader_user_id'])) $paths["execution_teams.$i.leader_user_id"] = $team['leader_user_id'];
@@ -378,6 +386,9 @@ class StoreRamadanIftarRequest extends FormRequest
                     $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingClassificationIds);
                 })->first();
                 if (! $classification) $validator->errors()->add("target_groups.$i.classification_target_group_id", __('validation.exists', ['attribute' => 'التصنيف المرتبط']));
+                elseif ($classification->getKey() === $group?->getKey() || $classification->type === $group?->type) {
+                    $validator->errors()->add("target_groups.$i.classification_target_group_id", 'يجب أن يكون التصنيف المرتبط من النوع المقابل ومختلفًا عن الفئة المستهدفة.');
+                }
             }
         }
         foreach ($this->input('volunteer_requirements', []) as $i => $requirement) {

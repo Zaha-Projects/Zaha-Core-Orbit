@@ -1,6 +1,7 @@
 @php($value = fn ($field, $default = '') => old($field, $record?->{$field} ?? $default))
 <div class="col-md-2"><label class="form-label">الرمز *</label><input class="form-control" name="code" value="{{ $value('code') }}" required></div>
 <div class="col-md-4"><label class="form-label">الاسم *</label><input class="form-control" name="name" value="{{ $value('name') }}" required></div>
+@if($resource === 'target_groups')<div class="col-md-3"><label class="form-label">النوع *</label><select class="form-select" name="type" required><option value="age" {{ $value('type', 'community') === 'age' ? 'selected' : '' }}>فئة عمرية</option><option value="community" {{ $value('type', 'community') === 'community' ? 'selected' : '' }}>شريحة مجتمعية</option></select></div>@endif
 @if($resource === 'execution_needs')
 <div class="col-md-4"><label class="form-label">الوصف</label><input class="form-control" name="description" value="{{ $value('description') }}"></div>
 <div class="col-12"><div class="table-responsive"><table class="table table-bordered align-middle mb-0"><thead><tr><th>الوحدة</th><th>متاح؟</th><th>عند الإتاحة</th></tr></thead><tbody>

@@ -7,11 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class TargetGroup extends Model
 {
+    public const TYPE_AGE = 'age';
+    public const TYPE_COMMUNITY = 'community';
+
     use HasFactory;
 
     protected $fillable = [
         'code',
         'name',
+        'type',
         'is_other',
         'is_active',
         'is_monthly_activity',
@@ -26,6 +30,22 @@ class TargetGroup extends Model
         'is_ramadan_iftar' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+
+    public static function types(): array
+    {
+        return [self::TYPE_AGE, self::TYPE_COMMUNITY];
+    }
+
+    public function scopeOfType($query, string $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    public function oppositeType(): string
+    {
+        return $this->type === self::TYPE_AGE ? self::TYPE_COMMUNITY : self::TYPE_AGE;
+    }
 
     public function ramadanSelections()
     {

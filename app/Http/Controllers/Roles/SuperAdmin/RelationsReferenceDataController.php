@@ -88,7 +88,7 @@ class RelationsReferenceDataController extends Controller
 
         return $request->validate(match ($resource) {
             'target_groups' => [
-                'code' => $code, 'name' => ['required', 'string', 'max:255', Rule::unique($table, 'name')->ignore($id)],
+                'code' => $code, 'type' => ['required', Rule::in(TargetGroup::types())], 'name' => ['required', 'string', 'max:255', Rule::unique($table, 'name')->ignore($id)],
                 'is_other' => ['required', 'boolean'], 'is_active' => ['required', 'boolean'],
                 'is_monthly_activity' => ['required', 'boolean'], 'is_ramadan_iftar' => ['required', 'boolean'],
                 'sort_order' => ['required', 'integer', 'min:0'],

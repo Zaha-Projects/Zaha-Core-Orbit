@@ -22,10 +22,9 @@ $collections = [
     <nav class="ramadan-section-nav d-flex flex-wrap gap-2 mb-3" aria-label="أقسام النموذج"><a class="btn btn-sm btn-outline-primary" href="#iftar-basic">١. معلومات الإفطار</a><a class="btn btn-sm btn-outline-primary" href="#iftar-location">٢. مكان التنفيذ</a><a class="btn btn-sm btn-outline-primary" href="#iftar-beneficiary">٣. الجهة / المجتمع المستفيد</a><a class="btn btn-sm btn-outline-primary" href="#iftar-targets">٤. الفئات المستهدفة</a><a class="btn btn-sm btn-outline-primary" href="#iftar-meals">٥. الوجبات</a><a class="btn btn-sm btn-outline-primary" href="#iftar-needs">٦. احتياجات التنفيذ</a><a class="btn btn-sm btn-outline-primary" href="#iftar-program">٧. البرنامج والمتطوعون</a><a class="btn btn-sm btn-outline-primary" href="#iftar-review">٨. ملاحظات ومراجعة</a></nav>
     <form method="POST" action="{{ $formAction }}" id="ramadan-planning-form">@csrf @if($formMethod !== 'POST') @method($formMethod) @endif
         <div class="alert alert-success"><i class="fas fa-check-circle"></i> تم إقرار نسخة الإرشادات الحالية قبل بدء هذا النموذج. <a href="{{ route('events.ramadan.guidance.show') }}">عرض الإرشادات</a></div>
-        <div class="card shadow-sm mb-3 ramadan-form-section" id="iftar-basic" data-error-prefixes="title,relations_officer_id,planned_date"><div class="card-header fw-semibold"><span><i class="fas fa-circle-info"></i> ١. معلومات الإفطار</span><small>بيانات الإفطار وموعده والمسؤول عنه</small></div><div class="card-body row g-3">
+        <div class="card shadow-sm mb-3 ramadan-form-section" id="iftar-basic" data-error-prefixes="title,planned_date"><div class="card-header fw-semibold"><span><i class="fas fa-circle-info"></i> ١. معلومات الإفطار</span><small>بيانات الإفطار وموعده والمسؤول عنه</small></div><div class="card-body row g-3">
             <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.fields.title') }} <span class="text-danger">*</span></label><input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ $value('title') }}" placeholder="مثال: إفطار أيتام" required>@error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.labels.description') }}</label><input class="form-control" name="description" value="{{ $value('description') }}"></div>
-            <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.fields.relations_officer') }} <span class="text-danger">*</span></label><select class="form-select @error('relations_officer_id') is-invalid @enderror" name="relations_officer_id" required>@foreach($users as $user)<option value="{{ $user->id }}" {{ $value('relations_officer_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>@endforeach</select>@error('relations_officer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-md-2"><label class="form-label">{{ __('ramadan_iftars.fields.planned_date') }} <span class="text-danger">*</span></label><input type="date" class="form-control @error('planned_date') is-invalid @enderror" name="planned_date" value="{{ old('planned_date',optional($ramadanIftar?->planned_date)->format('Y-m-d')) }}" required aria-describedby="planned-date-error">@error('planned_date')<div class="invalid-feedback" id="planned-date-error">{{ $message }}</div>@enderror</div>
         </div></div>
         <div class="card shadow-sm mb-3 ramadan-form-section" id="iftar-location" data-error-prefixes="location_name,address"><div class="card-header fw-semibold"><span><i class="fas fa-location-dot"></i> ٢. مكان التنفيذ</span><small>جميع إفطارات رمضان تنفذ داخل المركز</small></div><div class="card-body row g-3">
@@ -40,51 +39,48 @@ $collections = [
         </div></div>
         <div class="card shadow-sm mb-3 ramadan-form-section" data-repeat="attendees" data-attendance-section data-error-prefixes="attendees"><div class="card-header d-flex justify-content-between"><span><strong>كشف حضور المجتمع المحلي</strong><small>يظهر عند اختيار مجتمع محلي</small></span><button type="button" class="btn btn-sm btn-outline-primary add-row">إضافة</button></div><div class="card-body">@foreach($collections['attendees'] as $i=>$row)<div class="planning-row border rounded p-3 mb-2"><div class="d-flex justify-content-between"><strong>السطر {{ $i+1 }}</strong><button type="button" class="btn btn-sm btn-outline-danger remove-row" aria-label="حذف السطر {{ $i+1 }}">حذف</button></div><input type="hidden" name="attendees[{{ $i }}][id]" value="{{ $row['id']??'' }}"><div class="row g-2 mt-1"><div class="col-md-5"><label class="form-label">الاسم</label><input class="form-control @error('attendees.'.$i.'.full_name') is-invalid @enderror" name="attendees[{{ $i }}][full_name]" value="{{ $row['full_name']??'' }}">@error('attendees.'.$i.'.full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div><div class="col-md-4"><label class="form-label">الهاتف</label><input class="form-control @error('attendees.'.$i.'.phone') is-invalid @enderror" name="attendees[{{ $i }}][phone]" value="{{ $row['phone']??'' }}">@error('attendees.'.$i.'.phone')<div class="invalid-feedback">{{ $message }}</div>@enderror</div><div class="col-md-3"><label class="form-label">العمر</label><input type="number" min="0" max="120" class="form-control @error('attendees.'.$i.'.age') is-invalid @enderror" name="attendees[{{ $i }}][age]" value="{{ $row['age']??'' }}">@error('attendees.'.$i.'.age')<div class="invalid-feedback">{{ $message }}</div>@enderror</div></div></div>@endforeach</div></div>
         @php $rows=$collections['target_groups']; @endphp
-        <div class="card shadow-sm mb-3 ramadan-form-section" data-repeat="target_groups" id="iftar-targets" data-error-prefixes="target_groups"><div class="card-header d-flex justify-content-between align-items-center"><span><strong>٤. الفئات المستهدفة</strong><small>اختر الفئة، ويمكن ربطها اختياريًا بفئة أخرى لتوضيح العلاقة</small></span><button type="button" class="btn btn-sm btn-outline-primary add-row">{{ __('ramadan_iftars.planning.add') }}</button></div><div class="card-body">@foreach($rows as $i=>$row)<div class="planning-row border rounded p-3 mb-3"><div class="d-flex justify-content-between mb-2"><strong>{{ __('ramadan_iftars.planning.row',['number'=>$i+1]) }}</strong><button type="button" class="btn btn-sm btn-outline-danger remove-row">{{ __('ramadan_iftars.planning.remove') }}</button></div><input type="hidden" name="target_groups[{{ $i }}][id]" value="{{ $row['id']??'' }}"><div class="row g-3"><div class="col-md-4"><label class="form-label">الفئة المستهدفة</label><select class="form-select @error('target_groups.'.$i.'.target_group_id') is-invalid @enderror" name="target_groups[{{ $i }}][target_group_id]">@foreach($targetGroups as $item)<option value="{{ $item->id }}" {{ ($row['target_group_id'] ?? null) == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>@endforeach</select>@error('target_groups.'.$i.'.target_group_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</div><div class="col-md-4"><label class="form-label">التصنيف المرتبط <span class="text-muted">(اختياري)</span></label><select class="form-select @error('target_groups.'.$i.'.classification_target_group_id') is-invalid @enderror" name="target_groups[{{ $i }}][classification_target_group_id]"><option value="">بدون تصنيف مرتبط</option>@foreach($targetGroups as $item)<option value="{{ $item->id }}" {{ ($row['classification_target_group_id'] ?? null) == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>@endforeach</select>@error('target_groups.'.$i.'.classification_target_group_id')<div class="invalid-feedback">{{ $message }}</div>@enderror<div class="form-text">مثال: شباب ← مجتمع محلي، أو سيدات ← سيدات.</div></div><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.planned_count') }}</label><input class="form-control @error('target_groups.'.$i.'.planned_count') is-invalid @enderror" type="number" min="0" name="target_groups[{{ $i }}][planned_count]" value="{{ $row['planned_count']??0 }}">@error('target_groups.'.$i.'.planned_count')<div class="invalid-feedback">{{ $message }}</div>@enderror</div></div></div>@endforeach</div></div>
+        <div class="card shadow-sm mb-3 ramadan-form-section" data-repeat="target_groups" id="iftar-targets" data-error-prefixes="target_groups"><div class="card-header d-flex justify-content-between align-items-center"><span><strong>٤. الفئات المستهدفة</strong><small>اختر الفئة، ويمكن ربطها اختياريًا بفئة أخرى لتوضيح العلاقة</small></span><button type="button" class="btn btn-sm btn-outline-primary add-row">{{ __('ramadan_iftars.planning.add') }}</button></div><div class="card-body">@foreach($rows as $i=>$row)<div class="planning-row border rounded p-3 mb-3"><div class="d-flex justify-content-between mb-2"><strong>{{ __('ramadan_iftars.planning.row',['number'=>$i+1]) }}</strong><button type="button" class="btn btn-sm btn-outline-danger remove-row">{{ __('ramadan_iftars.planning.remove') }}</button></div><input type="hidden" name="target_groups[{{ $i }}][id]" value="{{ $row['id']??'' }}"><div class="row g-3"><div class="col-md-4"><label class="form-label">الفئة المستهدفة</label><select class="form-select @error('target_groups.'.$i.'.target_group_id') is-invalid @enderror" name="target_groups[{{ $i }}][target_group_id]" data-target-group-primary>@foreach($targetGroups as $item)<option value="{{ $item->id }}" data-target-group-type="{{ $item->type }}" {{ ($row['target_group_id'] ?? null) == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>@endforeach</select>@error('target_groups.'.$i.'.target_group_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</div><div class="col-md-4"><label class="form-label">التصنيف المرتبط <span class="text-muted">(اختياري)</span></label><select class="form-select @error('target_groups.'.$i.'.classification_target_group_id') is-invalid @enderror" name="target_groups[{{ $i }}][classification_target_group_id]" data-target-group-related><option value="">بدون تصنيف مرتبط</option>@foreach($targetGroups as $item)<option value="{{ $item->id }}" data-target-group-type="{{ $item->type }}" {{ ($row['classification_target_group_id'] ?? null) == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>@endforeach</select>@error('target_groups.'.$i.'.classification_target_group_id')<div class="invalid-feedback">{{ $message }}</div>@enderror<div class="form-text">مثال: أطفال ← سيدات، أو مجتمع محلي ← شباب.</div></div><div class="col-md-4"><label class="form-label">{{ __('ramadan_iftars.labels.planned_count') }}</label><input class="form-control @error('target_groups.'.$i.'.planned_count') is-invalid @enderror" type="number" min="0" name="target_groups[{{ $i }}][planned_count]" value="{{ $row['planned_count']??0 }}">@error('target_groups.'.$i.'.planned_count')<div class="invalid-feedback">{{ $message }}</div>@enderror</div></div></div>@endforeach</div></div>
         @include('pages.events.ramadan._planning_collections', ['collections'=>$collections,'mealItemTypes'=>$mealItemTypes,'users'=>$users,'collectionFilter'=>[],'includeMeals'=>true])
-        <div class="card shadow-sm mb-3 ramadan-form-section" id="iftar-needs" data-error-prefixes="execution_needs,execution_teams,supplies,gifts,volunteer_requirements"><div class="card-header fw-semibold d-flex justify-content-between"><span><i class="fas fa-list-check"></i> ٦. {{ __('ramadan_iftars.sections.execution_needs') }}<small>فعّل الاحتياج ثم أكمل تفاصيله داخل البطاقة نفسها</small></span><span class="badge bg-primary" data-selected-needs-count>0 احتياجات مفعّلة</span></div><div class="card-body"><div class="ramadan-needs-grid">
-        @forelse($executionNeedTypes as $needType)
-            @php
-                $selectedNeed = collect($collections['execution_needs'])->firstWhere('execution_need_type_id', $needType->id);
-                $mandatory = $needType->isMandatoryForRamadan();
-                $enabled = $mandatory || (bool) ($selectedNeed['is_required'] ?? false);
-            @endphp
-            <div class="ramadan-need-option {{ $enabled ? 'is-active' : '' }}" data-need-card>
-                @if($selectedNeed)
-                    <input type="hidden" name="execution_needs[{{ $needType->id }}][id]" value="{{ $selectedNeed['id'] ?? '' }}">
-                @endif
-                <input type="hidden" name="execution_needs[{{ $needType->id }}][execution_need_type_id]" value="{{ $needType->id }}">
-                @if($mandatory)
-                    <input type="hidden" name="execution_needs[{{ $needType->id }}][is_required]" value="1">
-                @else
-                    <input type="hidden" name="execution_needs[{{ $needType->id }}][is_required]" value="0">
-                @endif
-                <div class="ramadan-need-heading">
-                    <div class="ramadan-need-icon" aria-hidden="true"><i class="fas {{ $needType->code === 'execution_team' ? 'fa-people-group' : ($needType->code === 'supplies' ? 'fa-box-open' : ($needType->code === 'volunteers' ? 'fa-handshake-angle' : 'fa-list-check')) }}"></i></div>
-                    <div class="flex-grow-1">
-                        <label class="form-check-label fw-semibold" for="need-{{ $needType->id }}">{{ $needType->name }}</label>
-                        @if(filled($needType->description ?? null))<p class="small text-muted mb-0">{{ $needType->description }}</p>@endif
-                        <div class="mt-1"><span class="badge {{ $mandatory ? 'ramadan-badge-required' : 'ramadan-badge-optional' }}">{{ $mandatory ? 'إلزامي' : 'اختياري' }}</span> <span class="badge ramadan-badge-enabled" data-enabled-badge {{ $enabled ? '' : 'hidden' }}>مفعّل</span></div>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" data-ramadan-need-toggle data-mandatory="{{ $mandatory ? '1' : '0' }}" @unless($mandatory) name="execution_needs[{{ $needType->id }}][is_required]" @endunless value="1" id="need-{{ $needType->id }}" {{ $enabled ? 'checked' : '' }} {{ $mandatory ? 'disabled' : '' }} aria-label="{{ $mandatory ? 'احتياج إلزامي مفعّل دائمًا: ' : 'تفعيل ' }}{{ $needType->name }}" aria-expanded="{{ $enabled ? 'true' : 'false' }}" aria-controls="need-panel-{{ $needType->id }}">
-                    </div>
+        <div class="card shadow-sm mb-3 ramadan-form-section" id="iftar-needs" data-error-prefixes="execution_needs,execution_teams,supplies,gifts,volunteer_requirements">
+            <div class="card-header fw-semibold d-flex justify-content-between"><span><i class="fas fa-list-check"></i> ٦. {{ __('ramadan_iftars.sections.execution_needs') }}<small>اختر الاحتياجات أولًا، ثم أكمل تفاصيل الاحتياجات المفعلة أدناه</small></span><span class="badge bg-primary" data-selected-needs-count>0 احتياجات مفعّلة</span></div>
+            <div class="card-body">
+                <h3 class="h6 mb-3">تفعيل احتياجات التنفيذ</h3>
+                <div class="ramadan-needs-grid" data-need-controls>
+                    @forelse($executionNeedTypes as $needType)
+                        @php
+                            $selectedNeed = collect($collections['execution_needs'])->firstWhere('execution_need_type_id', $needType->id);
+                            $mandatory = $needType->isMandatoryForRamadan();
+                            $enabled = $mandatory || (bool) ($selectedNeed['is_required'] ?? false);
+                        @endphp
+                        <div class="ramadan-need-option {{ $enabled ? 'is-active' : '' }}" data-need-card data-need-key="{{ $needType->id }}">
+                            @if($selectedNeed)<input type="hidden" name="execution_needs[{{ $needType->id }}][id]" value="{{ $selectedNeed['id'] ?? '' }}">@endif
+                            <input type="hidden" name="execution_needs[{{ $needType->id }}][execution_need_type_id]" value="{{ $needType->id }}">
+                            <input type="hidden" name="execution_needs[{{ $needType->id }}][is_required]" value="{{ $mandatory ? '1' : '0' }}">
+                            <div class="ramadan-need-heading">
+                                <div class="ramadan-need-icon" aria-hidden="true"><i class="fas {{ $needType->code === 'execution_team' ? 'fa-people-group' : ($needType->code === 'supplies' ? 'fa-box-open' : ($needType->code === 'volunteers' ? 'fa-handshake-angle' : 'fa-list-check')) }}"></i></div>
+                                <div class="flex-grow-1"><label class="form-check-label fw-semibold" for="need-{{ $needType->id }}">{{ $needType->name }}</label>@if(filled($needType->description ?? null))<p class="small text-muted mb-0">{{ $needType->description }}</p>@endif<div class="mt-1"><span class="badge {{ $mandatory ? 'ramadan-badge-required' : 'ramadan-badge-optional' }}">{{ $mandatory ? 'إلزامي' : 'اختياري' }}</span> <span class="badge ramadan-badge-enabled" data-enabled-badge {{ $enabled ? '' : 'hidden' }}>مفعّل</span></div></div>
+                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" data-ramadan-need-toggle data-need-key="{{ $needType->id }}" data-mandatory="{{ $mandatory ? '1' : '0' }}" @unless($mandatory) name="execution_needs[{{ $needType->id }}][is_required]" @endunless value="1" id="need-{{ $needType->id }}" {{ $enabled ? 'checked' : '' }} {{ $mandatory ? 'disabled' : '' }} aria-expanded="{{ $enabled ? 'true' : 'false' }}" aria-controls="need-panel-{{ $needType->id }}"></div>
+                            </div>
+                        </div>
+                    @empty <div class="text-muted">{{ __('ramadan_iftars.empty.execution_needs') }}</div> @endforelse
                 </div>
-                <div class="ramadan-need-details mt-3" id="need-panel-{{ $needType->id }}" {{ $enabled ? '' : 'hidden' }}>
-                    <div class="row g-3 mb-3"><div class="col-12 col-md-4"><label class="form-label">التوفر داخل المركز</label><select class="form-select" name="need_availability[{{ $needType->code }}]"><option value="available" {{ old('need_availability.'.$needType->code, $selectedNeed['availability'] ?? 'not_available') === 'available' ? 'selected' : '' }}>متوفر داخل المركز</option><option value="not_available" {{ old('need_availability.'.$needType->code, $selectedNeed['availability'] ?? 'not_available') === 'not_available' ? 'selected' : '' }}>غير متوفر داخل المركز</option></select></div></div>
-                    @include('pages.events.ramadan._execution_need_details', [
-                        'needCode' => $needType->code,
-                        'needId' => $needType->id,
-                        'selectedNeed' => $selectedNeed,
-                        'collections' => $collections,
-                        'users' => $users,
-                        'giftTypes' => $giftTypes,
-                        'targetGroups' => $targetGroups,
-                    ])
+                <div class="mt-4" data-need-detail-sections>
+                    <h3 class="h6 mb-3">تفاصيل الاحتياجات المفعلة</h3>
+                    @foreach($executionNeedTypes as $needType)
+                        @php
+                            $selectedNeed = collect($collections['execution_needs'])->firstWhere('execution_need_type_id', $needType->id);
+                            $mandatory = $needType->isMandatoryForRamadan();
+                            $enabled = $mandatory || (bool) ($selectedNeed['is_required'] ?? false);
+                        @endphp
+                        <section class="ramadan-need-details monthly-subsection-card mb-3" id="need-panel-{{ $needType->id }}" data-need-details="{{ $needType->id }}" {{ $enabled ? '' : 'hidden' }}>
+                            <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="h6 mb-0">تفاصيل {{ $needType->name }}</h4><span class="badge {{ $mandatory ? 'ramadan-badge-required' : 'ramadan-badge-optional' }}">{{ $mandatory ? 'إلزامي' : 'اختياري' }}</span></div>
+                            <div class="row g-3 mb-3"><div class="col-12 col-md-4"><label class="form-label">التوفر داخل المركز</label><select class="form-select" name="need_availability[{{ $needType->code }}]"><option value="available" {{ old('need_availability.'.$needType->code, $selectedNeed['availability'] ?? 'not_available') === 'available' ? 'selected' : '' }}>متوفر داخل المركز</option><option value="not_available" {{ old('need_availability.'.$needType->code, $selectedNeed['availability'] ?? 'not_available') === 'not_available' ? 'selected' : '' }}>غير متوفر داخل المركز</option></select></div></div>
+                            @include('pages.events.ramadan._execution_need_details', ['needCode'=>$needType->code,'needId'=>$needType->id,'selectedNeed'=>$selectedNeed,'collections'=>$collections,'users'=>$users,'giftTypes'=>$giftTypes,'targetGroups'=>$targetGroups])
+                        </section>
+                    @endforeach
                 </div>
             </div>
-        @empty <div class="text-muted">{{ __('ramadan_iftars.empty.execution_needs') }}</div> @endforelse
-        </div></div></div>
+        </div>
         @include('pages.events.ramadan._historic_needs')
         @include('pages.events.ramadan._planning_collections', ['collections'=>$collections,'mealItemTypes'=>$mealItemTypes,'users'=>$users,'collectionFilter'=>['program_segments'],'includeMeals'=>false])
         <div class="ramadan-form-actions" id="iftar-review"><div><strong>٨. ملاحظات ومراجعة</strong><p class="small text-muted mb-0">راجع الأقسام المعلّمة وتأكد من اكتمال الاحتياجات المفعّلة.</p></div><button class="btn btn-primary" type="submit">{{ __('ramadan_iftars.planning.save_draft') }}</button></div>
@@ -100,9 +96,11 @@ document.addEventListener('click', function (event) {
         clone.querySelectorAll('[name]').forEach(function (input) {
             input.name=input.name.replace(/\[\d+\]/,'['+index+']');
             if (input.type!=='hidden' && input.tagName!=='SELECT') input.value='';
+            if (input.tagName==='SELECT') input.selectedIndex=0;
             if (input.type==='hidden') input.value='';
         });
         card.querySelector('.card-body').appendChild(clone);
+        document.dispatchEvent(new CustomEvent('ramadan:planning-row-added', { detail: { row: clone } }));
     }
 });
 </script>

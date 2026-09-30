@@ -11,12 +11,13 @@ return new class extends Migration
     {
         Schema::table('target_groups', function (Blueprint $table) {
             $table->string('code', 100)->nullable()->unique();
+            $table->string('type', 30)->default('community')->after('code');
         });
-        foreach (['children' => 'أطفال', 'youth' => 'شباب', 'women' => 'سيدات', 'disabilities' => 'ذوي إعاقة', 'local_community' => 'مجتمع محلي', 'other' => 'أخرى'] as $code => $name) {
+        foreach (['children' => 'أطفال', 'youth' => 'شباب', 'women' => 'سيدات', 'disability' => 'ذوي إعاقة', 'local_community' => 'مجتمع محلي', 'other' => 'أخرى'] as $code => $name) {
             $id = DB::table('target_groups')->where('name', $name)->orderBy('id')->value('id');
             if ($id) {
                 // Keep all referenced legacy IDs, including any duplicate labels.
-                DB::table('target_groups')->where('id', $id)->update(['code' => $code]);
+                DB::table('target_groups')->where('id', $id)->update(['code' => $code, 'type' => in_array($code, ['children', 'youth'], true) ? 'age' : 'community']);
             }
         }
     }
@@ -25,7 +26,7 @@ return new class extends Migration
     {
         Schema::table('target_groups', function (Blueprint $table) {
             $table->dropUnique(['code']);
-            $table->dropColumn('code');
+            $table->dropColumn(['code', 'type']);
         });
     }
 };

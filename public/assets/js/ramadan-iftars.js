@@ -9,14 +9,15 @@
         if (!option) return;
         var active = toggle.checked || toggle.dataset.mandatory === '1';
         option.classList.toggle('is-active', active);
-        var details = option.querySelector('.ramadan-need-details');
+        var key = toggle.dataset.needKey;
+        var details = key ? document.querySelector('[data-need-details="' + key + '"]') : null;
         if (details) details.hidden = !active;
         toggle.setAttribute('aria-expanded', active ? 'true' : 'false');
         var badge = option.querySelector('[data-enabled-badge]');
         if (badge) badge.hidden = !active;
-        var volunteerEnabled = option.querySelector('[data-volunteer-enabled]');
+        var volunteerEnabled = details ? details.querySelector('[data-volunteer-enabled]') : null;
         if (volunteerEnabled) volunteerEnabled.value = active ? '1' : '0';
-        option.querySelectorAll('.ramadan-need-details [name]').forEach(function (input) {
+        (details ? details.querySelectorAll('[name]') : []).forEach(function (input) {
             input.disabled = !active;
         });
         var counter = document.querySelector('[data-selected-needs-count]');
@@ -83,5 +84,29 @@
                 if (input) input.value = option.dataset[key] || '';
             });
         });
+    });
+
+    function syncRelatedTargetGroup(row, clearInvalid) {
+        var primary = row.querySelector('[data-target-group-primary]');
+        var related = row.querySelector('[data-target-group-related]');
+        if (!primary || !related) return;
+        var selected = primary.options[primary.selectedIndex];
+        var primaryType = selected ? selected.dataset.targetGroupType : '';
+        var primaryId = primary.value;
+        Array.prototype.forEach.call(related.options, function (option) {
+            if (!option.value) return;
+            var valid = option.value !== primaryId && option.dataset.targetGroupType && option.dataset.targetGroupType !== primaryType;
+            option.hidden = !valid;
+            option.disabled = !valid;
+        });
+        var current = related.options[related.selectedIndex];
+        if (clearInvalid && current && current.value && current.disabled) related.value = '';
+    }
+    document.querySelectorAll('#iftar-targets .planning-row').forEach(function (row) { syncRelatedTargetGroup(row, true); });
+    document.addEventListener('change', function (event) {
+        if (event.target.matches('[data-target-group-primary]')) syncRelatedTargetGroup(event.target.closest('.planning-row'), true);
+    });
+    document.addEventListener('ramadan:planning-row-added', function (event) {
+        if (event.detail && event.detail.row) syncRelatedTargetGroup(event.detail.row, true);
     });
 }());

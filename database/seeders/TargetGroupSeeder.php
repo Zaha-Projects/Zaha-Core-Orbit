@@ -18,10 +18,20 @@ class TargetGroupSeeder extends Seeder
             'other' => 'أخرى',
         ];
 
+        $types = [
+            'children' => TargetGroup::TYPE_AGE,
+            'youth' => TargetGroup::TYPE_AGE,
+            'women' => TargetGroup::TYPE_COMMUNITY,
+            'disability' => TargetGroup::TYPE_COMMUNITY,
+            'local_community' => TargetGroup::TYPE_COMMUNITY,
+            'other' => TargetGroup::TYPE_COMMUNITY,
+        ];
+
         $sortOrder = 10;
         foreach ($groups as $code => $name) {
             TargetGroup::query()->updateOrCreate(['code' => $code], [
                 'name' => $name,
+                'type' => $types[$code],
                 'sort_order' => $sortOrder,
                 'is_other' => $code === 'other',
                 'is_active' => true,
