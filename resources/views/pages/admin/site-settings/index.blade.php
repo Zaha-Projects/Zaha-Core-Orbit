@@ -56,23 +56,6 @@
                             <label class="form-label">وزن الالتزام الشهري</label>
                             <input class="form-control" type="number" name="branch_monthly_score_weight_commitment" value="{{ \App\Models\Setting::valueOf('branch_monthly_score_weight_commitment', '60') }}" min="0" max="100">
                         </div>
-                        <div class="col-12"><hr><h3 class="h6">نطاق احتياجات التنفيذ</h3></div>
-                        @foreach($executionNeedTypes as $needType)
-                            <div class="col-12 col-md-6">
-                                @if($needType->code === 'execution_team' && ! $needType->scope_configured_at && ! $needType->is_monthly_activity)
-                                    <div class="alert alert-warning">نطاق فريق التنفيذ موروث ولم يوثّق كاختيار إداري. الافتراضي الجديد «كلاهما»؛ راجع الاختيار ثم احفظ لتأكيده.</div>
-                                @endif
-                                <input type="hidden" name="execution_need_scopes[{{ $loop->index }}][id]" value="{{ $needType->id }}">
-                                <label class="form-label" for="need-scope-{{ $needType->id }}">{{ $needType->name }}</label>
-                                <select id="need-scope-{{ $needType->id }}" class="form-select" name="execution_need_scopes[{{ $loop->index }}][usage_scope]">
-                                    @foreach(['monthly_plans' => 'الخطط الشهرية', 'iftars' => 'الإفطارات', 'both' => 'كلاهما', 'none' => 'غير متاح'] as $scope => $label)
-                                        <option value="{{ $scope }}" {{ old('execution_need_scopes.'.$loop->parent->index.'.usage_scope', $needType->usage_scope) === $scope ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="form-check mt-1"><input class="form-check-input" type="checkbox" value="1" id="need-scope-confirm-{{ $needType->id }}" name="execution_need_scopes[{{ $loop->index }}][confirm_scope]" {{ old('execution_need_scopes.'.$loop->index.'.confirm_scope') ? 'checked' : '' }}><label class="form-check-label small" for="need-scope-confirm-{{ $needType->id }}">تأكيد هذا النطاق دون تغييره</label></div>
-                                @error('execution_need_scopes.'.$loop->index.'.usage_scope')<div class="text-danger">{{ $message }}</div>@enderror
-                            </div>
-                        @endforeach
                         <div class="col-12 d-flex justify-content-end">
                             <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
                         </div>

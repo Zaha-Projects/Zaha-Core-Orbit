@@ -128,6 +128,20 @@ class ExecutionNeedType extends Model
     {
         $codes = static::monthlyAvailableCodes();
         $errors = [];
+        $mandatory = static::query()->availableFor(EventSubjectTypes::MONTHLY_ACTIVITY)->get()
+            ->filter->isMandatoryForMonthly();
+        foreach ($mandatory as $type) {
+            $field = self::MONTHLY_FIELDS[$type->code] ?? null;
+            if ($field && empty($data[$field])) {
+                $errors[$field] = "احتياج {$type->name} إلزامي للفعاليات الشهرية.";
+            }
+            if (! $field && ! array_key_exists($type->code, self::MONTHLY_INPUT_FIELDS)) {
+                $selected = collect($data['custom_execution_needs'] ?? [])->contains(
+                    fn ($row) => (int) ($row['execution_need_type_id'] ?? 0) === (int) $type->id && (bool) ($row['is_required'] ?? false)
+                );
+                if (! $selected) $errors['custom_execution_needs.'.$type->id] = "احتياج {$type->name} إلزامي للفعاليات الشهرية.";
+            }
+        }
         foreach (self::MONTHLY_FIELDS as $code => $field) {
             if (! empty($data[$field]) && ! self::monthlyKeyAvailable($code, $codes)) {
                 $errors[$field] = 'هذا الاحتياج غير متاح للخطط الشهرية.';
@@ -234,6 +248,7 @@ class ExecutionNeedType extends Model
         'is_canonical',
         'is_monthly_activity',
         'is_ramadan_iftar',
+        'module_config',
         'mandatory_for_monthly',
         'mandatory_for_ramadan',
     ];
@@ -245,6 +260,7 @@ class ExecutionNeedType extends Model
         'is_canonical' => 'boolean',
         'is_monthly_activity' => 'boolean',
         'is_ramadan_iftar' => 'boolean',
+        'module_config' => 'array',
         'mandatory_for_monthly' => 'boolean',
         'mandatory_for_ramadan' => 'boolean',
     ];
@@ -279,13 +295,35 @@ class ExecutionNeedType extends Model
         return $query->where('is_monthly_activity', true);
     }
 
+    public function moduleAvailability(string $module): array
+    {
+        $configured = data_get($this->module_config, $module);
+        if (is_array($configured)) {
+            return [
+                'available' => (bool) ($configured['available'] ?? false),
+                'required' => (bool) ($configured['available'] ?? false) && (bool) ($configured['required'] ?? false),
+            ];
+        }
+
+        return match ($module) {
+            EventSubjectTypes::MONTHLY_ACTIVITY => ['available' => (bool) $this->is_monthly_activity, 'required' => (bool) $this->is_monthly_activity && (bool) $this->mandatory_for_monthly],
+            EventSubjectTypes::RAMADAN_IFTAR => ['available' => (bool) $this->is_ramadan_iftar, 'required' => (bool) $this->is_ramadan_iftar && (bool) $this->mandatory_for_ramadan],
+            default => ['available' => false, 'required' => false],
+        };
+    }
+
+    public function isAvailableFor(string $module): bool
+    {
+        return $this->moduleAvailability($module)['available'];
+    }
+
     public function isMandatoryForRamadan(): bool
     {
-        return $this->is_ramadan_iftar && $this->mandatory_for_ramadan;
+        return $this->moduleAvailability(EventSubjectTypes::RAMADAN_IFTAR)['required'];
     }
 
     public function isMandatoryForMonthly(): bool
     {
-        return $this->is_monthly_activity && $this->mandatory_for_monthly;
+        return $this->moduleAvailability(EventSubjectTypes::MONTHLY_ACTIVITY)['required'];
     }
 }

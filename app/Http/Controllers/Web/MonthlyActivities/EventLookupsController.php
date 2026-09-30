@@ -8,7 +8,6 @@ use App\Models\DepartmentUnit;
 use App\Models\EvaluationQuestion;
 use App\Modules\Events\Models\EventCategory;
 use App\Modules\Events\Models\EventStatusLookup;
-use App\Modules\Events\Models\TargetGroup;
 use App\Models\ZahaTimeOption;
 use App\Modules\Events\Models\EventContexts;
 use Illuminate\Http\Request;
@@ -18,7 +17,6 @@ class EventLookupsController extends Controller
 {
     public function index()
     {
-        $targetGroups = TargetGroup::query()->orderBy('sort_order')->orderBy('name')->get();
         $evaluationQuestions = EvaluationQuestion::query()->orderBy('sort_order')->orderBy('question')->get();
         $departments = Department::query()->orderBy('sort_order')->orderBy('name')->get();
         $departmentUnits = DepartmentUnit::query()->orderBy('sort_order')->orderBy('name')->get();
@@ -27,7 +25,6 @@ class EventLookupsController extends Controller
         $zahaTimeOptions = ZahaTimeOption::query()->orderBy('sort_order')->orderBy('name')->get();
 
         return view('pages.monthly_activities.lookups.admin', compact(
-            'targetGroups',
             'evaluationQuestions',
             'departments',
             'departmentUnits',
@@ -115,43 +112,6 @@ class EventLookupsController extends Controller
         ]);
 
         return back()->with('status', 'تم تحديث الوحدة/القسم.');
-    }
-
-    public function storeTargetGroup(Request $request)
-    {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'is_other' => ['nullable', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
-        ]);
-
-        TargetGroup::create([
-            'name' => $data['name'],
-            'is_other' => (bool) ($data['is_other'] ?? false),
-            'sort_order' => $data['sort_order'] ?? 0,
-            'is_active' => true,
-        ]);
-
-        return back()->with('status', 'تم إضافة فئة مستهدفة.');
-    }
-
-    public function updateTargetGroup(Request $request, TargetGroup $targetGroup)
-    {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('target_groups', 'name')->ignore($targetGroup->id)],
-            'is_other' => ['nullable', 'boolean'],
-            'is_active' => ['nullable', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
-        ]);
-
-        $targetGroup->update([
-            'name' => $data['name'],
-            'is_other' => (bool) ($data['is_other'] ?? false),
-            'is_active' => (bool) ($data['is_active'] ?? false),
-            'sort_order' => $data['sort_order'] ?? 0,
-        ]);
-
-        return back()->with('status', 'تم تحديث الفئة المستهدفة.');
     }
 
     public function storeEvaluationQuestion(Request $request)

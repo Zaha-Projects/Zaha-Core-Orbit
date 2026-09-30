@@ -22,6 +22,7 @@ use App\Http\Controllers\Web\Access\WorkflowsController as SuperAdminWorkflowsCo
 use App\Http\Controllers\Roles\SuperAdmin\ReportsController as SuperAdminReportsController;
 use App\Http\Controllers\Roles\SuperAdmin\SiteSettingsController as SuperAdminSiteSettingsController;
 use App\Http\Controllers\Roles\SuperAdmin\RamadanReferenceDataController;
+use App\Http\Controllers\Roles\SuperAdmin\RelationsReferenceDataController;
 use App\Modules\Events\Http\Controllers\Admin\RamadanAdminController;
 use App\Modules\Events\Http\Controllers\Admin\RamadanPeriodController;
 use App\Modules\Events\Http\Controllers\Admin\RamadanGuidanceAdminController;
@@ -191,6 +192,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/mobilization-methods/{method}', [MobilizationMethodController::class, 'update'])->name('mobilization-methods.update');
         Route::patch('/mobilization-methods/{method}/toggle', [MobilizationMethodController::class, 'toggle'])->name('mobilization-methods.toggle');
     });
+    Route::get('/dashboard/admin/relations-reference-data', [RelationsReferenceDataController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.relations_reference_data.index');
+    Route::post('/dashboard/admin/relations-reference-data/{resource}', [RelationsReferenceDataController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.relations_reference_data.store');
+    Route::put('/dashboard/admin/relations-reference-data/{resource}/{id}', [RelationsReferenceDataController::class, 'update'])->whereNumber('id')->middleware('role:super_admin')->name('role.super_admin.relations_reference_data.update');
+    Route::patch('/dashboard/admin/relations-reference-data/{resource}/{id}/toggle', [RelationsReferenceDataController::class, 'toggle'])->whereNumber('id')->middleware('role:super_admin')->name('role.super_admin.relations_reference_data.toggle');
+    Route::delete('/dashboard/admin/relations-reference-data/{resource}/{id}', [RelationsReferenceDataController::class, 'destroy'])->whereNumber('id')->middleware('role:super_admin')->name('role.super_admin.relations_reference_data.destroy');
     Route::get('/dashboard/admin/ramadan-reference-data', [RamadanReferenceDataController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.index');
     Route::post('/dashboard/admin/ramadan-reference-data/{resource}', [RamadanReferenceDataController::class, 'store'])->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.store');
     Route::put('/dashboard/admin/ramadan-reference-data/{resource}/{id}', [RamadanReferenceDataController::class, 'update'])->whereNumber('id')->middleware('role:super_admin')->name('role.super_admin.ramadan_reference_data.update');
@@ -225,8 +231,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/admin/events-lookups', [EventLookupsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.index');
     Route::post('/dashboard/admin/events-lookups/departments', [EventLookupsController::class, 'storeDepartment'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.departments.store');
     Route::put('/dashboard/admin/events-lookups/departments/{department}', [EventLookupsController::class, 'updateDepartment'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.departments.update');
-    Route::post('/dashboard/admin/events-lookups/target-groups', [EventLookupsController::class, 'storeTargetGroup'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.target_groups.store');
-    Route::put('/dashboard/admin/events-lookups/target-groups/{targetGroup}', [EventLookupsController::class, 'updateTargetGroup'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.target_groups.update');
     Route::post('/dashboard/admin/events-lookups/evaluation-questions', [EventLookupsController::class, 'storeEvaluationQuestion'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.evaluation_questions.store');
     Route::put('/dashboard/admin/events-lookups/evaluation-questions/{evaluationQuestion}', [EventLookupsController::class, 'updateEvaluationQuestion'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.evaluation_questions.update');
     Route::post('/dashboard/admin/events-lookups/department-units', [EventLookupsController::class, 'storeDepartmentUnit'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.department_units.store');

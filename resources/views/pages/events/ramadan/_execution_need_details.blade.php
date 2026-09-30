@@ -48,6 +48,21 @@
         </div>
     </div>
 @elseif($needCode === 'volunteers')
+    @php
+        $volunteerPlan = json_decode((string) ($selectedNeed['planned_details'] ?? ''), true) ?: [];
+        $volunteerValue = fn (string $key, $default = '') => old($key, $volunteerPlan[$key] ?? $default);
+    @endphp
+    <input type="hidden" name="needs_volunteers" value="{{ $enabled ? '1' : '0' }}" data-volunteer-enabled>
+    <div class="ramadan-need-detail-group mb-3">
+        <h6 class="mb-3">احتياج المتطوعين</h6>
+        <div class="row g-3">
+            <div class="col-12 col-md-3"><label class="form-label">عدد المتطوعين</label><input class="form-control @error('required_volunteers') is-invalid @enderror" type="number" min="1" name="required_volunteers" value="{{ $volunteerValue('required_volunteers') }}">@error('required_volunteers')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-12 col-md-3"><label class="form-label">الفترة العمرية</label><div class="row g-2"><div class="col-6"><input class="form-control" type="number" min="10" max="80" name="volunteer_age_from" placeholder="من" value="{{ $volunteerValue('volunteer_age_from') }}"></div><div class="col-6"><input class="form-control" type="number" min="10" max="80" name="volunteer_age_to" placeholder="إلى" value="{{ $volunteerValue('volunteer_age_to') }}"></div></div></div>
+            <div class="col-12 col-md-2"><label class="form-label">الجنس</label><select class="form-select" name="volunteer_gender"><option value="">اختر الجنس</option><option value="male" {{ $volunteerValue('volunteer_gender') === 'male' ? 'selected' : '' }}>ذكر</option><option value="female" {{ $volunteerValue('volunteer_gender') === 'female' ? 'selected' : '' }}>أنثى</option><option value="both" {{ $volunteerValue('volunteer_gender') === 'both' ? 'selected' : '' }}>كلاهما</option></select></div>
+            <div class="col-12 col-md-4"><label class="form-label">الاحتياج المختصر</label><input class="form-control" name="volunteer_need" value="{{ $volunteerValue('volunteer_need') }}"></div>
+            <div class="col-12 col-md-8"><label class="form-label">وصف مختصر عن طبيعة المهام</label><textarea class="form-control" name="volunteer_tasks_summary" rows="2">{{ $volunteerValue('volunteer_tasks_summary') }}</textarea></div>
+        </div>
+    </div>
     <div class="ramadan-need-detail-group" data-repeat="volunteer_requirements">
         <h6 class="mb-3">بيانات الفرق التطوعية</h6>
         @error('volunteer_requirements')<div class="alert alert-danger py-2" role="alert">{{ $message }}</div>@enderror
@@ -67,7 +82,7 @@
                             @error('volunteer_requirements.'.$i.'.beneficiary_segment_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">{{ __('ramadan_iftars.labels.gender') }}</label>
+                            <label class="form-label">النوع</label>
                             <select class="form-select @error('volunteer_requirements.'.$i.'.gender') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][gender]">
                                 @foreach(['male', 'female', 'mixed'] as $option)<option value="{{ $option }}" {{ ($row['gender'] ?? null) === $option ? 'selected' : '' }}>{{ __('ramadan_iftars.options.'.$option) }}</option>@endforeach
                             </select>

@@ -71,6 +71,7 @@ $collections = [
                     </div>
                 </div>
                 <div class="ramadan-need-details mt-3" id="need-panel-{{ $needType->id }}" {{ $enabled ? '' : 'hidden' }}>
+                    <div class="row g-3 mb-3"><div class="col-12 col-md-4"><label class="form-label">التوفر داخل المركز</label><select class="form-select" name="need_availability[{{ $needType->code }}]"><option value="available" {{ old('need_availability.'.$needType->code, $selectedNeed['availability'] ?? 'not_available') === 'available' ? 'selected' : '' }}>متوفر داخل المركز</option><option value="not_available" {{ old('need_availability.'.$needType->code, $selectedNeed['availability'] ?? 'not_available') === 'not_available' ? 'selected' : '' }}>غير متوفر داخل المركز</option></select></div></div>
                     @include('pages.events.ramadan._execution_need_details', [
                         'needCode' => $needType->code,
                         'needId' => $needType->id,

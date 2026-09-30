@@ -97,6 +97,7 @@ class RamadanIftarPlanningService
             }
         }
         $data = $this->normalizeExecutionNeeds($data, $types);
+        $data = $this->attachMonthlyVolunteerFields($data, $types);
         $this->syncSimple($iftar->attendees(), $data['attendees'], ['full_name', 'phone', 'age'], null, ['attended', 'checked_in_at'], fn ($model) => $model->attended || $model->checked_in_at !== null);
         $this->syncTargetGroups($iftar, $data['target_groups']);
         $this->syncMeals($iftar, $data['meals']);
@@ -116,7 +117,7 @@ class RamadanIftarPlanningService
             'item_name', 'planned_quantity', 'planned_available', 'provider_type', 'provider_name', 'estimated_value', 'notes',
         ], fn () => ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'status' => EventSupply::STATUS_PENDING], ['actual_quantity', 'is_available']);
         $this->syncSimple($iftar->executionNeeds()->whereIn('execution_need_type_id', $types->keys()), array_values($data['execution_needs']), [
-            'execution_need_type_id', 'is_required', 'planned_details',
+            'execution_need_type_id', 'is_required', 'availability', 'planned_details',
         ], fn () => [
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
             'subject_id' => $iftar->getKey(),
@@ -124,6 +125,27 @@ class RamadanIftarPlanningService
         ], ['actual_details', 'completed_at'], function ($model) {
             return $model->status !== SubjectExecutionNeed::STATUS_PENDING;
         });
+    }
+
+
+    private function attachMonthlyVolunteerFields(array $data, $types): array
+    {
+        $volunteerType = $types->firstWhere('code', 'volunteers');
+        if (! $volunteerType) return $data;
+        foreach ($data['execution_needs'] as &$need) {
+            if ((int) $need['execution_need_type_id'] !== (int) $volunteerType->id) continue;
+            $need['planned_details'] = json_encode([
+                'availability' => data_get($data, 'need_availability.volunteers', 'not_available'),
+                'required_volunteers' => $data['required_volunteers'] ?? null,
+                'volunteer_age_from' => $data['volunteer_age_from'] ?? null,
+                'volunteer_age_to' => $data['volunteer_age_to'] ?? null,
+                'volunteer_gender' => $data['volunteer_gender'] ?? null,
+                'volunteer_need' => $data['volunteer_need'] ?? null,
+                'volunteer_tasks_summary' => $data['volunteer_tasks_summary'] ?? null,
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        unset($need);
+        return $data;
     }
 
     private function normalizeExecutionNeeds(array $data, $types): array
@@ -136,9 +158,10 @@ class RamadanIftarPlanningService
         $selected = collect($data['execution_needs'] ?? [])->filter(function (array $row) use ($types): bool {
             $type = $types->get((int) ($row['execution_need_type_id'] ?? 0));
             return $type && ($type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false));
-        })->map(function (array $row) use ($types): array {
+        })->map(function (array $row) use ($types, $data): array {
             $type = $types->get((int) $row['execution_need_type_id']);
             $row['is_required'] = $type->isMandatoryForRamadan() || (bool) ($row['is_required'] ?? false);
+            $row['availability'] = data_get($data, 'need_availability.'.$type->code, $row['availability'] ?? 'not_available');
             return $row;
         })->values();
 

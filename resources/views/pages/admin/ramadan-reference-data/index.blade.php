@@ -7,9 +7,6 @@ $titles = [
     'meal_types' => 'أنواع الوجبات',
     'community_organizations' => 'المؤسسات والمراكز',
     'local_communities' => 'المجتمعات المحلية',
-    'target_groups' => 'الفئات المستهدفة',
-    'beneficiary_segments' => 'شرائح المستفيدين',
-    'execution_need_types' => 'أنواع احتياجات التنفيذ',
     'monitoring_methods' => 'طرق المتابعة',
 ];
 @endphp

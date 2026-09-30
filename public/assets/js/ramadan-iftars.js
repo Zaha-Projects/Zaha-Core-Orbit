@@ -14,6 +14,8 @@
         toggle.setAttribute('aria-expanded', active ? 'true' : 'false');
         var badge = option.querySelector('[data-enabled-badge]');
         if (badge) badge.hidden = !active;
+        var volunteerEnabled = option.querySelector('[data-volunteer-enabled]');
+        if (volunteerEnabled) volunteerEnabled.value = active ? '1' : '0';
         option.querySelectorAll('.ramadan-need-details [name]').forEach(function (input) {
             input.disabled = !active;
         });
