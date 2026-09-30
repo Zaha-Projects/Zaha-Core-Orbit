@@ -5,7 +5,6 @@ namespace App\Modules\Events\Http\Controllers\Ramadan;
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\TargetGroup;
 use App\Modules\Events\Http\Requests\Ramadan\UpdateRamadanIftarExecutionRequest;
-use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Services\RamadanIftarExecutionService;
 use Illuminate\Http\Request;
@@ -16,18 +15,16 @@ class RamadanIftarExecutionController extends Controller
     {
         $this->authorizeExecution($request, $ramadanIftar, false);
         $ramadanIftar->load([
-            'branch', 'relationsOfficer', 'attendees.targetGroup', 'attendees.beneficiarySegment',
+            'branch', 'relationsOfficer', 'attendees.targetGroup',
             'meals.items', 'gifts', 'programSegments', 'executionTeams.members.user',
-            'volunteerRequirements.beneficiarySegment', 'supplies', 'executionNeeds.executionNeedType',
+            'volunteerRequirements.targetGroup', 'supplies', 'executionNeeds.executionNeedType',
         ]);
 
         $targetGroups = TargetGroup::query()->active()->forRamadanIftars()->orderBy('sort_order')->get();
-        $beneficiarySegments = BeneficiarySegment::query()->active()->ordered()->get();
-
         $executionWritable = $ramadanIftar->closed_at === null
             && ($ramadanIftar->execution_status !== RamadanIftar::EXECUTION_STATUS_COMPLETED || $ramadanIftar->needsPostExecutionCorrection());
 
-        return view('pages.events.ramadan.execution', compact('ramadanIftar', 'targetGroups', 'beneficiarySegments', 'executionWritable'));
+        return view('pages.events.ramadan.execution', compact('ramadanIftar', 'targetGroups', 'executionWritable'));
     }
 
     public function start(Request $request, RamadanIftar $ramadanIftar, RamadanIftarExecutionService $execution)

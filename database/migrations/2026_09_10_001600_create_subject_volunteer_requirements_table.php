@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->string('subject_type', 50);
             $table->unsignedBigInteger('subject_id');
-            $table->foreignId('beneficiary_segment_id')->nullable()->constrained('beneficiary_segments')->nullOnDelete();
+            $table->foreignId('beneficiary_segment_id')->nullable()->constrained('beneficiary_segments')->nullOnDelete(); // Legacy historical reference.
+            $table->foreignId('target_group_id')->nullable()->constrained('target_groups')->nullOnDelete();
             $table->string('gender', 30)->nullable();
             $table->unsignedInteger('planned_count');
             $table->unsignedInteger('actual_count')->nullable();

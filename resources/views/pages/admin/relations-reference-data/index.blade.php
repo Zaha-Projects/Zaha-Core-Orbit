@@ -2,9 +2,9 @@
 
 @section('page_title', 'البيانات المرجعية للعلاقات')
 @section('content')
-@php($titles = ['age_groups' => 'الفئات العمرية', 'segments' => 'الشرائح', 'execution_needs' => 'احتياجات التنفيذ'])
+@php($titles = ['target_groups' => 'الفئات المستهدفة', 'execution_needs' => 'احتياجات التنفيذ'])
 <div class="container py-4" dir="rtl">
-    <div class="mb-4"><h1 class="h3 mb-1">البيانات المرجعية للعلاقات</h1><p class="text-muted mb-0">إدارة موحدة للفئات العمرية والشرائح واحتياجات التنفيذ. عطّل القيم المستخدمة تاريخيًا بدل حذفها.</p></div>
+    <div class="mb-4"><h1 class="h3 mb-1">البيانات المرجعية للعلاقات</h1><p class="text-muted mb-0">إدارة موحدة للفئات المستهدفة واحتياجات التنفيذ. عطّل القيم المستخدمة تاريخيًا بدل حذفها.</p></div>
     @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <ul class="nav nav-tabs mb-3" role="tablist">@foreach($titles as $key => $title)<li class="nav-item"><button class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#relations-{{ $key }}" type="button">{{ $title }}</button></li>@endforeach</ul>

@@ -111,7 +111,7 @@ class RamadanIftarExecutionService
             }
             $attendee = $attendee ?: new RamadanIftarAttendee(['ramadan_iftar_id' => $iftar->id]);
             $wasAttended = (bool) $attendee->attended;
-            $attendee->fill(Arr::only($row, ['full_name', 'phone', 'age', 'target_group_id', 'beneficiary_segment_id', 'attended', 'notes']));
+            $attendee->fill(Arr::only($row, ['full_name', 'phone', 'age', 'target_group_id', 'attended', 'notes']));
             $attended = (bool) $row['attended'];
             $attendee->checked_in_at = $attended ? ($wasAttended ? $attendee->checked_in_at : now()) : null;
             $attendee->save();

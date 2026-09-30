@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Roles\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Database\Eloquent\Model;
@@ -15,8 +14,7 @@ use Illuminate\Validation\Rule;
 class RelationsReferenceDataController extends Controller
 {
     private const MODELS = [
-        'age_groups' => TargetGroup::class,
-        'segments' => BeneficiarySegment::class,
+        'target_groups' => TargetGroup::class,
         'execution_needs' => ExecutionNeedType::class,
     ];
 
@@ -89,16 +87,11 @@ class RelationsReferenceDataController extends Controller
         $code = ['required', 'string', 'max:100', Rule::unique($table, 'code')->ignore($id)];
 
         return $request->validate(match ($resource) {
-            'age_groups' => [
+            'target_groups' => [
                 'code' => $code, 'name' => ['required', 'string', 'max:255', Rule::unique($table, 'name')->ignore($id)],
                 'is_other' => ['required', 'boolean'], 'is_active' => ['required', 'boolean'],
                 'is_monthly_activity' => ['required', 'boolean'], 'is_ramadan_iftar' => ['required', 'boolean'],
                 'sort_order' => ['required', 'integer', 'min:0'],
-            ],
-            'segments' => [
-                'code' => $code, 'name_ar' => ['required', 'string', 'max:255', Rule::unique($table, 'name_ar')->ignore($id)],
-                'name_en' => ['required', 'string', 'max:255'], 'dimension' => ['required', Rule::in([BeneficiarySegment::DIMENSION_SOCIAL])], 'is_other' => ['required', 'boolean'],
-                'is_active' => ['required', 'boolean'], 'sort_order' => ['required', 'integer', 'min:0'],
             ],
             'execution_needs' => [
                 'code' => $code, 'name' => ['required', 'string', 'max:255', Rule::unique($table, 'name')->ignore($id)],
@@ -123,9 +116,9 @@ class RelationsReferenceDataController extends Controller
     private function isReferenced(string $resource, int $id): bool
     {
         return match ($resource) {
-            'age_groups' => DB::table('event_target_group')->where('target_group_id', $id)->exists(),
-            'segments' => DB::table('event_target_group')->where('beneficiary_segment_id', $id)->exists()
-                || DB::table('subject_volunteer_requirements')->where('beneficiary_segment_id', $id)->exists(),
+            'target_groups' => DB::table('event_target_group')->where('target_group_id', $id)->orWhere('classification_target_group_id', $id)->exists()
+                || DB::table('subject_volunteer_requirements')->where('target_group_id', $id)->exists()
+                || DB::table('ramadan_iftar_attendees')->where('target_group_id', $id)->exists(),
             'execution_needs' => DB::table('subject_execution_needs')->where('execution_need_type_id', $id)->exists(),
         };
     }

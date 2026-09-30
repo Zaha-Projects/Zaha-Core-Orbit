@@ -111,7 +111,7 @@ class RamadanIftarPlanningService
         });
         if ($types->contains('code', 'execution_team')) $this->syncTeams($iftar, $data['execution_teams']);
         if ($types->contains('code', 'volunteers')) $this->syncSimple($iftar->volunteerRequirements(), $data['volunteer_requirements'], [
-            'beneficiary_segment_id', 'gender', 'planned_count', 'tasks_summary',
+            'target_group_id', 'gender', 'planned_count', 'tasks_summary',
         ], fn () => ['subject_type' => EventSubjectTypes::RAMADAN_IFTAR, 'status' => SubjectVolunteerRequirement::STATUS_PENDING], ['actual_count']);
         if ($types->contains('code', 'supplies')) $this->syncSimple($iftar->supplies(), $data['supplies'], [
             'item_name', 'planned_quantity', 'planned_available', 'provider_type', 'provider_name', 'estimated_value', 'notes',
@@ -182,7 +182,7 @@ class RamadanIftarPlanningService
     private function syncTargetGroups(RamadanIftar $iftar, array $rows): void
     {
         $this->syncSimple($iftar->targetGroupSelections(), $rows, [
-            'target_group_id', 'beneficiary_segment_id', 'planned_count', 'notes',
+            'target_group_id', 'classification_target_group_id', 'planned_count', 'notes',
         ], fn () => [
             'subject_type' => EventSubjectTypes::RAMADAN_IFTAR,
             'subject_id' => $iftar->getKey(),

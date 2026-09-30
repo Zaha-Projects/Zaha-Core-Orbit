@@ -72,14 +72,14 @@
                     <input type="hidden" name="volunteer_requirements[{{ $i }}][id]" value="{{ $row['id'] ?? '' }}">
                     <div class="row g-2">
                         <div class="col-md-3">
-                            <label class="form-label">{{ __('ramadan_iftars.labels.beneficiary_segment') }}</label>
-                            <select class="form-select @error('volunteer_requirements.'.$i.'.beneficiary_segment_id') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][beneficiary_segment_id]">
+                            <label class="form-label">الفئة المستهدفة</label>
+                            <select class="form-select @error('volunteer_requirements.'.$i.'.target_group_id') is-invalid @enderror" name="volunteer_requirements[{{ $i }}][target_group_id]">
                                 <option value="">{{ __('ramadan_iftars.options.none') }}</option>
-                                @foreach($beneficiarySegments as $segment)
-                                    <option value="{{ $segment->id }}" {{ ($row['beneficiary_segment_id'] ?? null) == $segment->id ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? $segment->name_ar : ($segment->name_en ?: $segment->name_ar) }}</option>
+                                @foreach($targetGroups as $segment)
+                                    <option value="{{ $segment->id }}" {{ ($row['target_group_id'] ?? null) == $segment->id ? 'selected' : '' }}>{{ $segment->name }}</option>
                                 @endforeach
                             </select>
-                            @error('volunteer_requirements.'.$i.'.beneficiary_segment_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('volunteer_requirements.'.$i.'.target_group_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">النوع</label>

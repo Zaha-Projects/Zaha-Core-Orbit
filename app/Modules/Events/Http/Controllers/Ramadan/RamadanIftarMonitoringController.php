@@ -15,7 +15,7 @@ class RamadanIftarMonitoringController extends Controller
     public function index(Request $request, RamadanIftar $ramadanIftar, RamadanIftarMonitoringService $monitoring)
     {
         $this->authorizeMonitoring($request, $ramadanIftar, false);
-        $ramadanIftar->load(['monitoringReports.monitoringMethod', 'monitoringReports.monitor', 'monitoringReports.verifications', 'targetGroupSelections.targetGroup', 'targetGroupSelections.beneficiarySegment', 'attendees', 'meals', 'gifts', 'programSegments', 'executionTeams', 'volunteerRequirements.beneficiarySegment', 'supplies', 'executionNeeds.executionNeedType']);
+        $ramadanIftar->load(['monitoringReports.monitoringMethod', 'monitoringReports.monitor', 'monitoringReports.verifications', 'targetGroupSelections.targetGroup', 'targetGroupSelections.classificationTargetGroup', 'attendees', 'meals', 'gifts', 'programSegments', 'executionTeams', 'volunteerRequirements.targetGroup', 'supplies', 'executionNeeds.executionNeedType']);
         $monitoringReport = $ramadanIftar->monitoringReports
             ->whereIn('status', [MonitoringReport::STATUS_DRAFT, MonitoringReport::STATUS_RETURNED])
             ->sortByDesc('updated_at')->first();

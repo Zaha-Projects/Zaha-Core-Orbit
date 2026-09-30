@@ -24,7 +24,23 @@ class TargetGroup extends Model
         'is_active' => 'boolean',
         'is_monthly_activity' => 'boolean',
         'is_ramadan_iftar' => 'boolean',
+        'sort_order' => 'integer',
     ];
+
+    public function ramadanSelections()
+    {
+        return $this->hasMany(SubjectTargetGroup::class);
+    }
+
+    public function ramadanClassifications()
+    {
+        return $this->hasMany(SubjectTargetGroup::class, 'classification_target_group_id');
+    }
+
+    public function volunteerRequirements()
+    {
+        return $this->hasMany(SubjectVolunteerRequirement::class);
+    }
 
     public function scopeActive($query)
     {

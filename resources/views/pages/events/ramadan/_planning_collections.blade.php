@@ -1,7 +1,7 @@
 @php
 $definitions = [
     'program_segments' => ['name','starts_at','ends_at','duration_minutes','sort_order','executor_user_id','external_executor_name'],
-    'volunteer_requirements' => ['beneficiary_segment_id','gender','planned_count','tasks_summary'],
+    'volunteer_requirements' => ['target_group_id','gender','planned_count','tasks_summary'],
 ];
 $sectionKeys = ['gifts'=>'gifts','program_segments'=>'programs','volunteer_requirements'=>'volunteers','supplies'=>'supplies'];
 $addKeys = ['gifts'=>'add_gift','program_segments'=>'add_program','volunteer_requirements'=>'add_volunteer','supplies'=>'add_supply'];
@@ -9,7 +9,7 @@ $fieldKeys = [
     'description'=>'description','planned_quantity'=>'planned_quantity','has_supporting_entity'=>'supporting_entity',
     'supporting_entity_name'=>'supporting_entity_name','unit_value'=>'unit_value','name'=>'name',
     'starts_at'=>'starts_at','ends_at'=>'ends_at','duration_minutes'=>'duration_minutes','sort_order'=>'sort_order',
-    'executor_user_id'=>'executor','external_executor_name'=>'external_executor_name','beneficiary_segment_id'=>'beneficiary_segment',
+    'executor_user_id'=>'executor','external_executor_name'=>'external_executor_name','target_group_id'=>'target_group',
     'gender'=>'gender','planned_count'=>'planned_count','tasks_summary'=>'tasks_summary','item_name'=>'item_name',
     'provider_type'=>'provider_type','provider_name'=>'provider_name','estimated_value'=>'estimated_value','notes'=>'notes',
 ];
@@ -34,8 +34,8 @@ $fieldKeys = [
                     <select class="form-select @error($errorKey) is-invalid @enderror" name="{{ $collection }}[{{ $i }}][{{ $field }}]"><option value="0">{{ __('ramadan_iftars.options.no_supporter') }}</option><option value="1" {{ ($row[$field] ?? false) ? 'selected' : '' }}>{{ __('ramadan_iftars.options.supported') }}</option></select>
                 @elseif($field === 'executor_user_id')
                     <select class="form-select @error($errorKey) is-invalid @enderror" name="{{ $collection }}[{{ $i }}][{{ $field }}]"><option value="">{{ __('ramadan_iftars.options.external_none') }}</option>@foreach($users as $user)<option value="{{ $user->id }}" {{ ($row[$field] ?? null) == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>@endforeach</select>
-                @elseif($field === 'beneficiary_segment_id')
-                    <select class="form-select @error($errorKey) is-invalid @enderror" name="{{ $collection }}[{{ $i }}][{{ $field }}]"><option value="">{{ __('ramadan_iftars.options.none') }}</option>@foreach($beneficiarySegments as $segment)<option value="{{ $segment->id }}" {{ ($row[$field] ?? null) == $segment->id ? 'selected' : '' }}>{{ app()->getLocale()==='ar' ? $segment->name_ar : ($segment->name_en ?: $segment->name_ar) }}</option>@endforeach</select>
+                @elseif($field === 'target_group_id')
+                    <select class="form-select @error($errorKey) is-invalid @enderror" name="{{ $collection }}[{{ $i }}][{{ $field }}]"><option value="">{{ __('ramadan_iftars.options.none') }}</option>@foreach($targetGroups as $group)<option value="{{ $group->id }}" {{ ($row[$field] ?? null) == $group->id ? 'selected' : '' }}>{{ $group->name }}</option>@endforeach</select>
                 @elseif($field === 'gender')
                     <select class="form-select @error($errorKey) is-invalid @enderror" name="{{ $collection }}[{{ $i }}][{{ $field }}]">@foreach(['male','female','mixed'] as $option)<option value="{{ $option }}" {{ ($row[$field] ?? null) === $option ? 'selected' : '' }}>{{ __('ramadan_iftars.options.'.$option) }}</option>@endforeach</select>
                 @else

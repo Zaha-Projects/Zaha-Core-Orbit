@@ -7,7 +7,6 @@ use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Http\Requests\Ramadan\StoreRamadanIftarRequest;
-use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;
 use App\Modules\Events\Models\MobilizationMethod;
@@ -55,8 +54,8 @@ class RamadanIftarController extends Controller
         $this->authorizePlanningAccess($request, $ramadanIftar);
         abort_unless($ramadanIftar->isPlanningEditable(), 403);
         $ramadanIftar->load([
-            'attendees', 'targetGroupSelections', 'meals.items', 'gifts', 'programSegments',
-            'executionTeams.members', 'volunteerRequirements.beneficiarySegment', 'supplies',
+            'attendees', 'targetGroupSelections.classificationTargetGroup', 'meals.items', 'gifts', 'programSegments',
+            'executionTeams.members', 'volunteerRequirements.targetGroup', 'supplies',
             'executionNeeds.executionNeedType',
         ]);
 
@@ -96,13 +95,11 @@ class RamadanIftarController extends Controller
             'targetGroups' => TargetGroup::query()->where(function ($query) use ($iftar) {
                 $query->where(fn ($available) => $available->active()->forRamadanIftars());
                 if ($iftar) {
-                    $query->orWhereIn('id', $iftar->targetGroupSelections()->pluck('target_group_id'));
+                    $query->orWhereIn('id', $iftar->targetGroupSelections()->pluck('target_group_id')
+                        ->merge($iftar->targetGroupSelections()->pluck('classification_target_group_id'))
+                        ->merge($iftar->volunteerRequirements()->pluck('target_group_id'))->filter());
                 }
             })->orderBy('sort_order')->get(),
-            'beneficiarySegments' => BeneficiarySegment::query()->where(function ($query) use ($iftar) {
-                $query->active();
-                if ($iftar) $query->orWhereIn('id', $iftar->targetGroupSelections()->pluck('beneficiary_segment_id')->merge($iftar->volunteerRequirements()->pluck('beneficiary_segment_id'))->filter());
-            })->ordered()->get(),
             'mobilizationMethods' => MobilizationMethod::query()->where(fn ($query) => $query->active()->when($iftar?->mobilization_method_id, fn ($q, $id) => $q->orWhere('id', $id)))->ordered()->get(),
             'selectedCommunityOrganization' => $iftar?->community_organization_id ? CommunityOrganization::query()->where('branch_id', $selectedBranchId)->find($iftar->community_organization_id) : null,
             'selectedLocalCommunity' => $iftar?->local_community_id ? LocalCommunity::query()->where('branch_id', $selectedBranchId)->find($iftar->local_community_id) : null,

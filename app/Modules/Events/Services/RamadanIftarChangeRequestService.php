@@ -94,8 +94,8 @@ class RamadanIftarChangeRequestService
             'submitted_at' => null, 'approved_at' => null, 'closed_at' => null,
         ]));
 
-        foreach ($source->attendees as $row) $revision->attendees()->create(Arr::only($row->getAttributes(), ['full_name','phone','age','target_group_id','beneficiary_segment_id','notes']));
-        foreach ($source->targetGroupSelections as $row) $revision->targetGroupSelections()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['target_group_id','beneficiary_segment_id','planned_count','notes'])));
+        foreach ($source->attendees as $row) $revision->attendees()->create(Arr::only($row->getAttributes(), ['full_name','phone','age','target_group_id','notes']));
+        foreach ($source->targetGroupSelections as $row) $revision->targetGroupSelections()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['target_group_id','classification_target_group_id','planned_count','notes'])));
         foreach ($source->meals as $row) {
             $copy = $revision->meals()->create(Arr::only($row->getAttributes(), ['description','planned_quantity','source_type','source_name','restaurant_name','restaurant_contact']));
             foreach ($row->items as $item) $copy->items()->create(Arr::only($item->getAttributes(), ['name','item_type','quantity','notes','sort_order']));
@@ -106,7 +106,7 @@ class RamadanIftarChangeRequestService
             $copy = $revision->executionTeams()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['name','leader_user_id','planned_members_count','notes'])));
             foreach ($row->members as $member) $copy->members()->create(Arr::only($member->getAttributes(), ['user_id','member_name','phone','role_name','task_description']));
         }
-        foreach ($source->volunteerRequirements as $row) $revision->volunteerRequirements()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['beneficiary_segment_id','gender','planned_count','tasks_summary']), ['status' => SubjectVolunteerRequirement::STATUS_PENDING]));
+        foreach ($source->volunteerRequirements as $row) $revision->volunteerRequirements()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['target_group_id','gender','planned_count','tasks_summary']), ['status' => SubjectVolunteerRequirement::STATUS_PENDING]));
         foreach ($source->supplies as $row) $revision->supplies()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['item_name','planned_quantity','planned_available','provider_type','provider_name','estimated_value','notes']), ['status' => EventSupply::STATUS_PENDING]));
         foreach ($source->executionNeeds as $row) $revision->executionNeeds()->create(array_merge(['subject_type' => EventSubjectTypes::RAMADAN_IFTAR], Arr::only($row->getAttributes(), ['execution_need_type_id','is_required','planned_details']), ['status' => SubjectExecutionNeed::STATUS_PENDING]));
 

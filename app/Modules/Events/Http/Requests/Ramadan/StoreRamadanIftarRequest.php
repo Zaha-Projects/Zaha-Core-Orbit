@@ -5,7 +5,6 @@ namespace App\Modules\Events\Http\Requests\Ramadan;
 use App\Modules\Events\Models\TargetGroup;
 use App\Models\User;
 use App\Modules\Events\Models\ExecutionNeedType;
-use App\Modules\Events\Models\BeneficiarySegment;
 use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\LocalCommunity;
 use App\Modules\Events\Models\MealType;
@@ -128,7 +127,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'target_groups' => ['present', 'array'],
             'target_groups.*.id' => ['nullable', 'integer'],
             'target_groups.*.target_group_id' => ['required', 'integer', 'exists:target_groups,id'],
-            'target_groups.*.beneficiary_segment_id' => ['nullable', 'integer', 'exists:beneficiary_segments,id'],
+            'target_groups.*.classification_target_group_id' => ['nullable', 'integer', 'exists:target_groups,id'],
             'target_groups.*.planned_count' => ['required', 'integer', 'min:0'],
             'target_groups.*.notes' => ['nullable', 'string'],
             'meals' => ['present', 'array'],
@@ -187,7 +186,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'volunteer_tasks_summary' => ['nullable', 'string', 'max:1500', 'required_if:needs_volunteers,1'],
             'volunteer_requirements' => ['present', 'array'],
             'volunteer_requirements.*.id' => ['nullable', 'integer'],
-            'volunteer_requirements.*.beneficiary_segment_id' => ['required', 'integer', 'exists:beneficiary_segments,id'],
+            'volunteer_requirements.*.target_group_id' => ['required', 'integer', 'exists:target_groups,id'],
             'volunteer_requirements.*.gender' => ['required', Rule::in(['male', 'female', 'mixed'])],
             'volunteer_requirements.*.planned_count' => ['required', 'integer', 'min:1'],
             'volunteer_requirements.*.tasks_summary' => ['required', 'string'],
@@ -229,12 +228,12 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.restaurant_contact' => 'رقم التواصل مع المطعم',
             'meals.*.items.*.name' => 'اسم الطبق',
             'meals.*.items.*.notes' => 'مكونات الطبق',
-            'volunteer_requirements.*.beneficiary_segment_id' => 'الفئة العمرية للمتطوعين',
+            'volunteer_requirements.*.target_group_id' => 'الفئة المستهدفة للمتطوعين',
             'volunteer_requirements.*.gender' => 'جنس المتطوعين',
             'volunteer_requirements.*.planned_count' => 'عدد المتطوعين',
             'volunteer_requirements.*.tasks_summary' => 'مهام المتطوعين',
             'target_groups.*.target_group_id' => 'الفئة المستهدفة',
-            'target_groups.*.beneficiary_segment_id' => 'شريحة المستفيدين',
+            'target_groups.*.classification_target_group_id' => 'التصنيف المرتبط',
             'target_groups.*.planned_count' => 'العدد المخطط للفئة',
             'execution_teams.*.name' => 'اسم فريق التنفيذ',
             'execution_teams' => 'فريق التنفيذ',
@@ -365,24 +364,28 @@ class StoreRamadanIftarRequest extends FormRequest
         $existingTargetIds = $this->route('ramadanIftar') instanceof RamadanIftar
             ? $this->route('ramadanIftar')->targetGroupSelections()->pluck('target_group_id')
             : collect();
-        $existingSegmentIds = $this->route('ramadanIftar') instanceof RamadanIftar
-            ? $this->route('ramadanIftar')->targetGroupSelections()->pluck('beneficiary_segment_id')
-                ->merge($this->route('ramadanIftar')->volunteerRequirements()->pluck('beneficiary_segment_id'))->filter()
+        $existingClassificationIds = $this->route('ramadanIftar') instanceof RamadanIftar
+            ? $this->route('ramadanIftar')->targetGroupSelections()->pluck('classification_target_group_id')
+                ->merge($this->route('ramadanIftar')->volunteerRequirements()->pluck('target_group_id'))->filter()
             : collect();
         foreach ($this->input('target_groups', []) as $i => $row) {
             $group = TargetGroup::query()->whereKey($row['target_group_id'])->where(function ($query) use ($existingTargetIds) {
                 $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingTargetIds);
             })->first();
             if (! $group) $validator->errors()->add("target_groups.$i.target_group_id", __('validation.exists', ['attribute' => 'الفئة المستهدفة']));
-            if ($segmentId = ($row['beneficiary_segment_id'] ?? null)) {
-                $segment = BeneficiarySegment::query()->whereKey($segmentId)->where(fn ($query) => $query->active()->orWhereIn('id', $existingSegmentIds))->first();
-                if (! $segment) $validator->errors()->add("target_groups.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'شريحة المستفيدين']));
+            if ($classificationId = ($row['classification_target_group_id'] ?? null)) {
+                $classification = TargetGroup::query()->whereKey($classificationId)->where(function ($query) use ($existingClassificationIds) {
+                    $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingClassificationIds);
+                })->first();
+                if (! $classification) $validator->errors()->add("target_groups.$i.classification_target_group_id", __('validation.exists', ['attribute' => 'التصنيف المرتبط']));
             }
         }
         foreach ($this->input('volunteer_requirements', []) as $i => $requirement) {
-            $segmentId = $requirement['beneficiary_segment_id'] ?? null;
-            if ($segmentId && ! BeneficiarySegment::query()->whereKey($segmentId)->where(fn ($query) => $query->active()->orWhereIn('id', $existingSegmentIds))->exists()) {
-                $validator->errors()->add("volunteer_requirements.$i.beneficiary_segment_id", __('validation.exists', ['attribute' => 'الفئة العمرية للمتطوعين']));
+            $targetGroupId = $requirement['target_group_id'] ?? null;
+            if ($targetGroupId && ! TargetGroup::query()->whereKey($targetGroupId)->where(function ($query) use ($existingClassificationIds) {
+                $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingClassificationIds);
+            })->exists()) {
+                $validator->errors()->add("volunteer_requirements.$i.target_group_id", __('validation.exists', ['attribute' => 'الفئة المستهدفة للمتطوعين']));
             }
         }
         foreach ($this->input('gifts', []) as $i => $gift) if (($gift['has_supporting_entity'] ?? false) && blank($gift['supporting_entity_name'] ?? null)) $validator->errors()->add("gifts.$i.supporting_entity_name", __('validation.required', ['attribute' => 'اسم الجهة الداعمة']));

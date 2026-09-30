@@ -17,6 +17,7 @@ class SubjectTargetGroup extends Model
         'target_group_id',
         'target_group_custom_text',
         'beneficiary_segment_id',
+        'classification_target_group_id',
         'segment_custom_text',
         'planned_count',
         'actual_count',
@@ -27,6 +28,7 @@ class SubjectTargetGroup extends Model
         'subject_id' => 'integer',
         'target_group_id' => 'integer',
         'beneficiary_segment_id' => 'integer',
+        'classification_target_group_id' => 'integer',
         'planned_count' => 'integer',
         'actual_count' => 'integer',
     ];
@@ -34,6 +36,11 @@ class SubjectTargetGroup extends Model
     public function targetGroup()
     {
         return $this->belongsTo(TargetGroup::class);
+    }
+
+    public function classificationTargetGroup()
+    {
+        return $this->belongsTo(TargetGroup::class, 'classification_target_group_id');
     }
 
     public function beneficiarySegment()

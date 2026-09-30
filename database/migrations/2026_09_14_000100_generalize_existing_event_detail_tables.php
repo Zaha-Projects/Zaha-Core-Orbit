@@ -14,7 +14,8 @@ return new class extends Migration
             $table->string('subject_type', 100)->nullable()->after('id');
             $table->unsignedBigInteger('subject_id')->nullable()->after('subject_type');
             $table->text('target_group_custom_text')->nullable()->after('custom_text');
-            $table->foreignId('beneficiary_segment_id')->nullable()->constrained('beneficiary_segments')->restrictOnDelete();
+            $table->foreignId('beneficiary_segment_id')->nullable()->constrained('beneficiary_segments')->restrictOnDelete(); // Legacy historical reference.
+            $table->foreignId('classification_target_group_id')->nullable()->constrained('target_groups')->restrictOnDelete();
             $table->text('segment_custom_text')->nullable();
             $table->unsignedInteger('planned_count')->nullable();
             $table->unsignedInteger('actual_count')->nullable();
@@ -103,8 +104,9 @@ return new class extends Migration
 
         Schema::table('event_target_group', function (Blueprint $table) {
             $table->dropForeign(['beneficiary_segment_id']);
+            $table->dropForeign(['classification_target_group_id']);
             $table->dropIndex('event_target_group_subject_idx');
-            $table->dropColumn(['subject_type', 'subject_id', 'target_group_custom_text', 'beneficiary_segment_id', 'segment_custom_text', 'planned_count', 'actual_count', 'notes']);
+            $table->dropColumn(['subject_type', 'subject_id', 'target_group_custom_text', 'beneficiary_segment_id', 'classification_target_group_id', 'segment_custom_text', 'planned_count', 'actual_count', 'notes']);
         });
         $this->setNotNullable('event_target_group', 'monthly_activity_id', 'BIGINT UNSIGNED');
     }

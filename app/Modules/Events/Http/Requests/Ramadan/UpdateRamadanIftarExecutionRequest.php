@@ -39,7 +39,6 @@ class UpdateRamadanIftarExecutionRequest extends FormRequest
             'attendees.*.phone' => ['nullable', 'string', 'max:50'],
             'attendees.*.age' => ['nullable', 'integer', 'min:0', 'max:150'],
             'attendees.*.target_group_id' => ['nullable', 'integer', 'exists:target_groups,id'],
-            'attendees.*.beneficiary_segment_id' => ['nullable', 'integer', 'exists:beneficiary_segments,id'],
             'attendees.*.attended' => ['required', 'boolean'],
             'attendees.*.notes' => ['nullable', 'string', 'max:2000'],
             'attendees.*._delete' => ['nullable', 'boolean'],
@@ -83,9 +82,6 @@ class UpdateRamadanIftarExecutionRequest extends FormRequest
             foreach ($this->input('attendees', []) as $index => $row) {
                 if (! empty($row['target_group_id']) && ! \App\Modules\Events\Models\TargetGroup::query()->active()->forRamadanIftars()->whereKey($row['target_group_id'])->exists()) {
                     $validator->errors()->add("attendees.$index.target_group_id", 'The selected target group is not available for Ramadan Iftars.');
-                }
-                if (! empty($row['beneficiary_segment_id']) && ! \App\Modules\Events\Models\BeneficiarySegment::query()->active()->whereKey($row['beneficiary_segment_id'])->exists()) {
-                    $validator->errors()->add("attendees.$index.beneficiary_segment_id", 'The selected beneficiary segment is inactive.');
                 }
             }
         });

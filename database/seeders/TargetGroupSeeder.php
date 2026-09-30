@@ -9,18 +9,26 @@ class TargetGroupSeeder extends Seeder
 {
     public function run(): void
     {
-        $groups = ['children' => 'أطفال', 'youth' => 'شباب', 'elderly' => 'كبار السن', 'other' => 'أخرى'];
+        $groups = [
+            'children' => 'أطفال',
+            'youth' => 'شباب',
+            'women' => 'سيدات',
+            'disability' => 'ذوي إعاقة',
+            'local_community' => 'مجتمع محلي',
+            'other' => 'أخرى',
+        ];
 
-        foreach ($groups as $index => $name) {
-            $code = array_keys($groups)[$index];
+        $sortOrder = 10;
+        foreach ($groups as $code => $name) {
             TargetGroup::query()->updateOrCreate(['code' => $code], [
                 'name' => $name,
-                'sort_order' => ($index + 1) * 10,
+                'sort_order' => $sortOrder,
                 'is_other' => $code === 'other',
                 'is_active' => true,
                 'is_monthly_activity' => true,
                 'is_ramadan_iftar' => true,
             ]);
+            $sortOrder += 10;
         }
 
         TargetGroup::query()->whereNotIn('code', array_keys($groups))->update(['is_active' => false]);
