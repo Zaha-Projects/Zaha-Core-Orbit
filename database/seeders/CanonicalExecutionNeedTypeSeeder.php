@@ -37,6 +37,15 @@ class CanonicalExecutionNeedTypeSeeder extends Seeder
             // A reference-code upgrade must not replace an explicit scope choice.
             ExecutionNeedType::query()->where('code', $code)->where('is_canonical', false)
                 ->whereNotNull('scope_configured_at')->update(['is_canonical' => true]);
+
+            $need = ExecutionNeedType::query()->where('code', $code)->first();
+            if ($need) {
+                $moduleConfig = is_array($need->module_config) ? $need->module_config : (json_decode($need->module_config ?: '{}', true) ?: []);
+                if (! array_key_exists('bazaar', $moduleConfig)) {
+                    $moduleConfig['bazaar'] = ['available' => $definition['monthly'] ?? true, 'required' => false];
+                    $need->update(['module_config' => $moduleConfig]);
+                }
+            }
         }
     }
 }

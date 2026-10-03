@@ -31,7 +31,7 @@ class WorkflowSeeder extends Seeder
     {
         $this->validateSteps($code, $steps);
 
-        $workflow = Workflow::query()->updateOrCreate(
+        $workflow = Workflow::query()->firstOrCreate(
             ['code' => $code],
             [
                 'module' => $module,
@@ -40,13 +40,6 @@ class WorkflowSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-
-        $stepKeys = collect($steps)->pluck('step_key')->all();
-
-        WorkflowStep::query()
-            ->where('workflow_id', $workflow->id)
-            ->whereNotIn('step_key', $stepKeys)
-            ->delete();
 
         foreach ($steps as $step) {
             $role = Role::query()
@@ -58,7 +51,7 @@ class WorkflowSeeder extends Seeder
                 throw new InvalidArgumentException("Role [{$step['role']}] is missing for workflow [{$code}].");
             }
 
-            WorkflowStep::query()->updateOrCreate(
+            WorkflowStep::query()->firstOrCreate(
                 [
                     'workflow_id' => $workflow->id,
                     'step_key' => $step['step_key'],

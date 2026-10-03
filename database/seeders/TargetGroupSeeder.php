@@ -40,7 +40,7 @@ class TargetGroupSeeder extends Seeder
             ]);
             $sortOrder += 10;
         }
-
-        TargetGroup::query()->whereNotIn('code', array_keys($groups))->update(['is_active' => false]);
+        // Unknown and administrator-managed groups are production data. Catalogue
+        // cleanup must be an explicit operation, never a side effect of seeding.
     }
 }
