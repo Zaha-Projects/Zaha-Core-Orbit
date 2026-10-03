@@ -274,6 +274,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/{bazaar}/execution', [BazaarController::class, 'saveExecution'])->middleware('permission:bazaars.post_execution')->whereNumber('bazaar')->name('execution.update');
         Route::post('/discounts/{discount}/decision', [BazaarController::class, 'decideDiscount'])->middleware('permission:bazaars.discount_review')->whereNumber('discount')->name('discounts.decision');
         Route::post('/{bazaar}/verify', [BazaarController::class, 'verify'])->middleware('permission:bazaars.monitor')->whereNumber('bazaar')->name('verify');
+        Route::post('/{bazaar}/close', [BazaarController::class, 'close'])->middleware('permission:bazaars.close')->whereNumber('bazaar')->name('close');
     });
 
     Route::prefix('dashboard/events/ramadan/iftars')->name('events.ramadan.iftars.')->middleware('branch.isolation')->group(function () {

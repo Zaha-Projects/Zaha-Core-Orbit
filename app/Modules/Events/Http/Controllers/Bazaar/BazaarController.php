@@ -105,10 +105,19 @@ class BazaarController extends Controller
     {
         $this->access($request, $bazaar); abort_unless($bazaar->status === Bazaar::STATUS_POST_EXECUTION, 422);
         abort_if($bazaar->tables()->whereHas('currentDiscount', fn ($q) => $q->where('status', 'pending'))->exists(), 422, 'لا يمكن إكمال المتابعة قبل البت في الخصومات المعلقة.');
-        $data = $request->validate(['decision' => ['required', Rule::in(['verify', 'return', 'complete'])], 'verification_note' => ['nullable', 'string', 'max:2000']]);
-        $status = ['verify' => Bazaar::STATUS_VERIFIED, 'return' => Bazaar::STATUS_EXECUTING, 'complete' => Bazaar::STATUS_COMPLETED][$data['decision']];
-        $bazaar->update(['status' => $status, 'verified_by' => $request->user()->id, 'verified_at' => in_array($data['decision'], ['verify', 'complete']) ? now() : null, 'verification_note' => $data['verification_note'] ?? null]);
+        $data = $request->validate(['decision' => ['required', Rule::in(['verify', 'return'])], 'verification_note' => ['nullable', 'string', 'max:2000']]);
+        $status = $data['decision'] === 'verify' ? Bazaar::STATUS_VERIFIED : Bazaar::STATUS_EXECUTING;
+        $bazaar->update(['status' => $status, 'verified_by' => $request->user()->id, 'verified_at' => $data['decision'] === 'verify' ? now() : null, 'verification_note' => $data['verification_note'] ?? null]);
         return back()->with('success', 'تم حفظ قرار المتابعة.');
+    }
+
+    public function close(Request $request, Bazaar $bazaar)
+    {
+        $this->access($request, $bazaar);
+        abort_unless($bazaar->status === Bazaar::STATUS_VERIFIED, 422);
+        $bazaar->update(['status' => Bazaar::STATUS_COMPLETED]);
+
+        return back()->with('success', 'تم الاعتماد النهائي وإغلاق البازار.');
     }
 
     private function sync(Bazaar $bazaar, array $data): void
