@@ -2,16 +2,18 @@
 
 namespace App\Services\AdminReports;
 
-use App\Models\AgendaApproval;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaApproval;
+use App\Modules\Events\Support\EventAggregateIdentity;
+use App\Modules\Events\Support\EventRequestModelIdentity;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Branch;
 use App\Models\DonationCash;
 use App\Models\MaintenanceRequest;
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\Trip;
@@ -81,7 +83,7 @@ class AdminReportsService
         $branchActivityRows = MonthlyActivity::query()
             ->leftJoin('workflow_instances', function ($join): void {
                 $join->on('workflow_instances.entity_id', '=', 'monthly_activities.id')
-                    ->where('workflow_instances.entity_type', '=', MonthlyActivity::class);
+                    ->whereIn('workflow_instances.entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class));
             })
             ->leftJoin('workflow_steps', 'workflow_steps.id', '=', 'workflow_instances.current_step_id')
             ->select('monthly_activities.branch_id')
@@ -138,14 +140,39 @@ class AdminReportsService
             ->orderByDesc('total')
             ->get();
 
-        $approvalSpeed = WorkflowInstance::query()
-            ->whereIn('entity_type', [MonthlyActivity::class, AgendaEvent::class, MonthlyPlanEditRequest::class, MonthlyPlanDeleteRequest::class])
+        $approvalWorkflows = WorkflowInstance::query()
+            ->whereIn('entity_type', array_merge(
+                EventAggregateIdentity::acceptedTypes(MonthlyActivity::class),
+                EventAggregateIdentity::acceptedTypes(AgendaEvent::class),
+                EventRequestModelIdentity::acceptedTypes(MonthlyPlanEditRequest::class),
+                EventRequestModelIdentity::acceptedTypes(MonthlyPlanDeleteRequest::class),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_EDIT_CANONICAL),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_DELETE_CANONICAL),
+            ))
             ->whereNotNull('started_at')
             ->whereNotNull('completed_at')
             ->whereYear('started_at', $year)
             ->whereMonth('started_at', $month)
-            ->get(['entity_type', 'started_at', 'completed_at'])
-            ->groupBy('entity_type')
+            ->get(['workflow_id', 'entity_type', 'entity_id', 'started_at', 'completed_at']);
+
+        $duplicateWorkflow = $approvalWorkflows
+            ->groupBy(fn (WorkflowInstance $instance): string => implode(':', [
+                EventAggregateIdentity::legacyFor($instance->entity_type)
+                    ?? EventRequestModelIdentity::legacyFor($instance->entity_type)
+                    ?? $instance->entity_type,
+                $instance->workflow_id,
+                $instance->entity_id,
+            ]))
+            ->first(fn ($instances): bool => $instances->count() > 1);
+
+        if ($duplicateWorkflow) {
+            throw new \LogicException('Conflicting legacy and canonical workflows cannot be reported safely.');
+        }
+
+        $approvalSpeed = $approvalWorkflows
+            ->groupBy(fn (WorkflowInstance $instance): string => EventAggregateIdentity::legacyFor($instance->entity_type)
+                ?? EventRequestModelIdentity::legacyFor($instance->entity_type)
+                ?? $instance->entity_type)
             ->map(function ($rows, string $entityType): array {
                 $minutes = $rows->map(fn ($row) => $row->started_at->diffInMinutes($row->completed_at))->values();
 

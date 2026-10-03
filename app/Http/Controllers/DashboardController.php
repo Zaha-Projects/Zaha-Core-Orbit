@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Models\CommunicationsRequest;
 use App\Models\DepartmentUnit;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Models\Setting;
+use App\Modules\Events\Models\EventSubjectTypes;
+use App\Modules\Events\Models\MonitoringReport;
+use App\Modules\Events\Models\RamadanIftar;
+use App\Modules\Events\Models\RamadanPeriod;
+use App\Modules\Events\Models\Bazaar;
 use Carbon\Carbon;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
@@ -179,7 +185,68 @@ class DashboardController extends Controller
             })
             ->values();
 
-        $calendarEvents = $agendaEvents->concat($monthlyActivityEvents)->values();
+        $calendarStart = now()->copy()->startOfYear();
+        $calendarEnd = now()->copy()->endOfYear();
+        $scopeCalendarQuery = function ($query) use ($user) {
+            if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
+                $query->whereIn('branch_id', $user->scopedBranchIds());
+            }
+
+            return $query;
+        };
+
+        $ramadanIftarEvents = collect();
+        if ($user->hasRole('super_admin') || $user->can('ramadan_iftars.view')) {
+            $ramadanIftarEvents = $scopeCalendarQuery(RamadanIftar::query())
+                ->select(['id', 'branch_id', 'title', 'planned_date', 'location_name', 'status'])
+                ->whereBetween('planned_date', [$calendarStart->toDateString(), $calendarEnd->toDateString()])
+                ->get()
+                ->map(fn (RamadanIftar $iftar): array => [
+                    'title' => $iftar->title,
+                    'start' => $iftar->planned_date->toDateString(),
+                    'allDay' => true,
+                    'url' => route('events.ramadan.iftars.show', $iftar),
+                    'type' => 'ramadan_iftar',
+                    'color' => '#7c3aed',
+                    'extendedProps' => [
+                        'owner_branch' => $branchesById->get((int) $iftar->branch_id, '—'),
+                        'location' => $iftar->location_name ?: '—',
+                        'status' => $iftar->status,
+                    ],
+                ]);
+        }
+
+        $bazaarEvents = collect();
+        if ($user->hasRole('super_admin') || $user->can('bazaars.view')) {
+            $bazaarEvents = $scopeCalendarQuery(Bazaar::query())
+                ->select(['id', 'branch_id', 'name', 'bazaar_date', 'starts_at', 'ends_at', 'location_name', 'status'])
+                ->whereBetween('bazaar_date', [$calendarStart->toDateString(), $calendarEnd->toDateString()])
+                ->get()
+                ->map(function (Bazaar $bazaar) use ($branchesById): array {
+                    $date = $bazaar->bazaar_date->toDateString();
+                    $timeFrom = substr((string) $bazaar->starts_at, 0, 5);
+                    $timeTo = substr((string) $bazaar->ends_at, 0, 5);
+
+                    return [
+                        'title' => $bazaar->name,
+                        'start' => "{$date}T{$timeFrom}:00",
+                        'end' => "{$date}T{$timeTo}:00",
+                        'allDay' => false,
+                        'url' => route('events.bazaars.show', $bazaar),
+                        'type' => 'bazaar',
+                        'color' => '#d97706',
+                        'extendedProps' => [
+                            'owner_branch' => $branchesById->get((int) $bazaar->branch_id, '—'),
+                            'location' => $bazaar->location_name ?: '—',
+                            'status' => $bazaar->status,
+                            'time_from' => $timeFrom,
+                            'time_to' => $timeTo,
+                        ],
+                    ];
+                });
+        }
+
+        $calendarEvents = $agendaEvents->concat($monthlyActivityEvents)->concat($ramadanIftarEvents)->concat($bazaarEvents)->values();
 
         $agendaCount = $agendaEvents->count();
         $monthlyCount = $monthlyActivityEvents->count();
@@ -194,10 +261,77 @@ class DashboardController extends Controller
             'total' => $totalCount,
             'agenda' => $agendaCount,
             'monthly' => $monthlyCount,
+            'ramadan' => $ramadanIftarEvents->count(),
+            'bazaars' => $bazaarEvents->count(),
             'top_branch_name' => (string) ($topBranch->keys()->first() ?? '—'),
             'top_branch_count' => (int) ($topBranch->first() ?? 0),
         ];
 
-        return view('dashboard', compact('cards', 'calendarEvents', 'dashboardCalendarStats'));
+        $ramadanDashboard = $this->configuredRamadanDashboard($user);
+
+        return view('dashboard', compact('cards', 'calendarEvents', 'dashboardCalendarStats', 'ramadanDashboard'));
+    }
+
+    private function configuredRamadanDashboard($user): ?array
+    {
+        if (Setting::valueOf('ramadan_dashboard_enabled', '1') !== '1') {
+            return null;
+        }
+
+        return $this->ramadanDashboard($user);
+    }
+
+    private function ramadanDashboard($user): ?array
+    {
+        $period = RamadanPeriod::current();
+        if (! $period || ! $user || (! $user->hasRole('super_admin') && ! $user->can('ramadan_iftars.view'))) {
+            return null;
+        }
+
+        $base = RamadanIftar::query()
+            ->whereDoesntHave('versions')
+            ->whereBetween('planned_date', [$period->start_date->toDateString(), $period->end_date->toDateString()]);
+        if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
+            $branchIds = $user->scopedBranchIds();
+            $branchIds === [] ? $base->whereRaw('1 = 0') : $base->whereIn('branch_id', $branchIds);
+        }
+
+        $today = now()->toDateString();
+        $metrics = (clone $base)->selectRaw(
+            "COUNT(*) AS total,
+            SUM(CASE WHEN planned_date > ? AND closed_at IS NULL THEN 1 ELSE 0 END) AS upcoming,
+            SUM(CASE WHEN planned_date = ? THEN 1 ELSE 0 END) AS today_count,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS draft,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS awaiting_approval,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS approved,
+            SUM(CASE WHEN execution_status IN (?, ?) AND closed_at IS NULL THEN 1 ELSE 0 END) AS execution_active,
+            SUM(CASE WHEN execution_status = ? AND closed_at IS NULL AND NOT EXISTS (
+                SELECT 1 FROM monitoring_reports mr WHERE mr.subject_type = ? AND mr.subject_id = ramadan_iftars.id
+            ) THEN 1 ELSE 0 END) AS awaiting_monitoring,
+            SUM(CASE WHEN EXISTS (
+                SELECT 1 FROM monitoring_reports mr WHERE mr.subject_type = ? AND mr.subject_id = ramadan_iftars.id AND mr.status = ?
+            ) THEN 1 ELSE 0 END) AS monitoring_submitted,
+            SUM(CASE WHEN closed_at IS NOT NULL THEN 1 ELSE 0 END) AS closed",
+            [
+                $today, $today, RamadanIftar::STATUS_DRAFT, RamadanIftar::STATUS_SUBMITTED,
+                RamadanIftar::STATUS_APPROVED, RamadanIftar::EXECUTION_STATUS_PLANNED,
+                RamadanIftar::EXECUTION_STATUS_IN_PROGRESS, RamadanIftar::EXECUTION_STATUS_COMPLETED,
+                EventSubjectTypes::RAMADAN_IFTAR, EventSubjectTypes::RAMADAN_IFTAR,
+                MonitoringReport::STATUS_SUBMITTED,
+            ]
+        )->first();
+
+        $upcoming = (clone $base)->with(['branch:id,name', 'communityOrganization:id,name'])
+            ->whereDate('planned_date', '>=', $today)
+            ->whereNull('closed_at')
+            ->orderBy('planned_date')->orderBy('time_from')->limit(5)->get();
+
+        return [
+            'period' => $period,
+            'metrics' => collect($metrics?->getAttributes() ?? [])->map(fn ($value) => (int) $value)->all(),
+            'upcoming' => $upcoming,
+            'can_create' => $user->hasRole('super_admin') || $user->can('ramadan_iftars.create'),
+            'can_approve' => $user->hasRole('super_admin') || $user->can('ramadan_iftars.approve'),
+        ];
     }
 }

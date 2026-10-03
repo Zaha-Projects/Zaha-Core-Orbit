@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Roles\RelationsManager;
 
 use App\Http\Controllers\Controller;
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 
 class DashboardController extends Controller
 {

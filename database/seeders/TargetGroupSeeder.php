@@ -2,24 +2,45 @@
 
 namespace Database\Seeders;
 
-use App\Models\TargetGroup;
+use App\Modules\Events\Models\TargetGroup;
 use Illuminate\Database\Seeder;
 
 class TargetGroupSeeder extends Seeder
 {
     public function run(): void
     {
-        $groups = ['أطفال', 'شباب', 'سيدات', 'ذوي إعاقة', 'مجتمع محلي', 'أخرى'];
+        $groups = [
+            'children' => 'أطفال',
+            'youth' => 'شباب',
+            'women' => 'سيدات',
+            'disability' => 'ذوي إعاقة',
+            'local_community' => 'مجتمع محلي',
+            'other' => 'أخرى',
+        ];
 
-        foreach ($groups as $index => $name) {
-            TargetGroup::updateOrCreate(
-                ['name' => $name],
-                [
-                    'sort_order' => $index + 1,
-                    'is_other' => $name === 'أخرى',
-                    'is_active' => true,
-                ]
-            );
+        $types = [
+            'children' => TargetGroup::TYPE_AGE,
+            'youth' => TargetGroup::TYPE_AGE,
+            'women' => TargetGroup::TYPE_COMMUNITY,
+            'disability' => TargetGroup::TYPE_COMMUNITY,
+            'local_community' => TargetGroup::TYPE_COMMUNITY,
+            'other' => TargetGroup::TYPE_COMMUNITY,
+        ];
+
+        $sortOrder = 10;
+        foreach ($groups as $code => $name) {
+            TargetGroup::query()->updateOrCreate(['code' => $code], [
+                'name' => $name,
+                'type' => $types[$code],
+                'sort_order' => $sortOrder,
+                'is_other' => $code === 'other',
+                'is_active' => true,
+                'is_monthly_activity' => true,
+                'is_ramadan_iftar' => true,
+            ]);
+            $sortOrder += 10;
         }
+        // Unknown and administrator-managed groups are production data. Catalogue
+        // cleanup must be an explicit operation, never a side effect of seeding.
     }
 }

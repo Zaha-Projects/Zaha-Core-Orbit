@@ -13,6 +13,7 @@
             <a class="btn btn-outline-primary" href="{{ route('role.super_admin.reports', ['tab' => 'relations', 'report_year' => $reportYear, 'report_month' => $reportMonth]) }}">
                 الرجوع للتقارير
             </a>
+            <a class="btn btn-outline-success" href="{{ route('role.super_admin.ramadan_reference_data.index') }}">إدارة البيانات المرجعية</a>
         </div>
     </div>
 
@@ -30,7 +31,8 @@
                         @method('PUT')
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="admin_reports_cache_enabled" name="admin_reports_cache_enabled" value="1" @checked($cacheConfig['enabled'])>
+                                <input type="hidden" name="admin_reports_cache_enabled" value="0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="admin_reports_cache_enabled" name="admin_reports_cache_enabled" value="1" {{ (string) old('admin_reports_cache_enabled', $cacheConfig['enabled'] ? '1' : '0') === '1' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="admin_reports_cache_enabled">تفعيل كاش تقارير الأدمن</label>
                             </div>
                         </div>
@@ -115,7 +117,7 @@
                 <table class="table table-sm align-middle">
                     <thead><tr><th>Key</th><th>Value</th></tr></thead>
                     <tbody>
-                    @forelse($settings as $setting)
+                    @forelse($settings->reject(fn ($setting) => in_array($setting->key, ['ramadan_period_year', 'ramadan_period_start_date', 'ramadan_period_end_date', 'ramadan_period_is_active', 'ramadan_default_year'], true)) as $setting)
                         <tr><td><code>{{ $setting->key }}</code></td><td>{{ $setting->value }}</td></tr>
                     @empty
                         <tr><td colspan="2" class="text-muted">لا توجد إعدادات محفوظة.</td></tr>

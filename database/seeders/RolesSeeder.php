@@ -54,6 +54,15 @@ class RolesSeeder extends Seeder
             // another module merely because they are absent from this catalogue.
             $role->givePermissionTo($permissions);
         }
+
+        // Execution actuals belong to the branch Relations Officer. Explicitly
+        // remove the historical Follow-up grant even though this seeder is
+        // otherwise additive, so deployed role state matches the workflow.
+        $followup = Role::query()->where('guard_name', 'web')->where('name', 'followup_officer')->first();
+        $executionPermission = Permission::query()->where('guard_name', 'web')->where('name', 'ramadan_iftars.execute')->first();
+        if ($followup && $executionPermission) {
+            $followup->revokePermissionTo($executionPermission);
+        }
     }
 
     /**
@@ -94,6 +103,9 @@ class RolesSeeder extends Seeder
         return [
             'super_admin' => ['*'],
             'executive_manager' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.approve',
                 'monthly_activities.view',
@@ -116,6 +128,12 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'relations_manager' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.create',
+                'ramadan_iftars.edit',
+                'ramadan_iftars.submit',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.create',
                 'agenda.update',
@@ -134,6 +152,15 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'supervisor' => [
+                'bazaars.view',
+                'bazaars.approve',
+                'bazaars.discount_review',
+                'bazaars.close',
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.monitor.review',
+                'ramadan_iftars.close',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',
@@ -146,6 +173,18 @@ class RolesSeeder extends Seeder
                 'communications.view_media',
             ],
             'relations_officer' => [
+                'bazaars.view',
+                'bazaars.create',
+                'bazaars.edit',
+                'bazaars.submit',
+                'bazaars.execute',
+                'bazaars.post_execution',
+                'ramadan_iftars.view',
+                'ramadan_iftars.create',
+                'ramadan_iftars.edit',
+                'ramadan_iftars.submit',
+                'ramadan_iftars.execute',
+                'ramadan_iftars.change_request.create',
                 'agenda.view',
                 'agenda.create',
                 'agenda.update',
@@ -160,6 +199,10 @@ class RolesSeeder extends Seeder
                 'communications.upload_media',
             ],
             'followup_officer' => [
+                'bazaars.view',
+                'bazaars.monitor',
+                'ramadan_iftars.view',
+                'ramadan_iftars.monitor',
                 'agenda.view',
                 'monthly_activities.view',
                 'monthly_activities.view_other_branches',
@@ -182,6 +225,9 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'branch_coordinator' => [
+                'ramadan_iftars.view',
+                'ramadan_iftars.approve',
+                'ramadan_iftars.change_request.review',
                 'agenda.view',
                 'agenda.participation.update',
                 'monthly_activities.view',

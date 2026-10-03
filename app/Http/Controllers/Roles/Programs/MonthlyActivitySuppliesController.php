@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Roles\Programs;
 
 use App\Http\Controllers\Controller;
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivitySupply;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\EventSupply;
 use Illuminate\Http\Request;
 
 class MonthlyActivitySuppliesController extends Controller
@@ -17,7 +17,7 @@ class MonthlyActivitySuppliesController extends Controller
             'available' => ['nullable', 'boolean'],
         ]);
 
-        MonthlyActivitySupply::create([
+        EventSupply::create([
             'monthly_activity_id' => $monthlyActivity->id,
             'item_name' => $data['item_name'],
             'status' => $data['status'],
@@ -29,7 +29,7 @@ class MonthlyActivitySuppliesController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.supplies.created'));
     }
 
-    public function update(Request $request, MonthlyActivitySupply $monthlyActivitySupply)
+    public function update(Request $request, EventSupply $monthlyActivitySupply)
     {
         $data = $request->validate([
             'item_name' => ['required', 'string', 'max:255'],
@@ -48,7 +48,7 @@ class MonthlyActivitySuppliesController extends Controller
             ->with('status', __('app.roles.programs.monthly_activities.supplies.updated'));
     }
 
-    public function destroy(MonthlyActivitySupply $monthlyActivitySupply)
+    public function destroy(EventSupply $monthlyActivitySupply)
     {
         $activityId = $monthlyActivitySupply->monthly_activity_id;
         $monthlyActivitySupply->delete();

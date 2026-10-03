@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyActivityTeam;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\ExecutionTeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -21,7 +21,7 @@ class PostExecutionCompletionTest extends TestCase
             'needs_media_coverage' => false,
         ]);
 
-        MonthlyActivityTeam::query()->create([
+        ExecutionTeamMember::query()->create([
             'monthly_activity_id' => $activity->id,
             'team_name' => 'فريق التنظيم',
             'member_name' => 'عضو تجريبي',
@@ -103,7 +103,7 @@ class PostExecutionCompletionTest extends TestCase
 
         Role::findOrCreate('evaluation_officer', 'web');
 
-        MonthlyActivityTeam::query()->create([
+        ExecutionTeamMember::query()->create([
             'monthly_activity_id' => $activity->id,
             'team_name' => 'فريق التنظيم',
             'member_name' => 'عضو أول',

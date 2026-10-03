@@ -1,0 +1,10 @@
+
+/* Ramadan reference pickers are intentionally scoped to the module theme. */
+.ramadan-module .ramadan-picker-results { z-index: 1050; max-height: 18rem; overflow-y: auto; width: calc(100% - 1.5rem); background: var(--ramadan-surface, var(--bs-body-bg)); border-color: var(--ramadan-border, var(--bs-border-color)); }
+.ramadan-module .ramadan-picker-results .list-group-item { display: flex; flex-direction: column; gap: .2rem; color: var(--bs-body-color); background: transparent; text-align: right; }
+.ramadan-module .ramadan-picker-results .list-group-item:hover,
+.ramadan-module .ramadan-picker-results .list-group-item.active { color: var(--bs-body-color); background: color-mix(in srgb, var(--ramadan-primary, var(--bs-success)) 14%, transparent); border-color: var(--ramadan-primary, var(--bs-success)); }
+.ramadan-module .ramadan-picker-results small { color: var(--bs-secondary-color); }
+.ramadan-module .ramadan-picker-empty { padding: .85rem; color: var(--bs-secondary-color); background: var(--ramadan-surface, var(--bs-body-bg)); }
+.ramadan-module .ramadan-quick-create { border: 1px solid var(--ramadan-border, var(--bs-border-color)); border-radius: .5rem; background: var(--ramadan-surface, var(--bs-body-bg)); }
+.ramadan-module [data-reference-search]:focus { border-color: var(--ramadan-primary, var(--bs-success)); box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--ramadan-primary, var(--bs-success)) 20%, transparent); }

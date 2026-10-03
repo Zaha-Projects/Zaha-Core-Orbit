@@ -23,5 +23,7 @@ class SettingSeeder extends Seeder
         foreach ($settings as $key => $value) {
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
+
+        $this->call(RamadanDashboardSettingSeeder::class);
     }
 }

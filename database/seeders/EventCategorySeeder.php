@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Department;
-use App\Models\EventCategory;
+use App\Modules\Events\Models\EventCategory;
 use Illuminate\Database\Seeder;
 
 class EventCategorySeeder extends Seeder

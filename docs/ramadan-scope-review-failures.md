@@ -1,0 +1,46 @@
+# إخفاقات الاختبارات الموسعة المثبتة بالمقارنة
+
+تاريخ التحقق: 17 سبتمبر 2026. النسخة المحفوظة قبل المراجعة: 231 اختبارًا؛ النسخة المعدلة: 236 اختبارًا. في كلتيهما 14 error و24 failure. مقارنة مجموعة أسماء الإخفاقات: 38 مشتركة، صفر إخفاق جديد، صفر حالة محلولة من تلك المجموعة. لا يعني ذلك نجاح المجموعة الموسعة.
+
+أُجريت المقارنة على قاعدتي MySQL منفصلتين عن قاعدة الموقع. آخر تعديلين على حماية seeder والعرض التاريخي تحقّقت منهما المجموعة المركزة النهائية: 36 اختبارًا، 238 assertion، جميعها ناجحة.
+
+هذه الحالات صُنفت كإخفاقات سابقة مثبتة بالمقارنة؛ تتضمن نواقص fixtures وأدوارًا مفقودة وتوقعات سلوك غير متطابقة. لم تُنسب إلى عطل اتصال قاعدة الاختبار، ولم تُخفَ عبر تعطيل الاختبارات.
+
+- `Tests\Feature\ActivityEvaluationWorkflowTest::test_followup_and_evaluation_officers_use_the_existing_monthly_plans_calendar`
+- `Tests\Feature\ActivityEvaluationWorkflowTest::test_followup_monthly_calendar_is_branch_scoped`
+- `Tests\Feature\AgendaBranchInteractionTest::test_quick_subscribed_monthly_plan_hides_system_managed_agenda_fields`
+- `Tests\Feature\EventReferenceDataBootstrapTest::test_bootstrap_wiring_excludes_superseded_and_abandoned_artifacts`
+- `Tests\Feature\EventReferenceDataBootstrapTest::test_business_managed_and_showcase_data_is_not_created_by_default_bootstrap`
+- `Tests\Feature\MonthlyActivityApprovalsPaginationTest::test_rejection_persists_and_returns_to_the_filtered_approvals_page`
+- `Tests\Feature\MonthlyActivityApprovalsPaginationTest::test_relationship_manager_notification_is_active_authorized_deduplicated_and_record_specific`
+- `Tests\Feature\MonthlyActivityBranchVisibilityTest::test_khelda_helper_detects_hq_branch`
+- `Tests\Feature\MonthlyActivityBranchVisibilityTest::test_volunteer_coordinator_cannot_open_activity_that_does_not_need_volunteers`
+- `Tests\Feature\MonthlyActivityBranchVisibilityTest::test_volunteer_coordinator_sees_only_monthly_activities_that_need_volunteers`
+- `Tests\Feature\MonthlyActivityMutationSafetyNetTest::test_authorized_officer_can_soft_delete_a_draft_and_admin_can_restore_it`
+- `Tests\Feature\NotificationBranchScopeTest::test_monthly_activity_published_notification_targets_only_activity_branch_roles`
+- `Tests\Feature\ProductionReadinessMonthlyActivitiesTest::test_agenda_event_creation_ignores_legacy_partner_department_payload`
+- `Tests\Feature\ProductionReadinessMonthlyActivitiesTest::test_approved_activity_edit_creates_new_version_and_cancels_previous`
+- `Tests\Feature\ProductionReadinessMonthlyActivitiesTest::test_requires_volunteers_count_if_enabled`
+- `Tests\Feature\ProductionReadinessMonthlyActivitiesTest::test_submitted_activity_with_existing_approval_trail_creates_new_version_when_edited`
+- `Tests\Feature\ProductionReadinessMonthlyActivitiesTest::test_superseded_activity_cannot_be_submitted_again`
+- `Tests\Feature\ProductionReadinessMonthlyActivitiesTest::test_unavailable_supply_accepts_insurance_mechanism_without_provider_name`
+- `Tests\Feature\ProductionReadinessMonthlyActivitiesTest::test_validates_outside_contact_number_format`
+- `Tests\Feature\ProgramsManagerViewOnlyAccessTest::test_programs_manager_can_view_agenda_and_monthly_activity_pages_only`
+- `Tests\Feature\RamadanGuidanceAcceptanceTest::test_acceptance_and_creation_use_server_resolved_version_and_timestamp`
+- `Tests\Feature\RamadanGuidanceAcceptanceTest::test_existing_iftar_keeps_accepted_version_and_accepted_content_is_immutable`
+- `Tests\Feature\RamadanGuidanceAcceptanceTest::test_store_without_server_recorded_acceptance_is_rejected`
+- `Tests\Feature\RamadanIftarChangeRequestVersioningTest::test_final_approval_deep_copies_plan_without_operational_history`
+- `Tests\Feature\RamadanIftarCompletionClosureTest::test_documented_approved_mismatch_does_not_block_closure_and_duplicate_is_safe`
+- `Tests\Feature\RamadanIftarCompletionClosureTest::test_duplicate_completion_is_rejected_without_duplicate_audit`
+- `Tests\Feature\RamadanIftarCoreAggregateTest::test_versioning_allows_multiple_versions_for_the_same_agenda_event`
+- `Tests\Feature\RamadanIftarPlanningFlowTest::test_execution_needs_reject_duplicates_and_synchronize_owned_planning_rows`
+- `Tests\Feature\RamadanIftarPlanningFlowTest::test_store_controls_lifecycle_and_persists_nested_planning_with_derived_totals`
+- `Tests\Feature\RamadanIftarPlanningFlowTest::test_update_is_scoped_preserves_actual_values_and_synchronizes_owned_rows`
+- `Tests\Feature\RamadanIftarWorkspaceMonitoringTest::test_monitor_can_create_update_and_submit_server_snapshots`
+- `Tests\Feature\RamadanIftarWorkspaceMonitoringTest::test_show_rejects_wrong_branch_and_exposes_only_contextual_actions`
+- `Tests\Feature\WorkflowGovernanceAndApprovalsTest::test_monthly_edit_mirror_displays_the_attached_workflow_summary`
+- `Tests\Feature\WorkflowGovernanceAndApprovalsTest::test_monthly_show_displays_the_same_attached_workflow_summary`
+- `Tests\Feature\WorkflowGovernanceAndApprovalsTest::test_primary_relations_officer_created_monthly_plan_goes_directly_to_relations_manager`
+- `Tests\Feature\WorkflowGovernanceAndApprovalsTest::test_relations_manager_can_publish_monthly_plan_without_executive_step`
+- `Tests\Feature\WorkflowGovernanceAndApprovalsTest::test_relations_manager_can_send_monthly_plan_to_executive_before_publish`
+- `Tests\Unit\ExecutionNeedCanonicalMappingTest::test_monthly_activity_keeps_its_legacy_definition_api`

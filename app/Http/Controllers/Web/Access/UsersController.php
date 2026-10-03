@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;

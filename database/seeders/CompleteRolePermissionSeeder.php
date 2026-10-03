@@ -17,6 +17,7 @@ class CompleteRolePermissionSeeder extends Seeder
             // source, then layer the evaluation workflow additions on top.
             $this->call(RolePermissionSeeder::class);
             $this->call(RolesSeeder::class);
+            $this->call(WorkflowSeeder::class);
             $this->call(EvaluationWorkflowAccessSeeder::class);
         });
 

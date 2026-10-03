@@ -181,12 +181,22 @@
         direction: state.locale === 'ar' ? 'rtl' : 'ltr',
         headerToolbar: { start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay' },
         buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع', day: 'يوم' },
-        eventClick: (info) => info.jsEvent.preventDefault(),
+        eventClick: (info) => {
+          info.jsEvent.preventDefault();
+          if (info.event.url) window.location.assign(info.event.url);
+        },
         events: eventSource,
         eventContent: (arg) => {
+          const safe = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
           const props = arg.event.extendedProps || {};
-          const isMonthlyPlan = props.type === 'monthly_plan' || arg.event._def.extendedProps?.type === 'monthly_plan';
-          const typeLabel = isMonthlyPlan ? 'خطة شهرية' : 'أجندة سنوية';
+          const type = props.type || arg.event._def.extendedProps?.type || 'agenda';
+          const types = {
+            agenda: { label: 'أجندة سنوية', icon: 'fa-calendar-check' },
+            monthly_plan: { label: 'خطة شهرية', icon: 'fa-list-check' },
+            ramadan_iftar: { label: 'إفطار رمضاني', icon: 'fa-moon' },
+            bazaar: { label: 'بازار', icon: 'fa-store' }
+          };
+          const typeMeta = types[type] || types.agenda;
           const owner = props.owner_branch || '—';
           const participants = Array.isArray(props.participant_entities) && props.participant_entities.length > 0
             ? props.participant_entities.join('، ')
@@ -198,27 +208,27 @@
           const wrapper = document.createElement('div');
           wrapper.className = 'dashboard-event-card';
           wrapper.innerHTML = `
-            <div class="dashboard-event-type ${isMonthlyPlan ? 'dashboard-event-type--monthly' : 'dashboard-event-type--agenda'}">${typeLabel}</div>
-            <div class="dashboard-event-title">${arg.event.title || ''}</div>
-            <div class="dashboard-event-meta dashboard-event-meta--time"><i class="fas fa-clock"></i> ${timeRange}</div>
-            <div class="dashboard-event-meta">${owner}</div>
-            <div class="dashboard-event-meta dashboard-event-meta--secondary">${participants}</div>
+            <div class="dashboard-event-type dashboard-event-type--${type}"><i class="fas ${typeMeta.icon}"></i> ${typeMeta.label}</div>
+            <div class="dashboard-event-title">${safe(arg.event.title)}</div>
+            <div class="dashboard-event-meta dashboard-event-meta--time"><i class="fas fa-clock"></i> ${safe(timeRange)}</div>
+            <div class="dashboard-event-meta">${safe(owner)}</div>
+            <div class="dashboard-event-meta dashboard-event-meta--secondary"><i class="fas fa-location-dot"></i> ${safe(props.location || participants)}</div>
+            ${props.status ? `<div class="dashboard-event-meta"><i class="fas fa-circle-info"></i> ${safe(props.status)}</div>` : ''}
           `;
 
           return { domNodes: [wrapper] };
         },
         eventDidMount: (info) => {
           const props = info.event.extendedProps || {};
-          const typeLabel = info.event.extendedProps.type === 'monthly_plan' || info.event._def.extendedProps?.type === 'monthly_plan'
-            ? 'خطة شهرية'
-            : 'أجندة سنوية';
+          const type = props.type || info.event._def.extendedProps?.type || 'agenda';
+          const typeLabel = { agenda: 'أجندة سنوية', monthly_plan: 'خطة شهرية', ramadan_iftar: 'إفطار رمضاني', bazaar: 'بازار' }[type] || 'فعالية';
           const participants = Array.isArray(props.participant_entities) && props.participant_entities.length > 0
             ? props.participant_entities.join('، ')
             : (props.participant_entity || '—');
           const timeFrom = props.time_from || '';
           const timeTo = props.time_to || '';
           const timeRange = timeFrom && timeTo ? `${timeFrom} - ${timeTo}` : (timeFrom || 'طوال اليوم');
-          info.el.title = `${typeLabel}\n${info.event.title || ''}\nالوقت: ${timeRange}\nالفرع المالك: ${props.owner_branch || '—'}\nالجهات المشاركة: ${participants}`;
+          info.el.title = `${typeLabel}\n${info.event.title || ''}\nالوقت: ${timeRange}\nالموقع: ${props.location || '—'}\nالحالة: ${props.status || '—'}\nالفرع المالك: ${props.owner_branch || '—'}\nالجهات المشاركة: ${participants}`;
         }
       });
       calendar.render();
@@ -234,6 +244,11 @@
           calendar.updateSize();
         });
       }
+      const typeFilters = document.querySelectorAll('[data-calendar-type-filter]');
+      typeFilters.forEach((filter) => filter.addEventListener('change', () => {
+        const enabled = new Set([...typeFilters].filter((item) => item.checked).map((item) => item.value));
+        calendar.getEvents().forEach((event) => event.setProp('display', enabled.has(event.extendedProps.type) ? 'auto' : 'none'));
+      }));
     } catch (error) {
       if (el.calendarFallback) el.calendarFallback.classList.remove('d-none');
     }

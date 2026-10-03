@@ -24,7 +24,7 @@
             return '-';
         }
 
-        return \App\Models\EventStatusLookup::labelFor('agenda', $status);
+        return \App\Modules\Events\Models\EventStatusLookup::labelFor('agenda', $status);
     };
     $ownerDepartment = $agendaEvent->ownerDepartment ?? $agendaEvent->department;
     $eventDateLabel = optional($agendaEvent->event_date)->format('d/m/Y') ?? '-';
