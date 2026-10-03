@@ -164,6 +164,9 @@
                 <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('events.ramadan.iftars.calendar') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.calendar') }}"><i class="fas fa-calendar-days"></i><span>تقويم الإفطارات</span></a></li>
             @endcan
+            @can('bazaars.view')
+                <li class="side-item {{ request()->routeIs('events.bazaars.*') ? 'selected' : '' }}"><a href="{{ route('events.bazaars.index') }}"><i class="fas fa-store"></i><span>البازارات</span></a></li>
+            @endcan
             @can('ramadan_iftars.approve')
                 <li class="side-item {{ request()->routeIs('events.ramadan.approvals.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('ramadan_iftars.navigation.approvals') }}</span></a></li>
             @endcan

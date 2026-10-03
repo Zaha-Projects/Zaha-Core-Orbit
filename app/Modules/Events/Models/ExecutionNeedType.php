@@ -28,6 +28,10 @@ class ExecutionNeedType extends Model
     {
         EventSubjectTypes::modelFor($subjectType);
 
+        if ($subjectType === EventSubjectTypes::BAZAAR) {
+            return $query->active()->where('module_config->bazaar->available', true);
+        }
+
         return $query->active()->where($subjectType === EventSubjectTypes::MONTHLY_ACTIVITY ? 'is_monthly_activity' : 'is_ramadan_iftar', true);
     }
 
@@ -308,6 +312,7 @@ class ExecutionNeedType extends Model
         return match ($module) {
             EventSubjectTypes::MONTHLY_ACTIVITY => ['available' => (bool) $this->is_monthly_activity, 'required' => (bool) $this->is_monthly_activity && (bool) $this->mandatory_for_monthly],
             EventSubjectTypes::RAMADAN_IFTAR => ['available' => (bool) $this->is_ramadan_iftar, 'required' => (bool) $this->is_ramadan_iftar && (bool) $this->mandatory_for_ramadan],
+            EventSubjectTypes::BAZAAR => ['available' => false, 'required' => false],
             default => ['available' => false, 'required' => false],
         };
     }
@@ -325,5 +330,10 @@ class ExecutionNeedType extends Model
     public function isMandatoryForMonthly(): bool
     {
         return $this->moduleAvailability(EventSubjectTypes::MONTHLY_ACTIVITY)['required'];
+    }
+
+    public function isMandatoryForBazaar(): bool
+    {
+        return $this->moduleAvailability(EventSubjectTypes::BAZAAR)['required'];
     }
 }

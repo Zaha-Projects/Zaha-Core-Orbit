@@ -11,11 +11,14 @@ final class EventSubjectTypes
 
     public const RAMADAN_IFTAR = 'ramadan_iftar';
 
+    public const BAZAAR = 'bazaar';
+
     public static function reserved(): array
     {
         return [
             self::MONTHLY_ACTIVITY,
             self::RAMADAN_IFTAR,
+            self::BAZAAR,
         ];
     }
 
@@ -25,6 +28,7 @@ final class EventSubjectTypes
         return [
             self::MONTHLY_ACTIVITY => MonthlyActivity::class,
             self::RAMADAN_IFTAR => RamadanIftar::class,
+            self::BAZAAR => Bazaar::class,
         ];
     }
 

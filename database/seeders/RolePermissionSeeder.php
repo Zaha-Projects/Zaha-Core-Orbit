@@ -35,6 +35,17 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'ramadan_iftars.change_request.create', 'module' => 'ramadan_iftars', 'action' => 'change_request_create', 'name_ar' => 'طلب تعديل خطة إفطار معتمدة', 'name_en' => 'Request changes to approved Ramadan plans'],
             ['name' => 'ramadan_iftars.change_request.review', 'module' => 'ramadan_iftars', 'action' => 'change_request_review', 'name_ar' => 'مراجعة طلبات تعديل خطط الإفطار', 'name_en' => 'Review Ramadan plan change requests'],
 
+            ['name' => 'bazaars.view', 'module' => 'bazaars', 'action' => 'view', 'name_ar' => 'عرض البازارات', 'name_en' => 'View bazaars'],
+            ['name' => 'bazaars.create', 'module' => 'bazaars', 'action' => 'create', 'name_ar' => 'إنشاء بازار', 'name_en' => 'Create bazaars'],
+            ['name' => 'bazaars.edit', 'module' => 'bazaars', 'action' => 'edit', 'name_ar' => 'تعديل بازار', 'name_en' => 'Edit bazaars'],
+            ['name' => 'bazaars.submit', 'module' => 'bazaars', 'action' => 'submit', 'name_ar' => 'إرسال بازار', 'name_en' => 'Submit bazaars'],
+            ['name' => 'bazaars.approve', 'module' => 'bazaars', 'action' => 'approve', 'name_ar' => 'اعتماد بازار', 'name_en' => 'Approve bazaars'],
+            ['name' => 'bazaars.execute', 'module' => 'bazaars', 'action' => 'execute', 'name_ar' => 'تنفيذ بازار', 'name_en' => 'Execute bazaars'],
+            ['name' => 'bazaars.post_execution', 'module' => 'bazaars', 'action' => 'post_execution', 'name_ar' => 'إدخال ما بعد تنفيذ البازار', 'name_en' => 'Record bazaar post-execution'],
+            ['name' => 'bazaars.monitor', 'module' => 'bazaars', 'action' => 'monitor', 'name_ar' => 'متابعة البازار', 'name_en' => 'Monitor bazaars'],
+            ['name' => 'bazaars.discount_review', 'module' => 'bazaars', 'action' => 'discount_review', 'name_ar' => 'اعتماد خصومات البازار', 'name_en' => 'Review bazaar discounts'],
+            ['name' => 'bazaars.close', 'module' => 'bazaars', 'action' => 'close', 'name_ar' => 'إغلاق البازار', 'name_en' => 'Close bazaars'],
+
             ['name' => 'evaluation.view', 'module' => 'evaluation', 'action' => 'view', 'name_ar' => 'عرض التقييم', 'name_en' => 'View evaluation'],
             ['name' => 'evaluation.submit', 'module' => 'evaluation', 'action' => 'submit', 'name_ar' => 'إرسال التقييم', 'name_en' => 'Submit evaluation'],
             ['name' => 'evaluation.manage', 'module' => 'evaluation', 'action' => 'manage', 'name_ar' => 'إدارة التقييم', 'name_en' => 'Manage evaluation'],

@@ -20,6 +20,7 @@ class TargetGroup extends Model
         'is_active',
         'is_monthly_activity',
         'is_ramadan_iftar',
+        'is_bazaar',
         'sort_order',
     ];
 
@@ -28,6 +29,7 @@ class TargetGroup extends Model
         'is_active' => 'boolean',
         'is_monthly_activity' => 'boolean',
         'is_ramadan_iftar' => 'boolean',
+        'is_bazaar' => 'boolean',
         'sort_order' => 'integer',
     ];
 
@@ -75,5 +77,10 @@ class TargetGroup extends Model
     public function scopeForRamadanIftars($query)
     {
         return $query->where('is_ramadan_iftar', true);
+    }
+
+    public function scopeForBazaars($query)
+    {
+        return $query->where('is_bazaar', true);
     }
 }

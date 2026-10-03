@@ -97,6 +97,7 @@ use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarClosureController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarChangeRequestController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanIftarChangeRequestReviewController;
 use App\Modules\Events\Http\Controllers\Ramadan\RamadanReferenceController;
+use App\Modules\Events\Http\Controllers\Bazaar\BazaarController;
 use App\Http\Controllers\SiteRoleGuideController;
 
 /*
@@ -260,6 +261,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/relations/agenda/{agendaEvent}', [RelationsAgendaEventsController::class, 'show'])->middleware('role_or_permission:relations_manager|relations_officer|executive_manager|programs_manager|super_admin|agenda.view')->middleware('branch.isolation')->whereNumber('agendaEvent')->name('role.relations.agenda.show');
     Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
+    Route::prefix('dashboard/events/bazaars')->name('events.bazaars.')->middleware(['branch.isolation'])->group(function () {
+        Route::get('/', [BazaarController::class, 'index'])->middleware('permission:bazaars.view')->name('index');
+        Route::get('/create', [BazaarController::class, 'create'])->middleware('permission:bazaars.create')->name('create');
+        Route::post('/', [BazaarController::class, 'store'])->middleware('permission:bazaars.create')->name('store');
+        Route::get('/{bazaar}', [BazaarController::class, 'show'])->middleware('permission:bazaars.view')->whereNumber('bazaar')->name('show');
+        Route::get('/{bazaar}/edit', [BazaarController::class, 'edit'])->middleware('permission:bazaars.edit')->whereNumber('bazaar')->name('edit');
+        Route::put('/{bazaar}', [BazaarController::class, 'update'])->middleware('permission:bazaars.edit')->whereNumber('bazaar')->name('update');
+        Route::post('/{bazaar}/submit', [BazaarController::class, 'submit'])->middleware('permission:bazaars.submit')->whereNumber('bazaar')->name('submit');
+        Route::post('/{bazaar}/decision', [BazaarController::class, 'decide'])->middleware('permission:bazaars.approve')->whereNumber('bazaar')->name('decision');
+        Route::get('/{bazaar}/execution', [BazaarController::class, 'execution'])->middleware('permission:bazaars.execute')->whereNumber('bazaar')->name('execution');
+        Route::put('/{bazaar}/execution', [BazaarController::class, 'saveExecution'])->middleware('permission:bazaars.post_execution')->whereNumber('bazaar')->name('execution.update');
+        Route::post('/discounts/{discount}/decision', [BazaarController::class, 'decideDiscount'])->middleware('permission:bazaars.discount_review')->whereNumber('discount')->name('discounts.decision');
+        Route::post('/{bazaar}/verify', [BazaarController::class, 'verify'])->middleware('permission:bazaars.monitor')->whereNumber('bazaar')->name('verify');
+    });
+
     Route::prefix('dashboard/events/ramadan/iftars')->name('events.ramadan.iftars.')->middleware('branch.isolation')->group(function () {
         Route::get('/references/organizations', [RamadanReferenceController::class, 'organizations'])->name('references.organizations.index');
         Route::post('/references/organizations', [RamadanReferenceController::class, 'storeOrganization'])->name('references.organizations.store');

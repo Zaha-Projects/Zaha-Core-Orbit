@@ -12,6 +12,7 @@ use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\MonitoringReport;
 use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Models\RamadanPeriod;
+use App\Modules\Events\Models\Bazaar;
 use Carbon\Carbon;
 use App\Services\DynamicWorkflowService;
 use Illuminate\Http\Request;
@@ -184,7 +185,68 @@ class DashboardController extends Controller
             })
             ->values();
 
-        $calendarEvents = $agendaEvents->concat($monthlyActivityEvents)->values();
+        $calendarStart = now()->copy()->startOfYear();
+        $calendarEnd = now()->copy()->endOfYear();
+        $scopeCalendarQuery = function ($query) use ($user) {
+            if (! $user->hasRole('super_admin') && ! $user->can('branches.view.all')) {
+                $query->whereIn('branch_id', $user->scopedBranchIds());
+            }
+
+            return $query;
+        };
+
+        $ramadanIftarEvents = collect();
+        if ($user->hasRole('super_admin') || $user->can('ramadan_iftars.view')) {
+            $ramadanIftarEvents = $scopeCalendarQuery(RamadanIftar::query())
+                ->select(['id', 'branch_id', 'title', 'planned_date', 'location_name', 'status'])
+                ->whereBetween('planned_date', [$calendarStart->toDateString(), $calendarEnd->toDateString()])
+                ->get()
+                ->map(fn (RamadanIftar $iftar): array => [
+                    'title' => $iftar->title,
+                    'start' => $iftar->planned_date->toDateString(),
+                    'allDay' => true,
+                    'url' => route('events.ramadan.iftars.show', $iftar),
+                    'type' => 'ramadan_iftar',
+                    'color' => '#7c3aed',
+                    'extendedProps' => [
+                        'owner_branch' => $branchesById->get((int) $iftar->branch_id, '—'),
+                        'location' => $iftar->location_name ?: '—',
+                        'status' => $iftar->status,
+                    ],
+                ]);
+        }
+
+        $bazaarEvents = collect();
+        if ($user->hasRole('super_admin') || $user->can('bazaars.view')) {
+            $bazaarEvents = $scopeCalendarQuery(Bazaar::query())
+                ->select(['id', 'branch_id', 'name', 'bazaar_date', 'starts_at', 'ends_at', 'location_name', 'status'])
+                ->whereBetween('bazaar_date', [$calendarStart->toDateString(), $calendarEnd->toDateString()])
+                ->get()
+                ->map(function (Bazaar $bazaar) use ($branchesById): array {
+                    $date = $bazaar->bazaar_date->toDateString();
+                    $timeFrom = substr((string) $bazaar->starts_at, 0, 5);
+                    $timeTo = substr((string) $bazaar->ends_at, 0, 5);
+
+                    return [
+                        'title' => $bazaar->name,
+                        'start' => "{$date}T{$timeFrom}:00",
+                        'end' => "{$date}T{$timeTo}:00",
+                        'allDay' => false,
+                        'url' => route('events.bazaars.show', $bazaar),
+                        'type' => 'bazaar',
+                        'color' => '#d97706',
+                        'extendedProps' => [
+                            'owner_branch' => $branchesById->get((int) $bazaar->branch_id, '—'),
+                            'location' => $bazaar->location_name ?: '—',
+                            'status' => $bazaar->status,
+                            'time_from' => $timeFrom,
+                            'time_to' => $timeTo,
+                        ],
+                    ];
+                });
+        }
+
+        $calendarEvents = $agendaEvents->concat($monthlyActivityEvents)->concat($ramadanIftarEvents)->concat($bazaarEvents)->values();
 
         $agendaCount = $agendaEvents->count();
         $monthlyCount = $monthlyActivityEvents->count();
@@ -199,6 +261,8 @@ class DashboardController extends Controller
             'total' => $totalCount,
             'agenda' => $agendaCount,
             'monthly' => $monthlyCount,
+            'ramadan' => $ramadanIftarEvents->count(),
+            'bazaars' => $bazaarEvents->count(),
             'top_branch_name' => (string) ($topBranch->keys()->first() ?? '—'),
             'top_branch_count' => (int) ($topBranch->first() ?? 0),
         ];
