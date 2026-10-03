@@ -166,13 +166,13 @@
 @endpush
 
 @push('scripts')
-    <script type="application/json" id="bazaar-calendar-labels">@json([
+    <script type="application/json" id="bazaar-calendar-labels">{!! json_encode([
         'weekdays' => __('app.roles.relations.agenda.calendar.weekdays'),
         'statuses' => __('bazaars.statuses'),
         'loading' => __('bazaars.calendar_loading'),
         'error' => __('bazaars.calendar_error'),
         'create' => __('bazaars.create_on', ['date' => '__DATE__']),
-    ])</script>
+    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script src="{{ \App\Support\AssetVersion::url('assets/js/ui-shared.js') }}"></script>
     <script src="{{ \App\Support\AssetVersion::url('assets/js/bazaar-index.js') }}"></script>
 @endpush
