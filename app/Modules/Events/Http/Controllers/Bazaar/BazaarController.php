@@ -3,6 +3,7 @@
 namespace App\Modules\Events\Http\Controllers\Bazaar;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\User;
 use App\Modules\Events\Http\Requests\Bazaar\StoreBazaarRequest;
 use App\Modules\Events\Models\Bazaar;
@@ -16,14 +17,41 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class BazaarController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Bazaar::query()->with(['branch', 'relationsOfficer'])->latest('bazaar_date');
-        if (! $request->user()->hasRole('super_admin') && ! $request->user()->can('branches.view.all')) $query->whereIn('branch_id', $request->user()->scopedBranchIds());
-        return view('pages.events.bazaars.index', ['bazaars' => $query->paginate(20)]);
+        $filters = $this->browseFilters($request);
+        $query = $this->browseQuery($request, $filters)->with(['branch', 'relationsOfficer']);
+        $bazaars = $query->orderBy('bazaar_date')->orderBy('starts_at')->paginate(12)->withQueryString();
+        $branches = Branch::query()->when(
+            ! $request->user()->hasRole('super_admin') && ! $request->user()->can('branches.view.all'),
+            fn ($branchQuery) => $branchQuery->whereIn('id', $request->user()->scopedBranchIds())
+        )->orderBy('name')->get();
+
+        return view('pages.events.bazaars.index', compact('bazaars', 'branches', 'filters'));
+    }
+
+    public function calendar(Request $request)
+    {
+        $filters = $this->browseFilters($request);
+        $items = $this->browseQuery($request, $filters)
+            ->with('branch')->orderBy('bazaar_date')->orderBy('starts_at')->get()
+            ->map(fn (Bazaar $bazaar) => [
+                'title' => $bazaar->name,
+                'date' => $bazaar->bazaar_date?->format('Y-m-d'),
+                'starts_at' => substr((string) $bazaar->starts_at, 0, 5),
+                'ends_at' => substr((string) $bazaar->ends_at, 0, 5),
+                'status' => $bazaar->status,
+                'status_label' => __('bazaars.statuses.'.$bazaar->status),
+                'location' => $bazaar->location_name,
+                'branch' => $bazaar->branch?->name,
+                'open_url' => route('events.bazaars.show', $bazaar),
+            ])->values();
+
+        return response()->json(['items' => $items]);
     }
 
     public function create(Request $request) { return view('pages.events.bazaars.create', $this->options($request)); }
@@ -142,4 +170,33 @@ class BazaarController extends Controller
     }
     private function relations(): array { return ['branch', 'relationsOfficer', 'tables.organization', 'tables.actualOrganization', 'tables.liaison', 'tables.currentDiscount.requester', 'tables.currentDiscount.approver', 'targetGroupSelections.targetGroup', 'executionNeeds.executionNeedType']; }
     private function access(Request $request, Bazaar $bazaar): void { abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('branches.view.all') || $request->user()->hasAccessToScopedBranch((int) $bazaar->branch_id), 403); }
+
+    private function browseFilters(Request $request): array
+    {
+        $month = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) $request->input('month')) ? $request->input('month') : now()->format('Y-m');
+
+        return [
+            'search' => trim((string) $request->input('search')),
+            'branch_id' => $request->integer('branch_id') ?: null,
+            'status' => in_array($request->input('status'), Bazaar::STATUSES, true) ? $request->input('status') : null,
+            'month' => $month,
+            'location_type' => in_array($request->input('location_type'), ['inside', 'outside'], true) ? $request->input('location_type') : null,
+            'rental_type' => in_array($request->input('rental_type'), ['individual', 'organization'], true) ? $request->input('rental_type') : null,
+        ];
+    }
+
+    private function browseQuery(Request $request, array $filters)
+    {
+        [$year, $month] = array_map('intval', explode('-', $filters['month']));
+        $start = Carbon::create($year, $month)->startOfMonth();
+        $query = Bazaar::query()->whereBetween('bazaar_date', [$start->toDateString(), $start->copy()->endOfMonth()->toDateString()]);
+        if (! $request->user()->hasRole('super_admin') && ! $request->user()->can('branches.view.all')) $query->whereIn('branch_id', $request->user()->scopedBranchIds());
+        $query->when($filters['search'], fn ($q, $value) => $q->where(fn ($search) => $search->where('name', 'like', "%{$value}%")->orWhere('location_name', 'like', "%{$value}%")))
+            ->when($filters['branch_id'], fn ($q, $value) => $q->where('branch_id', $value))
+            ->when($filters['status'], fn ($q, $value) => $q->where('status', $value))
+            ->when($filters['location_type'], fn ($q, $value) => $q->where('location_type', $value))
+            ->when($filters['rental_type'], fn ($q, $value) => $q->whereHas('tables', fn ($tables) => $tables->where('rental_type', $value)));
+
+        return $query;
+    }
 }

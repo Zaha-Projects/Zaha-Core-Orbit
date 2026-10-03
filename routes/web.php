@@ -263,6 +263,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
     Route::prefix('dashboard/events/bazaars')->name('events.bazaars.')->middleware(['branch.isolation'])->group(function () {
         Route::get('/', [BazaarController::class, 'index'])->middleware('permission:bazaars.view')->name('index');
+        Route::get('/calendar', [BazaarController::class, 'calendar'])->middleware('permission:bazaars.view')->name('calendar');
         Route::get('/create', [BazaarController::class, 'create'])->middleware('permission:bazaars.create')->name('create');
         Route::post('/', [BazaarController::class, 'store'])->middleware('permission:bazaars.create')->name('store');
         Route::get('/{bazaar}', [BazaarController::class, 'show'])->middleware('permission:bazaars.view')->whereNumber('bazaar')->name('show');

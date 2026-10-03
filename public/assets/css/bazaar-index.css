@@ -1,0 +1,30 @@
+.bazaar-browse-module { --bazaar: #b45309; --bazaar-dark: #78350f; --bazaar-soft: #fff7ed; }
+.bazaar-title-icon { align-items:center; background:var(--bazaar-soft); border-radius:12px; color:var(--bazaar); display:inline-flex; height:42px; justify-content:center; width:42px; }
+.btn-bazaar { background:var(--bazaar); border-color:var(--bazaar); color:#fff; }
+.btn-bazaar:hover,.btn-bazaar:focus { background:var(--bazaar-dark); border-color:var(--bazaar-dark); color:#fff; }
+.btn-outline-bazaar { border-color:var(--bazaar); color:var(--bazaar); }
+.btn-outline-bazaar:hover { background:var(--bazaar); color:#fff; }
+.bazaar-accent { color:var(--bazaar); }
+.bazaar-cards-grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); }
+.bazaar-browse-card { background:#fff; border:1px solid #fed7aa; border-radius:14px; display:flex; flex-direction:column; overflow:hidden; }
+.bazaar-browse-card .module-card-header,.bazaar-browse-card .module-card-body,.bazaar-browse-card .module-card-footer { padding:1rem; }
+.bazaar-browse-card .module-card-header { background:linear-gradient(135deg,#fff7ed,#fffbeb); }
+.bazaar-browse-card .module-card-body { flex:1; }
+.bazaar-meta { display:grid; gap:.55rem; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.bazaar-meta span { color:#64748b; font-size:.86rem; }
+.bazaar-status { border-radius:999px; display:inline-flex; font-size:.72rem; font-weight:700; padding:.25rem .55rem; width:max-content; }
+.bazaar-status--draft,.bazaar-status--returned { background:#fef3c7; color:#92400e; }
+.bazaar-status--submitted,.bazaar-status--post_execution { background:#dbeafe; color:#1e40af; }
+.bazaar-status--approved,.bazaar-status--verified { background:#dcfce7; color:#166534; }
+.bazaar-status--executing { background:#ffedd5; color:#9a3412; }
+.bazaar-status--rejected { background:#fee2e2; color:#991b1b; }
+.bazaar-status--completed { background:#e2e8f0; color:#334155; }
+.bazaar-empty,.bazaar-calendar-state { color:#64748b; grid-column:1/-1; padding:3rem 1rem; text-align:center; }
+.bazaar-empty>i { color:#d97706; font-size:2rem; margin-bottom:.75rem; }
+.bazaar-calendar-day { min-height:150px; }
+.bazaar-calendar-add { align-items:center; background:var(--bazaar-soft); border-radius:50%; color:var(--bazaar); display:inline-flex; height:24px; justify-content:center; width:24px; }
+.bazaar-calendar-add:hover { background:var(--bazaar); color:#fff; }
+.bazaar-calendar-event { background:#fff7ed; border-inline-start:4px solid var(--bazaar); border-radius:8px; color:#334155; display:flex; flex-direction:column; gap:.2rem; margin-top:.4rem; padding:.45rem; text-decoration:none; transition:transform .15s,box-shadow .15s; }
+.bazaar-calendar-event:hover { box-shadow:0 6px 16px rgba(120,53,15,.18); color:#1f2937; transform:translateY(-1px); }
+.bazaar-calendar-event small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media(max-width:767.98px){.bazaar-meta{grid-template-columns:1fr}.agenda-calendar-grid{overflow-x:auto;grid-template-columns:repeat(7,minmax(135px,1fr));}.agenda-calendar-weekdays{grid-template-columns:repeat(7,minmax(135px,1fr));overflow-x:auto}.bazaar-calendar-day{min-width:135px}}
