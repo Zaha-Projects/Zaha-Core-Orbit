@@ -152,6 +152,10 @@ class RolesSeeder extends Seeder
                 'kpi.view',
             ],
             'supervisor' => [
+                'bazaars.view',
+                'bazaars.approve',
+                'bazaars.discount_review',
+                'bazaars.close',
                 'ramadan_iftars.view',
                 'ramadan_iftars.approve',
                 'ramadan_iftars.monitor.review',
@@ -169,6 +173,12 @@ class RolesSeeder extends Seeder
                 'communications.view_media',
             ],
             'relations_officer' => [
+                'bazaars.view',
+                'bazaars.create',
+                'bazaars.edit',
+                'bazaars.submit',
+                'bazaars.execute',
+                'bazaars.post_execution',
                 'ramadan_iftars.view',
                 'ramadan_iftars.create',
                 'ramadan_iftars.edit',
@@ -189,6 +199,8 @@ class RolesSeeder extends Seeder
                 'communications.upload_media',
             ],
             'followup_officer' => [
+                'bazaars.view',
+                'bazaars.monitor',
                 'ramadan_iftars.view',
                 'ramadan_iftars.monitor',
                 'agenda.view',

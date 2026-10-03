@@ -79,8 +79,8 @@ class SiteRoleGuideController extends Controller
 
     private function technicalReference(): array
     {
-        $relations = ['routes' => ['role.relations.*', 'events.ramadan.*'], 'controllers' => ['Agenda controllers', 'MonthlyActivities controllers', 'Ramadan controllers']];
-        $followup = ['routes' => ['followup.*', 'evaluations.*', 'events.ramadan.iftars.monitoring.*'], 'controllers' => ['FollowupWorkspaceController', 'ActivityEvaluationsController', 'RamadanIftarMonitoringController']];
+        $relations = ['routes' => ['role.relations.*', 'events.ramadan.*', 'events.bazaars.*'], 'controllers' => ['Agenda controllers', 'MonthlyActivities controllers', 'Ramadan controllers', 'BazaarController']];
+        $followup = ['routes' => ['followup.*', 'evaluations.*', 'events.ramadan.iftars.monitoring.*', 'events.bazaars.*'], 'controllers' => ['FollowupWorkspaceController', 'ActivityEvaluationsController', 'RamadanIftarMonitoringController', 'BazaarController']];
         $transport = ['routes' => ['role.transport.*'], 'controllers' => ['Transport controllers', 'TripSegmentsController', 'TripRoundsController']];
 
         return [

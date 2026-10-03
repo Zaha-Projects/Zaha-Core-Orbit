@@ -24,6 +24,7 @@ class CanonicalExecutionNeedTypeSeeder extends Seeder
                     'module_config' => json_encode([
                         'monthly_activity' => ['available' => $definition['monthly'] ?? true, 'required' => $definition['mandatory_monthly'] ?? false],
                         'ramadan_iftar' => ['available' => $definition['ramadan'] ?? false, 'required' => $definition['mandatory_ramadan'] ?? false],
+                        'bazaar' => ['available' => $definition['monthly'] ?? true, 'required' => false],
                     ], JSON_UNESCAPED_UNICODE),
                 ]
             );

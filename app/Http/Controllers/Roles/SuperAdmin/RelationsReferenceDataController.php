@@ -79,7 +79,7 @@ class RelationsReferenceDataController extends Controller
 
     private function validated(Request $request, string $resource, Model $record): array
     {
-        foreach (['is_active', 'is_other', 'is_monthly_activity', 'is_ramadan_iftar', 'mandatory_for_monthly', 'mandatory_for_ramadan'] as $field) {
+        foreach (['is_active', 'is_other', 'is_monthly_activity', 'is_ramadan_iftar', 'is_bazaar', 'mandatory_for_monthly', 'mandatory_for_ramadan', 'mandatory_for_bazaar'] as $field) {
             if ($request->has($field)) $request->merge([$field => $request->boolean($field)]);
         }
         $table = $record->getTable();
@@ -90,7 +90,7 @@ class RelationsReferenceDataController extends Controller
             'target_groups' => [
                 'code' => $code, 'type' => ['required', Rule::in(TargetGroup::types())], 'name' => ['required', 'string', 'max:255', Rule::unique($table, 'name')->ignore($id)],
                 'is_other' => ['required', 'boolean'], 'is_active' => ['required', 'boolean'],
-                'is_monthly_activity' => ['required', 'boolean'], 'is_ramadan_iftar' => ['required', 'boolean'],
+                'is_monthly_activity' => ['required', 'boolean'], 'is_ramadan_iftar' => ['required', 'boolean'], 'is_bazaar' => ['required', 'boolean'],
                 'sort_order' => ['required', 'integer', 'min:0'],
             ],
             'execution_needs' => [
@@ -98,6 +98,7 @@ class RelationsReferenceDataController extends Controller
                 'description' => ['nullable', 'string'], 'is_active' => ['required', 'boolean'],
                 'is_monthly_activity' => ['required', 'boolean'], 'mandatory_for_monthly' => ['required', 'boolean'],
                 'is_ramadan_iftar' => ['required', 'boolean'], 'mandatory_for_ramadan' => ['required', 'boolean'],
+                'is_bazaar' => ['required', 'boolean'], 'mandatory_for_bazaar' => ['required', 'boolean'],
                 'sort_order' => ['required', 'integer', 'min:0'],
             ],
         });
@@ -105,10 +106,11 @@ class RelationsReferenceDataController extends Controller
 
     private function applyExecutionNeedConfiguration(ExecutionNeedType $record, Request $request): void
     {
-        $record->module_config = [
+        $record->module_config = array_replace($record->module_config ?? [], [
             'monthly_activity' => ['available' => $request->boolean('is_monthly_activity'), 'required' => $request->boolean('is_monthly_activity') && $request->boolean('mandatory_for_monthly')],
             'ramadan_iftar' => ['available' => $request->boolean('is_ramadan_iftar'), 'required' => $request->boolean('is_ramadan_iftar') && $request->boolean('mandatory_for_ramadan')],
-        ];
+            'bazaar' => ['available' => $request->boolean('is_bazaar'), 'required' => $request->boolean('is_bazaar') && $request->boolean('mandatory_for_bazaar')],
+        ]);
         $record->mandatory_for_monthly = $record->module_config['monthly_activity']['required'];
         $record->mandatory_for_ramadan = $record->module_config['ramadan_iftar']['required'];
     }
