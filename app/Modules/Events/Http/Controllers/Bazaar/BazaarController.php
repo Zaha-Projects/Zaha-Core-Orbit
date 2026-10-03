@@ -174,10 +174,11 @@ class BazaarController extends Controller
     private function browseFilters(Request $request): array
     {
         $month = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) $request->input('month')) ? $request->input('month') : now()->format('Y-m');
+        $branchId = filter_var($request->input('branch_id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 
         return [
             'search' => trim((string) $request->input('search')),
-            'branch_id' => $request->integer('branch_id') ?: null,
+            'branch_id' => $branchId === false ? null : $branchId,
             'status' => in_array($request->input('status'), Bazaar::STATUSES, true) ? $request->input('status') : null,
             'month' => $month,
             'location_type' => in_array($request->input('location_type'), ['inside', 'outside'], true) ? $request->input('location_type') : null,

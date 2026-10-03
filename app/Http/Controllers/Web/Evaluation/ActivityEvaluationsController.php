@@ -18,9 +18,10 @@ class ActivityEvaluationsController extends Controller
 {
     public function index(Request $request)
     {
+        $branchId = filter_var($request->input('branch_id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         $query = MonthlyActivity::query()->with(['branch', 'creator', 'activityEvaluation.evaluator'])->where('is_archived', false);
         if (! $request->user()->can('evaluation.view_all')) $query->whereIn('branch_id', $request->user()->scopedBranchIds());
-        $query->when($request->filled('branch_id'), fn ($q) => $q->where('branch_id', $request->integer('branch_id')))
+        $query->when($branchId !== false, fn ($q) => $q->where('branch_id', $branchId))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->input('has_evaluation') === 'yes', fn ($q) => $q->has('activityEvaluation'))
             ->when($request->input('has_evaluation') === 'no', fn ($q) => $q->doesntHave('activityEvaluation'));
