@@ -15,6 +15,30 @@
     $isFollowupOfficer = $user?->hasRole('followup_officer') && ! $user?->hasRole('super_admin');
     $isRelationsManagerSidebar = $user?->hasRole('relations_manager') && ! $user?->hasRole('super_admin');
     $isProgramsManagerViewOnly = $user?->hasRole('programs_manager') && ! $user?->hasRole('super_admin');
+    // Existing Events routes accept their established roles as well as explicit
+    // permissions. Keep sidebar discovery aligned with that contract so an
+    // older production role assignment is not hidden before additive seeders run.
+    $canViewAgenda = $user && (
+        $user->hasAnyRole(['relations_manager', 'relations_officer', 'executive_manager', 'programs_manager', 'super_admin'])
+        || $user->can('agenda.view')
+    );
+    $canViewMonthlyActivities = $user && (
+        $user->hasAnyRole(['relations_manager', 'relations_officer', 'volunteer_coordinator', 'programs_manager', 'super_admin'])
+        || $user->canAny(['monthly_activities.view', 'monthly_plan.view'])
+    );
+    $canViewRamadanIftars = $user && (
+        $user->hasAnyRole(['relations_manager', 'relations_officer', 'supervisor', 'branch_coordinator', 'executive_manager', 'super_admin'])
+        || $user->can('ramadan_iftars.view')
+    );
+    $bazaarNavigationFilter = [];
+    $bazaarNavigationLabel = 'البازارات';
+    if ($user?->hasRole('followup_officer')) {
+        $bazaarNavigationFilter = ['status' => 'post_execution'];
+        $bazaarNavigationLabel = 'بازارات بانتظار المتابعة';
+    } elseif ($user?->hasRole('supervisor')) {
+        $bazaarNavigationFilter = ['status' => 'submitted'];
+        $bazaarNavigationLabel = 'اعتمادات البازارات';
+    }
     $canAccessAgendaApprovals = $user && (
         ! $isProgramsManagerViewOnly
         && (
@@ -152,24 +176,20 @@
             @endif
 
             @if(! $isCommunicationHeadOnly)
-            @can('agenda.view')
+            @if($canViewAgenda)
                 <li class="side-item {{ request()->routeIs('role.relations.agenda.*') ? 'selected' : '' }}"><a href="{{ route('role.relations.agenda.index') }}"><i class="fas fa-calendar-days"></i><span>{{ __('app.roles.relations.agenda.title') }}</span></a></li>
-            @endcan
+            @endif
             @if($canAccessAgendaApprovals)
                 <li class="side-item {{ request()->routeIs('role.relations.approvals.*') ? 'selected' : '' }}"><a href="{{ route('role.relations.approvals.index') }}"><i class="fas fa-square-check"></i><span>{{ __('app.roles.relations.approvals.title') }}</span></a></li>
             @endif
-            @canany(['monthly_activities.view','monthly_plan.view'])
+            @if($canViewMonthlyActivities)
                 <li class="side-item {{ request()->routeIs('role.relations.activities.*') && request('scope') !== 'all_branches' ? 'selected' : '' }}"><a href="{{ route('role.relations.activities.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.programs.monthly_activities.title') }}</span></a></li>
-            @endcanany
-            @can('ramadan_iftars.view')
+            @endif
+            @if($canViewRamadanIftars)
                 <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('events.ramadan.iftars.calendar') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.calendar') }}"><i class="fas fa-calendar-days"></i><span>تقويم الإفطارات</span></a></li>
-            @endcan
+            @endif
             @can('bazaars.view')
-                @php
-                    $bazaarNavigationFilter = $user?->hasRole('followup_officer') ? ['status' => 'post_execution'] : ($user?->hasRole('supervisor') ? ['status' => 'submitted'] : []);
-                    $bazaarNavigationLabel = $user?->hasRole('followup_officer') ? 'بازارات بانتظار المتابعة' : ($user?->hasRole('supervisor') ? 'اعتمادات البازارات' : 'البازارات');
-                @endphp
                 <li class="side-item {{ request()->routeIs('events.bazaars.*') ? 'selected' : '' }}"><a href="{{ route('events.bazaars.index', $bazaarNavigationFilter) }}"><i class="fas fa-store"></i><span>{{ $bazaarNavigationLabel }}</span></a></li>
             @endcan
             @can('ramadan_iftars.approve')
