@@ -21,6 +21,18 @@ class RamadanIftarSubmissionService
         $this->workflows = $workflows;
     }
 
+    public function submitAndNotify(RamadanIftar $iftar, User $actor): RamadanIftar
+    {
+        $submitted = $this->submit($iftar, $actor);
+        DB::afterCommit(function () use ($submitted, $actor) {
+            $instance = $submitted->workflowInstance()->with('workflow.steps.role', 'currentStep.role')->first();
+            if ($instance) {
+                app(\App\Services\WorkflowNotificationService::class)->approvalRequested($instance, $submitted, route('events.ramadan.approvals.show', $submitted), $actor);
+            }
+        });
+        return $submitted;
+    }
+
     public function submit(RamadanIftar $iftar, User $actor): RamadanIftar
     {
         return DB::transaction(function () use ($iftar, $actor) {

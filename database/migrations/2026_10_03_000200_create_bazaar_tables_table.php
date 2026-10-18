@@ -34,6 +34,9 @@ return new class extends Migration {
             $table->boolean('is_paid')->nullable();
             $table->decimal('amount_paid', 12, 2)->nullable();
             $table->enum('payment_status', ['paid', 'partial', 'unpaid', 'approved_discount'])->nullable();
+            $table->string('invitation_type', 20)->default('public');
+            $table->text('private_audience')->nullable();
+            $table->unsignedInteger('day_count')->default(1);
             $table->text('actual_notes')->nullable();
             $table->timestamps();
             $table->unique(['bazaar_id', 'table_number']);

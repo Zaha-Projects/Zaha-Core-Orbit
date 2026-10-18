@@ -20,7 +20,7 @@ $collections = [
     @if($errors->any())<div class="alert alert-danger ramadan-validation-summary" role="alert" tabindex="-1" data-validation-summary><strong><i class="fas fa-triangle-exclamation"></i> يرجى مراجعة الحقول المحددة أدناه.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @forelse($ramadanPeriods as $period)<div class="alert alert-light border"><i class="fas fa-calendar-check text-success"></i> فترة رمضان المعتمدة ({{ $period->year }} ميلادي): <strong>{{ $period->start_date->format('Y-m-d') }}</strong> — <strong>{{ $period->end_date->format('Y-m-d') }}</strong></div>@empty<div class="alert alert-warning">لا توجد فترة رمضان فعالة. لا يمكن حفظ تاريخ إفطار حتى تضبطها الإدارة.</div>@endforelse
     <nav class="ramadan-section-nav d-flex flex-wrap gap-2 mb-3" aria-label="أقسام النموذج"><a class="btn btn-sm btn-outline-primary" href="#iftar-basic">١. معلومات الإفطار</a><a class="btn btn-sm btn-outline-primary" href="#iftar-location">٢. مكان التنفيذ</a><a class="btn btn-sm btn-outline-primary" href="#iftar-beneficiary">٣. الجهة / المجتمع المستفيد</a><a class="btn btn-sm btn-outline-primary" href="#iftar-targets">٤. الفئات المستهدفة</a><a class="btn btn-sm btn-outline-primary" href="#iftar-meals">٥. الوجبات</a><a class="btn btn-sm btn-outline-primary" href="#iftar-needs">٦. احتياجات التنفيذ</a><a class="btn btn-sm btn-outline-primary" href="#iftar-program">٧. البرنامج والمتطوعون</a><a class="btn btn-sm btn-outline-primary" href="#iftar-review">٨. ملاحظات ومراجعة</a></nav>
-    <form method="POST" action="{{ $formAction }}" id="ramadan-planning-form">@csrf @if($formMethod !== 'POST') @method($formMethod) @endif
+    <form method="POST" action="{{ $formAction }}" id="ramadan-planning-form" data-error-keys='@json($errors->keys())'>@csrf @if($formMethod !== 'POST') @method($formMethod) @endif
         <div class="alert alert-success"><i class="fas fa-check-circle"></i> تم إقرار نسخة الإرشادات الحالية قبل بدء هذا النموذج. <a href="{{ route('events.ramadan.guidance.show') }}">عرض الإرشادات</a></div>
         <div class="card shadow-sm mb-3 ramadan-form-section" id="iftar-basic" data-error-prefixes="title,planned_date"><div class="card-header fw-semibold"><span><i class="fas fa-circle-info"></i> ١. معلومات الإفطار</span><small>بيانات الإفطار وموعده والمسؤول عنه</small></div><div class="card-body row g-3">
             <div class="col-md-6"><label class="form-label">{{ __('ramadan_iftars.fields.title') }} <span class="text-danger">*</span></label><input class="form-control @error('title') is-invalid @enderror" name="title" value="{{ $value('title') }}" placeholder="مثال: إفطار أيتام" required>@error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
@@ -83,7 +83,7 @@ $collections = [
         </div>
         @include('pages.events.ramadan._historic_needs')
         @include('pages.events.ramadan._planning_collections', ['collections'=>$collections,'mealItemTypes'=>$mealItemTypes,'users'=>$users,'collectionFilter'=>['program_segments'],'includeMeals'=>false])
-        <div class="ramadan-form-actions" id="iftar-review"><div><strong>٨. ملاحظات ومراجعة</strong><p class="small text-muted mb-0">راجع الأقسام المعلّمة وتأكد من اكتمال الاحتياجات المفعّلة.</p></div><button class="btn btn-primary" type="submit">{{ __('ramadan_iftars.planning.save_draft') }}</button></div>
+        <div class="ramadan-form-actions" id="iftar-review"><div><strong>٨. ملاحظات ومراجعة</strong><p class="small text-muted mb-0">راجع الأقسام المعلّمة وتأكد من اكتمال الاحتياجات المفعّلة.</p></div><div class="d-flex flex-wrap gap-2"><a class="btn btn-light" href="{{ $ramadanIftar ? route('events.ramadan.iftars.show',$ramadanIftar) : route('events.ramadan.iftars.index') }}"><i class="fas fa-xmark"></i> إلغاء</a><button class="btn btn-outline-secondary" type="submit" name="submit_action" value="draft"><i class="fas fa-floppy-disk"></i> حفظ كمسودة</button>@if(auth()->user()->hasRole('super_admin') || auth()->user()->can('ramadan_iftars.submit'))<button class="btn btn-primary" type="submit" name="submit_action" value="submit"><i class="fas fa-paper-plane"></i> إرسال للاعتماد</button>@endif</div></div>
     </form>
 </div>
 <script>
@@ -104,3 +104,5 @@ document.addEventListener('click', function (event) {
     }
 });
 </script>
+
+@push('scripts')<script src="{{ \App\Support\AssetVersion::url('assets/js/event-planning-actions.js') }}" defer></script>@endpush

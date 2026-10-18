@@ -61,24 +61,60 @@ class BazaarController extends Controller
     public function store(StoreBazaarRequest $request)
     {
         $bazaar = DB::transaction(function () use ($request) {
-            $bazaar = Bazaar::query()->create(Arr::only($request->validated(), ['branch_id', 'relations_officer_id', 'name', 'bazaar_date', 'starts_at', 'ends_at', 'location_type', 'location_name', 'location_details', 'map_url', 'planned_table_count']) + ['status' => Bazaar::STATUS_DRAFT]);
+            $bazaar = Bazaar::query()->create(Arr::only($request->validated(), ['branch_id', 'relations_officer_id', 'name', 'bazaar_date', 'starts_at', 'ends_at', 'location_type', 'location_name', 'location_details', 'map_url', 'invitation_type', 'private_audience', 'day_count', 'planned_table_count']) + ['status' => Bazaar::STATUS_DRAFT]);
             $this->sync($bazaar, $request->validated());
+            if ($request->input('submit_action') === 'submit') $this->submitPlanning($request, $bazaar);
             return $bazaar;
         });
-        return redirect()->route('events.bazaars.edit', $bazaar)->with('success', 'تم إنشاء خطة البازار.');
+        return redirect()->route($request->input('submit_action') === 'submit' ? 'events.bazaars.show' : 'events.bazaars.edit', $bazaar)->with('success', $request->input('submit_action') === 'submit' ? 'تم إرسال البازار للاعتماد.' : 'تم إنشاء خطة البازار.');
     }
 
     public function update(StoreBazaarRequest $request, Bazaar $bazaar)
     {
         abort_unless($bazaar->isPlanningEditable(), 403);
         DB::transaction(function () use ($request, $bazaar) {
-            $bazaar->update(Arr::only($request->validated(), ['name', 'bazaar_date', 'starts_at', 'ends_at', 'location_type', 'location_name', 'location_details', 'map_url', 'planned_table_count']));
+            $bazaar = Bazaar::query()->lockForUpdate()->findOrFail($bazaar->id);
+            abort_unless($bazaar->isPlanningEditable(), 403);
+            $bazaar->update(Arr::only($request->validated(), ['name', 'bazaar_date', 'starts_at', 'ends_at', 'location_type', 'location_name', 'location_details', 'map_url', 'invitation_type', 'private_audience', 'day_count', 'planned_table_count']));
             $this->sync($bazaar, $request->validated());
+            if ($request->input('submit_action') === 'submit') $this->submitPlanning($request, $bazaar);
         });
-        return redirect()->route('events.bazaars.edit', $bazaar)->with('success', 'تم تحديث خطة البازار.');
+        return redirect()->route($request->input('submit_action') === 'submit' ? 'events.bazaars.show' : 'events.bazaars.edit', $bazaar)->with('success', $request->input('submit_action') === 'submit' ? 'تم إرسال البازار للاعتماد.' : 'تم تحديث خطة البازار.');
     }
 
-    public function submit(Request $request, Bazaar $bazaar) { $this->access($request, $bazaar); abort_unless($bazaar->isPlanningEditable(), 422); abort_unless($bazaar->tables()->count() === $bazaar->planned_table_count, 422, 'عدد الطاولات غير متطابق.'); $bazaar->update(['status' => Bazaar::STATUS_SUBMITTED, 'submitted_at' => now()]); return back()->with('success', 'تم إرسال البازار للاعتماد.'); }
+    public function submit(Request $request, Bazaar $bazaar)
+    {
+        $this->submitPlanning($request, $bazaar);
+        return redirect()->route('events.bazaars.show', $bazaar)->with('success', 'تم إرسال البازار للاعتماد.');
+    }
+
+    private function submitPlanning(Request $request, Bazaar $bazaar): void
+    {
+        $this->access($request, $bazaar);
+        abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('bazaars.submit'), 403);
+        DB::transaction(function () use ($request, $bazaar) {
+            $locked = Bazaar::query()->lockForUpdate()->findOrFail($bazaar->id);
+            abort_unless($locked->isPlanningEditable(), 422);
+            $locked->load($this->relations());
+            $data = $locked->toArray();
+            $data['bazaar_date'] = $locked->bazaar_date->format('Y-m-d');
+            $data['starts_at'] = substr($locked->starts_at, 0, 5);
+            $data['ends_at'] = substr($locked->ends_at, 0, 5);
+            $data['target_group_ids'] = $locked->targetGroupSelections->pluck('target_group_id')->all();
+            $data['target_group_notes'] = $locked->targetGroupSelections->pluck('target_group_custom_text', 'target_group_id')->all();
+            $data['team_groups'] = $locked->executionTeams->map(fn ($team) => ['team_name' => $team->name, 'notes' => $team->notes, 'members' => $team->members->toArray()])->all();
+            $data['execution_needs'] = $locked->executionNeeds->map(function ($need) {
+                $details = $need->executionNeedType?->code === 'invitations' ? json_decode($need->planned_details, true) : [];
+                return ['execution_need_type_id' => $need->execution_need_type_id, 'selected' => 1, 'planned_details' => $need->planned_details] + (is_array($details) ? $details : []);
+            })->all();
+            $planning = StoreBazaarRequest::createFrom($request);
+            $planning->replace($data);
+            $validator = \Illuminate\Support\Facades\Validator::make($data, $planning->rules());
+            $planning->withValidator($validator);
+            $validator->validate();
+            $locked->update(['status' => Bazaar::STATUS_SUBMITTED, 'submitted_at' => now()]);
+        });
+    }
 
     public function decide(Request $request, Bazaar $bazaar)
     {
@@ -153,10 +189,20 @@ class BazaarController extends Controller
         $bazaar->tables()->delete();
         foreach ($data['tables'] as $row) $bazaar->tables()->create(Arr::only($row, ['table_number', 'rental_type', 'tenant_name', 'tenant_phone', 'community_organization_id', 'table_liaison_name', 'table_liaison_phone', 'planned_material_description', 'planned_rental_amount', 'liaison_user_id', 'notes']));
         $bazaar->targetGroupSelections()->delete();
-        foreach ($data['target_group_ids'] as $id) SubjectTargetGroup::query()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'subject_id' => $bazaar->id, 'target_group_id' => $id]);
+        $targets = TargetGroup::query()->whereIn('id', $data['target_group_ids'])->get()->keyBy('id');
+        foreach ($data['target_group_ids'] as $id) {
+            $group = $targets->get($id);
+            SubjectTargetGroup::query()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'subject_id' => $bazaar->id, 'target_group_id' => $id,
+                'target_group_custom_text' => ($group->code === 'other' || $group->type === 'other' || $group->is_other) ? ($data['target_group_notes'][$id] ?? null) : null]);
+        }
+        foreach ($bazaar->executionTeams()->get() as $team) { $team->members()->delete(); $team->delete(); }
+        foreach ($data['team_groups'] as $group) {
+            $team = $bazaar->executionTeams()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'name' => $group['team_name'], 'planned_members_count' => count($group['members']), 'notes' => $group['notes'] ?? null]);
+            foreach ($group['members'] as $member) $team->members()->create(Arr::only($member, ['member_name', 'role_desc']));
+        }
         $bazaar->executionNeeds()->delete();
-        $types = ExecutionNeedType::query()->availableFor(EventSubjectTypes::BAZAAR)->get()->keyBy('id');
-        foreach (collect($data['execution_needs'])->filter(fn ($row) => ($row['selected'] ?? false) || $types->get($row['execution_need_type_id'])?->isMandatoryForBazaar()) as $row) {
+        $types = ExecutionNeedType::query()->availableFor(EventSubjectTypes::BAZAAR)->where('code', '!=', 'execution_team')->get()->keyBy('id');
+        foreach (collect($data['execution_needs'] ?? [])->filter(fn ($row) => ($row['selected'] ?? false) || $types->get($row['execution_need_type_id'])?->isMandatoryForBazaar()) as $row) {
             $type = $types->get($row['execution_need_type_id']); if (! $type) continue;
             $details = $type->code === 'invitations' ? json_encode(Arr::only($row, ['invitation_type', 'distribution_channel', 'distribution_other']), JSON_UNESCAPED_UNICODE) : $row['planned_details'];
             SubjectExecutionNeed::query()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'subject_id' => $bazaar->id, 'execution_need_type_id' => $type->id, 'is_required' => true, 'availability' => 'available', 'planned_details' => $details, 'status' => SubjectExecutionNeed::STATUS_PENDING]);
@@ -166,9 +212,9 @@ class BazaarController extends Controller
     private function options(Request $request, ?Bazaar $bazaar = null): array
     {
         $branchId = $bazaar?->branch_id ?? $request->user()->branch_id ?? collect($request->user()->scopedBranchIds())->first();
-        return ['bazaar' => $bazaar?->load($this->relations()), 'targetGroups' => TargetGroup::query()->active()->forBazaars()->orderBy('sort_order')->get(), 'executionNeedTypes' => ExecutionNeedType::query()->canonical()->availableFor(EventSubjectTypes::BAZAAR)->orderBy('sort_order')->get(), 'users' => User::query()->where('status', 'active')->where(fn ($q) => $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)))->orderBy('name')->get()];
+        return ['bazaar' => $bazaar?->load($this->relations()), 'targetGroups' => TargetGroup::query()->active()->forBazaars()->orderBy('sort_order')->get(), 'executionNeedTypes' => ExecutionNeedType::query()->canonical()->availableFor(EventSubjectTypes::BAZAAR)->where('code', '!=', 'execution_team')->orderBy('sort_order')->get(), 'users' => User::query()->where('status', 'active')->where(fn ($q) => $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)))->orderBy('name')->get()];
     }
-    private function relations(): array { return ['branch', 'relationsOfficer', 'tables.organization', 'tables.actualOrganization', 'tables.liaison', 'tables.currentDiscount.requester', 'tables.currentDiscount.approver', 'targetGroupSelections.targetGroup', 'executionNeeds.executionNeedType']; }
+    private function relations(): array { return ['branch', 'relationsOfficer', 'tables.organization', 'tables.actualOrganization', 'tables.liaison', 'tables.currentDiscount.requester', 'tables.currentDiscount.approver', 'targetGroupSelections.targetGroup', 'executionNeeds.executionNeedType', 'executionTeams.members']; }
     private function access(Request $request, Bazaar $bazaar): void { abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('branches.view.all') || $request->user()->hasAccessToScopedBranch((int) $bazaar->branch_id), 403); }
 
     private function browseFilters(Request $request): array

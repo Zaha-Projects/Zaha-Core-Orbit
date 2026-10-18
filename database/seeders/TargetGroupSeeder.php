@@ -12,18 +12,22 @@ class TargetGroupSeeder extends Seeder
         $groups = [
             'children' => 'أطفال',
             'youth' => 'شباب',
+            'elderly' => 'كبار السن',
             'women' => 'سيدات',
             'disability' => 'ذوي إعاقة',
             'local_community' => 'مجتمع محلي',
+            'orphans' => 'أيتام',
             'other' => 'أخرى',
         ];
 
         $types = [
             'children' => TargetGroup::TYPE_AGE,
             'youth' => TargetGroup::TYPE_AGE,
+            'elderly' => TargetGroup::TYPE_AGE,
             'women' => TargetGroup::TYPE_COMMUNITY,
             'disability' => TargetGroup::TYPE_COMMUNITY,
             'local_community' => TargetGroup::TYPE_COMMUNITY,
+            'orphans' => TargetGroup::TYPE_COMMUNITY,
             'other' => TargetGroup::TYPE_COMMUNITY,
         ];
 

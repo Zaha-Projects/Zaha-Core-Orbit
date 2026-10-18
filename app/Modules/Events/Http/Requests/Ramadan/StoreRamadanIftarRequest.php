@@ -31,6 +31,8 @@ class StoreRamadanIftarRequest extends FormRequest
             return false;
         }
 
+        if ($this->input('submit_action') === 'submit' && ! ($user->hasRole('super_admin') || $user->can('ramadan_iftars.submit'))) return false;
+
         return ! $iftar || ($iftar instanceof RamadanIftar && $this->canAccessBranch((int) $iftar->branch_id));
     }
 
@@ -109,6 +111,7 @@ class StoreRamadanIftarRequest extends FormRequest
         $allowedMealTypes = MealType::query()->active()->pluck('code')->merge($historicalMealTypes)->unique()->values()->all();
 
         return [
+            'submit_action' => ['nullable', Rule::in(['draft', 'submit'])],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'ramadan_period_id' => [Rule::requiredIf(fn () => ! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')), 'nullable', 'integer', 'exists:ramadan_periods,id'],
             'title' => ['required', 'string', 'max:255'],

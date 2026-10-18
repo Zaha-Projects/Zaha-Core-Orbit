@@ -97,10 +97,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     const locationType = document.querySelector('[data-location-type]');
     const locationLabel = document.querySelector('[data-location-label]');
-    const syncLocation = () => { if (locationLabel) locationLabel.textContent = locationType?.value === 'outside' ? 'اسم الموقع الخارجي' : 'المكان داخل المركز'; };
+    const syncLocation = () => {
+        const outside = ['outside', 'outside_center'].includes(locationType?.value);
+        locationLabel.textContent = outside ? 'اسم الموقع الخارجي' : 'المكان داخل المركز';
+        document.querySelector('[data-location-details-label]').textContent = outside ? 'العنوان / التفاصيل' : 'تفاصيل الموقع';
+        ['[data-location-name-field]', '[data-location-details-field]'].forEach(selector => {
+            const wrapper = document.querySelector(selector);
+            wrapper.hidden = false;
+            wrapper.querySelectorAll('input, textarea').forEach(field => field.disabled = false);
+            wrapper.classList.toggle('col-md-8', outside);
+            wrapper.classList.toggle('col-md-4', !outside);
+        });
+        const map = document.querySelector('[data-location-map-field]');
+        map.hidden = !outside;
+        map.querySelector('input').disabled = !outside;
+    };
     locationType?.addEventListener('change', syncLocation);
     syncLocation();
     [...container.children].forEach(toggleTenantFields);
-    const firstInvalid = document.querySelector('.bazaar-form-shell .is-invalid, .bazaar-validation-summary');
-    if (firstInvalid) window.requestAnimationFrame(() => firstInvalid.focus({preventScroll: true}));
+    const form = container.closest('form');
+    const teamContainer = form.querySelector('[data-team-groups]');
+    const teamCount = form.querySelector('[data-team-count]');
+    const resize = (parent, requested, max, render) => {
+        const wanted = Math.max(1, Math.min(max, Number(requested) || 1));
+        while (parent.children.length < wanted) parent.insertAdjacentHTML('beforeend', render(parent.children.length));
+        while (parent.children.length > wanted) parent.lastElementChild.remove();
+    };
+    teamCount?.addEventListener('change', () => {
+        resize(teamContainer, teamCount.value, 10, index => document.querySelector('#bazaar-team-template').innerHTML.replaceAll('__GROUP__', String(index)));
+        teamCount.value = teamContainer.children.length;
+    });
+    teamContainer?.addEventListener('change', event => {
+        if (!event.target.matches('[data-member-count]')) return;
+        const group = event.target.closest('[data-team-group]');
+        const members = group.querySelector('[data-team-members]');
+        resize(members, event.target.value, 20, index => document.querySelector('#bazaar-member-template').innerHTML.replaceAll('__GROUP__', group.dataset.teamGroup).replaceAll('__MEMBER__', String(index)));
+        event.target.value = members.children.length;
+    });
+    const invitation = form.querySelector('[name="invitation_type"]');
+    const days = form.querySelector('[name="day_count"]');
+    const syncPlanning = () => {
+        const privateBox = form.querySelector('[data-private-audience]');
+        const privateField = privateBox.querySelector('textarea');
+        privateBox.hidden = invitation.value !== 'private';
+        privateField.disabled = privateBox.hidden;
+        privateField.required = !privateBox.hidden;
+        form.querySelector('[data-review-days]').textContent = days.value;
+        form.querySelector('[data-review-invitation]').textContent = invitation.selectedOptions[0].textContent;
+    };
+    invitation.addEventListener('change', syncPlanning);
+    days.addEventListener('input', syncPlanning);
+    syncPlanning();
+    form.querySelectorAll('[data-other-target]').forEach(box => {
+        const toggle = form.querySelector(`[data-target-id="${box.dataset.otherTarget}"]`);
+        const field = box.querySelector('textarea');
+        const sync = () => { box.hidden = !toggle.checked; field.disabled = !toggle.checked; field.required = toggle.checked; };
+        toggle.addEventListener('change', sync);
+        sync();
+    });
+
 });

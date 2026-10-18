@@ -15,6 +15,8 @@ use App\Modules\Events\Models\RamadanIftar;
 use App\Modules\Events\Services\RamadanIftarPlanningService;
 use App\Modules\Events\Services\RamadanGuidanceAcceptanceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Modules\Events\Services\RamadanIftarSubmissionService;
 use App\Modules\Events\Models\RamadanPeriod;
 
 class RamadanIftarController extends Controller
@@ -39,11 +41,17 @@ class RamadanIftarController extends Controller
         return view('pages.events.ramadan.create', $this->formOptions($request));
     }
 
-    public function store(StoreRamadanIftarRequest $request)
+    public function store(StoreRamadanIftarRequest $request, RamadanIftarSubmissionService $submissions)
     {
         [$guidance, $acceptedAt] = $this->guidanceAcceptance->acceptedCurrentOrFail($request);
-        $iftar = $this->planning->create($request->validated(), $request->user(), $guidance, $acceptedAt);
+        $iftar = DB::transaction(function () use ($request, $guidance, $acceptedAt, $submissions) {
+            $iftar = $this->planning->create($request->validated(), $request->user(), $guidance, $acceptedAt);
+            if ($request->input('submit_action') === 'submit') $submissions->submitAndNotify($iftar, $request->user());
+            return $iftar;
+        });
         $this->guidanceAcceptance->forgetAcceptance($request);
+
+        if ($request->input('submit_action') === 'submit') return redirect()->route('dashboard')->with('success', __('ramadan_iftars.messages.submitted'));
 
         return redirect()->route('events.ramadan.iftars.edit', $iftar)
             ->with('success', __('ramadan_iftars.messages.created'));
@@ -62,9 +70,13 @@ class RamadanIftarController extends Controller
         return view('pages.events.ramadan.edit', $this->formOptions($request, $ramadanIftar));
     }
 
-    public function update(StoreRamadanIftarRequest $request, RamadanIftar $ramadanIftar)
+    public function update(StoreRamadanIftarRequest $request, RamadanIftar $ramadanIftar, RamadanIftarSubmissionService $submissions)
     {
-        $this->planning->update($ramadanIftar, $request->validated());
+        DB::transaction(function () use ($request, $ramadanIftar, $submissions) {
+            $this->planning->update($ramadanIftar, $request->validated());
+            if ($request->input('submit_action') === 'submit') $submissions->submitAndNotify($ramadanIftar, $request->user());
+        });
+        if ($request->input('submit_action') === 'submit') return redirect()->route('dashboard')->with('success', __('ramadan_iftars.messages.submitted'));
 
         return redirect()->route('events.ramadan.iftars.edit', $ramadanIftar)
             ->with('success', __('ramadan_iftars.messages.updated'));

@@ -19,6 +19,7 @@ class StoreBazaarRequest extends FormRequest
         $user = $this->user();
         $bazaar = $this->route('bazaar');
         return $user && ($user->hasRole('super_admin') || $user->can($bazaar ? 'bazaars.edit' : 'bazaars.create'))
+            && ($this->input('submit_action') !== 'submit' || $user->hasRole('super_admin') || $user->can('bazaars.submit'))
             && (! $bazaar || $user->hasRole('super_admin') || $user->hasAccessToScopedBranch((int) $bazaar->branch_id));
     }
 
@@ -26,6 +27,8 @@ class StoreBazaarRequest extends FormRequest
     {
         $user = $this->user();
         $this->merge([
+            'location_type' => match ($this->input('location_type')) { 'inside_center' => 'inside', 'outside_center' => 'outside', default => $this->input('location_type') },
+            'private_audience' => $this->input('invitation_type') === 'private' ? $this->input('private_audience') : null,
             'branch_id' => $this->route('bazaar')?->branch_id ?? $user?->branch_id ?? collect($user?->scopedBranchIds() ?? [])->first(),
             'relations_officer_id' => $user?->hasRole('relations_officer') ? $user->id : ($this->route('bazaar')?->relations_officer_id ?? $user?->id),
             'tables' => array_values(array_filter($this->input('tables', []), 'is_array')),
@@ -36,6 +39,18 @@ class StoreBazaarRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'submit_action' => ['nullable', Rule::in(['draft', 'submit'])],
+            'day_count' => ['required', 'integer', 'min:1', 'max:4294967295'],
+            'invitation_type' => ['required', Rule::in(['public', 'private'])],
+            'private_audience' => ['required_if:invitation_type,private', 'nullable', 'string', 'max:2000'],
+            'target_group_notes' => ['nullable', 'array'],
+            'target_group_notes.*' => ['nullable', 'string', 'max:2000'],
+            'team_groups' => ['required', 'array', 'min:1', 'max:10'],
+            'team_groups.*.team_name' => ['required', 'string', 'max:255'],
+            'team_groups.*.notes' => ['nullable', 'string', 'max:2000'],
+            'team_groups.*.members' => ['required', 'array', 'min:1', 'max:20'],
+            'team_groups.*.members.*.member_name' => ['required', 'string', 'max:255'],
+            'team_groups.*.members.*.role_desc' => ['required', 'string', 'max:255'],
             'branch_id' => ['required', 'integer', 'exists:branches,id'], 'relations_officer_id' => ['required', 'integer', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'], 'bazaar_date' => ['required', 'date'],
             'starts_at' => ['required', 'date_format:H:i'], 'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
@@ -67,7 +82,12 @@ class StoreBazaarRequest extends FormRequest
             if (! $this->user()->hasRole('super_admin') && ! $this->user()->hasAccessToScopedBranch($branchId)) $validator->errors()->add('branch_id', 'الفرع غير متاح.');
             $availableTargets = TargetGroup::query()->active()->forBazaars()->pluck('id');
             foreach ($this->input('target_group_ids', []) as $i => $id) if (! $availableTargets->contains((int) $id)) $validator->errors()->add("target_group_ids.$i", 'الفئة المستهدفة غير متاحة للبازارات.');
-            $types = ExecutionNeedType::query()->canonical()->availableFor(EventSubjectTypes::BAZAAR)->get()->keyBy('id');
+            foreach (TargetGroup::query()->whereIn('id', $this->input('target_group_ids', []))->get() as $group) {
+                if (($group->code === 'other' || $group->type === 'other' || $group->is_other) && blank($this->input('target_group_notes.'.$group->id))) {
+                    $validator->errors()->add('target_group_notes.'.$group->id, 'تفاصيل الفئة الأخرى مطلوبة.');
+                }
+            }
+            $types = ExecutionNeedType::query()->canonical()->availableFor(EventSubjectTypes::BAZAAR)->where('code', '!=', 'execution_team')->get()->keyBy('id');
             $selected = collect($this->input('execution_needs', []))->filter(fn ($row) => (bool) ($row['selected'] ?? false));
             foreach ($types->filter->isMandatoryForBazaar() as $type) if (! $selected->contains(fn ($row) => (int) $row['execution_need_type_id'] === (int) $type->id)) $validator->errors()->add('execution_needs', "احتياج {$type->name} إلزامي للبازار.");
             foreach ($selected as $i => $row) {
