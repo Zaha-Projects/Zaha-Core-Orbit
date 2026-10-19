@@ -3,7 +3,7 @@
 namespace App\Services\Kpi\Modules;
 
 use App\Modules\Events\Models\Bazaar;
-use Illuminate\Database\Query\Builder;
+use App\Services\Kpi\Support\KpiSql;
 
 class BazaarKpiDefinition extends KpiModuleDefinition
 {
@@ -12,7 +12,7 @@ class BazaarKpiDefinition extends KpiModuleDefinition
         return 'bazaar';
     }
 
-    protected function table(): string
+    public function table(): string
     {
         return 'bazaars';
     }
@@ -23,22 +23,80 @@ class BazaarKpiDefinition extends KpiModuleDefinition
     }
 
     /** Bazaars have no soft deletes or versioning: every row is live. */
-    protected function applyLive(Builder $query): void
+    public function liveSql(string $alias): string
     {
+        return '1 = 1';
     }
 
-    protected function rawStageConditions(): array
+    protected function rawStageConditions(string $alias): array
     {
+        $a = $alias;
+
         return [
-            'planned' => "s.status <> '".Bazaar::STATUS_DRAFT."'",
-            'approved' => 's.status IN ('.self::quoteList([Bazaar::STATUS_APPROVED, Bazaar::STATUS_EXECUTING, Bazaar::STATUS_POST_EXECUTION, Bazaar::STATUS_VERIFIED, Bazaar::STATUS_COMPLETED]).')',
-            'executed' => 's.status IN ('.self::quoteList([Bazaar::STATUS_POST_EXECUTION, Bazaar::STATUS_VERIFIED, Bazaar::STATUS_COMPLETED]).')',
-            'closed' => "s.status = '".Bazaar::STATUS_COMPLETED."'",
+            'planned' => $a.'.status <> '.KpiSql::literal(Bazaar::STATUS_DRAFT),
+            'approved' => $a.'.status IN ('.KpiSql::literalList([Bazaar::STATUS_APPROVED, Bazaar::STATUS_EXECUTING, Bazaar::STATUS_POST_EXECUTION, Bazaar::STATUS_VERIFIED, Bazaar::STATUS_COMPLETED]).')',
+            'executed' => $a.'.status IN ('.KpiSql::literalList([Bazaar::STATUS_POST_EXECUTION, Bazaar::STATUS_VERIFIED, Bazaar::STATUS_COMPLETED]).')',
+            'closed' => $a.'.status = '.KpiSql::literal(Bazaar::STATUS_COMPLETED),
         ];
     }
 
     public function notes(): array
     {
-        return ['لا يُسجَّل وقت إغلاق البازار؛ الإغلاق يُستدل عليه من الحالة «مكتمل» فقط.'];
+        return [
+            'وقت الإغلاق يُسجَّل منذ المرحلة الرابعة فقط؛ البازارات المغلقة قبلها لا تملك وقت إغلاق.',
+            'لا يوجد تاريخ تنفيذ فعلي للبازار؛ لذلك لا يدخل في مؤشر التنفيذ في الموعد.',
+        ];
+    }
+
+    protected function mainMetrics(string $alias): array
+    {
+        $a = $alias;
+        $planned = $this->stageSql('planned', $a);
+        $approved = $this->stageSql('approved', $a);
+        $executed = $this->stageSql('executed', $a);
+        $closed = $this->stageSql('closed', $a);
+        $reviewed = $a.'.status IN ('.KpiSql::literalList([Bazaar::STATUS_VERIFIED, Bazaar::STATUS_COMPLETED]).')';
+
+        $tables = fn (string $condition): string => '(SELECT COUNT(*) FROM bazaar_tables t WHERE t.bazaar_id = '.$a.'.id AND t.was_booked = TRUE'.$condition.')';
+        $tableSum = fn (string $expression, string $condition = ''): string => '(SELECT COALESCE(SUM('.$expression.'), 0) FROM bazaar_tables t WHERE t.bazaar_id = '.$a.'.id AND t.was_booked = TRUE'.$condition.')';
+        $paid = 'COALESCE(t.amount_paid, 0)';
+        $discounts = fn (string $condition): string => '(SELECT COUNT(*) FROM bazaar_table_discounts d JOIN bazaar_tables t ON t.id = d.bazaar_table_id WHERE t.bazaar_id = '.$a.'.id'.$condition.')';
+        $approvalHours = KpiSql::hoursBetween($a.'.submitted_at', $a.'.approved_at');
+        $verificationHours = KpiSql::hoursBetween($a.'.post_execution_submitted_at', $a.'.verified_at');
+        $closureLag = KpiSql::daysBetween($a.'.bazaar_date', KpiSql::dateOf($a.'.closed_at'));
+
+        return [
+            'tables_planned' => KpiSql::sumIf($executed, $a.'.planned_table_count'),
+            'tables_booked' => KpiSql::sumIf($executed, 'COALESCE('.$a.'.actual_occupied_table_count, 0)'),
+            'booked_tables' => KpiSql::sumIf($executed, $tables('')),
+            'renter_matches' => KpiSql::sumIf($executed, $tables(' AND t.actual_renter_matches = TRUE')),
+            'material_assessed' => KpiSql::sumIf($executed, $tables(' AND t.material_matches IS NOT NULL')),
+            'material_matches' => KpiSql::sumIf($executed, $tables(' AND t.material_matches = TRUE')),
+            // Payment state is derived from amounts: payment_status is chosen freely and can be overwritten by discounts.
+            'amount_due' => KpiSql::sumIf($executed, $tableSum('t.amount_due')),
+            'amount_paid' => KpiSql::sumIf($executed, $tableSum($paid)),
+            'planned_rent' => KpiSql::sumIf($executed, $tableSum('t.planned_rental_amount')),
+            'tables_paid' => KpiSql::sumIf($executed, $tables(' AND t.amount_due > 0 AND '.$paid.' >= t.amount_due')),
+            'tables_partial' => KpiSql::sumIf($executed, $tables(' AND t.amount_due > 0 AND '.$paid.' > 0 AND '.$paid.' < t.amount_due')),
+            'tables_unpaid' => KpiSql::sumIf($executed, $tables(' AND t.amount_due > 0 AND '.$paid.' = 0')),
+            'tables_unpaid_partial' => KpiSql::sumIf($executed, $tables(' AND t.amount_due > 0 AND '.$paid.' < t.amount_due')),
+            'outstanding' => KpiSql::sumIf($executed, $tableSum('t.amount_due - '.$paid, ' AND '.$paid.' < t.amount_due')),
+            'discount_requests' => KpiSql::sumIf($planned, $discounts('')),
+            'discount_pending' => KpiSql::sumIf($planned, $discounts(" AND d.status = 'pending'")),
+            'discount_approved' => KpiSql::sumIf($planned, $discounts(" AND d.status = 'approved'")),
+            'discount_returned' => KpiSql::sumIf($planned, $discounts(" AND d.status = 'returned'")),
+            'discount_rejected' => KpiSql::sumIf($planned, $discounts(" AND d.status = 'rejected'")),
+            'discount_decided' => KpiSql::sumIf($planned, $discounts(" AND d.status <> 'pending'")),
+            'discount_value' => KpiSql::sumIf($planned, '(SELECT COALESCE(SUM(d.original_amount - d.final_amount), 0) FROM bazaar_table_discounts d JOIN bazaar_tables t ON t.id = d.bazaar_table_id'
+                .' WHERE t.bazaar_id = '.$a.".id AND d.status = 'approved' AND d.final_amount IS NOT NULL)"),
+            'reviewed' => KpiSql::countIf('('.$executed.') AND '.$reviewed),
+            'approval_hours' => KpiSql::sumIf($approved, $approvalHours),
+            'approval_measured' => KpiSql::countValue($approved, $approvalHours),
+            'verification_hours' => KpiSql::sumIf($reviewed, $verificationHours),
+            'verification_measured' => KpiSql::countValue($reviewed, $verificationHours),
+            'closure_days' => KpiSql::sumIf($closed, $closureLag),
+            'closure_measured' => KpiSql::countValue($closed, $closureLag),
+            'closure_missing' => KpiSql::countIf('('.$closed.') AND '.$a.'.closed_at IS NULL'),
+        ];
     }
 }

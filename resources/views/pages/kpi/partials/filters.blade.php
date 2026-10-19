@@ -1,4 +1,4 @@
-{{-- Period / branch / module filters (GET). Params: $filters, $action, $showModule, $years, $months, $branches, $moduleOptions --}}
+{{-- Period / branch / module filters (GET). Params: $filters, $action, $showModule, $showBranch (default true), $years, $months, $branches, $moduleOptions --}}
 <form method="GET" action="{{ $action }}" class="kpi-filters" aria-label="تصفية المؤشرات">
     <div class="kpi-filters__field">
         <label for="kpi-year" class="form-label">السنة</label>
@@ -17,7 +17,7 @@
             @endforeach
         </select>
     </div>
-    @if ($filters['scope']->isAllBranches() || $branches->count() > 1 || $filters['branch_id'] !== null)
+    @if (($showBranch ?? true) && ($filters['scope']->isAllBranches() || $branches->count() > 1 || $filters['branch_id'] !== null))
         <div class="kpi-filters__field">
             <label for="kpi-branch" class="form-label">الفرع</label>
             <select id="kpi-branch" name="branch_id" class="form-select">

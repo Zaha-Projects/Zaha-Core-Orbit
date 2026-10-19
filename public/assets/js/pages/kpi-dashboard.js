@@ -1,6 +1,7 @@
 /*
- * KPI dashboard charts. Renders server-prepared payloads only: no business formulas here.
- * Theme-aware (re-renders when <html data-theme> changes), RTL, and honours prefers-reduced-motion.
+ * KPI dashboard charts. Renders server-prepared specs (App\Services\Kpi\KpiChartBuilder) only:
+ * no business formulas here. Spec types: bar | line | hbar | hbar-stacked.
+ * Theme-aware (re-renders when <html data-theme> changes), RTL, honours prefers-reduced-motion.
  */
 (function () {
     'use strict';
@@ -11,9 +12,9 @@
         return;
     }
 
-    var payload;
+    var specs;
     try {
-        payload = JSON.parse(dataNode.textContent || '{}') || {};
+        specs = JSON.parse(dataNode.textContent || '{}') || {};
     } catch (error) {
         return;
     }
@@ -23,89 +24,68 @@
     var charts = [];
 
     function token(name) {
-        return window.getComputedStyle(root).getPropertyValue(name).trim();
+        return window.getComputedStyle(root).getPropertyValue('--kpi-' + name).trim() || window.getComputedStyle(root).getPropertyValue('--kpi-primary').trim();
     }
 
-    function colorFor(prefix, key) {
-        return token('--kpi-' + prefix + key.replace(/_/g, '-')) || token('--kpi-primary');
+    function datasetColors(dataset) {
+        if (Array.isArray(dataset.colors)) {
+            return dataset.colors.map(token);
+        }
+
+        return token(dataset.color || 'primary');
     }
 
-    function baseOptions(extra) {
-        var text = token('--kpi-text');
-        var grid = token('--kpi-grid');
-        var options = {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: reducedMotion && reducedMotion.matches ? false : { duration: 600 },
-            locale: 'ar',
-            plugins: {
-                legend: { rtl: isRtl, textDirection: isRtl ? 'rtl' : 'ltr', labels: { color: text, usePointStyle: true } },
-                tooltip: { rtl: isRtl, textDirection: isRtl ? 'rtl' : 'ltr' }
+    function build(spec) {
+        var text = token('text');
+        var grid = token('grid');
+        var horizontal = spec.type === 'hbar' || spec.type === 'hbar-stacked';
+        var stacked = spec.type === 'hbar-stacked';
+        var valueTicks = { color: text, precision: spec.unit === '%' ? undefined : 0 };
+        if (spec.unit === '%') {
+            valueTicks.callback = function (value) { return value + '%'; };
+        }
+
+        var categoryAxis = { ticks: { color: text }, grid: { color: grid }, stacked: stacked };
+        var valueAxis = { ticks: valueTicks, grid: { color: grid }, beginAtZero: true, stacked: stacked };
+
+        var scales = horizontal
+            ? { x: Object.assign({ reverse: isRtl }, valueAxis), y: Object.assign({ position: isRtl ? 'right' : 'left' }, categoryAxis) }
+            : { x: Object.assign({ reverse: isRtl }, categoryAxis), y: Object.assign({ position: isRtl ? 'right' : 'left' }, valueAxis) };
+
+        return {
+            type: spec.type === 'line' ? 'line' : 'bar',
+            data: {
+                labels: spec.labels,
+                datasets: spec.datasets.map(function (dataset) {
+                    var color = datasetColors(dataset);
+
+                    return {
+                        label: dataset.label,
+                        data: dataset.data,
+                        backgroundColor: color,
+                        borderColor: color,
+                        borderRadius: spec.type === 'line' ? 0 : 6,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        spanGaps: false,
+                        fill: false
+                    };
+                })
             },
-            scales: {
-                x: { ticks: { color: text }, grid: { color: grid } },
-                y: { ticks: { color: text, precision: 0 }, grid: { color: grid }, beginAtZero: true }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: horizontal ? 'y' : 'x',
+                animation: reducedMotion && reducedMotion.matches ? false : { duration: 600 },
+                locale: 'ar',
+                plugins: {
+                    legend: { display: spec.datasets.length > 1, rtl: isRtl, textDirection: isRtl ? 'rtl' : 'ltr', labels: { color: text, usePointStyle: true } },
+                    tooltip: { rtl: isRtl, textDirection: isRtl ? 'rtl' : 'ltr' }
+                },
+                scales: scales
             }
         };
-
-        return Object.assign(options, extra || {});
     }
-
-    var builders = {
-        eventsByModule: function (data) {
-            var options = baseOptions();
-            options.scales.x.reverse = isRtl;
-
-            return {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: data.datasets.map(function (dataset) {
-                        return { label: dataset.label, data: dataset.data, backgroundColor: colorFor('stage-', dataset.key), borderRadius: 6 };
-                    })
-                },
-                options: options
-            };
-        },
-        statusDistribution: function (data) {
-            var options = baseOptions({ indexAxis: 'y' });
-            options.scales.x.stacked = true;
-            options.scales.x.reverse = isRtl;
-            options.scales.x.beginAtZero = true;
-            options.scales.x.ticks.precision = 0;
-            options.scales.y.stacked = true;
-            options.scales.y.position = isRtl ? 'right' : 'left';
-
-            return {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: data.datasets.map(function (dataset) {
-                        return { label: dataset.label, data: dataset.data, backgroundColor: colorFor('bucket-', dataset.key), borderRadius: 4 };
-                    })
-                },
-                options: options
-            };
-        },
-        monthlyTrend: function (data) {
-            var options = baseOptions();
-            options.scales.x.reverse = isRtl;
-            options.scales.y.position = isRtl ? 'right' : 'left';
-
-            return {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: data.datasets.map(function (dataset) {
-                        var color = token('--kpi-' + dataset.key);
-
-                        return { label: dataset.label, data: dataset.data, borderColor: color, backgroundColor: color, tension: 0.3, pointRadius: 3, fill: false };
-                    })
-                },
-                options: options
-            };
-        }
-    };
 
     function render() {
         charts.forEach(function (chart) { chart.destroy(); });
@@ -113,11 +93,11 @@
         window.Chart.defaults.font.family = window.getComputedStyle(document.body).fontFamily;
 
         root.querySelectorAll('canvas[data-kpi-chart]').forEach(function (canvas) {
-            var key = canvas.getAttribute('data-kpi-chart');
-            if (!builders[key] || !payload[key]) {
+            var spec = specs[canvas.getAttribute('data-kpi-chart')];
+            if (!spec || !Array.isArray(spec.datasets)) {
                 return;
             }
-            charts.push(new window.Chart(canvas, builders[key](payload[key])));
+            charts.push(new window.Chart(canvas, build(spec)));
         });
     }
 

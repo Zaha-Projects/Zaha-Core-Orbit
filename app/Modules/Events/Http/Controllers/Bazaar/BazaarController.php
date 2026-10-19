@@ -180,7 +180,7 @@ class BazaarController extends Controller
     {
         $this->access($request, $bazaar);
         abort_unless($bazaar->status === Bazaar::STATUS_VERIFIED, 422);
-        $bazaar->update(['status' => Bazaar::STATUS_COMPLETED]);
+        $bazaar->update(['status' => Bazaar::STATUS_COMPLETED, 'closed_at' => now(), 'closed_by' => $request->user()->id]);
 
         return back()->with('success', 'تم الاعتماد النهائي وإغلاق البازار.');
     }

@@ -57,6 +57,29 @@ class KpiPeriod
         return new self($this->year - 1);
     }
 
+    /** Months of this period that have started by today (0 for a future period). */
+    public function monthsElapsed(): int
+    {
+        $today = CarbonImmutable::today();
+        if ($this->start->greaterThan($today)) {
+            return 0;
+        }
+        if (! $this->month && $this->end->lessThan($today)) {
+            return 12;
+        }
+        if ($this->month) {
+            return 1;
+        }
+
+        return (int) $today->month;
+    }
+
+    /** End bound that also covers timestamp columns (whole last day). */
+    public function endBound(): string
+    {
+        return $this->end->toDateString().' 23:59:59';
+    }
+
     public function isMonthly(): bool
     {
         return $this->month !== null;

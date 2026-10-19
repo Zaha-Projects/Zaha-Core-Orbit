@@ -211,3 +211,7 @@ All routes are inside the `auth` group and use middleware `role_or_permission:su
 - `rg "Enterprise Analytics|monthly-kpis|kpi"`: no retired navigation restored. The legacy `role.reports.kpis.index` history page remains unlinked.
 
 **NO RUNTIME TESTS EXECUTED**
+
+## Phase 4 status (2026-10-19)
+
+The stage-based calculator was generalised into a metric-source dataset engine. It adds module and branch catalogues, branch comparison and drill-down, HTML drill-down reports, Bazaar closure capture and one index. The Phase 3 EV-* overview KPIs keep their codes. They now exclude Agenda from totals that include Monthly (no Agenda + Monthly double counting). Details: `docs/kpi-reporting-refactor-phase4-module-branch-kpis.md`.

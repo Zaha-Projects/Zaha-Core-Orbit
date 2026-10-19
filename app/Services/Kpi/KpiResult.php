@@ -15,9 +15,15 @@ class KpiResult
     public const STATE_INFORMATIONAL = 'informational';
     public const STATE_INSUFFICIENT = 'insufficient_data';
 
+    public const DATA_READY = 'READY';
+    public const DATA_PARTIAL = 'PARTIAL';
+    public const DATA_UNAVAILABLE = 'UNAVAILABLE';
+    public const DATA_NOT_APPLICABLE = 'NOT_APPLICABLE';
+
     public string $code;
     public string $name;
     public string $description;
+    public string $category;
     public string $icon;
     public string $unit;
 
@@ -37,6 +43,13 @@ class KpiResult
     public ?bool $achieved;
     public string $state;
 
+    /** READY | PARTIAL | UNAVAILABLE | NOT_APPLICABLE */
+    public string $dataStatus;
+    /** @var array<int, string> modules contributing to the value (labels) */
+    public array $modules;
+    /** @var array<int, string> exclusion and limitation notes shown to management */
+    public array $notes;
+
     public string $period;
     public string $comparisonPeriod;
     /** @var array{direction: string, delta: float, formatted: string, previous: string}|null */
@@ -44,9 +57,7 @@ class KpiResult
 
     public bool $dataAvailable;
     public ?string $missingReason;
-    /** @var array<int, string> modules the value covers / excludes */
-    public array $notes;
-    /** @var array<string, array{label: string, value: int|float|null, formatted: string, reason: ?string}> */
+    /** @var array<string, array{label: string, value: int|float|null, formatted: string, status: string, reason: ?string}> */
     public array $breakdown;
     /** @var array{route: string, parameters: array}|null */
     public ?array $drilldown;

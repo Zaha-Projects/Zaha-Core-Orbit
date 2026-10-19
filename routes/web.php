@@ -418,13 +418,15 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/transport/rounds/{tripRound}', [TransportTripRoundsController::class, 'update'])->middleware('role:transport_officer')->name('role.transport.rounds.update');
     Route::delete('/dashboard/transport/rounds/{tripRound}', [TransportTripRoundsController::class, 'destroy'])->middleware('role:transport_officer')->name('role.transport.rounds.destroy');
     Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
-    // KPI section (Phase 3 foundation). Branch scope is enforced by App\Services\Kpi\KpiScope.
+    // KPI section (Phases 3–4). Branch scope is enforced by App\Services\Kpi\KpiScope.
     Route::prefix('dashboard/kpi')->name('kpi.')->middleware(['role_or_permission:super_admin|kpi.view', 'branch.isolation'])->group(function () {
         Route::get('/', [KpiDashboardController::class, 'overview'])->name('overview');
         Route::get('/branches', [KpiDashboardController::class, 'branches'])->name('branches.index');
+        Route::get('/branches/{branch}', [KpiDashboardController::class, 'branch'])->whereNumber('branch')->name('branches.show');
         Route::get('/users', [KpiDashboardController::class, 'users'])->name('users.index');
         Route::get('/events', [KpiDashboardController::class, 'events'])->name('events.index');
         Route::get('/events/{module}', [KpiDashboardController::class, 'event'])->where('module', 'agenda|monthly|ramadan|bazaar')->name('events.show');
+        Route::get('/reports/{report}', [KpiDashboardController::class, 'report'])->where('report', 'on-time|attendance|ramadan-meals|bazaar-occupancy')->name('reports.show');
     });
 
     Route::get('/dashboard/reports/overview', [ReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.index');

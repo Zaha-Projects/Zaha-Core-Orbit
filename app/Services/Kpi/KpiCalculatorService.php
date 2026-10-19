@@ -3,30 +3,23 @@
 namespace App\Services\Kpi;
 
 use App\Services\Kpi\Modules\KpiModuleDefinition;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\DB;
+use App\Services\Kpi\Support\KpiSql;
 
 /**
- * Calculates catalogue KPIs from the module lifecycle definitions.
+ * Calculates catalogue KPIs from module metric sources.
  *
- * Query budget per module: one aggregate query covering the current and comparison period
- * (contiguous range, grouped by period), one grouped query for the 12-month trend, and one
- * grouped query for the branch table. Nothing is loaded row by row.
+ * Engine: for a grouping (period pair, branch, or month of the year) each module metric source
+ * runs ONE grouped aggregate query containing only the metrics the requested KPIs need. KPIs
+ * are then evaluated in PHP from those aggregates (Σ numerator ÷ Σ denominator per contributing
+ * module). No event rows are loaded into PHP.
  */
 class KpiCalculatorService
 {
-    /** Derived stages and the lifecycle stage that must be supported for them. */
-    private const DERIVED_STAGES = ['approved_due' => 'approved', 'executed_due' => 'executed'];
+    public const GROUP_PERIOD = 'period';
+    public const GROUP_BRANCH = 'branch';
+    public const GROUP_MONTH = 'month';
 
-    private const BUCKETS = [
-        'draft' => 'مسودة',
-        'awaiting' => 'قيد الاعتماد / معاد',
-        'approved_open' => 'معتمد بانتظار التنفيذ',
-        'executed_open' => 'منفذ بانتظار الإغلاق',
-        'closed' => 'مغلق',
-    ];
-
-    private const NO_BRANCHES_REASON = 'لا توجد فروع ضمن نطاق صلاحياتك؛ لا يمكن عرض بيانات.';
+    public const NO_BRANCHES_REASON = 'لا توجد فروع ضمن نطاق صلاحياتك؛ لا يمكن عرض بيانات.';
 
     private KpiRegistry $registry;
     private KpiTargetResolver $targets;
@@ -39,172 +32,143 @@ class KpiCalculatorService
         $this->formatter = $formatter;
     }
 
-    /**
-     * Everything the overview / module pages need for one period and scope.
-     *
-     * @param  array<int, string>  $moduleKeys
-     */
-    public function overview(array $moduleKeys, KpiPeriod $period, KpiScope $scope, ?string $definitionModule = null): array
-    {
-        $totals = $this->stageTotals($moduleKeys, $period, $scope);
-        $results = [];
-        foreach ($this->registry->definitions($definitionModule) as $code => $definition) {
-            $results[$code] = $this->calculate($definition, $moduleKeys, $totals, $period, $scope);
-        }
-
-        return [
-            'results' => $results,
-            'modules' => $this->moduleSummaries($moduleKeys, $totals, $scope),
-            'charts' => [
-                'eventsByModule' => $this->eventsByModuleChart($moduleKeys, $totals),
-                'statusDistribution' => $this->statusDistributionChart($moduleKeys, $totals),
-                'monthlyTrend' => $this->monthlyTrendChart($moduleKeys, $period, $scope),
-            ],
-        ];
-    }
-
-    /** Module summary cards only (no KPI cards, no charts). */
-    public function summaries(array $moduleKeys, KpiPeriod $period, KpiScope $scope): array
-    {
-        return $this->moduleSummaries($moduleKeys, $this->stageTotals($moduleKeys, $period, $scope), $scope);
-    }
+    /* ------------------------------------------------------------------ datasets */
 
     /**
-     * Stage counts per branch for the current period.
-     *
-     * @return array<int, array{branch_id: int, branch: string, modules: array<string, array<string, int|null>>}>
+     * @return array{grouping: string, scoped_out: bool, values: array<string, array<string, array<string, float>>>, defined: array<string, array<string, bool>>}
      */
-    public function branchBreakdown(array $moduleKeys, KpiPeriod $period, KpiScope $scope): array
+    public function dataset(array $moduleKeys, string $grouping, KpiPeriod $period, KpiScope $scope, array $metricNames): array
     {
+        $data = ['grouping' => $grouping, 'scoped_out' => $scope->hasNoBranches(), 'values' => [], 'defined' => []];
         if ($scope->hasNoBranches()) {
-            return [];
+            return $data;
         }
 
-        $branches = $scope->availableBranches();
-        if ($scope->selectedBranchId() !== null) {
-            $branches = $branches->where('id', $scope->selectedBranchId());
-        }
-
-        $counts = [];
+        $wanted = array_flip($metricNames);
         foreach ($moduleKeys as $key) {
-            $definition = $this->registry->moduleDefinition($key);
-            $query = $definition->liveQuery();
-            $branchKey = $definition->joinBranchKey($query, $scope->branchIds());
-            $query->whereBetween($definition->dateExpression(), [$period->startDate(), $period->endDate()]);
+            $data['values'][$key] = [];
+            $data['defined'][$key] = [];
 
-            $selects = [$branchKey.' AS branch_key'];
-            foreach ($definition->cumulativeStageSql() as $stage => $sql) {
-                $selects[] = 'SUM(CASE WHEN '.$sql.' THEN 1 ELSE 0 END) AS '.$stage;
-            }
+            foreach ($this->registry->moduleDefinition($key)->metricSources() as $source) {
+                $metrics = array_filter(array_intersect_key($source->metrics, $wanted), static fn ($sql) => $sql !== null);
+                if ($metrics === []) {
+                    continue;
+                }
 
-            foreach ($query->selectRaw(implode(', ', $selects))->groupBy('branch_key')->get() as $row) {
-                $counts[$key][(int) $row->branch_key] = (array) $row;
-            }
-        }
+                $built = $source->build($scope->branchIds(), $grouping === self::GROUP_BRANCH);
+                if ($built === null) {
+                    continue;
+                }
+                [$query, $branchKey] = $built;
+                [$from, $to, $groupExpression] = $this->groupingBounds($grouping, $period, $source->dateExpression, $branchKey);
 
-        return $branches->map(function ($branch) use ($moduleKeys, $counts): array {
-            $modules = [];
-            foreach ($moduleKeys as $key) {
-                $definition = $this->registry->moduleDefinition($key);
-                foreach (KpiModuleDefinition::STAGES as $stage) {
-                    $modules[$key][$stage] = $definition->supportsStage($stage)
-                        ? (int) ($counts[$key][(int) $branch->id][$stage] ?? 0)
-                        : null;
+                $selects = [$groupExpression.' AS group_key'];
+                foreach ($metrics as $name => $sql) {
+                    $selects[] = $sql.' AS '.$name;
+                    $data['defined'][$key][$name] = true;
+                }
+
+                $rows = $query->whereBetween($source->dateExpression, [$from, $to])
+                    ->selectRaw(implode(', ', $selects))
+                    ->groupBy('group_key')
+                    ->get();
+
+                foreach ($rows as $row) {
+                    if ($row->group_key === null || $row->group_key === '') {
+                        continue;
+                    }
+                    $group = (string) $row->group_key;
+                    foreach (array_keys($metrics) as $name) {
+                        $data['values'][$key][$group][$name] = ($data['values'][$key][$group][$name] ?? 0) + (float) $row->{$name};
+                    }
                 }
             }
+        }
 
-            return ['branch_id' => (int) $branch->id, 'branch' => $branch->name, 'modules' => $modules];
-        })->values()->all();
+        return $data;
+    }
+
+    /** Metric value, 0 when the group has no rows, null when the module cannot provide the metric. */
+    public function metric(array $data, string $module, string $group, string $name): ?float
+    {
+        if (! ($data['defined'][$module][$name] ?? false)) {
+            return null;
+        }
+
+        return (float) ($data['values'][$module][$group][$name] ?? 0);
+    }
+
+    private function groupingBounds(string $grouping, KpiPeriod $period, string $date, ?string $branchKey): array
+    {
+        switch ($grouping) {
+            case self::GROUP_BRANCH:
+                return [$period->startDate(), $period->endBound(), $branchKey];
+            case self::GROUP_MONTH:
+                $year = new KpiPeriod($period->year);
+
+                return [$year->startDate(), $year->endBound(), KpiSql::month($date)];
+            default:
+                return [
+                    $period->previous()->startDate(),
+                    $period->endBound(),
+                    'CASE WHEN '.$date.' >= '.KpiSql::literal($period->startDate())." THEN 'current' ELSE 'previous' END",
+                ];
+        }
+    }
+
+    /* ------------------------------------------------------------------ KPI evaluation */
+
+    /** @return array<string, KpiResult> */
+    public function results(array $definitions, array $moduleKeys, KpiPeriod $period, KpiScope $scope, ?array $data = null): array
+    {
+        $data = $data ?? $this->dataset($moduleKeys, self::GROUP_PERIOD, $period, $scope, $this->registry->metricsFor($definitions));
+        $results = [];
+        foreach ($definitions as $code => $definition) {
+            $results[$code] = $this->evaluate($definition, $moduleKeys, $data, $period);
+        }
+
+        return $results;
     }
 
     /**
-     * @return array<string, array{current: ?array, previous: ?array}>  null = no data in scope
+     * Value of one KPI for one dataset group (e.g. a branch id or a month number), without trend.
+     *
+     * @return array{value: float|int|null, formatted: string}
      */
-    public function stageTotals(array $moduleKeys, KpiPeriod $period, KpiScope $scope): array
+    public function valueFor(array $definition, array $moduleKeys, array $data, string $group, KpiPeriod $period): array
     {
-        $totals = [];
-        foreach ($moduleKeys as $key) {
-            $totals[$key] = $scope->hasNoBranches()
-                ? ['current' => null, 'previous' => null]
-                : $this->moduleTotals($this->registry->moduleDefinition($key), $period, $scope);
-        }
+        [$contributors] = $this->contributors($definition, $moduleKeys, $data);
+        $value = $contributors === [] ? null : $this->compute($definition, $contributors, $data, $group, $period)['value'];
 
-        return $totals;
+        return ['value' => $value, 'formatted' => $this->formatter->format($value, $definition['unit'])];
     }
 
-    private function moduleTotals(KpiModuleDefinition $definition, KpiPeriod $period, KpiScope $scope): array
+    private function evaluate(array $definition, array $moduleKeys, array $data, KpiPeriod $period): KpiResult
     {
-        $previous = $period->previous();
-        $date = $definition->dateExpression();
-        $today = now()->toDateString();
-        $stageSql = $definition->cumulativeStageSql();
-
-        $periodCase = 'CASE WHEN '.$date." >= ? THEN 'current' ELSE 'previous' END";
-        $selects = [$periodCase.' AS period_key', 'COUNT(*) AS records'];
-        $bindings = [$period->startDate()];
-        foreach ($stageSql as $stage => $sql) {
-            $selects[] = 'SUM(CASE WHEN '.$sql.' THEN 1 ELSE 0 END) AS '.$stage;
-        }
-        foreach (self::DERIVED_STAGES as $derived => $base) {
-            if (isset($stageSql[$base])) {
-                $selects[] = 'SUM(CASE WHEN ('.$stageSql[$base].') AND '.$date.' <= ? THEN 1 ELSE 0 END) AS '.$derived;
-                $bindings[] = $today;
-            }
-        }
-
-        $query = $definition->liveQuery();
-        $definition->applyBranchScope($query, $scope->branchIds());
-        $rows = $query
-            ->whereBetween($date, [$previous->startDate(), $period->endDate()])
-            ->selectRaw(implode(', ', $selects), $bindings)
-            ->groupBy('period_key')
-            ->get()
-            ->keyBy('period_key');
-
-        $shape = function ($row) use ($definition): array {
-            $values = ['records' => (int) ($row->records ?? 0)];
-            foreach (array_merge(KpiModuleDefinition::STAGES, array_keys(self::DERIVED_STAGES)) as $stage) {
-                $base = self::DERIVED_STAGES[$stage] ?? $stage;
-                $values[$stage] = $definition->supportsStage($base) ? (int) ($row->{$stage} ?? 0) : null;
-            }
-
-            return $values;
-        };
-
-        return ['current' => $shape($rows->get('current')), 'previous' => $shape($rows->get('previous'))];
-    }
-
-    private function calculate(array $definition, array $moduleKeys, array $totals, KpiPeriod $period, KpiScope $scope): KpiResult
-    {
-        $calculator = $definition['calculator'];
+        [$contributors, $excluded] = $this->contributors($definition, $moduleKeys, $data);
         $unit = $definition['unit'];
-        $applicable = array_values(array_intersect($moduleKeys, $definition['applicable_modules']));
-        $requiredStages = $calculator['type'] === 'stage_rate'
-            ? [$calculator['numerator'], $calculator['denominator']]
-            : [$calculator['stage']];
 
-        $included = array_values(array_filter($applicable, function (string $key) use ($requiredStages): bool {
-            foreach ($requiredStages as $stage) {
-                if (! $this->registry->moduleDefinition($key)->supportsStage(self::DERIVED_STAGES[$stage] ?? $stage)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }));
-
-        $current = $this->compute($calculator, $included, $totals, 'current');
-        $previous = $this->compute($calculator, $included, $totals, 'previous');
+        if ($contributors === []) {
+            $onlyNotApplicable = $excluded !== [] && collect($excluded)->every(fn (array $row): bool => $row['status'] === KpiResult::DATA_NOT_APPLICABLE);
+            $status = $definition['unavailable_reason'] === null && $onlyNotApplicable ? KpiResult::DATA_NOT_APPLICABLE : KpiResult::DATA_UNAVAILABLE;
+            $current = $previous = ['value' => null, 'numerator' => null, 'denominator' => null, 'records' => 0];
+        } else {
+            $status = collect($contributors)->contains(fn (array $spec): bool => $spec['status'] === KpiResult::DATA_PARTIAL)
+                ? KpiResult::DATA_PARTIAL
+                : KpiResult::DATA_READY;
+            $current = $this->compute($definition, $contributors, $data, 'current', $period);
+            $previous = $this->compute($definition, $contributors, $data, 'previous', $period->previous());
+        }
 
         $missingReason = null;
-        if ($scope->hasNoBranches()) {
+        if ($definition['unavailable_reason']) {
+            $missingReason = $definition['unavailable_reason'];
+        } elseif ($data['scoped_out']) {
             $missingReason = self::NO_BRANCHES_REASON;
-        } elseif ($included === []) {
-            $first = $moduleKeys[0] ?? null;
-            $missingReason = ($first ? $this->registry->moduleDefinition($first)->unavailableReason($requiredStages[0]) : null)
-                ?? 'لا تتوفر بيانات لهذا المؤشر ضمن الوحدات المختارة.';
+        } elseif ($contributors === []) {
+            $missingReason = collect($excluded)->pluck('reason')->filter()->first() ?? 'لا تتوفر بيانات لهذا المؤشر ضمن الوحدات المختارة.';
         } elseif ($current['value'] === null) {
-            $missingReason = 'لا توجد سجلات كافية لحساب النسبة ضمن الفترة.';
+            $missingReason = 'لا توجد سجلات كافية لحساب المؤشر ضمن الفترة.';
         }
 
         $target = $this->targets->resolve($definition);
@@ -214,7 +178,8 @@ class KpiCalculatorService
             'code' => $definition['code'],
             'name' => $definition['name_ar'],
             'description' => $definition['description_ar'],
-            'icon' => $definition['icon'] ?? 'fa-chart-simple',
+            'category' => $definition['category'] ?? 'planning',
+            'icon' => $definition['icon'],
             'unit' => $unit,
             'value' => $current['value'],
             'formattedValue' => $this->formatter->format($current['value'], $unit),
@@ -226,63 +191,157 @@ class KpiCalculatorService
             'configurationRequired' => $target['configuration_required'],
             'achieved' => $achieved,
             'state' => $this->state($current['value'], $target, $achieved),
+            'dataStatus' => $status,
+            'modules' => array_map(fn (string $key): string => $this->registry->moduleLabel($key), array_keys($contributors)),
+            'notes' => $this->notes($definition, $contributors, $excluded),
             'period' => $period->label(),
             'comparisonPeriod' => $period->previous()->label(),
-            'trend' => $this->trend($current, $previous, $unit, $calculator['type']),
+            'trend' => $this->trend($current, $previous, $unit, $definition['calculator']['type'] ?? 'sum'),
             'dataAvailable' => $current['value'] !== null,
             'missingReason' => $missingReason,
-            'notes' => $this->exclusionNotes($included, $moduleKeys),
-            'breakdown' => $this->breakdown($calculator, $moduleKeys, $definition, $totals, $requiredStages),
-            'drilldown' => $definition['drilldown'] ?? null,
+            'breakdown' => $this->breakdown($definition, $moduleKeys, $contributors, $excluded, $data, $period),
+            'drilldown' => $definition['drilldown'] ? ['route' => 'kpi.reports.show', 'parameters' => $definition['drilldown']] : null,
         ]);
     }
 
     /**
-     * @return array{value: int|float|null, numerator: int|null, denominator: int|null, records: int}
+     * Split selected modules into contributors (with their metric names) and excluded modules
+     * (with status and reason). A module contributes only when it declares availability AND its
+     * metric sources define the needed metrics in the current scope.
      */
-    private function compute(array $calculator, array $included, array $totals, string $periodKey): array
+    private function contributors(array $definition, array $moduleKeys, array $data): array
     {
-        $sum = static function (string $stage) use ($included, $totals, $periodKey): ?int {
-            $total = 0;
-            foreach ($included as $key) {
-                if ($totals[$key][$periodKey] === null) {
-                    return null;
-                }
-                $total += (int) $totals[$key][$periodKey][$stage];
+        $calculator = $definition['calculator'] ?? null;
+        $contributors = [];
+        $excluded = [];
+
+        foreach ($moduleKeys as $key) {
+            if (! $calculator || $definition['unavailable_reason']) {
+                $excluded[$key] = ['status' => KpiResult::DATA_UNAVAILABLE, 'reason' => $definition['unavailable_reason']];
+                continue;
             }
-
-            return $total;
-        };
-
-        $records = 0;
-        foreach ($included as $key) {
-            $records += (int) ($totals[$key][$periodKey]['records'] ?? 0);
+            $blockers = array_intersect($definition['exclusive_with'][$key] ?? [], $moduleKeys);
+            if ($blockers !== []) {
+                $excluded[$key] = ['status' => KpiResult::DATA_NOT_APPLICABLE, 'reason' => 'لا يُضاف للمجموع مع '
+                    .implode('، ', array_map(fn (string $blocker): string => $this->registry->moduleLabel($blocker), $blockers))
+                    .' لأن تنفيذ الفروع للأجندة يُسجَّل كأنشطة شهرية (تجنباً للعد المزدوج)؛ تظهر أرقامه في بطاقته الخاصة.'];
+                continue;
+            }
+            if (isset($definition['availability'][$key])) {
+                $spec = $definition['availability'][$key];
+                $spec = is_array($spec) ? $spec : ['status' => $spec];
+                $numerator = $spec['numerator'] ?? $calculator['numerator'];
+                $denominator = $spec['denominator'] ?? ($calculator['denominator'] ?? null);
+                $defined = ($data['defined'][$key][$numerator] ?? false) && ($denominator === null || ($data['defined'][$key][$denominator] ?? false));
+                if ($defined) {
+                    $contributors[$key] = ['status' => $spec['status'], 'numerator' => $numerator, 'denominator' => $denominator];
+                } else {
+                    $excluded[$key] = ['status' => KpiResult::DATA_UNAVAILABLE, 'reason' => $data['scoped_out']
+                        ? self::NO_BRANCHES_REASON
+                        : 'البيانات المطلوبة غير متاحة ضمن نطاقك أو على قاعدة البيانات الحالية.'];
+                }
+            } elseif (isset($definition['not_applicable'][$key])) {
+                $excluded[$key] = ['status' => KpiResult::DATA_NOT_APPLICABLE, 'reason' => $definition['not_applicable'][$key]];
+            } elseif (isset($definition['unavailable'][$key])) {
+                $excluded[$key] = ['status' => KpiResult::DATA_UNAVAILABLE, 'reason' => $definition['unavailable'][$key]];
+            } else {
+                $excluded[$key] = ['status' => KpiResult::DATA_NOT_APPLICABLE, 'reason' => null];
+            }
         }
 
-        if ($included === []) {
-            return ['value' => null, 'numerator' => null, 'denominator' => null, 'records' => 0];
-        }
-
-        if ($calculator['type'] === 'stage_rate') {
-            $numerator = $sum($calculator['numerator']);
-            $denominator = $sum($calculator['denominator']);
-            $value = ($numerator !== null && $denominator) ? round($numerator / $denominator * 100, 1) : null;
-
-            return ['value' => $value, 'numerator' => $numerator, 'denominator' => $denominator, 'records' => $records];
-        }
-
-        $value = $sum($calculator['stage']);
-
-        return ['value' => $value, 'numerator' => $value, 'denominator' => null, 'records' => $records];
+        return [$contributors, $excluded];
     }
 
-    /** Trend only when both periods hold comparable data (records, or a non-zero denominator for rates). */
+    /** @return array{value: float|int|null, numerator: float|null, denominator: float|null, records: int} */
+    private function compute(array $definition, array $contributors, array $data, string $group, KpiPeriod $period): array
+    {
+        $numerator = 0.0;
+        $denominator = 0.0;
+        $records = 0;
+        foreach ($contributors as $key => $spec) {
+            $numerator += (float) $this->metric($data, $key, $group, $spec['numerator']);
+            if ($spec['denominator'] !== null) {
+                $denominator += (float) $this->metric($data, $key, $group, $spec['denominator']);
+            }
+            $records += (int) ($this->metric($data, $key, $group, 'records') ?? 0);
+        }
+
+        $calculator = $definition['calculator'];
+        switch ($calculator['type']) {
+            case 'ratio':
+                $value = $denominator > 0 ? $numerator / $denominator * (float) ($calculator['scale'] ?? 100) : null;
+                break;
+            case 'per_month':
+                $months = $period->monthsElapsed();
+                $value = $months > 0 ? $numerator / $months : null;
+                break;
+            default:
+                $value = $numerator;
+        }
+
+        if ($value !== null) {
+            $precision = $this->formatter->precision($definition['unit']);
+            $value = $precision === 0 ? (int) round($value) : round($value, $precision);
+        }
+
+        return [
+            'value' => $value,
+            'numerator' => $numerator,
+            'denominator' => $calculator['type'] === 'ratio' ? $denominator : null,
+            'records' => $records,
+        ];
+    }
+
+    private function notes(array $definition, array $contributors, array $excluded): array
+    {
+        $notes = [];
+        if ($contributors !== []) {
+            foreach ($excluded as $key => $row) {
+                if ($row['reason'] !== null || $row['status'] === KpiResult::DATA_UNAVAILABLE) {
+                    $notes[] = 'لا يشمل '.$this->registry->moduleLabel($key).($row['reason'] ? ': '.$row['reason'] : '.');
+                }
+            }
+        }
+
+        return array_merge($notes, $definition['limitations'] ?? []);
+    }
+
+    private function breakdown(array $definition, array $moduleKeys, array $contributors, array $excluded, array $data, KpiPeriod $period): array
+    {
+        $rows = [];
+        foreach ($moduleKeys as $key) {
+            if (isset($contributors[$key])) {
+                $value = $this->compute($definition, [$key => $contributors[$key]], $data, 'current', $period)['value'];
+                $rows[$key] = [
+                    'label' => $this->registry->moduleLabel($key),
+                    'value' => $value,
+                    'formatted' => $this->formatter->format($value, $definition['unit']),
+                    'status' => $contributors[$key]['status'],
+                    'reason' => null,
+                ];
+                continue;
+            }
+
+            $row = $excluded[$key];
+            $rows[$key] = [
+                'label' => $this->registry->moduleLabel($key),
+                'value' => null,
+                'formatted' => $row['status'] === KpiResult::DATA_NOT_APPLICABLE ? 'لا ينطبق' : 'غير متاح',
+                'status' => $row['status'],
+                'reason' => $row['reason'],
+            ];
+        }
+
+        return $rows;
+    }
+
+    /** Trend only when both periods hold comparable data (records, or a non-zero denominator for ratios). */
     private function trend(array $current, array $previous, string $unit, string $type): ?array
     {
         if ($current['value'] === null || $previous['value'] === null) {
             return null;
         }
-        if ($type === 'stage_count' && ($current['records'] === 0 || $previous['records'] === 0)) {
+        if ($type !== 'ratio' && ($current['records'] === 0 || $previous['records'] === 0)) {
             return null;
         }
 
@@ -322,65 +381,34 @@ class KpiCalculatorService
         return $target['source'] === KpiTargetResolver::SOURCE_PROPOSED ? $text.' (مقترح)' : $text;
     }
 
-    private function exclusionNotes(array $included, array $moduleKeys): array
-    {
-        $excluded = array_diff($moduleKeys, $included);
-        if ($excluded === [] || $included === []) {
-            return [];
-        }
+    /* ------------------------------------------------------------------ module summaries */
 
-        $labels = array_map(fn (string $key): string => $this->registry->module($key)['label_ar'], $excluded);
-
-        return ['لا يشمل: '.implode('، ', $labels)];
-    }
-
-    private function breakdown(array $calculator, array $moduleKeys, array $definition, array $totals, array $requiredStages): array
-    {
-        $rows = [];
-        foreach ($moduleKeys as $key) {
-            $moduleDefinition = $this->registry->moduleDefinition($key);
-            $supported = in_array($key, $definition['applicable_modules'], true);
-            foreach ($requiredStages as $stage) {
-                $supported = $supported && $moduleDefinition->supportsStage(self::DERIVED_STAGES[$stage] ?? $stage);
-            }
-
-            $value = $supported ? $this->compute($calculator, [$key], $totals, 'current')['value'] : null;
-            $rows[$key] = [
-                'label' => $this->registry->module($key)['label_ar'],
-                'value' => $value,
-                'formatted' => $supported ? $this->formatter->format($value, $definition['unit']) : 'لا ينطبق',
-                'reason' => $supported ? null : $moduleDefinition->unavailableReason($requiredStages[0]),
-            ];
-        }
-
-        return $rows;
-    }
-
-    private function moduleSummaries(array $moduleKeys, array $totals, KpiScope $scope): array
+    /** Stage cards per module from a period dataset that includes the stage metrics. */
+    public function moduleSummaries(array $moduleKeys, array $data): array
     {
         $summaries = [];
         foreach ($moduleKeys as $key) {
             $module = $this->registry->module($key);
             $definition = $this->registry->moduleDefinition($key);
-            $current = $totals[$key]['current'];
             $stages = [];
             foreach (KpiModuleDefinition::STAGES as $stage) {
                 $supported = $definition->supportsStage($stage);
-                $value = $supported && $current !== null ? $current[$stage] : null;
+                $value = $supported ? $this->metric($data, $key, 'current', $stage) : null;
                 $stages[$stage] = [
                     'label' => $this->registry->stages()[$stage]['label_ar'],
                     'value' => $value,
                     'formatted' => ! $supported ? 'لا ينطبق' : $this->formatter->format($value, 'count'),
-                    'reason' => $supported ? ($current === null ? self::NO_BRANCHES_REASON : null) : $definition->unavailableReason($stage),
+                    'reason' => $supported ? ($data['scoped_out'] ? self::NO_BRANCHES_REASON : null) : $definition->unavailableReason($stage),
                 ];
             }
 
+            $records = $this->metric($data, $key, 'current', 'records');
             $summaries[$key] = [
                 'key' => $key,
                 'label' => $module['label_ar'],
                 'icon' => $module['icon'],
                 'accent' => $module['accent'],
-                'records' => $current['records'] ?? null,
+                'records' => $records === null ? null : (int) $records,
                 'stages' => $stages,
                 'notes' => $definition->notes(),
             ];
@@ -389,112 +417,9 @@ class KpiCalculatorService
         return $summaries;
     }
 
-    private function eventsByModuleChart(array $moduleKeys, array $totals): array
+    /** Metrics needed by module summary cards. */
+    public function stageMetricNames(): array
     {
-        $datasets = [];
-        foreach (KpiModuleDefinition::STAGES as $stage) {
-            $datasets[] = [
-                'key' => $stage,
-                'label' => $this->registry->stages()[$stage]['label_ar'],
-                'data' => array_map(fn (string $key) => $totals[$key]['current'][$stage] ?? null, $moduleKeys),
-            ];
-        }
-
-        return [
-            'labels' => array_map(fn (string $key): string => $this->registry->module($key)['label_ar'], $moduleKeys),
-            'datasets' => $datasets,
-            'available' => $this->anyRecords($moduleKeys, $totals),
-        ];
-    }
-
-    /** Exclusive buckets derived from the nested cumulative stages (each record counted once). */
-    private function statusDistributionChart(array $moduleKeys, array $totals): array
-    {
-        $data = array_fill_keys(array_keys(self::BUCKETS), []);
-        foreach ($moduleKeys as $key) {
-            $current = $totals[$key]['current'];
-            if ($current === null) {
-                foreach ($data as $bucket => $values) {
-                    $data[$bucket][] = null;
-                }
-                continue;
-            }
-
-            $executed = $current['executed'];
-            $closed = $current['closed'];
-            $data['draft'][] = $current['records'] - $current['planned'];
-            $data['awaiting'][] = $current['planned'] - $current['approved'];
-            $data['approved_open'][] = $current['approved'] - ($executed ?? 0);
-            $data['executed_open'][] = $executed === null ? null : $executed - ($closed ?? 0);
-            $data['closed'][] = $closed;
-        }
-
-        $datasets = [];
-        foreach (self::BUCKETS as $bucket => $label) {
-            $datasets[] = ['key' => $bucket, 'label' => $label, 'data' => $data[$bucket]];
-        }
-
-        return [
-            'labels' => array_map(fn (string $key): string => $this->registry->module($key)['label_ar'], $moduleKeys),
-            'datasets' => $datasets,
-            'available' => $this->anyRecords($moduleKeys, $totals),
-        ];
-    }
-
-    /** Planned records per month of the selected year, per module. */
-    private function monthlyTrendChart(array $moduleKeys, KpiPeriod $period, KpiScope $scope): array
-    {
-        $year = new KpiPeriod($period->year);
-        $labels = array_values(KpiPeriod::MONTHS_AR);
-        $datasets = [];
-        $available = false;
-
-        if ($scope->hasNoBranches()) {
-            return ['labels' => $labels, 'datasets' => [], 'available' => false, 'year' => $period->year];
-        }
-
-        foreach ($moduleKeys as $key) {
-            $definition = $this->registry->moduleDefinition($key);
-            $monthExpression = $this->monthExpression($definition->dateExpression());
-            $query = $definition->liveQuery();
-            $definition->applyBranchScope($query, $scope->branchIds());
-            $rows = $query
-                ->whereBetween($definition->dateExpression(), [$year->startDate(), $year->endDate()])
-                ->selectRaw($monthExpression.' AS month_number, SUM(CASE WHEN '.$definition->cumulativeStageSql()['planned'].' THEN 1 ELSE 0 END) AS planned')
-                ->groupBy('month_number')
-                ->pluck('planned', 'month_number');
-
-            $series = [];
-            foreach (range(1, 12) as $month) {
-                $series[] = (int) ($rows[$month] ?? 0);
-            }
-            $available = $available || array_sum($series) > 0;
-            $datasets[] = ['key' => $key, 'label' => $this->registry->module($key)['label_ar'], 'data' => $series];
-        }
-
-        return ['labels' => $labels, 'datasets' => $datasets, 'available' => $available, 'year' => $period->year];
-    }
-
-    private function anyRecords(array $moduleKeys, array $totals): bool
-    {
-        foreach ($moduleKeys as $key) {
-            if (($totals[$key]['current']['records'] ?? 0) > 0) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function monthExpression(string $column): string
-    {
-        switch (DB::connection()->getDriverName()) {
-            case 'sqlite':
-                return "CAST(strftime('%m', ".$column.') AS INTEGER)';
-            case 'pgsql':
-                return 'EXTRACT(MONTH FROM '.$column.')';
-            default:
-                return 'MONTH('.$column.')';
-        }
+        return ['records', 'planned', 'approved', 'executed', 'closed', 'approved_due', 'executed_due'];
     }
 }

@@ -21,8 +21,12 @@ class KpiFormatter
                 return $this->number((float) $value, 1).' ساعة';
             case 'score':
                 return $this->number((float) $value, 2).' / 10';
+            case 'currency':
+                return $this->number((float) $value, 2).' د.أ';
+            case 'count_decimal':
+                return $this->number((float) $value, 1);
             default:
-                return number_format((int) $value);
+                return number_format((int) round((float) $value));
         }
     }
 
@@ -35,6 +39,20 @@ class KpiFormatter
         return $unit === 'percentage'
             ? $sign.$this->number($magnitude, 1).' نقطة'
             : $sign.$this->format($magnitude, $unit);
+    }
+
+    /** Decimal places used when rounding a computed value of this unit. */
+    public function precision(string $unit): int
+    {
+        switch ($unit) {
+            case 'count':
+                return 0;
+            case 'score':
+            case 'currency':
+                return 2;
+            default:
+                return 1;
+        }
     }
 
     private function number(float $value, int $decimals): string

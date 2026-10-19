@@ -46,7 +46,7 @@
             <h2 id="kpi-charts-title">التحليلات</h2>
             <p>رسوم مبنية على البيانات نفسها المستخدمة في المؤشرات أعلاه.</p>
         </div>
-        @include('pages.kpi.partials.charts', ['show' => $filters['module'] ? ['statusDistribution', 'monthlyTrend'] : ['eventsByModule', 'statusDistribution', 'monthlyTrend']])
+        @include('pages.kpi.partials.charts', ['charts' => $charts])
     </section>
 
     <section class="kpi-section kpi-definitions" aria-labelledby="kpi-definitions-title">
