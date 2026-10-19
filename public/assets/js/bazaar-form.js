@@ -138,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const option = toggle.closest('[data-need-option]');
             const details = form.querySelector(`[data-need-details="${toggle.dataset.needToggle}"]`);
             const parts = [];
+            const availability = details?.querySelector('[data-need-availability]');
+            if (availability) parts.push(`${reviewNeeds.dataset.labelAvailability}: ${availability.selectedOptions[0].textContent.trim()}`);
             const cardType = details?.querySelector('[data-invitation-card-type]');
             if (cardType && cardType.value) {
                 parts.push(`${reviewNeeds.dataset.labelCardType}: ${cardType.selectedOptions[0].textContent.trim()}`);

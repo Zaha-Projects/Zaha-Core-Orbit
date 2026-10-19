@@ -61,6 +61,8 @@ return [
         'none_active' => 'لم يتم تفعيل أي احتياج بعد. فعّل احتياجًا من القسم السابق لعرض تفاصيله هنا.',
         'none_saved' => 'لا توجد احتياجات تنفيذ مسجلة.',
         'planned_details' => 'تفاصيل الاحتياج',
+        'availability' => 'التوفر داخل المركز',
+        'availability_options' => ['available' => 'متوفر داخل المركز', 'not_available' => 'غير متوفر داخل المركز'],
         'planned_details_placeholder' => 'اكتب تفاصيل الاحتياج: الكمية، التوقيت، الجهة المسؤولة…',
         'titles' => [
             'volunteers' => 'احتياج المتطوعين', 'official_correspondence' => 'المخاطبة الرسمية', 'media_coverage' => 'التغطية الإعلامية',
@@ -99,6 +101,7 @@ return [
         'branch_id' => 'الفرع', 'relations_officer_id' => 'مسؤول العلاقات', 'planned_table_count' => 'عدد الطاولات المخططة',
         'target_group_ids' => 'الفئات المستهدفة', 'target_group_ids.*' => 'الفئة المستهدفة', 'target_group_notes.*' => 'تفاصيل الفئة الأخرى',
         'execution_needs' => 'احتياجات التنفيذ', 'execution_needs.*.execution_need_type_id' => 'احتياج التنفيذ', 'execution_needs.*.selected' => 'تفعيل الاحتياج',
+        'execution_needs.*.availability' => 'التوفر داخل المركز',
         'execution_needs.*.planned_details' => 'تفاصيل الاحتياج', 'execution_needs.*.invitation_type' => 'نوع بطاقة الدعوة',
         'execution_needs.*.distribution_channels' => 'قناة التوزيع', 'execution_needs.*.distribution_channels.*' => 'قناة التوزيع',
         'execution_needs.*.distribution_other' => 'قناة التوزيع الأخرى', 'execution_needs.*.paper_template' => 'الصيغة المقترحة (ورقية)',

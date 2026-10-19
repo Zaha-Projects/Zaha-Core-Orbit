@@ -205,7 +205,7 @@ class BazaarController extends Controller
         foreach (collect($data['execution_needs'] ?? [])->filter(fn ($row) => ($row['selected'] ?? false) || $types->get($row['execution_need_type_id'])?->isMandatoryForBazaar()) as $row) {
             $type = $types->get($row['execution_need_type_id']); if (! $type) continue;
             $details = BazaarExecutionNeeds::storageValue($type, $row, $previousDetails->get($type->id));
-            SubjectExecutionNeed::query()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'subject_id' => $bazaar->id, 'execution_need_type_id' => $type->id, 'is_required' => true, 'availability' => 'available', 'planned_details' => $details, 'status' => SubjectExecutionNeed::STATUS_PENDING]);
+            SubjectExecutionNeed::query()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'subject_id' => $bazaar->id, 'execution_need_type_id' => $type->id, 'is_required' => true, 'availability' => BazaarExecutionNeeds::availabilityFor($type->code, $row['availability'] ?? null), 'planned_details' => $details, 'status' => SubjectExecutionNeed::STATUS_PENDING]);
         }
     }
 

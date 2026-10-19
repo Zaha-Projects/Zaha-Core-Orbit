@@ -57,6 +57,18 @@ $invitationType = old('invitation_type', $existing?->invitation_type ?? 'public'
 @php($field = fn (string $key) => "execution_needs[$i][$key]")
 <div class="bazaar-subsection-card" id="bazaar-need-details-{{ $need->id }}" data-need-details="{{ $need->id }}" @unless($active) hidden @endunless>
     <h3 class="bazaar-subsection-title"><i class="fas {{ \App\Modules\Events\Support\BazaarExecutionNeeds::icon($need->code) }}" aria-hidden="true"></i> {{ \App\Modules\Events\Support\BazaarExecutionNeeds::title($need) }}@if($need->isMandatoryForBazaar())<span class="badge bazaar-mandatory-badge">{{ __('bazaars.needs.mandatory') }}</span>@endif</h3>
+    @if(\App\Modules\Events\Support\BazaarExecutionNeeds::showsAvailabilityField($need->code))
+        @php($availability = $row['availability'] ?? \App\Modules\Events\Support\BazaarExecutionNeeds::defaultAvailability())
+        <div class="row g-3 mb-3"><div class="col-12 col-md-4">
+            <label class="form-label" for="bazaar-need-availability-{{ $need->id }}">{{ __('bazaars.needs.availability') }}</label>
+            <select id="bazaar-need-availability-{{ $need->id }}" class="form-select @error("execution_needs.$i.availability") is-invalid @enderror" name="{{ $field('availability') }}" data-need-availability>
+                @foreach(__('bazaars.needs.availability_options') as $value => $label)<option value="{{ $value }}" {{ $availability === $value ? 'selected' : '' }}>{{ $label }}</option>@endforeach
+            </select>
+            @error("execution_needs.$i.availability")<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div></div>
+    @else
+        <input type="hidden" name="{{ $field('availability') }}" value="not_available">
+    @endif
     @if($need->code === \App\Modules\Events\Support\BazaarExecutionNeeds::INVITATIONS)
         @php($cardType = $row['invitation_type'] ?? '')
         @php($channels = (array) ($row['distribution_channels'] ?? []))
@@ -115,7 +127,7 @@ $invitationType = old('invitation_type', $existing?->invitation_type ?? 'public'
 <section class="card bazaar-section-card mb-4"><div class="card-header bazaar-section-head bazaar-section-head--tables"><span class="bazaar-section-icon"><i class="fas fa-table-cells-large"></i></span><div class="flex-grow-1"><strong><span>٨</span> {{ __('bazaars.table_reservations') }}</strong><small>أكمل بيانات حجوزات الطاولات المخططة، ويمكن طي بطاقات الحجز الطويلة.</small></div><div class="bazaar-table-count-field"><label class="form-label" for="bazaar-table-count">{{ __('bazaars.attributes.planned_table_count') }}</label><input id="bazaar-table-count" class="form-control @error('planned_table_count') is-invalid @enderror" type="number" min="1" max="500" name="planned_table_count" data-table-count value="{{ old('planned_table_count',$existing?->planned_table_count ?? count($tableRows)) }}"></div></div><div class="card-body" data-tables>@foreach($tableRows as $i=>$table)@include('pages.events.bazaars._table_card',['i'=>$i,'table'=>$table])@endforeach</div></section>
 <section class="card bazaar-section-card bazaar-review-card mb-4"><div class="card-header bazaar-section-head"><span class="bazaar-section-icon"><i class="fas fa-clipboard-check"></i></span><div><strong><span>٩</span> {{ __('bazaars.sections.review') }}</strong><small>تأكد من اكتمال الأقسام والطاولات قبل المتابعة.</small></div></div><div class="card-body text-muted">{{ __('bazaars.review.intro') }}
 <div class="mt-2">{{ __('bazaars.day_count') }}: <strong data-review-days></strong> · {{ __('bazaars.invitation_type') }}: <strong data-review-invitation></strong></div>
-<div class="mt-3"><strong class="d-block mb-1 text-body">{{ __('bazaars.review.needs') }}</strong><ul class="bazaar-review-needs" data-review-needs data-label-mandatory="{{ __('bazaars.needs.mandatory') }}" data-label-enabled="{{ __('bazaars.needs.enabled') }}" data-label-card-type="{{ __('bazaars.invitation_cards.card_type') }}" data-label-channels="{{ __('bazaars.invitation_cards.channels') }}" data-label-empty="{{ __('bazaars.needs.none_saved') }}"></ul></div></div></section>
+<div class="mt-3"><strong class="d-block mb-1 text-body">{{ __('bazaars.review.needs') }}</strong><ul class="bazaar-review-needs" data-review-needs data-label-mandatory="{{ __('bazaars.needs.mandatory') }}" data-label-availability="{{ __('bazaars.needs.availability') }}" data-label-enabled="{{ __('bazaars.needs.enabled') }}" data-label-card-type="{{ __('bazaars.invitation_cards.card_type') }}" data-label-channels="{{ __('bazaars.invitation_cards.channels') }}" data-label-empty="{{ __('bazaars.needs.none_saved') }}"></ul></div></div></section>
 </div>
 <template id="bazaar-table-template">@include('pages.events.bazaars._table_card',['i'=>'__INDEX__','table'=>[]])</template>
 @push('styles')<link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/bazaar-form.css') }}">@endpush

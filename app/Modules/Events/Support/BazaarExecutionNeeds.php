@@ -43,6 +43,32 @@ class BazaarExecutionNeeds
         'invitations' => 'fa-envelope',
     ];
 
+    public const AVAILABILITY_VALUES = ['available', 'not_available'];
+
+    /** Same rules as Monthly (config/execution_needs.php → center_availability). */
+    public static function showsAvailabilityField(?string $code): bool
+    {
+        return (bool) config('execution_needs.center_availability.show_field', true)
+            && ! in_array($code, (array) config('execution_needs.center_availability.forced_not_available', []), true);
+    }
+
+    public static function defaultAvailability(): string
+    {
+        $default = (string) config('execution_needs.center_availability.default');
+
+        return in_array($default, self::AVAILABILITY_VALUES, true) ? $default : 'not_available';
+    }
+
+    /** Missing → Monthly default; forced/hidden → not_available; anything else is left for validation. */
+    public static function availabilityFor(?string $code, $submitted)
+    {
+        if (! self::showsAvailabilityField($code)) {
+            return 'not_available';
+        }
+
+        return $submitted === null || $submitted === '' ? self::defaultAvailability() : $submitted;
+    }
+
     public static function icon(?string $code): string
     {
         return self::ICONS[$code] ?? 'fa-list-check';
@@ -58,14 +84,15 @@ class BazaarExecutionNeeds
     /** Form row from a saved need (edit hydration and submit re-validation). */
     public static function fromStored(SubjectExecutionNeed $need): array
     {
-        $row = ['execution_need_type_id' => $need->execution_need_type_id, 'selected' => 1, 'planned_details' => $need->planned_details];
+        // Saved availability is restored as stored (pre-parity rows were all saved as `available`).
+        $row = ['execution_need_type_id' => $need->execution_need_type_id, 'selected' => 1, 'availability' => $need->availability, 'planned_details' => $need->planned_details];
         if ($need->executionNeedType?->code !== self::INVITATIONS) {
             return $row;
         }
 
         $decoded = json_decode((string) $need->planned_details, true);
 
-        return ['execution_need_type_id' => $need->execution_need_type_id, 'selected' => 1] + self::invitationFields(is_array($decoded) ? $decoded : []);
+        return ['execution_need_type_id' => $need->execution_need_type_id, 'selected' => 1, 'availability' => $need->availability] + self::invitationFields(is_array($decoded) ? $decoded : []);
     }
 
     /**
@@ -79,6 +106,7 @@ class BazaarExecutionNeeds
         if (! $selected) {
             return $base;
         }
+        $base['availability'] = self::availabilityFor($type?->code, $row['availability'] ?? null);
         if ($type?->code !== self::INVITATIONS) {
             return $base + ['planned_details' => $row['planned_details'] ?? null];
         }
@@ -103,11 +131,14 @@ class BazaarExecutionNeeds
     /** Human-readable [label => value] lines for review/show pages. */
     public static function summary(ExecutionNeedType $type, array $row): array
     {
+        $lines = [];
+        if (in_array($row['availability'] ?? null, self::AVAILABILITY_VALUES, true)) {
+            $lines[__('bazaars.needs.availability')] = __('bazaars.needs.availability_options.'.$row['availability']);
+        }
         if ($type->code !== self::INVITATIONS) {
-            return filled($row['planned_details'] ?? null) ? [__('bazaars.needs.planned_details') => $row['planned_details']] : [];
+            return $lines + (filled($row['planned_details'] ?? null) ? [__('bazaars.needs.planned_details') => $row['planned_details']] : []);
         }
 
-        $lines = [];
         if (filled($row['invitation_type'] ?? null)) {
             $lines[__('bazaars.invitation_cards.card_type')] = __('bazaars.invitation_cards.types.'.$row['invitation_type']);
         }
