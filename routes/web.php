@@ -66,8 +66,8 @@ use App\Http\Controllers\Web\Reports\TransportReportsController as TransportRepo
 use App\Http\Controllers\Web\Reports\MonthlyKpisController as MonthlyKpisController;
 use App\Http\Controllers\Roles\Staff\StaffAgendaController as StaffAgendaController;
 use App\Http\Controllers\Roles\Staff\StaffMonthlyActivitiesController as StaffMonthlyActivitiesController;
-use App\Http\Controllers\Web\Enterprise\EnterpriseReportsController;
 use App\Http\Controllers\Web\Kpi\KpiDashboardController;
+use App\Http\Controllers\Web\Kpi\KpiGuideController;
 use App\Http\Controllers\Web\Kpi\KpiUserController;
 use App\Http\Controllers\Web\Enterprise\NotificationsController;
 use App\Http\Controllers\Web\Enterprise\ArchiveController;
@@ -422,7 +422,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/transport/rounds/{tripRound}', [TransportTripRoundsController::class, 'update'])->middleware('role:transport_officer')->name('role.transport.rounds.update');
     Route::delete('/dashboard/transport/rounds/{tripRound}', [TransportTripRoundsController::class, 'destroy'])->middleware('role:transport_officer')->name('role.transport.rounds.destroy');
     Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
-    // KPI section (Phases 3–4). Branch scope is enforced by App\Services\Kpi\KpiScope.
+    // KPI Guide (Phase 6): definitions only, no data → authenticated users.
+    Route::get('/dashboard/kpi/guide', [KpiGuideController::class, 'index'])->name('kpi.guide');
+    // KPI section (Phases 3–6). Branch scope is enforced by App\Services\Kpi\KpiScope.
     Route::prefix('dashboard/kpi')->name('kpi.')->middleware(['role_or_permission:super_admin|kpi.view', 'branch.isolation'])->group(function () {
         Route::get('/', [KpiDashboardController::class, 'overview'])->name('overview');
         Route::get('/branches', [KpiDashboardController::class, 'branches'])->name('branches.index');
@@ -439,7 +441,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/dashboard/reports/overview', [ReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.index');
-    // Phase 2: retired Events report pages redirect to the operational reports hub until the KPI section ships.
+    // Retired Events report pages (Phase 2, controllers removed in Phase 6) redirect to the operational reports hub; reports viewers may lack kpi.view.
     Route::redirect('/dashboard/reports/agenda', '/dashboard/reports/overview')->name('role.reports.agenda.index');
     Route::redirect('/dashboard/reports/monthly', '/dashboard/reports/overview')->name('role.reports.monthly.index');
     Route::get('/dashboard/reports/finance', [FinanceReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.finance.index');
@@ -447,14 +449,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/reports/transport', [TransportReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.transport.index');
     Route::get('/dashboard/reports/kpis', [MonthlyKpisController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|kpi.view')->name('role.reports.kpis.index');
 
-    // Phase 2: retired Enterprise Analytics pages (replaced by the KPI section in Phase 3).
-    Route::redirect('/dashboard/enterprise', '/dashboard/reports/overview')->name('role.enterprise.dashboard');
-    Route::redirect('/dashboard/enterprise/annual-planning', '/dashboard/reports/overview')->name('role.enterprise.annual_planning');
-    Route::redirect('/dashboard/reports/enterprise/branch-performance', '/dashboard/reports/overview')->name('role.reports.enterprise.branch_performance');
-    Route::get('/dashboard/reports/enterprise/agenda-export', [EnterpriseReportsController::class, 'exportAgenda'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.agenda_export');
-    Route::get('/dashboard/reports/enterprise/monthly-export', [EnterpriseReportsController::class, 'exportMonthlyActivities'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.monthly_export');
-    Route::get('/dashboard/reports/enterprise/approval-export', [EnterpriseReportsController::class, 'exportApprovalReport'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.approval_export');
-    Route::get('/dashboard/reports/enterprise/printable', [EnterpriseReportsController::class, 'printable'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.printable');
+    // Retired Enterprise Analytics URLs (Phase 2/6): kept as redirects to their KPI replacements for bookmarks.
+    Route::redirect('/dashboard/enterprise', '/dashboard/kpi')->name('role.enterprise.dashboard');
+    Route::redirect('/dashboard/enterprise/annual-planning', '/dashboard/kpi/events/agenda')->name('role.enterprise.annual_planning');
+    Route::redirect('/dashboard/reports/enterprise/branch-performance', '/dashboard/kpi/branches')->name('role.reports.enterprise.branch_performance');
+    Route::redirect('/dashboard/reports/enterprise/agenda-export', '/dashboard/kpi/events/agenda')->name('role.reports.enterprise.agenda_export');
+    Route::redirect('/dashboard/reports/enterprise/monthly-export', '/dashboard/kpi/events/monthly')->name('role.reports.enterprise.monthly_export');
+    Route::redirect('/dashboard/reports/enterprise/approval-export', '/dashboard/kpi/events/monthly')->name('role.reports.enterprise.approval_export');
+    Route::redirect('/dashboard/reports/enterprise/printable', '/dashboard/kpi')->name('role.reports.enterprise.printable');
     Route::get('/dashboard/notifications/{notification}/open', [NotificationsController::class, 'open'])->name('role.notifications.open');
     Route::patch('/dashboard/notifications/{notification}/read', [NotificationsController::class, 'markRead'])->name('role.notifications.read');
     Route::post('/dashboard/archive/year', [ArchiveController::class, 'archiveYear'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.archive.year');

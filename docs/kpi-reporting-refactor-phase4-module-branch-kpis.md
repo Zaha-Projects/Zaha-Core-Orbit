@@ -263,3 +263,7 @@ Official targets · SLA deadlines · 5-day planning rule (MA-25) · 40/60 branch
 - **Fixed:** `KpiSql::literal` now doubles backslashes on MySQL/MariaDB. Before the fix, workflow `entity_type` lists such as `'App\Models\MonthlyActivity'` were read with `\` as an escape character and matched nothing. Workflow-based KPIs (MA-06/07/08, RI-11, RI-15, AG-04, and the `wf_*` metrics) were therefore unavailable or 0 in Phase 4.
 - **Reports:** all Phase 4 reports have a real CSV export (`kpi.reports.export`, permission `kpi.export`).
 - Details: `docs/kpi-reporting-refactor-phase5-user-performance-reports.md`.
+
+## Phase 6 status (2026-10-19)
+
+Finalised. The deprecated Enterprise Analytics code, the old Agenda/Monthly report controllers and the manual Monthly KPI write path were removed (the `monthly_kpis` table and its rows are preserved). The KPI Guide, dataset caching and actor indexes were added. Current reference: `docs/kpi-reporting-final-architecture.md`.

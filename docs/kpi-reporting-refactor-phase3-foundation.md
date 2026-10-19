@@ -221,3 +221,7 @@ The stage-based calculator was generalised into a metric-source dataset engine. 
 - `/dashboard/kpi/users` is no longer a placeholder: it is the same-role comparison page. Access is `kpi.users.view` (new, additive seeder); self performance is in My Profile → الأداء.
 - `KpiScope` gained `canViewUsers`, `canViewUser`, `canExport` and `forSelf`.
 - Details: `docs/kpi-reporting-refactor-phase5-user-performance-reports.md`.
+
+## Phase 6 status (2026-10-19)
+
+Finalised. The deprecated Enterprise Analytics code, the old Agenda/Monthly report controllers and the manual Monthly KPI write path were removed (the `monthly_kpis` table and its rows are preserved). The KPI Guide, dataset caching and actor indexes were added. Current reference: `docs/kpi-reporting-final-architecture.md`.

@@ -941,3 +941,7 @@ Each phase is a separate PR, reviewable and mergeable on its own.
 KPI & REPORTING REFACTOR PHASE 1 AUDIT COMPLETE
 
 All ten Phase 1 deliverables are in this document. Nothing was deleted, migrated or modified outside this file. Phase 3 is blocked only on the business decisions listed in §21.
+
+## Phase 6 status (2026-10-19)
+
+Finalised. The deprecated Enterprise Analytics code, the old Agenda/Monthly report controllers and the manual Monthly KPI write path were removed (the `monthly_kpis` table and its rows are preserved). The KPI Guide, dataset caching and actor indexes were added. Current reference: `docs/kpi-reporting-final-architecture.md`.

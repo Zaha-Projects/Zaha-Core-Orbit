@@ -10,7 +10,7 @@
 <div class="kpi-dashboard" dir="rtl">
     @include('pages.kpi.partials.header', [
         'title' => $report['title'],
-        'subtitle' => 'تقرير تفصيلي خلف مؤشر الأداء. عرض فقط؛ التصدير في مرحلة لاحقة.',
+        'subtitle' => 'تقرير تفصيلي خلف مؤشر الأداء، مع إمكانية التصدير لمن يملك صلاحية التصدير.',
         'icon' => $report['icon'],
     ])
     @include('pages.kpi.partials.section-nav')

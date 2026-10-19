@@ -30,7 +30,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PostExecutionShowcaseSeeder::class);
 
          $this->call(MovementSeeder::class);
-         $this->call(MonthlyKpiSeeder::class);
 
          $this->call(EvaluationWorkflowPermissionSeeder::class);
          $this->call(FollowupOfficerUsersSeeder::class);

@@ -10,7 +10,7 @@
 <div class="kpi-dashboard" dir="rtl">
     @include('pages.kpi.partials.header', [
         'title' => 'مؤشرات الفعاليات',
-        'subtitle' => 'اختر نوع الفعالية لعرض مؤشراته. المؤشرات التفصيلية لكل نوع تُضاف في المراحل القادمة.',
+        'subtitle' => 'اختر نوع الفعالية لعرض مؤشراته التفصيلية.',
         'icon' => 'fa-layer-group',
     ])
     @include('pages.kpi.partials.section-nav')

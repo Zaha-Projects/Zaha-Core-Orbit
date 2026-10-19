@@ -4,6 +4,7 @@ namespace App\Services\Kpi;
 
 use App\Services\Kpi\Modules\KpiModuleDefinition;
 use App\Services\Kpi\Support\KpiSql;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Calculates catalogue KPIs from module metric sources.
@@ -42,6 +43,32 @@ class KpiCalculatorService
      * @param  array<int, int>|null  $userIds  restrict to actions performed by these users; only actor sources take part
      */
     public function dataset(array $moduleKeys, string $grouping, KpiPeriod $period, KpiScope $scope, array $metricNames, ?array $userIds = null): array
+    {
+        $cache = (array) config('kpis.cache', []);
+        $cacheable = ($cache['enabled'] ?? false) && ! $scope->hasNoBranches() && ($userIds === null || count($userIds) > 1);
+        if (! $cacheable) {
+            return $this->computeDataset($moduleKeys, $grouping, $period, $scope, $metricNames, $userIds);
+        }
+
+        $metrics = array_values(array_unique($metricNames));
+        sort($metrics);
+        $users = $userIds === null ? null : array_map('intval', $userIds);
+        if ($users !== null) {
+            sort($users);
+        }
+        $branches = $scope->branchIds();
+        if ($branches !== null) {
+            sort($branches);
+        }
+        $key = ($cache['prefix'] ?? 'kpi:v1:dataset:').md5(json_encode([
+            $moduleKeys, $grouping, $period->startDate(), $period->endDate(), $branches, $metrics, $users, now()->toDateString(),
+        ]));
+
+        return Cache::remember($key, now()->addMinutes(max(1, (int) ($cache['ttl_minutes'] ?? 10))),
+            fn (): array => $this->computeDataset($moduleKeys, $grouping, $period, $scope, $metricNames, $userIds));
+    }
+
+    private function computeDataset(array $moduleKeys, string $grouping, KpiPeriod $period, KpiScope $scope, array $metricNames, ?array $userIds): array
     {
         $data = ['grouping' => $grouping, 'scoped_out' => $scope->hasNoBranches(), 'values' => [], 'defined' => []];
         if ($scope->hasNoBranches()) {

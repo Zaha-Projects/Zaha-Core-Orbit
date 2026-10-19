@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Streamed CSV downloads (extracted from EnterpriseReportsController::csvResponse).
+ * Streamed CSV downloads (originally EnterpriseReportsController::csvResponse; shared by the KPI exports).
  * Rows are written as they are iterated, so a LazyCollection/cursor never loads the report into memory.
  */
 trait StreamsCsv

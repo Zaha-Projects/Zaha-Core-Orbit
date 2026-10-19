@@ -20,5 +20,6 @@
         @if ($showOperationalReports)
             <li class="side-item {{ request()->routeIs('role.reports.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.index') }}"><i class="fas fa-chart-simple"></i><span>التقارير التشغيلية</span></a></li>
         @endif
+        <li class="side-item {{ request()->routeIs('kpi.guide') ? 'selected' : '' }}"><a href="{{ route('kpi.guide') }}"><i class="fas fa-book-open"></i><span>دليل مؤشرات الأداء</span></a></li>
     </ul>
 </li>

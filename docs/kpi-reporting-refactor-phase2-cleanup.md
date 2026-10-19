@@ -120,3 +120,7 @@ Removed outright (POST only, nothing to bookmark): the six fake `*.export` route
 ## Phase 3 status (2026-10-19)
 
 The KPI section (`/dashboard/kpi`, sidebar group "مؤشرات الأداء والتقارير") replaces the retired analytical entry points. None of the Phase 2 retirements were reverted. The deprecated Enterprise chart partial now loads Chart.js through the shared `layouts/app/partials/chartjs.blade.php`. Details: `docs/kpi-reporting-refactor-phase3-foundation.md`.
+
+## Phase 6 status (2026-10-19)
+
+Finalised. The deprecated Enterprise Analytics code, the old Agenda/Monthly report controllers and the manual Monthly KPI write path were removed (the `monthly_kpis` table and its rows are preserved). The KPI Guide, dataset caching and actor indexes were added. Current reference: `docs/kpi-reporting-final-architecture.md`.

@@ -208,3 +208,7 @@ Official targets · SLA deadlines · overall user score (and weights) · 40/60 b
   - `post_execution_verifications(verified_by, verified_at)`
   - `activity_evaluations(evaluated_by, submitted_at)`
 - **Deprecated cleanup:** Enterprise controller, service and views; Agenda/Monthly report controllers; manual KPI store; the orphan launcher redirects; dead computations listed in the Phase 2 doc.
+
+## Phase 6 status (2026-10-19)
+
+Finalised. The deprecated Enterprise Analytics code, the old Agenda/Monthly report controllers and the manual Monthly KPI write path were removed (the `monthly_kpis` table and its rows are preserved). The KPI Guide, dataset caching and actor indexes were added. Current reference: `docs/kpi-reporting-final-architecture.md`.
