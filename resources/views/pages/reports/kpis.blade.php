@@ -51,7 +51,7 @@
         </div>
     @endif
 
-    @if (auth()->user()->hasRole('followup_officer'))
+    @if ($canManageKpis)
         <div class="card shadow-sm mb-4 kpi-form-card">
             <div class="card-body">
                 <h2 class="h6 mb-3">{{ __('app.roles.reports.kpis.form_title') }}</h2>
@@ -68,7 +68,9 @@
                     <div class="col-12 col-md-4">
                         <label class="form-label">{{ __('app.roles.reports.kpis.fields.branch') }}</label>
                         <select class="form-select" name="branch_id">
-                            <option value="">{{ __('app.roles.reports.kpis.common.all') }}</option>
+                            @unless($isBranchScoped)
+                                <option value="">{{ __('app.roles.reports.kpis.common.all') }}</option>
+                            @endunless
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                             @endforeach

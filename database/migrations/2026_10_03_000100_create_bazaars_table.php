@@ -19,6 +19,9 @@ return new class extends Migration {
             $table->string('location_name');
             $table->text('location_details')->nullable();
             $table->string('map_url', 2048)->nullable();
+            $table->string('invitation_type', 20)->default('public');
+            $table->text('private_audience')->nullable();
+            $table->unsignedInteger('day_count')->default(1);
             $table->unsignedInteger('planned_table_count');
             $table->unsignedInteger('actual_occupied_table_count')->nullable();
             $table->string('status')->default('draft')->index();

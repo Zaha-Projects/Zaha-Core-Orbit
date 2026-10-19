@@ -66,6 +66,7 @@ class BazaarController extends Controller
             if ($request->input('submit_action') === 'submit') $this->submitPlanning($request, $bazaar);
             return $bazaar;
         });
+        $request->attributes->set('audit_entity', $bazaar);
         return redirect()->route($request->input('submit_action') === 'submit' ? 'events.bazaars.show' : 'events.bazaars.edit', $bazaar)->with('success', $request->input('submit_action') === 'submit' ? 'تم إرسال البازار للاعتماد.' : 'تم إنشاء خطة البازار.');
     }
 
