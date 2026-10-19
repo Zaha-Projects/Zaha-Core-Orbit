@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="container py-4">
+    @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
+    @if(auth()->user()->hasRole('super_admin'))<a class="btn btn-primary mb-3" href="{{ route('events.ramadan.guidance.edit') }}">تعديل التعليمات</a>@endif
     <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('events.ramadan.iftars.index') }}">{{ __('ramadan_iftars.navigation.title') }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ __('ramadan_iftars.titles.guidance') }}</li></ol></nav>
     @php $sections=json_decode($guidance->content,true); $structured=is_array($sections); @endphp
     <div class="card ramadan-hero shadow-sm mb-4">

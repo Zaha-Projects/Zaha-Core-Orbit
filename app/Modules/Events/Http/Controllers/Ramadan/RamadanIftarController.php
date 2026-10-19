@@ -113,10 +113,10 @@ class RamadanIftarController extends Controller
                 }
             })->orderBy('sort_order')->get(),
             'mobilizationMethods' => MobilizationMethod::query()->where(fn ($query) => $query->active()->when($iftar?->mobilization_method_id, fn ($q, $id) => $q->orWhere('id', $id)))->ordered()->get(),
-            'selectedCommunityOrganization' => $iftar?->community_organization_id ? CommunityOrganization::query()->where('branch_id', $selectedBranchId)->find($iftar->community_organization_id) : null,
-            'selectedLocalCommunity' => $iftar?->local_community_id ? LocalCommunity::query()->where('branch_id', $selectedBranchId)->find($iftar->local_community_id) : null,
+            'selectedCommunityOrganization' => CommunityOrganization::query()->where('branch_id', $selectedBranchId)->find($request->old('community_organization_id', $iftar?->community_organization_id)),
+            'selectedLocalCommunity' => LocalCommunity::query()->where('branch_id', $selectedBranchId)->find($request->old('local_community_id', $iftar?->local_community_id)),
             'users' => $users,
-            'hostTypes' => [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER, RamadanIftar::HOST_LOCAL_COMMUNITY],
+            'hostTypes' => RamadanIftar::hostTypes(),
             'mealItemTypes' => MealType::query()->where(function ($query) use ($iftar) {
                 $query->active();
                 if ($iftar) $query->orWhereIn('code', $iftar->meals()->with('items')->get()->pluck('items')->flatten()->pluck('item_type'));

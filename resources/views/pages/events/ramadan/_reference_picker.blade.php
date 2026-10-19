@@ -1,5 +1,5 @@
 @php($pickerId = str_replace('_', '-', $field))
-<div class="ramadan-reference-picker" data-reference-picker data-search-url="{{ $searchUrl }}" data-create-url="{{ $createUrl }}">
+<div class="ramadan-reference-picker" data-reference-picker data-contact-name="{{ $selected?->contact_name ?? ($selectedHostType === 'individual' ? $selected?->name : '') }}" data-contact-phone="{{ $selected?->contact_phone }}" data-search-url="{{ $searchUrl }}" data-create-url="{{ $createUrl }}">
     <input type="hidden" name="{{ $field }}" value="{{ old($field, $selected?->id) }}" data-reference-id>
     <label class="form-label" for="{{ $pickerId }}-search">{{ $label }} <span class="text-danger">*</span></label>
 
@@ -11,7 +11,7 @@
         </div>
         <div id="{{ $pickerId }}-results" class="ramadan-picker-results list-group position-absolute shadow-sm d-none" role="listbox" data-reference-results></div>
         <div class="small text-muted mt-2 d-none" aria-live="polite" data-reference-loading><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> جارٍ البحث...</div>
-        <button type="button" class="btn btn-sm btn-outline-success mt-2 d-none" data-reference-create>إضافة <span data-reference-name></span> كجهة جديدة</button>
+        <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-reference-create>إضافة جهة جديدة <span data-reference-name></span></button>
     </div>
 
     <div class="ramadan-reference-selected @unless($selected) d-none @endunless" data-reference-selected-state>
@@ -25,11 +25,13 @@
         <h3 class="h6 mb-1">إضافة جهة جديدة</h3>
         <p class="small text-muted mb-3">الاسم ورقم التواصل مطلوبان للحفظ.</p>
         <div class="row g-3">
-            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-name">الاسم <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-name" class="form-control" autocomplete="organization" placeholder="مثال: جمعية الخير" data-create-field="name"><div class="invalid-feedback" data-create-error="name"></div></div>
-            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-phone">رقم التواصل <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-phone" class="form-control" type="tel" inputmode="tel" dir="ltr" autocomplete="tel" placeholder="مثال: 07XXXXXXXX" data-create-field="contact_phone"><div class="invalid-feedback" data-create-error="contact_phone"></div></div>
+            <div class="col-md-6"><label class="form-label">نوع الجهة</label><select class="form-select" data-create-kind>@foreach(($field === 'local_community_id' ? ['local_community'=>'مجتمع محلي'] : ['individual'=>'فرد','center'=>'مؤسسة','association'=>'جمعية']) as $kind=>$kindLabel)<option value="{{ $kind }}" {{ ($selectedHostType === $kind) ? 'selected' : '' }}>{{ $kindLabel }}</option>@endforeach</select></div>
+            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-name">اسم الجهة / اسم الفرد <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-name" class="form-control" autocomplete="organization" placeholder="مثال: جمعية الخير" data-create-field="name"><div class="invalid-feedback" data-create-error="name"></div></div>
+            <div class="col-md-6"><label class="form-label" for="{{ $pickerId }}-create-phone">رقم هاتف ضابط الارتباط / الفرد <span class="text-danger">*</span></label><input id="{{ $pickerId }}-create-phone" class="form-control" type="tel" inputmode="tel" dir="ltr" autocomplete="tel" placeholder="مثال: 07XXXXXXXX" data-create-field="contact_phone"><div class="invalid-feedback" data-create-error="contact_phone"></div></div>
+            <div class="col-md-6" data-create-liaison><label class="form-label">اسم ضابط الارتباط</label><input class="form-control" data-create-field="contact_name"><div class="invalid-feedback" data-create-error="contact_name"></div></div>
             <div class="col-12"><button class="btn btn-sm btn-outline-secondary" type="button" data-reference-more aria-expanded="false">إضافة تفاصيل إضافية</button></div>
             <div class="col-12 d-none" data-reference-optional><div class="row g-2">
-                <div class="col-md-4"><label class="form-label">اسم ضابط الارتباط <span class="text-muted">(اختياري)</span></label><input class="form-control" placeholder="مثال: أحمد محمد" data-create-field="contact_name"></div>
+
                 <div class="col-md-4"><label class="form-label">اسم الموقع <span class="text-muted">(اختياري)</span></label><input class="form-control" placeholder="مثال: المركز الرئيسي" data-create-field="location_name"></div>
                 <div class="col-md-4"><label class="form-label">العنوان <span class="text-muted">(اختياري)</span></label><input class="form-control" placeholder="مثال: عمّان، شارع ..." data-create-field="address"></div>
             </div></div>

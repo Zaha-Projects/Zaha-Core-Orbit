@@ -33,6 +33,32 @@
         var message = picker.querySelector('[data-reference-message]');
         var timer;
         var activeIndex = -1;
+        var mode = id.value ? 'selected' : 'search';
+        var searchRevision = 0;
+        var host = document.querySelector('#ramadan-planning-form [name="host_type"]');
+        var kind = picker.querySelector('[data-create-kind]');
+        picker.closest('form')?.addEventListener('submit', function (event) {
+            if (mode === 'create' && !id.disabled) {
+                event.preventDefault();
+                message.className = 'small text-danger';
+                message.textContent = 'احفظ الجهة الجديدة واخترها أو ألغِ الإضافة قبل حفظ الإفطار.';
+                picker.querySelector('[data-create-field="name"]').focus();
+            }
+        });
+        function invalidateSearch() { clearTimeout(timer); searchRevision++; loading.classList.add('d-none'); }
+        function syncKind() {
+            picker.querySelector('[data-create-liaison]').hidden = kind.value === 'individual';
+        }
+        kind.addEventListener('change', function () {
+            host.value = kind.value;
+            host.dispatchEvent(new Event('change', { bubbles: true }));
+            syncKind();
+        });
+        host?.addEventListener('change', function () {
+            if (Array.from(kind.options).some(function (option) { return option.value === host.value; })) kind.value = host.value;
+            syncKind();
+        });
+        syncKind();
 
         function closeResults() {
             results.classList.add('d-none');
@@ -52,6 +78,9 @@
             picker.querySelector('[data-reference-more]').setAttribute('aria-expanded', 'false');
         }
         function showSearch(clearSelection) {
+            mode = 'search';
+            invalidateSearch();
+            createButton.classList.remove('d-none');
             panel.classList.add('d-none');
             selectedState.classList.add('d-none');
             searchState.classList.remove('d-none');
@@ -63,7 +92,15 @@
             search.focus();
         }
         function select(item) {
+            picker.dataset.contactName = item.contact_name || (host?.value === 'individual' ? item.name : '');
+            picker.dataset.contactPhone = item.contact_phone || '';
+            mode = 'selected';
+            invalidateSearch();
             id.value = item.id;
+            if (!id.disabled) {
+                document.querySelector('[name="contact_name"]').value = picker.dataset.contactName;
+                document.querySelector('[name="contact_phone"]').value = picker.dataset.contactPhone;
+            }
             search.value = '';
             closeResults();
             createButton.classList.add('d-none');
@@ -74,6 +111,7 @@
             picker.querySelector('[data-reference-selected-contact]').textContent = [item.contact_name, item.contact_phone].filter(Boolean).join(' · ') || 'لا توجد بيانات اتصال محفوظة';
         }
         function render(items, term) {
+            if (mode !== 'search') return;
             results.innerHTML = '';
             if (!items.length) {
                 var empty = document.createElement('div');
@@ -108,15 +146,16 @@
 
         search.addEventListener('input', function () {
             id.value = '';
-            clearTimeout(timer);
+            invalidateSearch();
+            var revision = searchRevision;
             var term = search.value.trim();
-            if (!term) { closeResults(); createButton.classList.add('d-none'); return; }
+            if (!term) { closeResults(); return; }
             loading.classList.remove('d-none');
             timer = setTimeout(function () {
-                requestJson(picker.dataset.searchUrl + '?q=' + encodeURIComponent(term))
-                    .then(function (body) { render(body.data || [], term); })
-                    .catch(function () { results.innerHTML = '<div class="ramadan-picker-empty text-danger">تعذر تحميل النتائج. حاول مرة أخرى.</div>'; results.classList.remove('d-none'); })
-                    .finally(function () { loading.classList.add('d-none'); });
+                requestJson(picker.dataset.searchUrl + (picker.dataset.searchUrl.includes('?') ? '&q=' : '?q=') + encodeURIComponent(term))
+                    .then(function (body) { if (revision === searchRevision && mode === 'search') render(body.data || [], term); })
+                    .catch(function () { if (revision !== searchRevision || mode !== 'search') return; results.innerHTML = '<div class="ramadan-picker-empty text-danger">تعذر تحميل النتائج. حاول مرة أخرى.</div>'; results.classList.remove('d-none'); })
+                    .finally(function () { if (revision === searchRevision) loading.classList.add('d-none'); });
             }, 250);
         });
         search.addEventListener('keydown', function (event) {
@@ -130,22 +169,32 @@
                 options[activeIndex].scrollIntoView({ block: 'nearest' });
             } else if (event.key === 'Enter' && activeIndex >= 0) { event.preventDefault(); options[activeIndex].click(); }
         });
-        picker.querySelector('[data-reference-clear]').addEventListener('click', function () { showSearch(true); closeResults(); createButton.classList.add('d-none'); });
+        picker.querySelector('[data-reference-clear]').addEventListener('click', function () { showSearch(true); closeResults(); });
         picker.querySelector('[data-reference-change]').addEventListener('click', function () { showSearch(true); });
-        createButton.addEventListener('click', function () { searchState.classList.add('d-none'); panel.classList.remove('d-none'); closeResults(); picker.querySelector('[data-create-field="name"]').focus(); });
+        createButton.addEventListener('click', function () { mode = 'create'; invalidateSearch(); searchState.classList.add('d-none'); panel.classList.remove('d-none'); closeResults(); picker.querySelector('[data-create-field="name"]').focus(); });
         picker.querySelector('[data-reference-more]').addEventListener('click', function (event) { var optional = picker.querySelector('[data-reference-optional]'); var expand = optional.classList.contains('d-none'); optional.classList.toggle('d-none', !expand); event.currentTarget.setAttribute('aria-expanded', expand ? 'true' : 'false'); });
         picker.querySelector('[data-reference-cancel]').addEventListener('click', function () { resetCreate(); showSearch(false); });
+        panel.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
+                event.preventDefault();
+                picker.querySelector('[data-reference-save]').click();
+            }
+        });
         picker.querySelector('[data-reference-save]').addEventListener('click', function () {
             var payload = {};
             var save = this;
             clearErrors();
             picker.querySelectorAll('[data-create-field]').forEach(function (input) { payload[input.dataset.createField] = input.value.trim(); });
+            payload.host_type = kind.value;
+            if (kind.value === 'individual') payload.contact_name = payload.name;
+            if (!payload.contact_name) setFieldError('contact_name', 'اسم ضابط الارتباط مطلوب');
             if (!payload.name) setFieldError('name', 'الاسم مطلوب');
             if (!payload.contact_phone) setFieldError('contact_phone', 'رقم التواصل مطلوب');
             var firstInvalid = picker.querySelector('.is-invalid');
             if (firstInvalid) { firstInvalid.focus(); return; }
             if (!csrfToken) { message.className = 'small text-danger'; message.textContent = 'انتهت صلاحية الجلسة أو رمز الحماية غير صالح. حدّث الصفحة وحاول مرة أخرى.'; return; }
             save.disabled = true;
+            picker.dataset.saving = '1';
             requestJson(picker.dataset.createUrl, {
                 method: 'POST',
                 headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
@@ -162,31 +211,29 @@
                 else if (error.status === 422) message.textContent = error.message;
                 else message.textContent = 'تعذر حفظ الجهة. حاول مرة أخرى.';
                 picker.querySelector('.is-invalid')?.focus();
-            }).finally(function () { save.disabled = false; });
+            }).finally(function () { delete picker.dataset.saving; save.disabled = id.disabled; });
         });
     });
 
     var form = document.querySelector('#ramadan-planning-form');
     var hostType = form?.querySelector('[name="host_type"]');
-    function resetPicker(wrapper) {
-        if (!wrapper) return;
-        var selectedId = wrapper.querySelector('[data-reference-id]');
-        if (selectedId) selectedId.value = '';
-        wrapper.querySelector('[data-reference-create-form]')?.classList.add('d-none');
-        wrapper.querySelector('[data-reference-selected-state]')?.classList.add('d-none');
-        wrapper.querySelector('[data-reference-search-state]')?.classList.remove('d-none');
-        var searchInput = wrapper.querySelector('[data-reference-search]');
-        if (searchInput) searchInput.value = '';
-        wrapper.querySelectorAll('[data-create-field]').forEach(function (input) { input.value = ''; input.classList.remove('is-invalid'); });
-    }
-    function updateConditionalFields() {
+    function updateConditionalFields(event) {
         var local = hostType?.value === 'local_community';
-        var organization = document.querySelector('[data-organization-picker]');
-        var community = document.querySelector('[data-community-picker]');
-        organization?.classList.toggle('d-none', local);
-        community?.classList.toggle('d-none', !local);
+        var individual = hostType?.value === 'individual';
+        document.querySelectorAll('[data-organization-picker], [data-community-picker]').forEach(function (wrapper) {
+            var active = wrapper.hasAttribute('data-community-picker') === local;
+            wrapper.hidden = !active;
+            wrapper.classList.toggle('d-none', !active);
+            wrapper.querySelectorAll('input, select, button').forEach(function (input) { input.disabled = !active || (input.hasAttribute('data-reference-save') && wrapper.querySelector('[data-reference-picker]').dataset.saving === '1'); });
+        });
         document.querySelectorAll('[data-community-only]').forEach(function (element) { element.classList.toggle('d-none', !local); });
-        resetPicker(local ? organization : community);
+        var label = document.querySelector('[data-supporter-contact-label]');
+        if (label) label.textContent = individual ? 'اسم الفرد الداعم' : 'اسم ضابط الارتباط';
+        if (event) {
+            var activePicker = document.querySelector(local ? '[data-community-picker] [data-reference-picker]' : '[data-organization-picker] [data-reference-picker]');
+            document.querySelector('[name="contact_name"]').value = activePicker?.dataset.contactName || '';
+            document.querySelector('[name="contact_phone"]').value = activePicker?.dataset.contactPhone || '';
+        }
     }
     hostType?.addEventListener('change', updateConditionalFields);
     updateConditionalFields();

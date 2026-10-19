@@ -81,7 +81,7 @@ return [
         'outside_center' => 'Outside center',
         'association' => 'Association',
         'local_community' => 'Local community',
-        'center' => 'Center',
+        'center' => 'Institution',
         'main' => 'Main',
         'side' => 'Side',
         'drink' => 'Drink',

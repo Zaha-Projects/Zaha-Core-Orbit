@@ -93,6 +93,16 @@
         var selected = primary.options[primary.selectedIndex];
         var primaryType = selected ? selected.dataset.targetGroupType : '';
         var primaryId = primary.value;
+        var other = selected?.dataset.targetGroupOther === '1';
+        row.querySelector('[data-classification-field]').hidden = other;
+        related.disabled = other;
+        var notes = row.querySelector('[data-other-target-notes]');
+        row.querySelector('[data-other-target-field]').hidden = !other;
+        notes.disabled = !other;
+        notes.required = other;
+        if (other) related.value = '';
+        else notes.value = '';
+
         Array.prototype.forEach.call(related.options, function (option) {
             if (!option.value) return;
             var valid = option.value !== primaryId && option.dataset.targetGroupType && option.dataset.targetGroupType !== primaryType;

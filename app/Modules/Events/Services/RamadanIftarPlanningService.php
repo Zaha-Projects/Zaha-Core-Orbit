@@ -204,7 +204,8 @@ class RamadanIftarPlanningService
         foreach ($rows as $row) {
             $meal = isset($row['id']) ? $existing->get((int) $row['id']) : new RamadanIftarMeal(['ramadan_iftar_id' => $iftar->getKey()]);
             if (! $meal) $this->invalidOwnedId('meals');
-            $meal->fill(Arr::only($row, ['description', 'planned_quantity', 'source_type', 'source_name', 'restaurant_name', 'restaurant_contact']))->save();
+            if (! $meal->exists) $meal->description = collect($row['items'] ?? [])->pluck('name')->join('، ');
+            $meal->fill(Arr::only($row, ['planned_quantity', 'source_type', 'source_name', 'restaurant_name', 'restaurant_contact']))->save();
             $kept[] = $meal->getKey();
             $this->syncSimple($meal->items(), $row['items'] ?? [], ['name', 'item_type', 'sort_order']);
         }

@@ -48,6 +48,12 @@ $stages = [
         @foreach($versionHistory as $version)<a class="list-group-item list-group-item-action d-flex flex-wrap justify-content-between align-items-center gap-2 {{ $version->id === $ramadanIftar->id ? 'active' : '' }}" href="{{ route('events.ramadan.iftars.show',$version) }}"><span>{{ __('ramadan_iftars.change_requests.version',['number'=>$version->version_number]) }} · {{ __('ramadan_iftars.statuses.planning.'.$version->status) }}</span><span class="badge {{ $version->id === $latestVersion->id ? 'bg-success' : 'bg-secondary' }}">{{ __('ramadan_iftars.change_requests.'.($version->id === $latestVersion->id ? 'current' : 'historical')) }}</span></a>@endforeach
     </div></div>
 
+    @include('pages.events.ramadan._supporting_entity')
+    <div class="card mb-3"><div class="card-header fw-semibold">الفئات المستهدفة</div><ul class="list-group list-group-flush">
+        @foreach($ramadanIftar->targetGroupSelections as $selection)<li class="list-group-item"><strong>{{ $selection->targetGroup?->name }}</strong> — {{ $selection->planned_count }}
+        @if($selection->classificationTargetGroup)<span> ← {{ $selection->classificationTargetGroup->name }}</span>@endif
+        @if($selection->notes)<p class="mb-0">{{ $selection->notes }}</p>@endif</li>@endforeach
+    </ul></div>
     <div class="row g-3">
         @foreach([
             ['meals', $ramadanIftar->meals, 'empty.meals'],
@@ -55,7 +61,7 @@ $stages = [
             ['volunteers', $ramadanIftar->volunteerRequirements, 'empty.volunteers']
         ] as [$section,$rows,$empty])
         <div class="col-lg-6"><div class="card h-100"><div class="card-header fw-semibold">{{ __('ramadan_iftars.sections.'.$section) }}</div><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>{{ __('ramadan_iftars.fields.title') }}</th><th>{{ __('ramadan_iftars.fields.expected') }}</th><th>{{ __('ramadan_iftars.fields.actual') }}</th></tr></thead><tbody>
-        @forelse($rows as $row)<tr><td>{{ $row->description ?? $row->name ?? $row->item_name ?? optional($row->targetGroup)->name ?? optional($row->beneficiarySegment)->name_ar ?? '#'.$row->id }}</td><td>{{ $row->planned_quantity ?? $row->planned_members_count ?? $row->planned_count ?? '—' }}</td><td>{{ $row->actual_quantity ?? $row->actual_members_count ?? $row->actual_count ?? ($row->execution_status ? __('ramadan_iftars.statuses.execution.'.$row->execution_status) : '—') }}</td></tr>@empty<tr><td colspan="3" class="text-center text-muted">{{ __('ramadan_iftars.'.$empty) }}</td></tr>@endforelse
+        @forelse($rows as $row)<tr><td>{{ ($section === 'meals' ? ($row->items->pluck('name')->join('، ') ?: $row->description) : null) ?? $row->description ?? $row->name ?? $row->item_name ?? optional($row->targetGroup)->name ?? optional($row->beneficiarySegment)->name_ar ?? '#'.$row->id }}@if($section === 'meals')@if(filled($row->description))<div class="small text-muted">وصف محفوظ سابقًا: {{ $row->description }}</div>@endif @foreach($row->items as $item)@if(filled($item->notes))<div class="small text-muted">تفاصيل محفوظة سابقًا: {{ $item->notes }}</div>@endif @endforeach @endif</td><td>{{ $row->planned_quantity ?? $row->planned_members_count ?? $row->planned_count ?? '—' }}</td><td>{{ $row->actual_quantity ?? $row->actual_members_count ?? $row->actual_count ?? ($row->execution_status ? __('ramadan_iftars.statuses.execution.'.$row->execution_status) : '—') }}</td></tr>@empty<tr><td colspan="3" class="text-center text-muted">{{ __('ramadan_iftars.'.$empty) }}</td></tr>@endforelse
         </tbody></table></div></div></div>
         @endforeach
         <div class="col-12"><div class="card"><div class="card-header fw-semibold">{{ __('ramadan_iftars.sections.execution_needs') }}</div><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>{{ __('ramadan_iftars.fields.title') }}</th><th>{{ __('ramadan_iftars.fields.expected') }}</th><th>{{ __('ramadan_iftars.fields.actual') }}</th><th>{{ __('ramadan_iftars.fields.execution_status') }}</th></tr></thead><tbody>@forelse($ramadanIftar->executionNeeds as $row)<tr><td>{{ optional($row->executionNeedType)->name }} <span class="badge bg-light text-dark">{{ __('ramadan_iftars.statuses.requirement.'.($row->is_required ? 'required' : 'not_required')) }}</span></td><td>{{ $row->planned_details ?: '—' }}

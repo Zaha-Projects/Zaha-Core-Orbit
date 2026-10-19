@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const amount = Number(card.querySelector('.rental-amount')?.value || 0).toFixed(2);
         const complete = Boolean(tenant && card.querySelector('.material-description')?.value && card.querySelector('.liaison-select')?.value);
         const renterBadge = card.querySelector('[data-renter-badge]');
-        renterBadge.innerHTML = organization ? '<i class="fas fa-building"></i> جهة' : '<i class="fas fa-user"></i> فردي';
+        renterBadge.innerHTML = organization ? '<i class="fas fa-building"></i> ' + ({institution: 'مؤسسة', association: 'جمعية'}[card.querySelector('.rental-type').value] || 'جهة محفوظة سابقًا') : '<i class="fas fa-user"></i> فردي';
         renterBadge.classList.toggle('is-organization', organization);
         card.querySelector('[data-summary-tenant]').textContent = tenant || 'لم يحدد المستأجر';
         card.querySelector('[data-summary-rent]').textContent = `${amount} د.أ`;

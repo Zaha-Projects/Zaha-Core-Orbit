@@ -48,9 +48,11 @@ class RamadanReferenceController extends Controller
     private function store(Request $request, string $model): JsonResponse
     {
         $branchId = $this->branchId($request);
+        if ($request->input('host_type') === 'individual') $request->merge(['contact_name' => $request->input('name')]);
         $validator = Validator::make($request->all(), [
+            'host_type' => ['nullable', \Illuminate\Validation\Rule::in(['individual', 'center', 'association', 'local_community'])],
             'name' => ['required', 'string', 'max:255'],
-            'contact_name' => ['nullable', 'string', 'max:255'],
+            'contact_name' => ['required_with:host_type', 'nullable', 'string', 'max:255'],
             'contact_phone' => ['required', 'string', 'min:7', 'max:25', 'regex:/^[0-9+()\-\s]+$/'],
             'location_name' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
@@ -61,7 +63,7 @@ class RamadanReferenceController extends Controller
             'contact_phone.min' => 'رقم التواصل قصير جدًا.',
             'contact_phone.max' => 'رقم التواصل طويل جدًا.',
             'contact_phone.regex' => 'أدخل رقم تواصل صالحًا باستخدام الأرقام والمسافات و + أو - أو الأقواس فقط.',
-        ]);
+        ], ['name' => 'اسم الجهة / الفرد', 'host_type' => 'نوع الجهة الداعمة', 'contact_name' => 'اسم ضابط الارتباط', 'contact_phone' => 'رقم الهاتف', 'location_name' => 'الموقع', 'address' => 'العنوان', 'google_maps_url' => 'رابط الموقع']);
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -70,6 +72,7 @@ class RamadanReferenceController extends Controller
             ], 422);
         }
         $data = $validator->validated();
+        unset($data['host_type']); // Type belongs to the Iftar; references are shared, untyped records.
         $normalized = $this->normalize($data['name']);
         $duplicate = $model::query()->where('branch_id', $branchId)->get(['id', 'name'])->first(
             fn (Model $record) => $this->normalize($record->name) === $normalized
@@ -90,7 +93,14 @@ class RamadanReferenceController extends Controller
     private function branchId(Request $request): int
     {
         $user = $request->user();
-        abort_unless($user && ($user->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']) || $user->can('ramadan_iftars.create')), 403);
+        abort_unless($user && ($user->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']) || $user->can('ramadan_iftars.create') || ($request->filled('iftar_id') && $user->can('ramadan_iftars.edit'))), 403);
+        if ($request->filled('iftar_id')) {
+            $request->validate(['iftar_id' => ['required', 'integer']], [], ['iftar_id' => 'الإفطار الرمضاني']);
+            $iftar = \App\Modules\Events\Models\RamadanIftar::query()->findOrFail($request->input('iftar_id'));
+            abort_unless($iftar->isPlanningEditable() && ($user->hasAnyRole(['relations_manager', 'relations_officer', 'super_admin']) || $user->can('ramadan_iftars.edit')), 403);
+            abort_unless($user->hasRole('super_admin') || $user->can('branches.view.all') || $user->hasAccessToScopedBranch((int) $iftar->branch_id), 403);
+            return (int) $iftar->branch_id;
+        }
         $branchId = $user->branch_id ?? collect($user->scopedBranchIds())->first();
         abort_unless($branchId, 422, 'لا يوجد فرع مخول للمستخدم.');
 

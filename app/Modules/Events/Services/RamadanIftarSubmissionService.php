@@ -77,7 +77,7 @@ class RamadanIftarSubmissionService
                 'workflow_step_id' => $step->id,
                 'acted_by' => $actor->id,
                 'action' => DynamicWorkflowService::DECISION_APPROVED,
-                'comment' => $locked->status === RamadanIftar::STATUS_CHANGES_REQUESTED ? 'Ramadan Iftar corrections resubmitted.' : 'Ramadan Iftar submitted for approval.',
+                'comment' => $locked->status === RamadanIftar::STATUS_CHANGES_REQUESTED ? 'أعيد إرسال تصحيحات الإفطار الرمضاني.' : 'أرسل الإفطار الرمضاني للاعتماد.',
                 'edit_request_iteration' => (int) $instance->edit_request_count,
                 'acted_at' => now(),
             ]);

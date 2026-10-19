@@ -315,6 +315,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('dashboard/events/ramadan/guidance')->name('events.ramadan.guidance.')->middleware(['branch.isolation', 'role_or_permission:relations_manager|relations_officer|super_admin|ramadan_iftars.create'])->group(function () {
         Route::get('/', [RamadanGuidanceController::class, 'show'])->name('show');
         Route::post('/accept', [RamadanGuidanceController::class, 'accept'])->name('accept');
+        Route::get('/edit', [RamadanGuidanceController::class, 'edit'])->middleware('role:super_admin')->name('edit');
+        Route::post('/revision', [RamadanGuidanceController::class, 'update'])->middleware('role:super_admin')->name('update');
     });
 
     Route::get('/dashboard/relations/monthly-activities', [MonthlyActivitiesBrowseController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|volunteer_coordinator|programs_manager|super_admin|monthly_activities.view')->middleware('branch.isolation')->name('role.relations.activities.index');
