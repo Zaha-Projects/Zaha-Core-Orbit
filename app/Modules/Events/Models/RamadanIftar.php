@@ -26,13 +26,14 @@ class RamadanIftar extends Model
     public const LOCATION_INSIDE_CENTER = 'inside_center';
     public const LOCATION_OUTSIDE_CENTER = 'outside_center';
 
+    public const HOST_INDIVIDUAL = 'individual';
     public const HOST_ASSOCIATION = 'association';
     public const HOST_CENTER = 'center';
     public const HOST_LOCAL_COMMUNITY = 'local_community';
 
     public static function hostTypes(): array
     {
-        return [self::HOST_ASSOCIATION, self::HOST_CENTER, self::HOST_LOCAL_COMMUNITY];
+        return [self::HOST_INDIVIDUAL, self::HOST_CENTER, self::HOST_ASSOCIATION, self::HOST_LOCAL_COMMUNITY];
     }
 
     protected $fillable = [
@@ -49,6 +50,8 @@ class RamadanIftar extends Model
         'address',
         'google_maps_url',
         'host_type',
+        'contact_name',
+        'contact_phone',
         'community_organization_id',
         'local_community_id',
         'mobilization_method_id',

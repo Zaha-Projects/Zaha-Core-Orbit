@@ -75,6 +75,7 @@ return [
         'request_changes' => 'Return for changes',
     ],
     'options' => [
+        'individual' => 'Individual',
         'none' => 'None',
         'inside_center' => 'Inside center',
         'outside_center' => 'Outside center',
@@ -94,6 +95,8 @@ return [
         'external_none' => 'External / none',
     ],
     'labels' => [
+        'meal_item_description' => 'Item / description',
+        'meal_count' => 'Planned meal count',
         'name' => 'Name',
         'agenda_event' => 'Agenda event',
         'description' => 'Description',

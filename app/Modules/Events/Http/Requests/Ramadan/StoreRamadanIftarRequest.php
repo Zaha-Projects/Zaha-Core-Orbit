@@ -71,6 +71,10 @@ class StoreRamadanIftarRequest extends FormRequest
                 'ramadan_period_id' => $periodId,
                 'relations_officer_id' => $relationsOfficerId,
                 'host_type' => $hostType,
+                'community_organization_id' => $hostType === RamadanIftar::HOST_LOCAL_COMMUNITY ? null : $this->input('community_organization_id'),
+                'local_community_id' => $hostType === RamadanIftar::HOST_LOCAL_COMMUNITY ? $this->input('local_community_id') : null,
+                'mobilization_method_id' => $hostType === RamadanIftar::HOST_LOCAL_COMMUNITY ? $this->input('mobilization_method_id') : null,
+                'mobilization_method_other' => $hostType === RamadanIftar::HOST_LOCAL_COMMUNITY ? $this->input('mobilization_method_other') : null,
                 'location_type' => RamadanIftar::LOCATION_INSIDE_CENTER,
             ]
         ));
@@ -115,7 +119,8 @@ class StoreRamadanIftarRequest extends FormRequest
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'ramadan_period_id' => [Rule::requiredIf(fn () => ! $this->route('ramadanIftar') || $this->route('ramadanIftar')?->planned_date?->toDateString() !== $this->input('planned_date')), 'nullable', 'integer', 'exists:ramadan_periods,id'],
             'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'contact_name' => ['required', 'string', 'max:255'],
+            'contact_phone' => ['required', 'string', 'max:25', 'regex:'.self::CONTACT_PHONE_REGEX],
             'relations_officer_id' => ['required', 'integer', 'exists:users,id'],
             'planned_date' => ['required', 'date'],
             'location_type' => ['required', Rule::in([RamadanIftar::LOCATION_INSIDE_CENTER])],
@@ -149,8 +154,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.items.*.id' => ['nullable', 'integer'],
             'meals.*.items.*.name' => ['required', 'string', 'max:255'],
             'meals.*.items.*.item_type' => ['required', Rule::in($allowedMealTypes)],
-            'meals.*.items.*.quantity' => ['nullable', 'integer', 'min:0'],
-            'meals.*.items.*.notes' => ['required', 'string'],
+            // Historical item quantities and component notes are read-only in planning.
             'meals.*.items.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'gifts' => ['present', 'array'],
             'gifts.*.id' => ['nullable', 'integer'],
@@ -218,6 +222,10 @@ class StoreRamadanIftarRequest extends FormRequest
     {
         return [
             'title' => __('ramadan_iftars.fields.title'),
+            'host_type' => 'نوع الجهة الداعمة',
+            'contact_name' => 'اسم ضابط الارتباط / الفرد الداعم',
+            'contact_phone' => 'رقم هاتف ضابط الارتباط',
+            'target_groups.*.notes' => 'تفاصيل الفئة الأخرى',
             'branch_id' => __('ramadan_iftars.fields.branch'),
             'relations_officer_id' => __('ramadan_iftars.fields.relations_officer'),
             'planned_date' => __('ramadan_iftars.fields.planned_date'),
@@ -233,7 +241,7 @@ class StoreRamadanIftarRequest extends FormRequest
             'meals.*.planned_quantity' => 'عدد الوجبات',
             'meals.*.restaurant_name' => 'اسم المطعم',
             'meals.*.restaurant_contact' => 'رقم التواصل مع المطعم',
-            'meals.*.items.*.name' => 'اسم الطبق',
+            'meals.*.items.*.name' => 'الصنف / الوصف',
             'meals.*.items.*.notes' => 'مكونات الطبق',
             'volunteer_requirements.*.target_group_id' => 'الفئة المستهدفة للمتطوعين',
             'volunteer_requirements.*.gender' => 'جنس المتطوعين',
@@ -361,7 +369,7 @@ class StoreRamadanIftarRequest extends FormRequest
     private function validateConditionalLookups(Validator $validator): void
     {
         $host = $this->input('host_type');
-        if (in_array($host, [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER], true) && ! $this->input('community_organization_id')) $validator->errors()->add('community_organization_id', __('validation.required', ['attribute' => __('ramadan_iftars.labels.community_organization')]));
+        if (in_array($host, [RamadanIftar::HOST_ASSOCIATION, RamadanIftar::HOST_CENTER, RamadanIftar::HOST_INDIVIDUAL], true) && ! $this->input('community_organization_id')) $validator->errors()->add('community_organization_id', __('validation.required', ['attribute' => __('ramadan_iftars.labels.community_organization')]));
         if ($host === RamadanIftar::HOST_LOCAL_COMMUNITY && ! $this->input('local_community_id')) $validator->errors()->add('local_community_id', __('validation.required', ['attribute' => __('ramadan_iftars.labels.local_community')]));
         if ($host === RamadanIftar::HOST_LOCAL_COMMUNITY && ! $this->input('mobilization_method_id')) $validator->errors()->add('mobilization_method_id', __('validation.required', ['attribute' => __('ramadan_iftars.labels.mobilization_method')]));
         if ($id = $this->input('mobilization_method_id')) {
@@ -384,7 +392,10 @@ class StoreRamadanIftarRequest extends FormRequest
                 $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingTargetIds);
             })->first();
             if (! $group) $validator->errors()->add("target_groups.$i.target_group_id", __('validation.exists', ['attribute' => 'الفئة المستهدفة']));
-            if ($classificationId = ($row['classification_target_group_id'] ?? null)) {
+            $other = $group && ($group->code === 'other' || $group->type === 'other' || $group->is_other);
+            if ($other && blank($row['notes'] ?? null)) $validator->errors()->add("target_groups.$i.notes", 'تفاصيل الفئة الأخرى مطلوبة.');
+            if ($other && filled($row['classification_target_group_id'] ?? null)) $validator->errors()->add("target_groups.$i.classification_target_group_id", 'لا يمكن اختيار تصنيف مرتبط للفئة الأخرى.');
+            if (! $other && ($classificationId = ($row['classification_target_group_id'] ?? null))) {
                 $classification = TargetGroup::query()->whereKey($classificationId)->where(function ($query) use ($existingClassificationIds) {
                     $query->where(fn ($available) => $available->active()->forRamadanIftars())->orWhereIn('id', $existingClassificationIds);
                 })->first();

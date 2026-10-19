@@ -182,7 +182,6 @@
             @endif
             @if($canViewRamadanIftars)
                 <li class="side-item {{ request()->routeIs('events.ramadan.iftars.*') || request()->routeIs('events.ramadan.guidance.*') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.index') }}"><i class="fas fa-moon"></i><span>{{ __('ramadan_iftars.navigation.title') }}</span></a></li>
-                <li class="side-item {{ request()->routeIs('events.ramadan.iftars.calendar') ? 'selected' : '' }}"><a href="{{ route('events.ramadan.iftars.calendar') }}"><i class="fas fa-calendar-days"></i><span>تقويم الإفطارات</span></a></li>
             @endif
             @can('bazaars.view')
                 <li class="side-item {{ request()->routeIs('events.bazaars.*') ? 'selected' : '' }}"><a href="{{ route('events.bazaars.index', $bazaarNavigationFilter) }}"><i class="fas fa-store"></i><span>{{ $bazaarNavigationLabel }}</span></a></li>

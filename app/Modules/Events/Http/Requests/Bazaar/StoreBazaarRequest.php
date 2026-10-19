@@ -28,11 +28,19 @@ class StoreBazaarRequest extends FormRequest
     {
         $user = $this->user();
         $this->merge([
+            'location_details' => in_array($this->input('location_type'), ['outside', 'outside_center'], true) ? $this->input('location_details') : null,
+            'map_url' => in_array($this->input('location_type'), ['outside', 'outside_center'], true) ? $this->input('map_url') : null,
             'location_type' => match ($this->input('location_type')) { 'inside_center' => 'inside', 'outside_center' => 'outside', default => $this->input('location_type') },
             'private_audience' => $this->input('invitation_type') === 'private' ? $this->input('private_audience') : null,
             'branch_id' => $this->route('bazaar')?->branch_id ?? $user?->branch_id ?? collect($user?->scopedBranchIds() ?? [])->first(),
             'relations_officer_id' => $user?->hasRole('relations_officer') ? $user->id : ($this->route('bazaar')?->relations_officer_id ?? $user?->id),
-            'tables' => array_values(array_filter($this->input('tables', []), 'is_array')),
+            'tables' => array_values(array_map(function (array $row): array {
+                // Keep the existing storage enum; the nullable subtype distinguishes new entities.
+                $kind = $row['renter_entity_type'] ?? ($row['rental_type'] ?? null);
+                $row['renter_entity_type'] = $kind;
+                $row['rental_type'] = in_array($kind, ['institution', 'association', 'organization'], true) ? 'organization' : $kind;
+                return $row;
+            }, array_filter($this->input('tables', []), 'is_array'))),
             'target_group_ids' => array_values(array_unique(array_filter(array_map('intval', $this->input('target_group_ids', []))))),
             'execution_needs' => self::normalizeExecutionNeeds($this->input('execution_needs', [])),
         ]);
@@ -81,6 +89,7 @@ class StoreBazaarRequest extends FormRequest
             'execution_needs.*.paper_copies' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'execution_needs.*.electronic_template' => ['nullable', 'string', 'max:500'],
             'tables' => ['required', 'array', 'min:1'], 'tables.*.table_number' => ['required', 'integer', 'min:1', 'distinct'],
+            'tables.*.renter_entity_type' => ['required', Rule::in(['individual', 'institution', 'association', 'organization'])],
             'tables.*.rental_type' => ['required', Rule::in(['individual', 'organization'])],
             'tables.*.tenant_name' => ['nullable', 'string', 'max:255'], 'tables.*.tenant_phone' => ['nullable', 'string', 'max:25', 'regex:/^[0-9+()\-\s]{7,25}$/'],
             'tables.*.community_organization_id' => ['nullable', 'integer', 'exists:community_organizations,id'],
@@ -127,8 +136,11 @@ class StoreBazaarRequest extends FormRequest
                 } elseif (blank($row['planned_details'] ?? null)) $validator->errors()->add("execution_needs.$i.planned_details", 'تفاصيل احتياج التنفيذ مطلوبة عند اختياره.');
             }
             foreach ($this->input('tables', []) as $i => $table) {
+                if (($table['renter_entity_type'] ?? null) === 'organization' && ! $this->route('bazaar')?->tables()->where('table_number', $table['table_number'] ?? 0)->where('rental_type', 'organization')->whereNull('renter_entity_type')->where('community_organization_id', $table['community_organization_id'] ?? null)->exists()) {
+                    $validator->errors()->add("tables.$i.renter_entity_type", 'اختر فردي أو مؤسسة أو جمعية للحجز الجديد.');
+                }
                 if (($table['rental_type'] ?? null) === 'individual' && (blank($table['tenant_name'] ?? null) || blank($table['tenant_phone'] ?? null))) $validator->errors()->add("tables.$i.tenant_name", 'اسم وهاتف المستأجر الفرد مطلوبان.');
-                if (($table['rental_type'] ?? null) === 'organization' && empty($table['community_organization_id'])) $validator->errors()->add("tables.$i.community_organization_id", 'اختر المؤسسة أو الجمعية أو المجتمع المحلي.');
+                if (($table['rental_type'] ?? null) === 'organization' && empty($table['community_organization_id'])) $validator->errors()->add("tables.$i.community_organization_id", 'اختر المؤسسة أو الجمعية.');
                 foreach (['community_organization_id' => CommunityOrganization::class] as $field => $model) if (! empty($table[$field]) && ! $model::query()->whereKey($table[$field])->where('branch_id', $branchId)->active()->exists()) $validator->errors()->add("tables.$i.$field", 'الجهة غير متاحة لهذا الفرع.');
                 if (! User::query()->whereKey($table['liaison_user_id'] ?? 0)->where('status', 'active')->where(fn ($q) => $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)))->exists()) $validator->errors()->add("tables.$i.liaison_user_id", 'ضابط الارتباط غير متاح لهذا الفرع.');
             }

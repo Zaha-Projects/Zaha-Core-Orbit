@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const template = document.querySelector('#bazaar-table-template');
     if (!container || !count || !template) return;
     const updateCardSummary = card => {
-        const organization = card.querySelector('.rental-type')?.value === 'organization';
+        const organization = ['institution', 'association', 'organization'].includes(card.querySelector('.rental-type')?.value);
         const tenant = organization ? card.querySelector('.organization-search')?.value : card.querySelector('.tenant-name')?.value;
         const amount = Number(card.querySelector('.rental-amount')?.value || 0).toFixed(2);
         const complete = Boolean(tenant && card.querySelector('.material-description')?.value && card.querySelector('.liaison-select')?.value);
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         completion.classList.toggle('is-complete', complete);
     };
     const toggleTenantFields = card => {
-        const organization = card.querySelector('.rental-type')?.value === 'organization';
+        const organization = ['institution', 'association', 'organization'].includes(card.querySelector('.rental-type')?.value);
         card.querySelectorAll('.individual-field').forEach(el => el.hidden = organization);
         card.querySelectorAll('.organization-field').forEach(el => el.hidden = !organization);
         updateCardSummary(card);
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!event.target.matches('.organization-add')) return;
         const picker = event.target.closest('.organization-picker');
-        const name = window.prompt('اسم المؤسسة / الجمعية / المجتمع المحلي');
+        const name = window.prompt('اسم المؤسسة / الجمعية');
         if (!name) return;
         const contactPhone = window.prompt('رقم التواصل (مطلوب)');
         if (!contactPhone) return;
@@ -92,8 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('[data-location-details-label]').textContent = outside ? 'العنوان / التفاصيل' : 'تفاصيل الموقع';
         ['[data-location-name-field]', '[data-location-details-field]'].forEach(selector => {
             const wrapper = document.querySelector(selector);
-            wrapper.hidden = false;
-            wrapper.querySelectorAll('input, textarea').forEach(field => field.disabled = false);
+            const show = selector === '[data-location-name-field]' || outside;
+            wrapper.hidden = !show;
+            wrapper.querySelectorAll('input, textarea').forEach(field => field.disabled = !show);
             wrapper.classList.toggle('col-md-8', outside);
             wrapper.classList.toggle('col-md-4', !outside);
         });

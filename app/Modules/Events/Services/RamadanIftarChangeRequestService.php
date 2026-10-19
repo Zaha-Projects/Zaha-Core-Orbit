@@ -21,7 +21,7 @@ class RamadanIftarChangeRequestService
 {
     private const CORE_FIELDS = [
         'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id', 'planned_date',
-        'location_type', 'location_name', 'address', 'host_type',
+        'location_type', 'location_name', 'address', 'host_type', 'contact_name', 'contact_phone',
         'community_organization_id', 'local_community_id', 'mobilization_method_id',
         'mobilization_method_other', 'planned_meals_count', 'expected_attendance',
         'guidance_version_id', 'guidance_accepted_at',

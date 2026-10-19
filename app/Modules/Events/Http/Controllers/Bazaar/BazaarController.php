@@ -186,7 +186,10 @@ class BazaarController extends Controller
     private function sync(Bazaar $bazaar, array $data): void
     {
         $bazaar->tables()->delete();
-        foreach ($data['tables'] as $row) $bazaar->tables()->create(Arr::only($row, ['table_number', 'rental_type', 'tenant_name', 'tenant_phone', 'community_organization_id', 'table_liaison_name', 'table_liaison_phone', 'planned_material_description', 'planned_rental_amount', 'liaison_user_id', 'notes']));
+        foreach ($data['tables'] as $row) {
+            if (($row['renter_entity_type'] ?? null) === 'organization') $row['renter_entity_type'] = null;
+            $bazaar->tables()->create(Arr::only($row, ['table_number', 'rental_type', 'renter_entity_type', 'tenant_name', 'tenant_phone', 'community_organization_id', 'table_liaison_name', 'table_liaison_phone', 'planned_material_description', 'planned_rental_amount', 'liaison_user_id', 'notes']));
+        }
         $bazaar->targetGroupSelections()->delete();
         $targets = TargetGroup::query()->whereIn('id', $data['target_group_ids'])->get()->keyBy('id');
         foreach ($data['target_group_ids'] as $id) {

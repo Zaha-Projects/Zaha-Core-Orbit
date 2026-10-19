@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 class RamadanIftarPlanningService
 {
     private const CORE_FIELDS = [
-        'branch_id', 'ramadan_period_id', 'title', 'description', 'relations_officer_id',
+        'branch_id', 'ramadan_period_id', 'title', 'relations_officer_id', 'contact_name', 'contact_phone',
         'planned_date', 'location_type', 'location_name', 'address',
         'host_type', 'community_organization_id',
         'local_community_id', 'mobilization_method_id', 'mobilization_method_other',
@@ -167,7 +167,7 @@ class RamadanIftarPlanningService
 
         foreach ($types->filter->isMandatoryForRamadan() as $type) {
             if (! $selected->contains(fn ($row) => (int) $row['execution_need_type_id'] === (int) $type->id)) {
-                throw ValidationException::withMessages(['execution_needs' => "Mandatory Ramadan execution need is missing: {$type->code}"]);
+                throw ValidationException::withMessages(['execution_needs' => "احتياج التنفيذ الإلزامي {$type->name} غير مكتمل."]);
             }
         }
 
@@ -181,6 +181,14 @@ class RamadanIftarPlanningService
 
     private function syncTargetGroups(RamadanIftar $iftar, array $rows): void
     {
+        $groups = \App\Modules\Events\Models\TargetGroup::query()->whereIn('id', array_column($rows, 'target_group_id'))->get()->keyBy('id');
+        foreach ($rows as &$row) {
+            $group = $groups->get($row['target_group_id']);
+            $other = $group && ($group->code === 'other' || $group->type === 'other' || $group->is_other);
+            if ($other) $row['classification_target_group_id'] = null;
+            else $row['notes'] = null;
+        }
+        unset($row);
         $this->syncSimple($iftar->targetGroupSelections(), $rows, [
             'target_group_id', 'classification_target_group_id', 'planned_count', 'notes',
         ], fn () => [
@@ -198,7 +206,7 @@ class RamadanIftarPlanningService
             if (! $meal) $this->invalidOwnedId('meals');
             $meal->fill(Arr::only($row, ['description', 'planned_quantity', 'source_type', 'source_name', 'restaurant_name', 'restaurant_contact']))->save();
             $kept[] = $meal->getKey();
-            $this->syncSimple($meal->items(), $row['items'] ?? [], ['name', 'item_type', 'quantity', 'notes', 'sort_order']);
+            $this->syncSimple($meal->items(), $row['items'] ?? [], ['name', 'item_type', 'sort_order']);
         }
         $iftar->meals()->whereNotIn('id', $kept)->get()->each(function (RamadanIftarMeal $meal) {
             if ($meal->actual_quantity === null && $meal->rating === null) $meal->delete();
