@@ -67,6 +67,7 @@ use App\Http\Controllers\Web\Reports\MonthlyKpisController as MonthlyKpisControl
 use App\Http\Controllers\Roles\Staff\StaffAgendaController as StaffAgendaController;
 use App\Http\Controllers\Roles\Staff\StaffMonthlyActivitiesController as StaffMonthlyActivitiesController;
 use App\Http\Controllers\Web\Enterprise\EnterpriseReportsController;
+use App\Http\Controllers\Web\Kpi\KpiDashboardController;
 use App\Http\Controllers\Web\Enterprise\NotificationsController;
 use App\Http\Controllers\Web\Enterprise\ArchiveController;
 use App\Http\Controllers\Web\WorkflowAutoApprovalPreferenceController;
@@ -417,6 +418,15 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/transport/rounds/{tripRound}', [TransportTripRoundsController::class, 'update'])->middleware('role:transport_officer')->name('role.transport.rounds.update');
     Route::delete('/dashboard/transport/rounds/{tripRound}', [TransportTripRoundsController::class, 'destroy'])->middleware('role:transport_officer')->name('role.transport.rounds.destroy');
     Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
+    // KPI section (Phase 3 foundation). Branch scope is enforced by App\Services\Kpi\KpiScope.
+    Route::prefix('dashboard/kpi')->name('kpi.')->middleware(['role_or_permission:super_admin|kpi.view', 'branch.isolation'])->group(function () {
+        Route::get('/', [KpiDashboardController::class, 'overview'])->name('overview');
+        Route::get('/branches', [KpiDashboardController::class, 'branches'])->name('branches.index');
+        Route::get('/users', [KpiDashboardController::class, 'users'])->name('users.index');
+        Route::get('/events', [KpiDashboardController::class, 'events'])->name('events.index');
+        Route::get('/events/{module}', [KpiDashboardController::class, 'event'])->where('module', 'agenda|monthly|ramadan|bazaar')->name('events.show');
+    });
+
     Route::get('/dashboard/reports/overview', [ReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.index');
     // Phase 2: retired Events report pages redirect to the operational reports hub until the KPI section ships.
     Route::redirect('/dashboard/reports/agenda', '/dashboard/reports/overview')->name('role.reports.agenda.index');

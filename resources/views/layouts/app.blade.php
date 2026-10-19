@@ -69,6 +69,7 @@
         $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
         || $user->can('reports.view')
     );
+    $canAccessKpiSection = \App\Services\Kpi\KpiScope::canAccess($user);
     $headerNow = now(config('app.timezone'));
     $headerHijri = app(\App\Support\HijriDateFormatter::class)->format($headerNow);
 @endphp
@@ -118,6 +119,9 @@
             @can('bazaars.view')<li class="side-item {{ request()->routeIs('events.bazaars.*') ? 'selected' : '' }}"><a href="{{ route('events.bazaars.index', ['status' => 'post_execution']) }}"><i class="fas fa-store"></i><span>بازارات بانتظار المتابعة</span></a></li>@endcan
             <li class="side-item {{ request()->routeIs('followup.awaiting-evaluation') || request()->routeIs('evaluations.verification.*') || request()->routeIs('evaluations.create') ? 'selected' : '' }}"><a href="{{ route('followup.awaiting-evaluation') }}"><i class="fas fa-hourglass-half"></i><span>{{ __('evaluation.followup.sidebar.awaiting_evaluation') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('followup.evaluations.*') || request()->routeIs('evaluations.show') ? 'selected' : '' }}"><a href="{{ route('followup.evaluations.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('evaluation.followup.sidebar.previous_evaluations') }}</span></a></li>
+            @if ($canAccessKpiSection)
+                @include('layouts.app.partials.kpi-navigation', ['showOperationalReports' => $canAccessReportPages, 'kpiMenuId' => 'kpiMenuFollowup'])
+            @endif
             <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}"><a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>{{ __('evaluation.followup.sidebar.user_directory') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('profile.*') ? 'selected' : '' }}"><a href="{{ route('profile.show') }}"><i class="fas fa-user"></i><span>{{ __('evaluation.followup.sidebar.profile') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('site-guide.*') ? 'selected' : '' }}"><a href="{{ route('site-guide.index') }}"><i class="fas fa-book-open"></i><span>دليل الموقع</span></a></li>
@@ -234,7 +238,9 @@
                 <li class="side-item {{ request()->routeIs('role.transport.movements.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.movements.index') }}"><i class="fas fa-map-location-dot"></i><span>{{ __('app.roles.transport.movements.title') }}</span></a></li>
             @endif
 
-            @if ($canAccessReportPages && ! $isRelationsManagerSidebar)
+            @if ($canAccessKpiSection)
+                @include('layouts.app.partials.kpi-navigation', ['showOperationalReports' => $canAccessReportPages && ! $isRelationsManagerSidebar])
+            @elseif ($canAccessReportPages && ! $isRelationsManagerSidebar)
                 <li class="side-item {{ request()->routeIs('role.reports.index') ? 'selected' : '' }}"><a href="{{ route('role.reports.index') }}"><i class="fas fa-chart-simple"></i><span>{{ __('app.roles.reports.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.reports.finance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.finance.index') }}"><i class="fas fa-money-bill-trend-up"></i><span>{{ __('app.roles.reports.finance.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.reports.maintenance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.maintenance.index') }}"><i class="fas fa-toolbox"></i><span>{{ __('app.roles.reports.maintenance.title') }}</span></a></li>

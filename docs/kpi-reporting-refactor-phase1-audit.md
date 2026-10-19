@@ -56,7 +56,8 @@
    | D5 | **RETIRED (Phase 2)** | `branchMetrics()` is unreachable: Enterprise routes redirect and the code is `@deprecated` for Phase 9 deletion. |
    | D6 | **RESOLVED (Phase 2)** | All six fake export routes, methods and forms were removed. |
    | D10 | **FIXED (Phase 2)** | The "تقارير الإدارة" sidebar link is shown to super_admin only (`resources/views/layouts/app.blade.php`). |
-   | D9, D11 | STILL OPEN | D9 → Phase 3 KPI sidebar. D11 → 40/60 branch-score business decision. |
+   | D9 | **FIXED (Phase 3)** | The follow-up sidebar includes the shared KPI navigation partial when the user has `kpi.view`. |
+   | D11 | STILL OPEN | 40/60 branch-score business decision. |
 
    Leftover `center_id` keys in `ZahaTimeController`, `BookingsController`, `MaintenanceRequestsController` and `UsersController` are dropped silently by `$fillable` and cause no SQL error. They are dead code, not a defect.
 
@@ -829,7 +830,7 @@ Each phase is a separate PR, reviewable and mergeable on its own.
 | **0.5 (separate bug-fix PR) — source complete** | D1, D2, D3, D7 (staging Bazaar migrations corrected + staging SQL), D8. D10 deferred to Phase 2 (sidebar) | `MonthlyKpisController`, `kpis.blade.php`, `charts-scripts.blade.php`, Bazaar migrations `000100`/`000200`, `TrackUserOperations`, `BazaarController` | existing screens work; no KPI work mixed in |
 | **1 (this doc)** | Audit, catalogue, gap matrix | `docs/kpi-reporting-refactor-phase1-audit.md` | business sign-off on targets, SLAs, open decisions (§21) |
 | **2** | Retire dead code and hide deprecated UI only: orphan `roles/super_admin/reports.blade.php` + JS; dead `layouts/dashboard` sidebar chain; hide orphan launcher routes. **No live report removed yet** | views, assets | `grep` proves no references; existing tests pass |
-| **3** | `config/kpis.php`, `app/Services/Kpi/*` skeleton (Registry, Period, Scope, TargetResolver, LiveSubjects, WorkflowTiming), permissions seeder (`kpi.users.view`, `kpi.export`, grant `kpi.view` to supervisor), `dashboard/kpi` routes, sidebar group, Overview page (cards + filters + trend) | new files + sidebar | Overview renders READY KPIs for MA-01/02, RI-01, BZ-01, AG-01 with scope |
+| **3 — foundation complete (see `kpi-reporting-refactor-phase3-foundation.md`)** | `config/kpis.php`, `app/Services/Kpi/*` skeleton (Registry, Period, Scope, TargetResolver, LiveSubjects, WorkflowTiming), ~~permissions seeder (`kpi.users.view`, `kpi.export`, grant `kpi.view` to supervisor)~~ *deferred: no new permissions until the business decisions are made*, `dashboard/kpi` routes, sidebar group, Overview page (cards + filters + trend) | new files + sidebar | Overview renders READY KPIs for MA-01/02, RI-01, BZ-01, AG-01 with scope |
 | **4** | Monthly calculators MA-01…25; Branch KPIs page; Monthly module page; Monthly target-group / team capture (code only); hide Admin Reports relations/enterprise tabs, Enterprise pages, Reports overview/agenda/monthly, manual KPI page (read-only legacy) | calculators, views, Monthly form/post-execution | numbers reconcile against the old Admin Reports for a sample month (documented diffs explained by the canonical definitions) |
 | **5** | Agenda AG-*, Ramadan RI-*, Bazaar BZ-* calculators and pages; Bazaar `closed_at/closed_by` additive migration + action logging + needs actuals | calculators, BazaarController | each module page complete |
 | **6** | User performance: U-* calculators, profile partial, `kpi.users.show`, policy, directory links; remove the old profile stats | ProfileController, views | each role sees only its KPIs |

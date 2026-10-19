@@ -116,3 +116,7 @@ Removed outright (POST only, nothing to bookmark): the six fake `*.export` route
 - Stale-reference greps for every removed route, view, asset, class and view variable: none outside the deprecated code listed in §2.
 
 **NO RUNTIME TESTS EXECUTED**
+
+## Phase 3 status (2026-10-19)
+
+The KPI section (`/dashboard/kpi`, sidebar group "مؤشرات الأداء والتقارير") replaces the retired analytical entry points. None of the Phase 2 retirements were reverted. The deprecated Enterprise chart partial now loads Chart.js through the shared `layouts/app/partials/chartjs.blade.php`. Details: `docs/kpi-reporting-refactor-phase3-foundation.md`.
