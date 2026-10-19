@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Web\Kpi;
 
+use App\Http\Controllers\Concerns\StreamsCsv;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Web\Kpi\Concerns\ParsesKpiFilters;
 use App\Models\Branch;
 use App\Services\Kpi\KpiCalculatorService;
 use App\Services\Kpi\KpiChartBuilder;
@@ -19,6 +21,9 @@ use Illuminate\Http\Request;
  */
 class KpiDashboardController extends Controller
 {
+    use ParsesKpiFilters;
+    use StreamsCsv;
+
     /** Branch comparison columns: column key => KPI code. */
     private const COMPARISON_COLUMNS = [
         'planned' => 'BR-01',
@@ -194,13 +199,26 @@ class KpiDashboardController extends Controller
             'filters' => $filters,
             'reportKey' => $report,
             'report' => $reports->build($report, $module, $filters['period'], $filters['scope']),
+            'canExport' => KpiScope::canExport($request->user()),
         ] + $this->filterOptions($filters));
     }
 
-    /** Phase 5 placeholder: user KPIs wait for the kpi.users.view business decision. */
-    public function users()
+    /** Real CSV of the same query as the HTML report (same filters, scope and ordering), streamed. */
+    public function reportExport(Request $request, string $report, KpiReportService $reports)
     {
-        return view('pages.kpi.users');
+        abort_unless(KpiReportService::exists($report), 404);
+        abort_unless(KpiScope::canExport($request->user()), 403);
+        $filters = $this->filters($request, []);
+        $module = KpiReportService::moduleFor($report, $request->query('module'));
+        $query = $reports->query($report, $module, $filters['period'], $filters['scope']);
+        [$headers, $mapper] = $reports->csvFor($report, $module);
+
+        return $this->csvResponse(
+            'kpi-'.$report.'-'.$module.'-'.$filters['year'].($filters['month'] ? '-'.$filters['month'] : '').'.csv',
+            $headers,
+            $query ? $query->cursor()->map($mapper) : [],
+            true
+        );
     }
 
     /* ------------------------------------------------------------------ helpers */
@@ -227,68 +245,5 @@ class KpiDashboardController extends Controller
     private function isUnavailable(KpiResult $result): bool
     {
         return in_array($result->dataStatus, [KpiResult::DATA_UNAVAILABLE, KpiResult::DATA_NOT_APPLICABLE], true);
-    }
-
-    private function filterOptions(array $filters, ?array $moduleKeys = null): array
-    {
-        return [
-            'years' => KpiPeriod::selectableYears(),
-            'months' => KpiPeriod::MONTHS_AR,
-            'branches' => $filters['scope']->availableBranches(),
-            'moduleOptions' => collect($moduleKeys ?? array_keys($this->registry->modules()))
-                ->mapWithKeys(fn (string $key): array => [$key => $this->registry->moduleLabel($key)])->all(),
-        ];
-    }
-
-    /**
-     * Server-side filter validation. Invalid values fall back to defaults and are reported;
-     * a branch outside the viewer's scope is a 403 (KpiScope).
-     *
-     * @param  array<int, string>  $allowedModules  modules accepted by the "module" filter ([] = no module filter)
-     */
-    private function filters(Request $request, array $allowedModules, ?int $forcedBranchId = null): array
-    {
-        $rejected = [];
-        $read = function (string $key, int $min, int $max) use ($request, &$rejected): ?int {
-            $raw = $request->query($key);
-            if ($raw === null || $raw === '') {
-                return null;
-            }
-            $value = filter_var($raw, FILTER_VALIDATE_INT, ['options' => ['min_range' => $min, 'max_range' => $max]]);
-            if ($value === false) {
-                $rejected[] = $key;
-
-                return null;
-            }
-
-            return (int) $value;
-        };
-
-        $year = $read('year', KpiPeriod::MIN_YEAR, KpiPeriod::maxYear()) ?? (int) now()->year;
-        $month = $read('month', 1, 12);
-        $branchId = $forcedBranchId ?? $read('branch_id', 1, PHP_INT_MAX);
-
-        $module = null;
-        if ($allowedModules !== []) {
-            $raw = $request->query('module');
-            if ($raw !== null && $raw !== '') {
-                if (is_string($raw) && in_array($raw, $allowedModules, true)) {
-                    $module = $raw;
-                } else {
-                    $rejected[] = 'module';
-                }
-            }
-        }
-
-        return [
-            'period' => new KpiPeriod($year, $month),
-            'scope' => KpiScope::forUser($request->user(), $branchId),
-            'year' => $year,
-            'month' => $month,
-            'branch_id' => $branchId,
-            'module' => $module,
-            'rejected' => $rejected,
-            'query' => array_filter(['year' => $year, 'month' => $month, 'branch_id' => $branchId, 'module' => $module], fn ($value) => $value !== null),
-        ];
     }
 }

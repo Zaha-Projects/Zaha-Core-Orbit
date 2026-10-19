@@ -215,3 +215,9 @@ All routes are inside the `auth` group and use middleware `role_or_permission:su
 ## Phase 4 status (2026-10-19)
 
 The stage-based calculator was generalised into a metric-source dataset engine. It adds module and branch catalogues, branch comparison and drill-down, HTML drill-down reports, Bazaar closure capture and one index. The Phase 3 EV-* overview KPIs keep their codes. They now exclude Agenda from totals that include Monthly (no Agenda + Monthly double counting). Details: `docs/kpi-reporting-refactor-phase4-module-branch-kpis.md`.
+
+## Phase 5 status (2026-10-19)
+
+- `/dashboard/kpi/users` is no longer a placeholder: it is the same-role comparison page. Access is `kpi.users.view` (new, additive seeder); self performance is in My Profile → الأداء.
+- `KpiScope` gained `canViewUsers`, `canViewUser`, `canExport` and `forSelf`.
+- Details: `docs/kpi-reporting-refactor-phase5-user-performance-reports.md`.

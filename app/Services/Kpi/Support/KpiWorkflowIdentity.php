@@ -14,6 +14,18 @@ use App\Modules\Events\Support\EventAggregateIdentity;
  */
 class KpiWorkflowIdentity
 {
+    /** workflow_action_logs.module per KPI module (Agenda writes no action logs for submission). */
+    private const ACTION_LOG_MODULES = [
+        'monthly' => 'monthly_activities',
+        'ramadan' => 'ramadan_iftars',
+    ];
+
+    /** Comments written by DynamicWorkflowService auto-approval (both locales); excluded from human decisions. */
+    private const AUTO_APPROVAL_COMMENTS = [
+        'تم الاعتماد تلقائيا حسب تفضيل المستخدم.',
+        'Approved automatically by user preference.',
+    ];
+
     /** @return array<int, string> */
     public static function typesFor(string $module): array
     {
@@ -33,5 +45,21 @@ class KpiWorkflowIdentity
     public static function sqlList(string $module): string
     {
         return KpiSql::literalList(self::typesFor($module));
+    }
+
+    public static function actionLogModule(string $module): ?string
+    {
+        return self::ACTION_LOG_MODULES[$module] ?? null;
+    }
+
+    /** SQL condition excluding auto-approval rows from a workflow_logs alias. */
+    public static function humanDecisionSql(string $alias): string
+    {
+        $comments = KpiSql::literalList(array_merge(
+            self::AUTO_APPROVAL_COMMENTS,
+            array_values(array_filter([__('app.workflow_auto_approval.log_comment')], 'is_string'))
+        ));
+
+        return '('.$alias.'.comment IS NULL OR '.$alias.'.comment NOT IN ('.$comments.'))';
     }
 }

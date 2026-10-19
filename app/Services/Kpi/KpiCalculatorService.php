@@ -18,6 +18,7 @@ class KpiCalculatorService
     public const GROUP_PERIOD = 'period';
     public const GROUP_BRANCH = 'branch';
     public const GROUP_MONTH = 'month';
+    public const GROUP_USER = 'user';
 
     public const NO_BRANCHES_REASON = 'لا توجد فروع ضمن نطاق صلاحياتك؛ لا يمكن عرض بيانات.';
 
@@ -37,7 +38,10 @@ class KpiCalculatorService
     /**
      * @return array{grouping: string, scoped_out: bool, values: array<string, array<string, array<string, float>>>, defined: array<string, array<string, bool>>}
      */
-    public function dataset(array $moduleKeys, string $grouping, KpiPeriod $period, KpiScope $scope, array $metricNames): array
+    /**
+     * @param  array<int, int>|null  $userIds  restrict to actions performed by these users; only actor sources take part
+     */
+    public function dataset(array $moduleKeys, string $grouping, KpiPeriod $period, KpiScope $scope, array $metricNames, ?array $userIds = null): array
     {
         $data = ['grouping' => $grouping, 'scoped_out' => $scope->hasNoBranches(), 'values' => [], 'defined' => []];
         if ($scope->hasNoBranches()) {
@@ -55,12 +59,15 @@ class KpiCalculatorService
                     continue;
                 }
 
-                $built = $source->build($scope->branchIds(), $grouping === self::GROUP_BRANCH);
+                if ($grouping === self::GROUP_USER && $source->actor === null) {
+                    continue;
+                }
+                $built = $source->build($scope->branchIds(), $grouping === self::GROUP_BRANCH, $userIds);
                 if ($built === null) {
                     continue;
                 }
                 [$query, $branchKey] = $built;
-                [$from, $to, $groupExpression] = $this->groupingBounds($grouping, $period, $source->dateExpression, $branchKey);
+                [$from, $to, $groupExpression] = $this->groupingBounds($grouping, $period, $source->dateExpression, $grouping === self::GROUP_USER ? $source->actor : $branchKey);
 
                 $selects = [$groupExpression.' AS group_key'];
                 foreach ($metrics as $name => $sql) {
@@ -102,6 +109,7 @@ class KpiCalculatorService
     {
         switch ($grouping) {
             case self::GROUP_BRANCH:
+            case self::GROUP_USER:
                 return [$period->startDate(), $period->endBound(), $branchKey];
             case self::GROUP_MONTH:
                 $year = new KpiPeriod($period->year);
@@ -151,7 +159,7 @@ class KpiCalculatorService
         if ($contributors === []) {
             $onlyNotApplicable = $excluded !== [] && collect($excluded)->every(fn (array $row): bool => $row['status'] === KpiResult::DATA_NOT_APPLICABLE);
             $status = $definition['unavailable_reason'] === null && $onlyNotApplicable ? KpiResult::DATA_NOT_APPLICABLE : KpiResult::DATA_UNAVAILABLE;
-            $current = $previous = ['value' => null, 'numerator' => null, 'denominator' => null, 'records' => 0];
+            $current = $previous = ['value' => null, 'numerator' => null, 'denominator' => null, 'records' => null];
         } else {
             $status = collect($contributors)->contains(fn (array $spec): bool => $spec['status'] === KpiResult::DATA_PARTIAL)
                 ? KpiResult::DATA_PARTIAL
@@ -200,7 +208,8 @@ class KpiCalculatorService
             'dataAvailable' => $current['value'] !== null,
             'missingReason' => $missingReason,
             'breakdown' => $this->breakdown($definition, $moduleKeys, $contributors, $excluded, $data, $period),
-            'drilldown' => $definition['drilldown'] ? ['route' => 'kpi.reports.show', 'parameters' => $definition['drilldown']] : null,
+            // User KPIs drill into the per-user action report; the page decides the route (profile vs management).
+            'drilldown' => $definition['drilldown'] ? ['route' => ($definition['page'] ?? null) === 'user' ? 'user' : 'kpi.reports.show', 'parameters' => $definition['drilldown']] : null,
         ]);
     }
 
@@ -252,18 +261,21 @@ class KpiCalculatorService
         return [$contributors, $excluded];
     }
 
-    /** @return array{value: float|int|null, numerator: float|null, denominator: float|null, records: int} */
+    /** @return array{value: float|int|null, numerator: float|null, denominator: float|null, records: ?int} */
     private function compute(array $definition, array $contributors, array $data, string $group, KpiPeriod $period): array
     {
         $numerator = 0.0;
         $denominator = 0.0;
-        $records = 0;
+        $records = null;
         foreach ($contributors as $key => $spec) {
             $numerator += (float) $this->metric($data, $key, $group, $spec['numerator']);
             if ($spec['denominator'] !== null) {
                 $denominator += (float) $this->metric($data, $key, $group, $spec['denominator']);
             }
-            $records += (int) ($this->metric($data, $key, $group, 'records') ?? 0);
+            $moduleRecords = $this->metric($data, $key, $group, 'records');
+            if ($moduleRecords !== null) {
+                $records = (int) $records + (int) $moduleRecords;
+            }
         }
 
         $calculator = $definition['calculator'];
@@ -341,8 +353,18 @@ class KpiCalculatorService
         if ($current['value'] === null || $previous['value'] === null) {
             return null;
         }
-        if ($type !== 'ratio' && ($current['records'] === 0 || $previous['records'] === 0)) {
-            return null;
+        if ($type === 'snapshot') {
+            return null; // current snapshot: no previous-period value exists
+        }
+        if ($type !== 'ratio') {
+            // Subject datasets: both periods need live records. Actor (user) datasets have no
+            // record count: the previous period must contain at least one counted action.
+            $comparable = $current['records'] !== null
+                ? $current['records'] > 0 && $previous['records'] > 0
+                : (float) $previous['numerator'] > 0;
+            if (! $comparable) {
+                return null;
+            }
         }
 
         $delta = (float) $current['value'] - (float) $previous['value'];

@@ -24,6 +24,14 @@
         </nav>
     @endif
 
+    @if ($canExport && $report['rows'] !== null && $report['rows']->total() > 0)
+        <div class="kpi-report-toolbar">
+            <a class="btn btn-outline-primary" href="{{ route('kpi.reports.export', [$reportKey] + $filters['query'] + ['module' => $report['module']]) }}">
+                <i class="fas fa-file-csv" aria-hidden="true"></i> تصدير CSV
+            </a>
+        </div>
+    @endif
+
     @foreach ($report['notes'] as $note)
         <p class="kpi-card__note"><i class="fas fa-circle-info" aria-hidden="true"></i> {{ $note }}</p>
     @endforeach

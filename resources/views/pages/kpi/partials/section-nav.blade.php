@@ -5,8 +5,10 @@
         ['route' => 'kpi.overview', 'active' => 'kpi.overview', 'icon' => 'fa-gauge-high', 'label' => 'نظرة عامة'],
         ['route' => 'kpi.branches.index', 'active' => 'kpi.branches.*', 'icon' => 'fa-code-branch', 'label' => 'مؤشرات الفروع'],
         ['route' => 'kpi.events.index', 'active' => 'kpi.events.*', 'icon' => 'fa-layer-group', 'label' => 'مؤشرات الفعاليات'],
-        ['route' => 'kpi.users.index', 'active' => 'kpi.users.*', 'icon' => 'fa-user-check', 'label' => 'مؤشرات المستخدمين'],
     ];
+    if (\App\Services\Kpi\KpiScope::canViewUsers(auth()->user())) {
+        $kpiTabs[] = ['route' => 'kpi.users.index', 'active' => 'kpi.users.*', 'icon' => 'fa-user-check', 'label' => 'مؤشرات المستخدمين'];
+    }
 @endphp
 <nav class="kpi-tabs" aria-label="أقسام مؤشرات الأداء">
     @foreach ($kpiTabs as $tab)

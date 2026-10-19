@@ -61,6 +61,15 @@ class KpiSql
         }
     }
 
+    /** Larger of two nullable timestamps (null only when both are null). */
+    public static function greatest(string $a, string $b): string
+    {
+        $left = 'COALESCE('.$a.', '.$b.')';
+        $right = 'COALESCE('.$b.', '.$a.')';
+
+        return self::driver() === 'sqlite' ? 'MAX('.$left.', '.$right.')' : 'GREATEST('.$left.', '.$right.')';
+    }
+
     public static function dateOf(string $expression): string
     {
         return self::driver() === 'sqlite' ? 'date('.$expression.')' : 'CAST('.$expression.' AS DATE)';
@@ -92,8 +101,17 @@ class KpiSql
         return 'COALESCE(JSON_LENGTH(JSON_SEARCH('.$column.', \'all\', '.self::literal($value).', NULL, \'$[*].'.$field.'\')), 0)';
     }
 
+    /**
+     * Quoted SQL string literal. MySQL/MariaDB treat backslash as an escape character in string
+     * literals (unless NO_BACKSLASH_ESCAPES), so class names such as App\Models\MonthlyActivity
+     * must have their backslashes doubled there; SQLite/PostgreSQL take them literally.
+     */
     public static function literal(string $value): string
     {
+        if (in_array(self::driver(), ['mysql', 'mariadb'], true)) {
+            $value = str_replace('\\', '\\\\', $value);
+        }
+
         return "'".str_replace("'", "''", $value)."'";
     }
 

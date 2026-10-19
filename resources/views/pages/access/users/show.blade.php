@@ -45,6 +45,12 @@
         <div class="col-6 col-lg"><div class="profile-stat"><div class="profile-stat-label">إشعارات</div><div class="profile-stat-value">{{ $stats['notifications'] }}</div></div></div>
     </div>
 
+    @if ($performancePanel)
+        <div class="mb-4">
+            @include('pages.kpi.partials.user-performance', $performancePanel)
+        </div>
+    @endif
+
     <div class="row g-4">
         <div class="col-12 col-xl-4">
             <div class="card profile-card h-100"><div class="card-body">

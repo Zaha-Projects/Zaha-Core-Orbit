@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Setting;
+use App\Services\Kpi\KpiUserPerformanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function show(Request $request): View
+    public function show(Request $request, KpiUserPerformanceService $performance): View
     {
         $user = $request->user()->load(['branch', 'assignedBranches', 'roles']);
 
@@ -24,6 +25,8 @@ class ProfileController extends Controller
             'emailEditingEnabled' => $emailEditingEnabled,
             'canEditProfileEmail' => $emailEditingEnabled || $canManageEmailEditing,
             'canManageEmailEditing' => $canManageEmailEditing,
+            // My Profile → الأداء: own KPIs only (Phase 5).
+            'performancePanel' => $performance->panel($user, $user, $request),
         ]);
     }
 

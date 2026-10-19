@@ -132,6 +132,77 @@ class MonthlyActivityKpiDefinition extends KpiModuleDefinition
         return $metrics;
     }
 
+    /**
+     * User-attributable Monthly actions. Actors: created_by (creation), workflow_action_logs.performed_by
+     * (submission, post-execution, closure), workflow_logs.acted_by (decisions),
+     * monthly_activity_approvals.approved_by (post-execution returns), post_execution_verifications.verified_by,
+     * activity_evaluations.evaluated_by.
+     */
+    protected function actorSources(): array
+    {
+        $types = KpiWorkflowIdentity::sqlList('monthly');
+        $planned = $this->stageSql('planned', 's');
+        $approved = $this->stageSql('approved', 's');
+        $returned = '('.$planned.') AND '.$this->workflowInstanceExists('s', $types, ' AND wi.edit_request_count > 0');
+        $firstSubmission = $this->firstActionLogSql('s.id', 'submitted');
+        $createToSubmit = KpiSql::hoursBetween('s.created_at', $firstSubmission);
+        $firstPostExecution = 'l.performed_at = '.$this->firstActionLogSql('l.entity_id', 'post_execution_submitted').' AND s.actual_date IS NOT NULL';
+        $postExecutionLag = KpiSql::daysBetween('s.actual_date', KpiSql::dateOf('l.performed_at'));
+        $closedLog = $this->firstActionLogSql('s.id', 'closed');
+        $evaluationTurnaround = KpiSql::daysBetween(KpiSql::dateOf($closedLog), KpiSql::dateOf('ev.submitted_at'));
+        $statusLabel = 'CASE WHEN '.$returned." THEN 'مقدّم — أُعيد للتعديل' WHEN ".$planned." THEN 'مقدّم' ELSE 'مسودة' END";
+
+        return [
+            $this->actorSource('u_created', fn (): Builder => $this->liveQuery('s'), 's.created_at', 's.created_by', [
+                'u_created' => 'COUNT(*)',
+                'u_created_submitted' => KpiSql::countIf($planned),
+                'u_created_returned' => KpiSql::countIf($returned),
+                'u_created_approved_wf' => KpiSql::countIf('('.$approved.') AND '.$this->workflowInstanceExists('s', $types)),
+                'u_created_first_pass' => KpiSql::countIf('('.$approved.') AND '.$this->workflowInstanceExists('s', $types, ' AND wi.edit_request_count = 0')),
+                'u_create_to_submit_hours' => KpiSql::sumIf('TRUE', $createToSubmit),
+                'u_create_to_submit_measured' => KpiSql::countValue('TRUE', $createToSubmit),
+            ], ['action' => "'إنشاء خطة'", 'result' => $statusLabel, 'duration_hours' => $createToSubmit], ['returned' => $returned]),
+            $this->actionLogSource('u_submissions', ['submitted'], [
+                'u_submitted' => 'COUNT(DISTINCT l.entity_id)',
+                'u_resubmissions' => '(COUNT(*) - COUNT(DISTINCT l.entity_id))',
+            ]),
+            $this->actionLogSource('u_post_execution', ['post_execution_submitted'], [
+                'u_postexec' => 'COUNT(DISTINCT l.entity_id)',
+                'u_postexec_lag_days' => KpiSql::sumIf($firstPostExecution, $postExecutionLag),
+                'u_postexec_lag_measured' => KpiSql::countValue($firstPostExecution, $postExecutionLag),
+            ], ['duration_days' => $postExecutionLag]),
+            $this->decisionSource($firstSubmission, true),
+            $this->actorSource('u_post_execution_returns', fn (): Builder => DB::table('monthly_activity_approvals as pa')
+                ->join('monthly_activities as s', 's.id', '=', 'pa.monthly_activity_id')
+                ->where('pa.step', 'post_execution_review')
+                ->whereIn('pa.decision', ['clarification', 'rejected']),
+                'pa.approved_at', 'pa.approved_by', [
+                    'u_pe_reviews' => 'COUNT(*)',
+                    'u_pe_returned' => 'COUNT(*)',
+                ], ['action' => "'مراجعة ما بعد التنفيذ'", 'result' => self::labelCase('pa.decision', ['clarification' => 'طلب توضيح', 'rejected' => 'رفض'])]),
+            $this->actionLogSource('u_closures', ['closed'], [
+                'u_pe_reviews' => 'COUNT(*)',
+                'u_closures' => 'COUNT(*)',
+            ], ['result' => "'اعتماد وإغلاق'"]),
+            $this->actorSource('u_verifications', fn (): Builder => DB::table('post_execution_verifications as v')
+                ->join('monthly_activities as s', 's.id', '=', 'v.monthly_activity_id')
+                ->whereNull('v.monitoring_report_id')
+                ->where('v.status', '<>', 'pending'),
+                'v.verified_at', 'v.verified_by', [
+                    'u_monthly_verified' => 'COUNT(*)',
+                    'u_cases_handled' => 'COUNT(DISTINCT v.monthly_activity_id)',
+                ], ['action' => 'COALESCE(v.field_label, v.field_key)', 'result' => self::labelCase('v.status', ['correct' => 'صحيح', 'incorrect' => 'غير صحيح'])]),
+            $this->actorSource('u_evaluations', fn (): Builder => DB::table('activity_evaluations as ev')
+                ->join('monthly_activities as s', 's.id', '=', 'ev.monthly_activity_id'),
+                'ev.submitted_at', 'ev.evaluated_by', [
+                    'u_evaluations' => 'COUNT(*)',
+                    'u_cases_completed' => 'COUNT(*)',
+                    'u_turnaround_days' => KpiSql::sumIf('TRUE', $evaluationTurnaround),
+                    'u_turnaround_measured' => KpiSql::countValue('TRUE', $evaluationTurnaround),
+                ], ['action' => "'تقييم النشاط'", 'duration_days' => $evaluationTurnaround]),
+        ];
+    }
+
     /** Edit/delete requests counted by their own request date and branch (independent of plan versions). */
     protected function secondarySources(): array
     {

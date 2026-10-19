@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web\Enterprise;
 
+use App\Http\Controllers\Concerns\StreamsCsv;
 use App\Http\Controllers\Controller;
 use App\Modules\Events\Models\AgendaEvent;
 use App\Modules\Events\Models\MonthlyActivity;
@@ -16,17 +17,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EnterpriseReportsController extends Controller
 {
-    protected function csvResponse(string $filename, array $headers, iterable $rows): StreamedResponse
-    {
-        return response()->streamDownload(function () use ($headers, $rows) {
-            $handle = fopen('php://output', 'wb');
-            fputcsv($handle, $headers);
-            foreach ($rows as $row) {
-                fputcsv($handle, $row);
-            }
-            fclose($handle);
-        }, $filename, ['Content-Type' => 'text/csv']);
-    }
+    use StreamsCsv;
 
     public function exportAgenda(Request $request, AgendaWorkflowPresenter $agendaWorkflowPresenter): StreamedResponse
     {

@@ -127,6 +127,84 @@ class RamadanIftarKpiDefinition extends KpiModuleDefinition
         ];
     }
 
+    /**
+     * User-attributable Ramadan actions. Actors: created_by, workflow_action_logs.performed_by
+     * (submitted, execution_completed, monitoring_*, iftar_closed), workflow_logs.acted_by,
+     * post_execution_verifications.verified_by; returned monitoring reports are attributed to
+     * monitoring_reports.monitor_user_id (the officer whose report was returned).
+     */
+    protected function actorSources(): array
+    {
+        $types = KpiWorkflowIdentity::sqlList('ramadan');
+        $subject = KpiSql::literal(EventSubjectTypes::RAMADAN_IFTAR);
+        $planned = $this->stageSql('planned', 's');
+        $approved = $this->stageSql('approved', 's');
+        $returned = '('.$planned.') AND '.$this->workflowInstanceExists('s', $types, ' AND wi.edit_request_count > 0');
+        $createToSubmit = KpiSql::hoursBetween('s.created_at', 's.submitted_at');
+        $firstExecution = 'l.performed_at = '.$this->firstActionLogSql('l.entity_id', 'execution_completed').' AND s.actual_date IS NOT NULL';
+        $executionLag = KpiSql::daysBetween('s.actual_date', KpiSql::dateOf('l.performed_at'));
+        $monitoringTurnaround = KpiSql::daysBetween(KpiSql::dateOf($this->firstActionLogSql('s.id', 'execution_completed')), KpiSql::dateOf('l.performed_at'));
+        $statusLabel = 'CASE WHEN '.$returned." THEN 'مقدّم — أُعيد للتعديل' WHEN ".$planned." THEN 'مقدّم' ELSE 'مسودة' END";
+
+        return [
+            $this->actorSource('u_created', fn (): Builder => $this->liveQuery('s'), 's.created_at', 's.created_by', [
+                'u_created' => 'COUNT(*)',
+                'u_created_submitted' => KpiSql::countIf($planned),
+                'u_created_returned' => KpiSql::countIf($returned),
+                'u_created_approved_wf' => KpiSql::countIf('('.$approved.') AND '.$this->workflowInstanceExists('s', $types)),
+                'u_created_first_pass' => KpiSql::countIf('('.$approved.') AND '.$this->workflowInstanceExists('s', $types, ' AND wi.edit_request_count = 0')),
+                'u_create_to_submit_hours' => KpiSql::sumIf('TRUE', $createToSubmit),
+                'u_create_to_submit_measured' => KpiSql::countValue('TRUE', $createToSubmit),
+            ], ['action' => "'إنشاء خطة إفطار'", 'result' => $statusLabel, 'duration_hours' => $createToSubmit], ['returned' => $returned]),
+            $this->actionLogSource('u_submissions', ['submitted'], [
+                'u_submitted' => 'COUNT(DISTINCT l.entity_id)',
+                'u_resubmissions' => '(COUNT(*) - COUNT(DISTINCT l.entity_id))',
+            ]),
+            $this->actionLogSource('u_post_execution', ['execution_completed'], [
+                'u_postexec' => 'COUNT(DISTINCT l.entity_id)',
+                'u_postexec_lag_days' => KpiSql::sumIf($firstExecution, $executionLag),
+                'u_postexec_lag_measured' => KpiSql::countValue($firstExecution, $executionLag),
+            ], ['duration_days' => $executionLag]),
+            $this->decisionSource('s.submitted_at', true),
+            $this->actionLogSource('u_monitoring_reviews', ['monitoring_approved', 'monitoring_returned'], [
+                'u_pe_reviews' => 'COUNT(*)',
+                'u_pe_returned' => KpiSql::countIf("l.action_type = 'monitoring_returned'"),
+            ], ['result' => self::labelCase('l.action_type', ['monitoring_approved' => 'اعتماد', 'monitoring_returned' => 'إعادة للتصحيح'])]),
+            $this->actionLogSource('u_closures', ['iftar_closed'], ['u_closures' => 'COUNT(*)'], ['result' => "'إغلاق'"]),
+            $this->actionLogSource('u_monitoring', ['monitoring_verification_submitted'], [
+                'u_cases_handled' => 'COUNT(DISTINCT l.entity_id)',
+                'u_cases_completed' => 'COUNT(DISTINCT l.entity_id)',
+                'u_turnaround_days' => KpiSql::sumIf('TRUE', $monitoringTurnaround),
+                'u_turnaround_measured' => KpiSql::countValue('TRUE', $monitoringTurnaround),
+            ], ['duration_days' => $monitoringTurnaround]),
+            new KpiMetricSource(
+                'u_reports_returned',
+                fn (): Builder => DB::table('workflow_action_logs as l')
+                    ->join('ramadan_iftars as s', 's.id', '=', 'l.entity_id')
+                    ->join('monitoring_reports as mr', function ($join): void {
+                        $join->on('mr.subject_id', '=', 'l.entity_id')->where('mr.subject_type', '=', EventSubjectTypes::RAMADAN_IFTAR);
+                    })
+                    ->where('l.module', RamadanIftar::WORKFLOW_MODULE)
+                    ->whereRaw('l.entity_type IN ('.$types.')')
+                    ->where('l.action_type', 'monitoring_returned'),
+                'l.performed_at',
+                fn (?array $branchIds) => $this->branchScopeSql('s', $branchIds),
+                fn (Builder $query): string => 's.branch_id',
+                ['u_reports_returned' => 'COUNT(*)'],
+                'mr.monitor_user_id',
+                ['event' => 's.title', 'action_date' => 'l.performed_at', 'action' => "'إعادة تقرير المتابعة للتصحيح'", 'result' => "'أُعيد'"]
+            ),
+            $this->actorSource('u_matches', fn (): Builder => DB::table('post_execution_verifications as v')
+                ->join('monitoring_reports as mr', 'mr.id', '=', 'v.monitoring_report_id')
+                ->join('ramadan_iftars as s', 's.id', '=', 'mr.subject_id')
+                ->where('mr.subject_type', EventSubjectTypes::RAMADAN_IFTAR),
+                'v.verified_at', 'v.verified_by', [
+                    'u_matched' => KpiSql::countIf("v.match_status = 'matched'"),
+                    'u_mismatched' => KpiSql::countIf("v.match_status = 'mismatched'"),
+                ], ['action' => 'COALESCE(v.field_label, v.field_key)', 'result' => self::labelCase('v.match_status', ['matched' => 'مطابق', 'mismatched' => 'غير مطابق', 'not_observed' => 'لم يُرصد', 'not_applicable' => 'لا ينطبق'])]),
+        ];
+    }
+
     /** Change requests by request date and branch. */
     protected function secondarySources(): array
     {

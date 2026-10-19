@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Kpi\KpiUserPerformanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,7 @@ class UsersController extends Controller
         return view('pages.access.users.index', compact('users', 'roles', 'permissions', 'branches'));
     }
 
-    public function show(User $user)
+    public function show(Request $request, User $user, KpiUserPerformanceService $performance)
     {
         $this->authorize('users.view');
 
@@ -41,7 +42,10 @@ class UsersController extends Controller
             ->take(8)
             ->get(['id', 'title', 'status', 'updated_at']);
 
-        return view('pages.access.users.show', compact('user', 'stats', 'recentActivities'));
+        // Same «الأداء» panel as My Profile; null unless the viewer may see this user's KPIs (Phase 5).
+        $performancePanel = $performance->panel($request->user(), $user, $request);
+
+        return view('pages.access.users.show', compact('user', 'stats', 'recentActivities', 'performancePanel'));
     }
 
     public function store(Request $request)

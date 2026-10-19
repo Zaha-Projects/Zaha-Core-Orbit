@@ -1,8 +1,8 @@
 {{-- KPIs that cannot be computed from current data. Param: $unavailable (KpiResult[]) --}}
 @if ($unavailable !== [])
-    <section class="kpi-section" aria-labelledby="kpi-unavailable-title">
+    <section class="kpi-section" aria-labelledby="{{ $unavailableId ?? 'kpi-unavailable-title' }}">
         <div class="kpi-section__head">
-            <h2 id="kpi-unavailable-title"><i class="fas fa-ban" aria-hidden="true"></i> مؤشرات غير متاحة حالياً</h2>
+            <h2 id="{{ $unavailableId ?? 'kpi-unavailable-title' }}"><i class="fas fa-ban" aria-hidden="true"></i> مؤشرات غير متاحة حالياً</h2>
             <p>لا تُعرض لها قيم لأن البيانات اللازمة غير مسجلة أو بانتظار قرار إداري.</p>
         </div>
         <ul class="kpi-unavailable">

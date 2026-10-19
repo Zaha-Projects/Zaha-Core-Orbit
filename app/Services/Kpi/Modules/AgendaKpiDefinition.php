@@ -42,6 +42,16 @@ class AgendaKpiDefinition extends KpiModuleDefinition
         ];
     }
 
+    public function titleColumn(): string
+    {
+        return 'event_name';
+    }
+
+    public function hasBranchColumn(): bool
+    {
+        return false;
+    }
+
     public function unavailableReason(string $stage): ?string
     {
         return in_array($stage, ['executed', 'closed'], true)
@@ -99,6 +109,46 @@ class AgendaKpiDefinition extends KpiModuleDefinition
             'wf_returned' => KpiSql::countIf('('.$planned.') AND EXISTS (SELECT 1 FROM agenda_approvals aa WHERE aa.agenda_event_id = '.$a.".id AND aa.decision = 'changes_requested')"),
             'approval_hours' => KpiSql::sumIf($approved, $approvalHours),
             'approval_measured' => KpiSql::countValue($approved, $approvalHours),
+        ];
+    }
+
+    /**
+     * User-attributable Agenda actions. Actors: created_by, workflow_logs.acted_by on the
+     * submission step (agenda_relations_officer_submit) and on main approval steps.
+     */
+    protected function actorSources(): array
+    {
+        $types = KpiWorkflowIdentity::sqlList('agenda');
+        $planned = $this->stageSql('planned', 's');
+        $approved = $this->stageSql('approved', 's');
+        $returned = '('.$planned.') AND EXISTS (SELECT 1 FROM agenda_approvals aa WHERE aa.agenda_event_id = s.id AND aa.decision = \'changes_requested\')';
+        $firstSubmission = '(SELECT MIN(fw.acted_at) FROM workflow_logs fw JOIN workflow_instances fi ON fi.id = fw.workflow_instance_id'
+            .' JOIN workflow_steps fs ON fs.id = fw.workflow_step_id WHERE fi.entity_type IN ('.$types.') AND fi.entity_id = s.id'
+            ." AND fs.step_key = 'agenda_relations_officer_submit')";
+        $createToSubmit = KpiSql::hoursBetween('s.created_at', $firstSubmission);
+        $statusLabel = 'CASE WHEN '.$returned." THEN 'مقدّم — أُعيد للتعديل' WHEN ".$planned." THEN 'مقدّم' ELSE 'مسودة' END";
+
+        return [
+            $this->actorSource('u_created', fn (): Builder => $this->liveQuery('s'), 's.created_at', 's.created_by', [
+                'u_created' => 'COUNT(*)',
+                'u_created_submitted' => KpiSql::countIf($planned),
+                'u_created_returned' => KpiSql::countIf($returned),
+                'u_created_approved_wf' => KpiSql::countIf('('.$approved.') AND '.$this->workflowInstanceExists('s', $types)),
+                'u_created_first_pass' => KpiSql::countIf('('.$approved.') AND '.$this->workflowInstanceExists('s', $types, ' AND wi.edit_request_count = 0')),
+                'u_create_to_submit_hours' => KpiSql::sumIf('TRUE', $createToSubmit),
+                'u_create_to_submit_measured' => KpiSql::countValue('TRUE', $createToSubmit),
+            ], ['action' => "'إنشاء فعالية أجندة'", 'result' => $statusLabel, 'duration_hours' => $createToSubmit], ['returned' => $returned]),
+            $this->actorSource('u_submissions', fn (): Builder => DB::table('workflow_logs as wl')
+                ->join('workflow_instances as wi', 'wi.id', '=', 'wl.workflow_instance_id')
+                ->join('workflow_steps as st', 'st.id', '=', 'wl.workflow_step_id')
+                ->join('agenda_events as s', 's.id', '=', 'wi.entity_id')
+                ->whereRaw('wi.entity_type IN ('.$types.')')
+                ->where('st.step_key', 'agenda_relations_officer_submit'),
+                'wl.acted_at', 'wl.acted_by', [
+                    'u_submitted' => 'COUNT(DISTINCT wi.entity_id)',
+                    'u_resubmissions' => '(COUNT(*) - COUNT(DISTINCT wi.entity_id))',
+                ], ['action' => "'تقديم للاعتماد'"]),
+            $this->decisionSource($firstSubmission, false),
         ];
     }
 

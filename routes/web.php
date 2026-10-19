@@ -68,6 +68,7 @@ use App\Http\Controllers\Roles\Staff\StaffAgendaController as StaffAgendaControl
 use App\Http\Controllers\Roles\Staff\StaffMonthlyActivitiesController as StaffMonthlyActivitiesController;
 use App\Http\Controllers\Web\Enterprise\EnterpriseReportsController;
 use App\Http\Controllers\Web\Kpi\KpiDashboardController;
+use App\Http\Controllers\Web\Kpi\KpiUserController;
 use App\Http\Controllers\Web\Enterprise\NotificationsController;
 use App\Http\Controllers\Web\Enterprise\ArchiveController;
 use App\Http\Controllers\Web\WorkflowAutoApprovalPreferenceController;
@@ -158,6 +159,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    // My Profile → الأداء: own action reports and own CSV (no kpi.view needed; self only).
+    Route::get('/profile/performance/actions/{action}', [KpiUserController::class, 'selfActions'])->where('action', '[a-z_]+')->name('profile.performance.actions');
+    Route::get('/profile/performance/actions/{action}/export', [KpiUserController::class, 'selfActionsExport'])->where('action', '[a-z_]+')->name('profile.performance.actions.export');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/email-editing', [ProfileController::class, 'updateEmailEditing'])->middleware('role_or_permission:super_admin|users.manage')->name('profile.email_editing.update');
     Route::get('/directory/users', [UserDirectoryController::class, 'index'])->name('directory.users.index');
@@ -423,10 +427,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [KpiDashboardController::class, 'overview'])->name('overview');
         Route::get('/branches', [KpiDashboardController::class, 'branches'])->name('branches.index');
         Route::get('/branches/{branch}', [KpiDashboardController::class, 'branch'])->whereNumber('branch')->name('branches.show');
-        Route::get('/users', [KpiDashboardController::class, 'users'])->name('users.index');
+        // User performance: cross-user views require super_admin or kpi.users.view (checked in KpiUserController).
+        Route::get('/users', [KpiUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [KpiUserController::class, 'show'])->whereNumber('user')->name('users.show');
+        Route::get('/users/{user}/actions/{action}', [KpiUserController::class, 'actions'])->whereNumber('user')->where('action', '[a-z_]+')->name('users.actions');
+        Route::get('/users/{user}/actions/{action}/export', [KpiUserController::class, 'actionsExport'])->whereNumber('user')->where('action', '[a-z_]+')->name('users.actions.export');
         Route::get('/events', [KpiDashboardController::class, 'events'])->name('events.index');
         Route::get('/events/{module}', [KpiDashboardController::class, 'event'])->where('module', 'agenda|monthly|ramadan|bazaar')->name('events.show');
         Route::get('/reports/{report}', [KpiDashboardController::class, 'report'])->where('report', 'on-time|attendance|ramadan-meals|bazaar-occupancy')->name('reports.show');
+        Route::get('/reports/{report}/export', [KpiDashboardController::class, 'reportExport'])->where('report', 'on-time|attendance|ramadan-meals|bazaar-occupancy')->name('reports.export');
     });
 
     Route::get('/dashboard/reports/overview', [ReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.index');

@@ -31,6 +31,43 @@ class KpiScope
         return $user !== null && ($user->hasRole('super_admin') || $user->can('kpi.view'));
     }
 
+    /** Cross-user performance viewing (Phase 5). Never implied by kpi.view. */
+    public static function canViewUsers(?User $user): bool
+    {
+        return $user !== null && ($user->hasRole('super_admin') || $user->can('kpi.users.view'));
+    }
+
+    /**
+     * Self always; others only with kpi.users.view AND the target inside the viewer's branch scope
+     * (oversight viewers: any user). Prevents direct-ID access to out-of-scope users.
+     */
+    public static function canViewUser(?User $viewer, User $target): bool
+    {
+        if ($viewer === null) {
+            return false;
+        }
+        if ((int) $viewer->id === (int) $target->id) {
+            return true;
+        }
+        if (! self::canViewUsers($viewer)) {
+            return false;
+        }
+
+        return self::hasOversight($viewer) || array_intersect($viewer->scopedBranchIds(), $target->scopedBranchIds()) !== [];
+    }
+
+    /** Organisational report exports (Phase 5). Own performance export does not need it. */
+    public static function canExport(?User $user): bool
+    {
+        return $user !== null && ($user->hasRole('super_admin') || $user->can('kpi.export'));
+    }
+
+    /** Self view: the user's own actions in every branch (user filter applied by the caller). */
+    public static function forSelf(User $user): self
+    {
+        return new self(null, null);
+    }
+
     public static function hasOversight(User $user): bool
     {
         return $user->hasRole('super_admin') || $user->can('branches.view.all');
@@ -69,6 +106,12 @@ class KpiScope
     public function hasNoBranches(): bool
     {
         return $this->branchIds() === [];
+    }
+
+    /** @return array<int, int>|null branches the viewer may see (null = all) */
+    public function allowedBranchIds(): ?array
+    {
+        return $this->allowedBranchIds;
     }
 
     public function selectedBranchId(): ?int

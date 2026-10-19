@@ -305,6 +305,12 @@
 .kpi-sort:hover, .kpi-sort:focus-visible { color: var(--kpi-primary); }
 .kpi-table td.text-start { text-align: start; white-space: normal; }
 
+/* Phase 5: report toolbar, embedded performance panel */
+.kpi-report-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+.kpi-report-toolbar .kpi-tabs { margin-bottom: 0; }
+.kpi-user-performance { margin-top: 0; }
+.kpi-user-performance .kpi-section__head h3 { margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--kpi-text); }
+
 @keyframes kpi-rise {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }

@@ -63,7 +63,10 @@
         <div class="kpi-next">
             <a href="{{ route('kpi.branches.index', $filters['query']) }}" class="kpi-next__link"><i class="fas fa-code-branch" aria-hidden="true"></i> مقارنة الفروع</a>
             <a href="{{ route('kpi.events.index', $kpiCarryQuery) }}" class="kpi-next__link"><i class="fas fa-layer-group" aria-hidden="true"></i> مؤشرات كل نوع فعالية</a>
-            <a href="{{ route('kpi.users.index') }}" class="kpi-next__link"><i class="fas fa-user-check" aria-hidden="true"></i> مؤشرات المستخدمين (قريبًا)</a>
+            @if (\App\Services\Kpi\KpiScope::canViewUsers(auth()->user()))
+                <a href="{{ route('kpi.users.index') }}" class="kpi-next__link"><i class="fas fa-user-check" aria-hidden="true"></i> مؤشرات المستخدمين</a>
+            @endif
+            <a href="{{ route('profile.show') }}" class="kpi-next__link"><i class="fas fa-id-badge" aria-hidden="true"></i> أدائي (الملف الشخصي)</a>
         </div>
     </section>
 </div>

@@ -4,6 +4,8 @@ namespace App\Services\Kpi\Modules;
 
 use App\Modules\Events\Models\Bazaar;
 use App\Services\Kpi\Support\KpiSql;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 class BazaarKpiDefinition extends KpiModuleDefinition
 {
@@ -37,6 +39,48 @@ class BazaarKpiDefinition extends KpiModuleDefinition
             'approved' => $a.'.status IN ('.KpiSql::literalList([Bazaar::STATUS_APPROVED, Bazaar::STATUS_EXECUTING, Bazaar::STATUS_POST_EXECUTION, Bazaar::STATUS_VERIFIED, Bazaar::STATUS_COMPLETED]).')',
             'executed' => $a.'.status IN ('.KpiSql::literalList([Bazaar::STATUS_POST_EXECUTION, Bazaar::STATUS_VERIFIED, Bazaar::STATUS_COMPLETED]).')',
             'closed' => $a.'.status = '.KpiSql::literal(Bazaar::STATUS_COMPLETED),
+        ];
+    }
+
+    public function titleColumn(): string
+    {
+        return 'name';
+    }
+
+    /**
+     * User-attributable Bazaar actions. Actors: relations_officer_id (set to the creating user),
+     * bazaar_table_discounts.approved_by, verified_by (verification), closed_by (closure, since Phase 4).
+     * Submission and execution actors are not recorded.
+     */
+    protected function actorSources(): array
+    {
+        $planned = $this->stageSql('planned', 's');
+        $verification = KpiSql::daysBetween(KpiSql::dateOf('s.post_execution_submitted_at'), KpiSql::dateOf('s.verified_at'));
+
+        return [
+            $this->actorSource('u_created', fn (): Builder => $this->liveQuery('s'), 's.created_at', 's.relations_officer_id', [
+                'u_created' => 'COUNT(*)',
+                'u_created_submitted' => KpiSql::countIf($planned),
+            ], ['action' => "'إنشاء بازار'", 'result' => 'CASE WHEN '.$planned." THEN 'مقدّم' ELSE 'مسودة' END"]),
+            $this->actorSource('u_discounts', fn (): Builder => DB::table('bazaar_table_discounts as d')
+                ->join('bazaar_tables as t', 't.id', '=', 'd.bazaar_table_id')
+                ->join('bazaars as s', 's.id', '=', 't.bazaar_id')
+                ->where('d.status', '<>', 'pending')
+                ->whereNotNull('d.approved_by'),
+                'd.requested_at', 'd.approved_by', [
+                    'u_discount_decisions' => 'COUNT(*)',
+                    'u_discount_approved' => KpiSql::countIf("d.status = 'approved'"),
+                ], ['action' => "'قرار خصم على طاولة'", 'result' => self::labelCase('d.status', ['approved' => 'اعتماد', 'returned' => 'إعادة', 'rejected' => 'رفض'])]),
+            $this->actorSource('u_verifications', fn (): Builder => DB::table('bazaars as s')->whereNotNull('s.verified_at'),
+                's.verified_at', 's.verified_by', [
+                    'u_bazaar_verified' => 'COUNT(*)',
+                    'u_cases_handled' => 'COUNT(*)',
+                    'u_cases_completed' => 'COUNT(*)',
+                    'u_turnaround_days' => KpiSql::sumIf('TRUE', $verification),
+                    'u_turnaround_measured' => KpiSql::countValue('TRUE', $verification),
+                ], ['action' => "'التحقق من البازار'", 'result' => "'متحقق'", 'duration_days' => $verification]),
+            $this->actorSource('u_closures', fn (): Builder => DB::table('bazaars as s')->whereNotNull('s.closed_at'),
+                's.closed_at', 's.closed_by', ['u_closures' => 'COUNT(*)'], ['action' => "'إغلاق البازار'", 'result' => "'مغلق'"]),
         ];
     }
 

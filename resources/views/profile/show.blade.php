@@ -103,10 +103,11 @@
         </div>
 
         <div class="col-12 col-xl-8">
-            <div class="alert alert-light border shadow-sm mb-4 small text-muted">
-                <i class="fas fa-circle-info me-1"></i>
-                سيتم عرض مؤشرات الأداء الشخصية هنا بعد اعتماد نظام مؤشرات الأداء الجديد.
-            </div>
+            @if ($performancePanel)
+                <div class="mb-4">
+                    @include('pages.kpi.partials.user-performance', $performancePanel)
+                </div>
+            @endif
 
             <div class="card profile-card profile-form-card">
                 <div class="card-body">

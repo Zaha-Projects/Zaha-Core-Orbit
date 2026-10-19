@@ -65,7 +65,10 @@
         </details>
     @endif
 
-    @if ($result->drilldown)
+    @if ($result->drilldown && $result->drilldown['route'] !== 'user')
         <a class="kpi-card__drilldown" href="{{ route($result->drilldown['route'], $result->drilldown['parameters'] + $kpiCarry) }}">عرض التفاصيل <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+    @elseif ($result->drilldown && isset($actionsRoute))
+        {{-- User KPI: drill into the per-user action report of the current page context (profile or management). --}}
+        <a class="kpi-card__drilldown" href="{{ route($actionsRoute, ($actionsParameters ?? []) + $result->drilldown['parameters'] + \Illuminate\Support\Arr::except($kpiCarry, ['branch_id'])) }}">عرض الإجراءات <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
     @endif
 </article>
