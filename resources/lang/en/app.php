@@ -1446,8 +1446,8 @@ return [
             ],
         ],
         'reports' => [
-            'title' => 'Reports overview',
-            'subtitle' => 'Filter and export reports by module.',
+            'title' => 'Operational reports',
+            'subtitle' => 'Operational finance, maintenance and transport reports.',
             'filters_title' => 'Report filters',
             'fields' => [
                 'date_from' => 'Date from',

@@ -42,10 +42,6 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg"><div class="profile-stat"><div class="profile-stat-label">أنشطة أنشأها</div><div class="profile-stat-value">{{ $stats['created_monthly_activities'] }}</div></div></div>
-        <div class="col-6 col-lg"><div class="profile-stat"><div class="profile-stat-label">أنشطة فروعه</div><div class="profile-stat-value">{{ $stats['assigned_branch_activities'] }}</div></div></div>
-        <div class="col-6 col-lg"><div class="profile-stat"><div class="profile-stat-label">أنشطة مكتملة</div><div class="profile-stat-value">{{ $stats['completed_branch_activities'] }}</div></div></div>
-        <div class="col-6 col-lg"><div class="profile-stat"><div class="profile-stat-label">إجراءات Workflow</div><div class="profile-stat-value">{{ $stats['workflow_actions'] }}</div></div></div>
         <div class="col-6 col-lg"><div class="profile-stat"><div class="profile-stat-label">إشعارات</div><div class="profile-stat-value">{{ $stats['notifications'] }}</div></div></div>
     </div>
 

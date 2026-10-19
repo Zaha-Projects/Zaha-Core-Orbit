@@ -64,19 +64,10 @@
         $user->hasAnyRole(['transport_officer', 'movement_manager', 'movement_editor', 'movement_viewer', 'super_admin'])
         || request()->routeIs('role.transport.*')
     );
-    $canAccessReportsSidebar = $user && (
-        $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
-        || $user->canAny(['reports.view', 'kpi.view'])
-        || request()->routeIs('role.reports.*')
-        || request()->routeIs('role.enterprise.*')
-    );
+    // Phase 2: only operational reports remain here; the KPI section arrives in Phase 3.
     $canAccessReportPages = $user && (
         $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
         || $user->can('reports.view')
-    );
-    $canAccessKpiPage = $user && (
-        $user->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin'])
-        || $user->can('kpi.view')
     );
     $headerNow = now(config('app.timezone'));
     $headerHijri = app(\App\Support\HijriDateFormatter::class)->format($headerNow);
@@ -149,8 +140,8 @@
                 <li class="side-item {{ request()->routeIs('role.super_admin.workflows*') || request()->routeIs('role.super_admin.workflow_steps*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.workflows') }}"><i class="fas fa-diagram-project"></i><span>{{ __('app.roles.super_admin.actions.workflows.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.branches*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.branches') }}"><i class="fas fa-building"></i><span>{{ __('app.roles.super_admin.sidebar.branches') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.approvals*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.approvals') }}"><i class="fas fa-list-check"></i><span>{{ __('app.roles.super_admin.sidebar.approvals') }}</span></a></li>
-                <li class="side-item {{ request()->routeIs('role.super_admin.reports') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.reports') }}"><i class="fas fa-chart-simple"></i><span>تقارير الإدارة</span></a></li>
                 @if($user?->hasRole('super_admin'))
+                <li class="side-item {{ request()->routeIs('role.super_admin.reports') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.reports') }}"><i class="fas fa-chart-simple"></i><span>تقارير الإدارة</span></a></li>
                 <li class="side-comment px-3 pt-2">الإعدادات والبيانات المرجعية</li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.site_settings.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.site_settings.index') }}"><i class="fas fa-gear"></i><span>إعدادات الموقع</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.super_admin.events_lookups.*') ? 'selected' : '' }}"><a href="{{ route('role.super_admin.events_lookups.index') }}"><i class="fas fa-database"></i><span>البيانات المرجعية العامة</span></a></li>
@@ -243,22 +234,11 @@
                 <li class="side-item {{ request()->routeIs('role.transport.movements.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.movements.index') }}"><i class="fas fa-map-location-dot"></i><span>{{ __('app.roles.transport.movements.title') }}</span></a></li>
             @endif
 
-            @if ($canAccessReportsSidebar && ! $isRelationsManagerSidebar)
-                @if($canAccessReportPages)
-                    <li class="side-item {{ request()->routeIs('role.reports.index') ? 'selected' : '' }}"><a href="{{ route('role.reports.index') }}"><i class="fas fa-chart-simple"></i><span>{{ __('app.roles.reports.title') }}</span></a></li>
-                    <li class="side-item {{ request()->routeIs('role.reports.agenda.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.agenda.index') }}"><i class="fas fa-calendar-check"></i><span>{{ __('app.roles.reports.agenda.title') }}</span></a></li>
-                    <li class="side-item {{ request()->routeIs('role.reports.monthly.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.monthly.index') }}"><i class="fas fa-layer-group"></i><span>{{ __('app.roles.reports.monthly.title') }}</span></a></li>
-                    <li class="side-item {{ request()->routeIs('role.reports.finance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.finance.index') }}"><i class="fas fa-money-bill-trend-up"></i><span>{{ __('app.roles.reports.finance.title') }}</span></a></li>
-                    <li class="side-item {{ request()->routeIs('role.reports.maintenance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.maintenance.index') }}"><i class="fas fa-toolbox"></i><span>{{ __('app.roles.reports.maintenance.title') }}</span></a></li>
-                    <li class="side-item {{ request()->routeIs('role.reports.transport.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.transport.index') }}"><i class="fas fa-truck-fast"></i><span>{{ __('app.roles.reports.transport.title') }}</span></a></li>
-                @endif
-                @if($canAccessKpiPage)
-                    <li class="side-item {{ request()->routeIs('role.reports.kpis.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.kpis.index') }}"><i class="fas fa-chart-line"></i><span>{{ __('app.roles.reports.kpis.title') }}</span></a></li>
-                @endif
-                @if($user?->hasAnyRole(['reports_viewer', 'followup_officer', 'super_admin']))
-                    <li class="side-item {{ request()->routeIs('role.enterprise.dashboard') ? 'selected' : '' }}"><a href="{{ route('role.enterprise.dashboard') }}"><i class="fas fa-chart-pie"></i><span>{{ __('app.enterprise.analytics_title') }}</span></a></li>
-                    <li class="side-item {{ request()->routeIs('role.reports.enterprise.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.enterprise.branch_performance') }}"><i class="fas fa-arrow-trend-up"></i><span>{{ __('app.enterprise.branch_performance.report_title') }}</span></a></li>
-                @endif
+            @if ($canAccessReportPages && ! $isRelationsManagerSidebar)
+                <li class="side-item {{ request()->routeIs('role.reports.index') ? 'selected' : '' }}"><a href="{{ route('role.reports.index') }}"><i class="fas fa-chart-simple"></i><span>{{ __('app.roles.reports.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.reports.finance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.finance.index') }}"><i class="fas fa-money-bill-trend-up"></i><span>{{ __('app.roles.reports.finance.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.reports.maintenance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.maintenance.index') }}"><i class="fas fa-toolbox"></i><span>{{ __('app.roles.reports.maintenance.title') }}</span></a></li>
+                <li class="side-item {{ request()->routeIs('role.reports.transport.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.transport.index') }}"><i class="fas fa-truck-fast"></i><span>{{ __('app.roles.reports.transport.title') }}</span></a></li>
             @endif
 
             @include('layouts.app.partials.workflow-auto-approval-toggle', ['variant' => 'original'])

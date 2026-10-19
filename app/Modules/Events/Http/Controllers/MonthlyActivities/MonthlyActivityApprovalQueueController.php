@@ -340,7 +340,6 @@ class MonthlyActivityApprovalQueueController extends Controller
         return [
             'delete' => ['total' => (clone $deleteBase)->count(), 'pending' => (clone $deleteBase)->where('status', 'pending')->count(), 'approved' => (clone $deleteBase)->where('status', 'approved')->count(), 'rejected' => (clone $deleteBase)->where('status', 'rejected')->count()],
             'edit' => ['total' => (clone $editBase)->count(), 'pending' => (clone $editBase)->where('status', 'pending')->count(), 'approved' => (clone $editBase)->where('status', 'approved')->count(), 'rejected' => (clone $editBase)->where('status', 'rejected')->count()],
-            'by_branch' => (clone $deleteBase)->selectRaw('branch_id, count(*) as total')->groupBy('branch_id')->with('monthlyActivity.branch')->limit(8)->get(),
             'recent_delete' => (clone $deleteBase)->latest()->limit(5)->get(),
             'recent_edit' => (clone $editBase)->latest()->limit(5)->get(),
         ];

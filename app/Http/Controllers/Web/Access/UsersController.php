@@ -8,7 +8,6 @@ use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Models\WorkflowLog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -33,17 +32,7 @@ class UsersController extends Controller
         $this->authorize('users.view');
 
         $user->load(['roles.permissions', 'permissions', 'deniedPermissions', 'branch', 'assignedBranches']);
-        $branchIds = $user->scopedBranchIds();
         $stats = [
-            'created_monthly_activities' => MonthlyActivity::query()->where('created_by', $user->id)->count(),
-            'assigned_branch_activities' => MonthlyActivity::query()
-                ->when($branchIds !== [], fn ($query) => $query->whereIn('branch_id', $branchIds), fn ($query) => $query->whereRaw('1 = 0'))
-                ->count(),
-            'completed_branch_activities' => MonthlyActivity::query()
-                ->when($branchIds !== [], fn ($query) => $query->whereIn('branch_id', $branchIds), fn ($query) => $query->whereRaw('1 = 0'))
-                ->whereIn('status', ['completed', 'closed'])
-                ->count(),
-            'workflow_actions' => WorkflowLog::query()->where('acted_by', $user->id)->count(),
             'notifications' => $user->inAppNotifications()->count(),
         ];
         $recentActivities = MonthlyActivity::query()

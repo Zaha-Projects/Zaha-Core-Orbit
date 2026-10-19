@@ -3,31 +3,29 @@
 namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
-use App\Models\Branch;
 use App\Models\MonthlyKpi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+/**
+ * @deprecated KPI refactor Phase 2: manually entered monthly KPIs are retired. The page stays reachable read-only for historical rows; data entry (store) is no longer routed. Replaced by calculated KPIs in Phase 4. Do not drop monthly_kpis.
+ */
 class MonthlyKpisController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $user = $request->user();
-        $canManageKpis = $this->canManageKpis($user);
-        $isBranchScoped = $user->isBranchScopedPlanningUser();
-        $branches = Branch::query()
-            ->when($isBranchScoped, fn ($query) => $query->whereIn('id', $user->scopedBranchIds()))
-            ->orderBy('name')
-            ->get();
         $kpis = MonthlyKpi::with(['branch', 'creator'])
             ->orderByDesc('year')
             ->orderByDesc('month')
             ->get();
 
-        return view('pages.reports.kpis', compact('kpis', 'branches', 'canManageKpis', 'isBranchScoped'));
+        return view('pages.reports.kpis', compact('kpis'));
     }
 
+    /**
+     * @deprecated Not routed since KPI refactor Phase 2 (manual KPI entry retired). Kept for historical compatibility.
+     */
     public function store(Request $request)
     {
         $user = $request->user();

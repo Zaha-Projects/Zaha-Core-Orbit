@@ -6,7 +6,6 @@ use App\Modules\Events\Models\AgendaApproval;
 use App\Modules\Events\Support\EventAggregateIdentity;
 use App\Modules\Events\Support\EventRequestModelIdentity;
 use App\Modules\Events\Models\AgendaEvent;
-use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Branch;
 use App\Models\DonationCash;
@@ -20,7 +19,6 @@ use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\WorkflowInstance;
-use App\Models\ZahaTimeOption;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -28,19 +26,12 @@ class AdminReportsService
 {
     public function build(int $year, int $month): array
     {
-        $executionNeeds = $this->executionNeeds();
-        $activitiesWithNeedsPayload = $executionNeeds['payload_rows'];
-        unset($executionNeeds['payload_rows']);
-
         return [
             'overview' => $this->overview(),
             'operations' => $this->operations(),
             'financials' => $this->financials(),
             'statuses' => $this->statuses(),
-            'execution_needs' => $executionNeeds,
-            'zaha_time' => $this->zahaTime($activitiesWithNeedsPayload),
-            'daily_operation_logs' => $this->dailyOperationLogs(),
-            'user_delay_stats' => $this->userDelayStats(),
+            'execution_needs' => $this->executionNeeds(),
             'relations' => $this->cachedRelationsReport($year, $month),
         ];
     }
@@ -201,7 +192,6 @@ class AdminReportsService
     {
         return [
             'branches' => Branch::count(),
-            'centers' => 0,
             'users' => User::count(),
             'vehicles' => Vehicle::count(),
         ];
@@ -258,7 +248,6 @@ class AdminReportsService
 
     protected function executionNeeds(): array
     {
-        $activitiesWithNeedsPayload = MonthlyActivity::query()->whereNotNull('execution_needs_payload')->get(['id', 'execution_needs_payload']);
         $activitiesWithNeedsFollowup = MonthlyActivity::query()->whereNotNull('execution_needs_followup')->get(['id', 'execution_needs_followup']);
 
         $securedCount = 0;
@@ -280,60 +269,12 @@ class AdminReportsService
         }
 
         return [
-            'with_payload' => $activitiesWithNeedsPayload->count(),
+            'with_payload' => MonthlyActivity::query()->whereNotNull('execution_needs_payload')->count(),
             'with_followup' => $activitiesWithNeedsFollowup->count(),
             'secured_count' => $securedCount,
             'not_secured_count' => $notSecuredCount,
             'avg_effectiveness' => count($scores) > 0 ? round(array_sum($scores) / count($scores), 2) : null,
-            'payload_rows' => $activitiesWithNeedsPayload,
         ];
-    }
-
-    protected function zahaTime($activitiesWithNeedsPayload): array
-    {
-        $zahaUsage = [];
-        foreach ($activitiesWithNeedsPayload as $activity) {
-            $options = data_get($activity->execution_needs_payload, 'programs.zaha_time_options', []);
-            foreach ((array) $options as $optionCode) {
-                if (filled($optionCode)) {
-                    $zahaUsage[$optionCode] = ($zahaUsage[$optionCode] ?? 0) + 1;
-                }
-            }
-        }
-
-        $zahaLookup = ZahaTimeOption::query()->orderBy('sort_order')->orderBy('name')->get();
-
-        return [
-            'total' => $zahaLookup->count(),
-            'active' => $zahaLookup->where('is_active', true)->count(),
-            'usage' => $zahaLookup->map(fn (ZahaTimeOption $option) => [
-                'code' => $option->code,
-                'name' => $option->name,
-                'used' => (int) ($zahaUsage[$option->code] ?? 0),
-            ]),
-        ];
-    }
-
-    protected function dailyOperationLogs()
-    {
-        return AuditLog::query()
-            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
-            ->whereDate('created_at', '>=', now()->subDays(30)->toDateString())
-            ->groupByRaw('DATE(created_at)')
-            ->orderBy('day')
-            ->get();
-    }
-
-    protected function userDelayStats()
-    {
-        return AuditLog::query()
-            ->selectRaw('user_id, MIN(created_at) as first_action_at, MAX(created_at) as last_action_at, COUNT(*) as total_actions')
-            ->whereNotNull('user_id')
-            ->groupBy('user_id')
-            ->with('user:id,name')
-            ->orderByDesc('total_actions')
-            ->limit(25)
-            ->get();
     }
 
     protected function cacheEnabled(): bool

@@ -3,21 +3,20 @@
 namespace App\Http\Controllers\Web\Reports;
 
 use App\Http\Controllers\Controller;
-use App\Models\Branch;
-use Illuminate\Http\Request;
 
+/**
+ * Operational reports hub (تقارير تشغيلية). Events KPI reporting moves to the new KPI section in Phase 3.
+ */
 class ReportsController extends Controller
 {
     public function index()
     {
-        $branches = Branch::orderBy('name')->get();
-        return view('pages.reports.index', compact('branches'));
-    }
+        $reports = [
+            ['route' => 'role.reports.finance.index', 'title' => __('app.roles.reports.finance.title'), 'description' => __('app.roles.reports.finance.subtitle'), 'icon' => 'fas fa-money-bill-trend-up'],
+            ['route' => 'role.reports.maintenance.index', 'title' => __('app.roles.reports.maintenance.title'), 'description' => __('app.roles.reports.maintenance.subtitle'), 'icon' => 'fas fa-toolbox'],
+            ['route' => 'role.reports.transport.index', 'title' => __('app.roles.reports.transport.title'), 'description' => __('app.roles.reports.transport.subtitle'), 'icon' => 'fas fa-truck-fast'],
+        ];
 
-    public function export(Request $request)
-    {
-        return redirect()
-            ->back()
-            ->with('status', __('app.roles.reports.exported'));
+        return view('pages.reports.index', compact('reports'));
     }
 }

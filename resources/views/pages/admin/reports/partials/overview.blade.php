@@ -5,7 +5,6 @@
             <p class="text-muted small">{{ __('app.reports.structure.subtitle') }}</p>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.structure.branches') }}</span><strong>{{ $reportData['overview']['branches'] }}</strong></li>
-                <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.structure.centers') }}</span><strong>{{ $reportData['overview']['centers'] }}</strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.structure.users') }}</span><strong>{{ $reportData['overview']['users'] }}</strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.structure.vehicles') }}</span><strong>{{ $reportData['overview']['vehicles'] }}</strong></li>
             </ul>

@@ -7,6 +7,9 @@ use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated KPI refactor Phase 2: no longer routed; /dashboard/reports/agenda redirects to the operational reports hub. Replaced by the Annual Agenda KPI drill-down in Phase 7; delete in Phase 9.
+ */
 class AgendaReportsController extends Controller
 {
     public function index(Request $request)
@@ -17,10 +20,4 @@ class AgendaReportsController extends Controller
         return view('pages.reports.agenda', compact('branches', 'events'));
     }
 
-    public function export(Request $request)
-    {
-        return redirect()
-            ->back()
-            ->with('status', __('app.roles.reports.exported'));
-    }
 }

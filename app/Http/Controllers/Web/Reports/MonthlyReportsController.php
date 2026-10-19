@@ -7,6 +7,9 @@ use App\Models\Branch;
 use App\Modules\Events\Models\MonthlyActivity;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated KPI refactor Phase 2: no longer routed; /dashboard/reports/monthly redirects to the operational reports hub. Replaced by the Monthly Activities KPI drill-down in Phase 7; delete in Phase 9.
+ */
 class MonthlyReportsController extends Controller
 {
     public function index()
@@ -17,10 +20,4 @@ class MonthlyReportsController extends Controller
         return view('pages.reports.monthly', compact('branches', 'activities'));
     }
 
-    public function export(Request $request)
-    {
-        return redirect()
-            ->back()
-            ->with('status', __('app.roles.reports.exported'));
-    }
 }

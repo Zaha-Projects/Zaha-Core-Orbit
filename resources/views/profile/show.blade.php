@@ -103,50 +103,9 @@
         </div>
 
         <div class="col-12 col-xl-8">
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة أنشأتها</div><div class="profile-stat-value">{{ $stats['created_monthly_activities'] }}</div><div class="profile-stat-help">كل نشاط شهري كان حسابك هو منشئه، بغض النظر عن الفرع أو حالة الاعتماد.</div></div></div>
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة فروعك</div><div class="profile-stat-value">{{ $stats['assigned_branch_activities'] }}</div><div class="profile-stat-help">كل الأنشطة المرتبطة بالفروع المسندة لحسابك. قد تختلف عن شاشة الخطط لأنها تشمل كل الحالات والسجلات غير المعروضة بالفلاتر.</div></div></div>
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">أنشطة مكتملة</div><div class="profile-stat-value">{{ $stats['completed_branch_activities'] }}</div><div class="profile-stat-help">من أنشطة فروعك فقط، وتُحسب عندما تكون حالة النشاط في قاعدة البيانات completed.</div></div></div>
-                <div class="col-6 col-lg-3"><div class="profile-stat"><div class="profile-stat-label">إجراءات Workflow</div><div class="profile-stat-value">{{ $stats['workflow_actions'] }}</div><div class="profile-stat-help">عدد قرارات أو إجراءات الاعتماد التي نفذتها داخل مسارات Workflow.</div></div></div>
-            </div>
-
-
-            <div class="alert alert-info border-0 shadow-sm mb-4">
-                <strong>توضيح الأرقام:</strong>
-                أرقام الملف الشخصي هي مؤشرات إجمالية مباشرة من قاعدة البيانات. لذلك قد يظهر رقم <strong>أنشطة فروعك</strong> أكبر من شاشة الخطط الشهرية إذا كانت شاشة الخطط مفلترة حسب شهر/سنة/حالة، أو تستبعد بعض السجلات مثل المؤرشف أو النسخ القديمة أو الأنشطة غير الظاهرة في العرض الحالي.
-            </div>
-
-            <div class="card profile-card mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="profile-section-title mb-0">
-                            <span class="icon"><i class="fas fa-chart-line"></i></span>
-                            <div>
-                                <h2 class="h5 mb-0 fw-bold">التقييمات</h2>
-                                <div class="small text-muted">آخر مؤشرات الأداء والتقييم</div>
-                            </div>
-                        </div>
-                        <span class="badge rounded-pill text-bg-info">Cached 15 min</span>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-3"><div class="profile-evaluation-box p-3"><div class="small text-muted">مكلف بها</div><strong>{{ $evaluations['assigned_count'] }}</strong></div></div>
-                        <div class="col-md-3"><div class="profile-evaluation-box p-3"><div class="small text-muted">مكتملة</div><strong>{{ $evaluations['completed_count'] }}</strong></div></div>
-                        <div class="col-md-3"><div class="profile-evaluation-box p-3"><div class="small text-muted">متوسط الدرجة</div><strong>{{ $evaluations['average_score'] ?: '0' }}</strong></div></div>
-                        <div class="col-md-3"><div class="profile-evaluation-box p-3"><div class="small text-muted">إجابات التقييم</div><strong>{{ $evaluations['responses_count'] }}</strong></div></div>
-                    </div>
-                    <div class="table-responsive rounded-4 border">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead><tr><th>النشاط</th><th>الدرجة</th><th>آخر تحديث</th></tr></thead>
-                            <tbody>
-                                @forelse ($evaluations['latest'] as $evaluation)
-                                    <tr><td>{{ $evaluation['title'] }}</td><td>{{ $evaluation['score'] }}</td><td>{{ $evaluation['date'] }}</td></tr>
-                                @empty
-                                    <tr><td colspan="3" class="text-muted text-center py-3">لا توجد تقييمات مكتملة.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="alert alert-light border shadow-sm mb-4 small text-muted">
+                <i class="fas fa-circle-info me-1"></i>
+                سيتم عرض مؤشرات الأداء الشخصية هنا بعد اعتماد نظام مؤشرات الأداء الجديد.
             </div>
 
             <div class="card profile-card profile-form-card">

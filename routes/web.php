@@ -8,13 +8,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserDirectoryController;
 use App\Http\Controllers\Roles\FinanceOfficer\DashboardController as FinanceOfficerDashboardController;
 use App\Http\Controllers\Roles\MaintenanceOfficer\DashboardController as MaintenanceOfficerDashboardController;
-use App\Http\Controllers\Roles\ProgramsManager\DashboardController as ProgramsManagerDashboardController;
-use App\Http\Controllers\Roles\ProgramsOfficer\DashboardController as ProgramsOfficerDashboardController;
-use App\Http\Controllers\Roles\RelationsManager\DashboardController as RelationsManagerDashboardController;
-use App\Http\Controllers\Roles\RelationsOfficer\DashboardController as RelationsOfficerDashboardController;
-use App\Http\Controllers\Roles\ReportsViewer\DashboardController as ReportsViewerDashboardController;
-use App\Http\Controllers\Roles\Staff\DashboardController as StaffDashboardController;
-use App\Http\Controllers\Roles\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\Web\Access\RolesController as SuperAdminRolesManagementController;
 use App\Http\Controllers\Web\Access\UsersController as SuperAdminUsersManagementController;
 use App\Http\Controllers\Web\Access\ApprovalsController as SuperAdminApprovalsController;
@@ -67,15 +60,12 @@ use App\Http\Controllers\Roles\Transport\TripSegmentsController as TransportTrip
 use App\Http\Controllers\Roles\Transport\TripRoundsController as TransportTripRoundsController;
 use App\Http\Controllers\Roles\Transport\TransportRequestsController as TransportTransportRequestsController;
 use App\Http\Controllers\Web\Reports\ReportsController as ReportsController;
-use App\Http\Controllers\Web\Reports\AgendaReportsController as AgendaReportsController;
-use App\Http\Controllers\Web\Reports\MonthlyReportsController as MonthlyReportsController;
 use App\Http\Controllers\Web\Reports\FinanceReportsController as FinanceReportsController;
 use App\Http\Controllers\Web\Reports\MaintenanceReportsController as MaintenanceReportsController;
 use App\Http\Controllers\Web\Reports\TransportReportsController as TransportReportsController;
 use App\Http\Controllers\Web\Reports\MonthlyKpisController as MonthlyKpisController;
 use App\Http\Controllers\Roles\Staff\StaffAgendaController as StaffAgendaController;
 use App\Http\Controllers\Roles\Staff\StaffMonthlyActivitiesController as StaffMonthlyActivitiesController;
-use App\Http\Controllers\Web\Enterprise\EnterpriseDashboardController;
 use App\Http\Controllers\Web\Enterprise\EnterpriseReportsController;
 use App\Http\Controllers\Web\Enterprise\NotificationsController;
 use App\Http\Controllers\Web\Enterprise\ArchiveController;
@@ -170,7 +160,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/email-editing', [ProfileController::class, 'updateEmailEditing'])->middleware('role_or_permission:super_admin|users.manage')->name('profile.email_editing.update');
     Route::get('/directory/users', [UserDirectoryController::class, 'index'])->name('directory.users.index');
-    Route::get('/dashboard/admin', [SuperAdminDashboardController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.dashboard');
+    Route::redirect('/dashboard/admin', '/dashboard')->name('role.super_admin.dashboard'); // Phase 2: retired orphan launcher dashboard
     Route::get('/dashboard/admin/reports', [SuperAdminReportsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.reports');
     Route::get('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'index'])->middleware('role:super_admin')->name('role.super_admin.site_settings.index');
     Route::put('/dashboard/admin/site-settings', [SuperAdminSiteSettingsController::class, 'update'])->middleware('role:super_admin')->name('role.super_admin.site_settings.update');
@@ -242,8 +232,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/admin/events-lookups/status-lookups/{eventStatusLookup}', [EventLookupsController::class, 'updateStatusLookup'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.status_lookups.update');
     Route::post('/dashboard/admin/events-lookups/zaha-time-options', [EventLookupsController::class, 'storeZahaTimeOption'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.zaha_time_options.store');
     Route::put('/dashboard/admin/events-lookups/zaha-time-options/{zahaTimeOption}', [EventLookupsController::class, 'updateZahaTimeOption'])->middleware('role:super_admin')->name('role.super_admin.events_lookups.zaha_time_options.update');
-    Route::get('/dashboard/relations/manager', [RelationsManagerDashboardController::class, 'index'])->middleware('role:relations_manager|super_admin')->name('role.relations_manager.dashboard');
-    Route::get('/dashboard/relations/officer', [RelationsOfficerDashboardController::class, 'index'])->middleware('role:relations_officer|super_admin')->name('role.relations_officer.dashboard');
+    Route::redirect('/dashboard/relations/manager', '/dashboard')->name('role.relations_manager.dashboard'); // Phase 2: retired orphan launcher dashboard
+    Route::redirect('/dashboard/relations/officer', '/dashboard')->name('role.relations_officer.dashboard'); // Phase 2: retired orphan launcher dashboard
     Route::get('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'index'])->middleware('role_or_permission:relations_manager|relations_officer|executive_manager|programs_manager|super_admin|agenda.view')->middleware('branch.isolation')->name('role.relations.agenda.index');
     Route::get('/dashboard/relations/agenda/create', [RelationsAgendaEventsController::class, 'create'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|agenda.create')->name('role.relations.agenda.create');
     Route::post('/dashboard/relations/agenda', [RelationsAgendaEventsController::class, 'store'])->middleware('role_or_permission:relations_manager|relations_officer|super_admin|agenda.create')->name('role.relations.agenda.store');
@@ -259,8 +249,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/dashboard/relations/agenda/approvals/delete-requests/{deleteRequest}', [RelationsAgendaApprovalsController::class, 'decideDeleteRequest'])->name('role.relations.approvals.delete_requests.update');
     Route::put('/dashboard/relations/agenda/approvals/edit-requests/{editRequest}', [RelationsAgendaApprovalsController::class, 'decideEditRequest'])->name('role.relations.approvals.edit_requests.update');
     Route::get('/dashboard/relations/agenda/{agendaEvent}', [RelationsAgendaEventsController::class, 'show'])->middleware('role_or_permission:relations_manager|relations_officer|executive_manager|programs_manager|super_admin|agenda.view')->middleware('branch.isolation')->whereNumber('agendaEvent')->name('role.relations.agenda.show');
-    Route::get('/dashboard/programs/manager', [ProgramsManagerDashboardController::class, 'index'])->middleware('role:programs_manager')->name('role.programs_manager.dashboard');
-    Route::get('/dashboard/programs/officer', [ProgramsOfficerDashboardController::class, 'index'])->middleware('role:programs_officer')->name('role.programs_officer.dashboard');
+    Route::redirect('/dashboard/programs/manager', '/dashboard')->name('role.programs_manager.dashboard'); // Phase 2: retired orphan launcher dashboard
+    Route::redirect('/dashboard/programs/officer', '/dashboard')->name('role.programs_officer.dashboard'); // Phase 2: retired orphan launcher dashboard
     Route::prefix('dashboard/events/bazaars')->name('events.bazaars.')->middleware(['branch.isolation'])->group(function () {
         Route::get('/', [BazaarController::class, 'index'])->middleware('permission:bazaars.view')->name('index');
         Route::get('/calendar', [BazaarController::class, 'calendar'])->middleware('permission:bazaars.view')->name('calendar');
@@ -428,23 +418,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('/dashboard/transport/rounds/{tripRound}', [TransportTripRoundsController::class, 'destroy'])->middleware('role:transport_officer')->name('role.transport.rounds.destroy');
     Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
     Route::get('/dashboard/reports/overview', [ReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.index');
-    Route::post('/dashboard/reports/overview/export', [ReportsController::class, 'export'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.export');
-    Route::get('/dashboard/reports/agenda', [AgendaReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.agenda.index');
-    Route::post('/dashboard/reports/agenda/export', [AgendaReportsController::class, 'export'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.agenda.export');
-    Route::get('/dashboard/reports/monthly', [MonthlyReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.monthly.index');
-    Route::post('/dashboard/reports/monthly/export', [MonthlyReportsController::class, 'export'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.monthly.export');
+    // Phase 2: retired Events report pages redirect to the operational reports hub until the KPI section ships.
+    Route::redirect('/dashboard/reports/agenda', '/dashboard/reports/overview')->name('role.reports.agenda.index');
+    Route::redirect('/dashboard/reports/monthly', '/dashboard/reports/overview')->name('role.reports.monthly.index');
     Route::get('/dashboard/reports/finance', [FinanceReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.finance.index');
-    Route::post('/dashboard/reports/finance/export', [FinanceReportsController::class, 'export'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.finance.export');
     Route::get('/dashboard/reports/maintenance', [MaintenanceReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.maintenance.index');
-    Route::post('/dashboard/reports/maintenance/export', [MaintenanceReportsController::class, 'export'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.maintenance.export');
     Route::get('/dashboard/reports/transport', [TransportReportsController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.transport.index');
-    Route::post('/dashboard/reports/transport/export', [TransportReportsController::class, 'export'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|reports.view')->name('role.reports.transport.export');
     Route::get('/dashboard/reports/kpis', [MonthlyKpisController::class, 'index'])->middleware('role_or_permission:reports_viewer|followup_officer|super_admin|kpi.view')->name('role.reports.kpis.index');
-    Route::post('/dashboard/reports/kpis', [MonthlyKpisController::class, 'store'])->middleware('role_or_permission:followup_officer|super_admin|kpi.manage')->name('role.reports.kpis.store');
 
-    Route::get('/dashboard/enterprise', [EnterpriseDashboardController::class, 'index'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.dashboard');
-    Route::get('/dashboard/enterprise/annual-planning', [EnterpriseDashboardController::class, 'annualPlanning'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.annual_planning');
-    Route::get('/dashboard/reports/enterprise/branch-performance', [EnterpriseDashboardController::class, 'branchReport'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.branch_performance');
+    // Phase 2: retired Enterprise Analytics pages (replaced by the KPI section in Phase 3).
+    Route::redirect('/dashboard/enterprise', '/dashboard/reports/overview')->name('role.enterprise.dashboard');
+    Route::redirect('/dashboard/enterprise/annual-planning', '/dashboard/reports/overview')->name('role.enterprise.annual_planning');
+    Route::redirect('/dashboard/reports/enterprise/branch-performance', '/dashboard/reports/overview')->name('role.reports.enterprise.branch_performance');
     Route::get('/dashboard/reports/enterprise/agenda-export', [EnterpriseReportsController::class, 'exportAgenda'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.agenda_export');
     Route::get('/dashboard/reports/enterprise/monthly-export', [EnterpriseReportsController::class, 'exportMonthlyActivities'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.monthly_export');
     Route::get('/dashboard/reports/enterprise/approval-export', [EnterpriseReportsController::class, 'exportApprovalReport'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.reports.enterprise.approval_export');
@@ -454,8 +439,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/archive/year', [ArchiveController::class, 'archiveYear'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.archive.year');
     Route::post('/dashboard/archive/year/restore', [ArchiveController::class, 'restoreYear'])->middleware('role:reports_viewer|followup_officer|super_admin')->name('role.enterprise.archive.year.restore');
 
-    Route::get('/dashboard/reports', [ReportsViewerDashboardController::class, 'index'])->middleware('role:reports_viewer|followup_officer')->name('role.reports_viewer.dashboard');
+    Route::redirect('/dashboard/reports', '/dashboard/reports/overview')->name('role.reports_viewer.dashboard'); // Phase 2: retired orphan launcher dashboard
     Route::get('/dashboard/staff/agenda', [StaffAgendaController::class, 'index'])->middleware('role:staff')->name('role.staff.agenda.index');
     Route::get('/dashboard/staff/activities', [StaffMonthlyActivitiesController::class, 'index'])->middleware('role:staff')->name('role.staff.activities.index');
-    Route::get('/dashboard/staff', [StaffDashboardController::class, 'index'])->middleware('role:staff')->name('role.staff.dashboard');
+    Route::redirect('/dashboard/staff', '/dashboard')->name('role.staff.dashboard'); // Phase 2: retired orphan launcher dashboard
 });

@@ -95,7 +95,7 @@ class SiteRoleGuideController extends Controller
             'finance_officer' => ['routes' => ['role.finance.*'], 'controllers' => ['Finance controllers']],
             'maintenance_officer' => ['routes' => ['role.maintenance.*'], 'controllers' => ['Maintenance controllers']],
             'transport_officer' => $transport, 'movement_manager' => $transport, 'movement_editor' => $transport, 'movement_viewer' => $transport,
-            'reports_viewer' => ['routes' => ['role.reports.*', 'role.enterprise.*'], 'controllers' => ['Reports controllers', 'EnterpriseDashboardController']],
+            'reports_viewer' => ['routes' => ['role.reports.*'], 'controllers' => ['Reports controllers']],
             'staff' => ['routes' => ['role.staff.*'], 'controllers' => ['StaffAgendaController', 'StaffMonthlyActivitiesController']],
         ];
     }

@@ -67,7 +67,6 @@
                             <p class="kpi-label mb-0">{{ $card['title'] }}</p>
                             <span class="kpi-icon"><i class="{{ $card['icon'] }}"></i></span>
                         </div>
-                        <h3 class="kpi-value">{{ $card['value'] ?? $loop->iteration }}</h3>
                         <p class="kpi-delta">{{ $card['description'] }}</p>
                     </div>
                 </a>
@@ -121,11 +120,6 @@
                         </div>
                         <div class="stat-pill stat-pill--ramadan"><span class="label"><i class="fas fa-moon"></i> الإفطارات الرمضانية</span><strong>{{ data_get($dashboardCalendarStats ?? [], 'ramadan', 0) }}</strong></div>
                         <div class="stat-pill stat-pill--bazaar"><span class="label"><i class="fas fa-store"></i> البازارات</span><strong>{{ data_get($dashboardCalendarStats ?? [], 'bazaars', 0) }}</strong></div>
-                        <div class="stat-pill stat-pill--branch">
-                            <span class="label"><i class="fas fa-users"></i> الأكثر مشاركة</span>
-                            <strong>{{ data_get($dashboardCalendarStats ?? [], 'top_branch_name', '—') }}</strong>
-                            <small><i class="fas fa-hashtag"></i> {{ data_get($dashboardCalendarStats ?? [], 'top_branch_count', 0) }} سجل</small>
-                        </div>
                     </div>
                     <div id="calendar"></div>
                     <div id="calendarFallback" class="alert alert-warning mt-3 d-none">

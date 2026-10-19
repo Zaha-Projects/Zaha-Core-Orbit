@@ -11,6 +11,9 @@ use App\Modules\Events\Models\MonthlyActivity;
 use App\Services\EnterpriseAnalyticsService;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated KPI refactor Phase 2: Enterprise Analytics is retired; its routes redirect to the operational reports hub. Replaced by the KPI overview in Phase 3; delete in Phase 9.
+ */
 class EnterpriseDashboardController extends Controller
 {
     public function index(Request $request, EnterpriseAnalyticsService $analyticsService)

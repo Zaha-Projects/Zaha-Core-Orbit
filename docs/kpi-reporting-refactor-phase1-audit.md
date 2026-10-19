@@ -52,7 +52,11 @@
    | D3 | **FIXED** | Chart.js is pinned to `https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js` (`resources/views/pages/enterprise/partials/charts-scripts.blade.php:2`). `pages-enterprise-charts(.min).js` only uses the v3/v4-compatible `line` and `doughnut` APIs and needs no change. |
    | D7 | **FIXED** | The three columns moved from `2026_10_03_000200_create_bazaar_tables_table.php` to `2026_10_03_000100_create_bazaars_table.php:22-24`, with identical types and defaults. The model, request, controller, form and show view already targeted `bazaars`. Staging reconciliation SQL is in §0.2. |
    | D8 | **FIXED** | `TrackUserOperations::resolveEntity()` reads `getKey()` from bound models and accepts an opt-in `audit_entity` request attribute for create routes (`app/Http/Middleware/TrackUserOperations.php:30,46-74`). `BazaarController::store` sets it (`app/Modules/Events/Http/Controllers/Bazaar/BazaarController.php:69`). Other create routes with no route parameter still log `entity_id = 0` until they opt in. |
-   | D4, D5, D6, D9, D10, D11 | STILL OPEN | Not in Phase 0.5 scope. They are retired or replaced in Phases 2–7. |
+   | D4 | **RESOLVED (Phase 2)** | The Admin Reports enterprise tab and partial were removed. |
+   | D5 | **RETIRED (Phase 2)** | `branchMetrics()` is unreachable: Enterprise routes redirect and the code is `@deprecated` for Phase 9 deletion. |
+   | D6 | **RESOLVED (Phase 2)** | All six fake export routes, methods and forms were removed. |
+   | D10 | **FIXED (Phase 2)** | The "تقارير الإدارة" sidebar link is shown to super_admin only (`resources/views/layouts/app.blade.php`). |
+   | D9, D11 | STILL OPEN | D9 → Phase 3 KPI sidebar. D11 → 40/60 branch-score business decision. |
 
    Leftover `center_id` keys in `ZahaTimeController`, `BookingsController`, `MaintenanceRequestsController` and `UsersController` are dropped silently by `$fillable` and cause no SQL error. They are dead code, not a defect.
 
@@ -221,6 +225,30 @@ Classification: **replaced** (a new KPI page supersedes it), **still needed** (k
 | Profile / user-admin stats | replaced | §17 performance section | Phase 6 |
 | Orphan role launcher dashboards | deprecated | role-aware `/dashboard` | Phase 9 |
 | `/dashboard` stat pills | replaced (scoped + bounded) | KPI Overview mini-strip | Phase 3 |
+
+**Phase 2 status (2026-10-19)** — full detail in `docs/kpi-reporting-refactor-phase2-cleanup.md`:
+
+| Old item | Phase 2 outcome |
+|---|---|
+| `roles/super_admin/reports.blade.php` + JS | **REMOVED** |
+| Dead `layouts.dashboard` chain (layout, header/page-header/footer, 7 module sidebar partials, their CSS/JS) | **REMOVED** |
+| AdminReportsService `zaha_time`, `daily_operation_logs`, `user_delay_stats`; queue `by_branch` | **REMOVED** |
+| Admin Reports enterprise tab (+ partial) and Mermaid loader | **REMOVED** |
+| Admin Reports approval-speed panel | **HIDDEN** (computation kept for identity-compatibility tests until Phase 4) |
+| Admin Reports overview "centers = 0" row | **REMOVED** |
+| Admin Reports relations / overview / operations tabs | **KEPT** until Phase 4 |
+| Enterprise dashboard, branch performance, annual planning | **RETIRED**: nav removed, routes redirect, code `@deprecated` (delete Phase 9) |
+| Enterprise CSV exports / printable | **KEPT** (Phase 7 reuse) |
+| Reports overview | **REPLACED** by the "تقارير تشغيلية" hub |
+| Agenda / Monthly report pages | **RETIRED**: routes redirect to the hub, code `@deprecated` |
+| Finance / Maintenance / Transport reports | **KEPT**; fake exports removed; branch scope added where the table has `branch_id` |
+| Six fake `*.export` routes | **REMOVED** |
+| Monthly KPIs (manual) | **RETIRED**: nav, entry form and store route removed; read-only history page kept; table and rows untouched |
+| Change-request reports | **KEPT** (tests; Phase 7) |
+| Profile / admin user-view stats | **REMOVED** (Phase 6 adds the new panel) |
+| Orphan launcher dashboards (7) | **REMOVED** (controllers + views); routes redirect |
+| `/dashboard` fake card values and "الأكثر مشاركة" pill | **REMOVED**; other calendar pills kept |
+| D10 (Admin Reports link 403) | **FIXED** (super_admin only) |
 
 **Manual `monthly_kpis` fields → computed KPIs**
 

@@ -6,6 +6,9 @@ use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Branch;
 use App\Modules\Events\Models\MonthlyActivity;
 
+/**
+ * @deprecated KPI refactor Phase 2: only used by the retired EnterpriseDashboardController. Its metric definitions conflict with the canonical KPI definitions (audit §5.3); delete in Phase 9.
+ */
 class EnterpriseAnalyticsService
 {
     public function build(int $year): array
