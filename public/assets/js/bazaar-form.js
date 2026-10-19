@@ -84,17 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
         picker.querySelector('.organization-details').textContent = [body.data.contact_name, body.data.contact_phone].filter(Boolean).join(' · ');
         updateCardSummary(picker.closest('.bazaar-table-card'));
     });
-    document.querySelectorAll('.bazaar-need-card').forEach(card => {
-        const toggle = card.querySelector('.need-toggle');
-        const details = card.querySelector('.need-details');
-        const sync = () => {
-            const enabled = toggle.checked;
-            details.classList.toggle('opacity-50', !enabled);
-            details.querySelectorAll('input,select,textarea').forEach(field => field.disabled = !enabled);
-        };
-        toggle.addEventListener('change', sync);
-        sync();
-    });
     const locationType = document.querySelector('[data-location-type]');
     const locationLabel = document.querySelector('[data-location-label]');
     const syncLocation = () => {
@@ -134,6 +123,85 @@ document.addEventListener('DOMContentLoaded', () => {
         resize(members, event.target.value, 20, index => document.querySelector('#bazaar-member-template').innerHTML.replaceAll('__GROUP__', group.dataset.teamGroup).replaceAll('__MEMBER__', String(index)));
         event.target.value = members.children.length;
     });
+    // Execution needs (Monthly pattern): activation switches first, detail cards below.
+    // Hidden or disabled detail fields are not submitted; the server also drops stale values.
+    const setFieldsEnabled = (wrapper, enabled) => {
+        wrapper.hidden = !enabled;
+        wrapper.querySelectorAll('input, select, textarea').forEach(field => { field.disabled = !enabled; });
+    };
+    const reviewNeeds = form.querySelector('[data-review-needs]');
+    const renderReviewNeeds = () => {
+        if (!reviewNeeds) return;
+        const items = [];
+        form.querySelectorAll('[data-need-toggle]').forEach(toggle => {
+            if (!toggle.checked) return;
+            const option = toggle.closest('[data-need-option]');
+            const details = form.querySelector(`[data-need-details="${toggle.dataset.needToggle}"]`);
+            const parts = [];
+            const cardType = details?.querySelector('[data-invitation-card-type]');
+            if (cardType && cardType.value) {
+                parts.push(`${reviewNeeds.dataset.labelCardType}: ${cardType.selectedOptions[0].textContent.trim()}`);
+                const channels = [...details.querySelectorAll('[data-invitation-channel]:checked:not(:disabled)')]
+                    .map(input => input.closest('label').textContent.trim());
+                if (channels.length) parts.push(`${reviewNeeds.dataset.labelChannels}: ${channels.join('، ')}`);
+            }
+            const li = document.createElement('li');
+            const name = document.createElement('strong');
+            name.textContent = option.querySelector('[data-need-name]').textContent.trim();
+            const badge = document.createElement('span');
+            badge.className = 'badge ms-2 ' + (toggle.disabled ? 'bazaar-mandatory-badge' : 'bazaar-enabled-badge');
+            badge.textContent = toggle.disabled ? reviewNeeds.dataset.labelMandatory : reviewNeeds.dataset.labelEnabled;
+            li.append(name, badge);
+            if (parts.length) {
+                const meta = document.createElement('small');
+                meta.className = 'd-block';
+                meta.textContent = parts.join(' · ');
+                li.append(meta);
+            }
+            items.push(li);
+        });
+        reviewNeeds.replaceChildren(...items);
+        if (!items.length) {
+            const li = document.createElement('li');
+            li.textContent = reviewNeeds.dataset.labelEmpty;
+            reviewNeeds.append(li);
+        }
+    };
+    const syncInvitationCards = details => {
+        const group = details.querySelector('[data-invitation-cards]');
+        if (!group || details.hidden) return;
+        const type = group.querySelector('[data-invitation-card-type]').value;
+        group.querySelectorAll('[data-invitation-paper]').forEach(wrapper => setFieldsEnabled(wrapper, type === 'paper'));
+        group.querySelectorAll('[data-invitation-electronic]').forEach(wrapper => setFieldsEnabled(wrapper, type === 'electronic'));
+        const otherChecked = type === 'electronic' && group.querySelector('[data-invitation-channel][value="other"]')?.checked;
+        group.querySelectorAll('[data-invitation-other]').forEach(wrapper => {
+            setFieldsEnabled(wrapper, Boolean(otherChecked));
+            wrapper.querySelector('input').required = Boolean(otherChecked);
+        });
+    };
+    const syncNeed = toggle => {
+        const details = form.querySelector(`[data-need-details="${toggle.dataset.needToggle}"]`);
+        if (!details) return;
+        setFieldsEnabled(details, toggle.checked);
+        if (!toggle.disabled) toggle.setAttribute('aria-expanded', toggle.checked ? 'true' : 'false');
+        syncInvitationCards(details);
+    };
+    const syncNeedsEmptyState = () => {
+        const empty = form.querySelector('[data-need-details-empty]');
+        if (empty) empty.hidden = Boolean(form.querySelector('[data-need-details]:not([hidden])'));
+    };
+    form.querySelectorAll('[data-need-toggle]').forEach(toggle => {
+        toggle.addEventListener('change', () => { syncNeed(toggle); syncNeedsEmptyState(); renderReviewNeeds(); });
+        syncNeed(toggle);
+    });
+    form.querySelectorAll('[data-need-details]').forEach(details => {
+        details.addEventListener('change', event => {
+            if (event.target.matches('[data-invitation-card-type], [data-invitation-channel]')) syncInvitationCards(details);
+            renderReviewNeeds();
+        });
+    });
+    syncNeedsEmptyState();
+    renderReviewNeeds();
     const invitation = form.querySelector('[name="invitation_type"]');
     const days = form.querySelector('[name="day_count"]');
     const syncPlanning = () => {

@@ -13,6 +13,7 @@ use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\SubjectExecutionNeed;
 use App\Modules\Events\Models\SubjectTargetGroup;
 use App\Modules\Events\Models\TargetGroup;
+use App\Modules\Events\Support\BazaarExecutionNeeds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -104,13 +105,10 @@ class BazaarController extends Controller
             $data['target_group_ids'] = $locked->targetGroupSelections->pluck('target_group_id')->all();
             $data['target_group_notes'] = $locked->targetGroupSelections->pluck('target_group_custom_text', 'target_group_id')->all();
             $data['team_groups'] = $locked->executionTeams->map(fn ($team) => ['team_name' => $team->name, 'notes' => $team->notes, 'members' => $team->members->toArray()])->all();
-            $data['execution_needs'] = $locked->executionNeeds->map(function ($need) {
-                $details = $need->executionNeedType?->code === 'invitations' ? json_decode($need->planned_details, true) : [];
-                return ['execution_need_type_id' => $need->execution_need_type_id, 'selected' => 1, 'planned_details' => $need->planned_details] + (is_array($details) ? $details : []);
-            })->all();
+            $data['execution_needs'] = StoreBazaarRequest::normalizeExecutionNeeds($locked->executionNeeds->map(fn ($need) => BazaarExecutionNeeds::fromStored($need))->values()->all());
             $planning = StoreBazaarRequest::createFrom($request);
             $planning->replace($data);
-            $validator = \Illuminate\Support\Facades\Validator::make($data, $planning->rules());
+            $validator = \Illuminate\Support\Facades\Validator::make($data, $planning->rules(), $planning->messages(), $planning->attributes());
             $planning->withValidator($validator);
             $validator->validate();
             $locked->update(['status' => Bazaar::STATUS_SUBMITTED, 'submitted_at' => now()]);
@@ -201,11 +199,12 @@ class BazaarController extends Controller
             $team = $bazaar->executionTeams()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'name' => $group['team_name'], 'planned_members_count' => count($group['members']), 'notes' => $group['notes'] ?? null]);
             foreach ($group['members'] as $member) $team->members()->create(Arr::only($member, ['member_name', 'role_desc']));
         }
+        $previousDetails = $bazaar->executionNeeds()->pluck('planned_details', 'execution_need_type_id');
         $bazaar->executionNeeds()->delete();
         $types = ExecutionNeedType::query()->availableFor(EventSubjectTypes::BAZAAR)->where('code', '!=', 'execution_team')->get()->keyBy('id');
         foreach (collect($data['execution_needs'] ?? [])->filter(fn ($row) => ($row['selected'] ?? false) || $types->get($row['execution_need_type_id'])?->isMandatoryForBazaar()) as $row) {
             $type = $types->get($row['execution_need_type_id']); if (! $type) continue;
-            $details = $type->code === 'invitations' ? json_encode(Arr::only($row, ['invitation_type', 'distribution_channel', 'distribution_other']), JSON_UNESCAPED_UNICODE) : $row['planned_details'];
+            $details = BazaarExecutionNeeds::storageValue($type, $row, $previousDetails->get($type->id));
             SubjectExecutionNeed::query()->create(['subject_type' => EventSubjectTypes::BAZAAR, 'subject_id' => $bazaar->id, 'execution_need_type_id' => $type->id, 'is_required' => true, 'availability' => 'available', 'planned_details' => $details, 'status' => SubjectExecutionNeed::STATUS_PENDING]);
         }
     }

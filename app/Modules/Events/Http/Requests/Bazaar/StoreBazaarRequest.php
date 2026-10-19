@@ -8,6 +8,7 @@ use App\Modules\Events\Models\CommunityOrganization;
 use App\Modules\Events\Models\EventSubjectTypes;
 use App\Modules\Events\Models\ExecutionNeedType;
 use App\Modules\Events\Models\TargetGroup;
+use App\Modules\Events\Support\BazaarExecutionNeeds;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -33,7 +34,18 @@ class StoreBazaarRequest extends FormRequest
             'relations_officer_id' => $user?->hasRole('relations_officer') ? $user->id : ($this->route('bazaar')?->relations_officer_id ?? $user?->id),
             'tables' => array_values(array_filter($this->input('tables', []), 'is_array')),
             'target_group_ids' => array_values(array_unique(array_filter(array_map('intval', $this->input('target_group_ids', []))))),
+            'execution_needs' => self::normalizeExecutionNeeds($this->input('execution_needs', [])),
         ]);
+    }
+
+    /** Disabled needs keep no details; inapplicable invitation fields are dropped (see BazaarExecutionNeeds). */
+    public static function normalizeExecutionNeeds($rows): array
+    {
+        $rows = array_filter(is_array($rows) ? $rows : [], 'is_array');
+        $types = ExecutionNeedType::query()->canonical()->availableFor(EventSubjectTypes::BAZAAR)
+            ->whereIn('id', array_map(fn ($row) => (int) ($row['execution_need_type_id'] ?? 0), $rows))->get()->keyBy('id');
+
+        return array_map(fn (array $row) => BazaarExecutionNeeds::normalizeRow($types->get((int) ($row['execution_need_type_id'] ?? 0)), $row), $rows);
     }
 
     public function rules(): array
@@ -60,9 +72,13 @@ class StoreBazaarRequest extends FormRequest
             'target_group_ids' => ['required', 'array', 'min:1'], 'target_group_ids.*' => ['integer', 'distinct', 'exists:target_groups,id'],
             'execution_needs' => ['array'], 'execution_needs.*.execution_need_type_id' => ['required', 'integer', 'distinct', 'exists:execution_need_types,id'],
             'execution_needs.*.selected' => ['nullable', 'boolean'], 'execution_needs.*.planned_details' => ['nullable', 'string', 'max:2000'],
-            'execution_needs.*.invitation_type' => ['nullable', Rule::in(['paper', 'electronic'])],
-            'execution_needs.*.distribution_channel' => ['nullable', Rule::in(['whatsapp', 'sponsored_ad', 'other'])],
+            'execution_needs.*.invitation_type' => ['nullable', Rule::in(BazaarExecutionNeeds::CARD_TYPES)],
+            'execution_needs.*.distribution_channels' => ['nullable', 'array'],
+            'execution_needs.*.distribution_channels.*' => ['string', 'distinct', Rule::in(BazaarExecutionNeeds::CHANNELS)],
             'execution_needs.*.distribution_other' => ['nullable', 'string', 'max:500'],
+            'execution_needs.*.paper_template' => ['nullable', 'string', 'max:500'],
+            'execution_needs.*.paper_copies' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'execution_needs.*.electronic_template' => ['nullable', 'string', 'max:500'],
             'tables' => ['required', 'array', 'min:1'], 'tables.*.table_number' => ['required', 'integer', 'min:1', 'distinct'],
             'tables.*.rental_type' => ['required', Rule::in(['individual', 'organization'])],
             'tables.*.tenant_name' => ['nullable', 'string', 'max:255'], 'tables.*.tenant_phone' => ['nullable', 'string', 'max:25', 'regex:/^[0-9+()\-\s]{7,25}$/'],
@@ -74,10 +90,20 @@ class StoreBazaarRequest extends FormRequest
         ];
     }
 
+    public function attributes(): array
+    {
+        return __('bazaars.attributes');
+    }
+
+    public function messages(): array
+    {
+        return __('bazaars.validation');
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            if ((int) $this->input('planned_table_count') !== count($this->input('tables', []))) $validator->errors()->add('planned_table_count', 'يجب أن يساوي عدد الطاولات عدد سجلات الطاولات المخططة.');
+            if ((int) $this->input('planned_table_count') !== count($this->input('tables', []))) $validator->errors()->add('planned_table_count', 'يجب أن يساوي عدد الطاولات المخططة عدد بطاقات حجوزات الطاولات.');
             $branchId = (int) $this->input('branch_id');
             if (! $this->user()->hasRole('super_admin') && ! $this->user()->hasAccessToScopedBranch($branchId)) $validator->errors()->add('branch_id', 'الفرع غير متاح.');
             $availableTargets = TargetGroup::query()->active()->forBazaars()->pluck('id');
@@ -95,8 +121,8 @@ class StoreBazaarRequest extends FormRequest
                 if (! $type) { $validator->errors()->add("execution_needs.$i", 'احتياج التنفيذ غير متاح للبازار.'); continue; }
                 if ($type->code === 'invitations') {
                     if (empty($row['invitation_type'])) $validator->errors()->add("execution_needs.$i.invitation_type", 'نوع بطاقة الدعوة مطلوب.');
-                    if (($row['invitation_type'] ?? null) === 'electronic' && empty($row['distribution_channel'])) $validator->errors()->add("execution_needs.$i.distribution_channel", 'قناة التوزيع الإلكتروني مطلوبة.');
-                    if (($row['distribution_channel'] ?? null) === 'other' && blank($row['distribution_other'] ?? null)) $validator->errors()->add("execution_needs.$i.distribution_other", 'يرجى وصف قناة التوزيع الأخرى.');
+                    if (($row['invitation_type'] ?? null) === 'electronic' && empty($row['distribution_channels'])) $validator->errors()->add("execution_needs.$i.distribution_channels", 'اختر قناة توزيع واحدة على الأقل للدعوة الإلكترونية.');
+                    if (($row['invitation_type'] ?? null) === 'electronic' && in_array('other', (array) ($row['distribution_channels'] ?? []), true) && blank($row['distribution_other'] ?? null)) $validator->errors()->add("execution_needs.$i.distribution_other", 'يرجى تحديد قناة التوزيع الأخرى.');
                 } elseif (blank($row['planned_details'] ?? null)) $validator->errors()->add("execution_needs.$i.planned_details", 'تفاصيل احتياج التنفيذ مطلوبة عند اختياره.');
             }
             foreach ($this->input('tables', []) as $i => $table) {
