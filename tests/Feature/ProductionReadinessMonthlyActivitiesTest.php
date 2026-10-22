@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Branch;
 use App\Models\Center;
 use App\Models\Department;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
@@ -66,7 +66,7 @@ class ProductionReadinessMonthlyActivitiesTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect();
 
-        $this->assertDatabaseHas('monthly_activity_supplies', [
+        $this->assertDatabaseHas('event_supplies', [
             'item_name' => 'مكبر صوت',
             'available' => false,
             'status' => 'needed',

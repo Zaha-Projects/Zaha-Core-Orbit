@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Support\PostExecutionVerificationStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

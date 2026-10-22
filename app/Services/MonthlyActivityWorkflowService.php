@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use Illuminate\Support\Collection;
 

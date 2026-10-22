@@ -61,7 +61,7 @@
         </div>
 
         <div class="row g-3">
-            <div class="col-12 col-lg-5">
+            <div class="col-12">
                 <h3 class="h6">ملخص الأجندة السنوية حسب الحالة</h3>
                 <ul class="list-group list-group-flush">
                     @forelse ($relationsReport['agenda_status'] as $item)
@@ -73,35 +73,6 @@
                         <li class="list-group-item text-muted">لا توجد بيانات أجندة ضمن الفترة.</li>
                     @endforelse
                 </ul>
-            </div>
-            <div class="col-12 col-lg-7">
-                <h3 class="h6">سرعة الاعتمادات: الفرق بين الطلب والاعتماد</h3>
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle">
-                        <thead>
-                        <tr>
-                            <th>المسار</th>
-                            <th>عدد الطلبات</th>
-                            <th>متوسط الساعات</th>
-                            <th>أسرع اعتماد</th>
-                            <th>أطول اعتماد</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @forelse ($relationsReport['approval_speed'] as $row)
-                            <tr>
-                                <td>{{ $row['module'] }}</td>
-                                <td>{{ $row['total'] }}</td>
-                                <td>{{ $row['avg_hours'] }}</td>
-                                <td>{{ $row['min_hours'] }}</td>
-                                <td>{{ $row['max_hours'] }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="text-muted">لا توجد اعتمادات مكتملة ضمن الفترة.</td></tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
     </div>

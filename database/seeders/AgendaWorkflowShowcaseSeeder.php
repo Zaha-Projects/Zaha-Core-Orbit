@@ -2,13 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\AgendaApproval;
-use App\Models\AgendaEvent;
-use App\Models\AgendaParticipation;
+use App\Modules\Events\Models\AgendaApproval;
+use App\Modules\Events\Models\AgendaEvent;
+use App\Modules\Events\Support\EventAggregateIdentity;
+use App\Modules\Events\Models\AgendaParticipation;
 use App\Models\Branch;
 use App\Models\Department;
 use App\Models\DepartmentUnit;
-use App\Models\EventCategory;
+use App\Modules\Events\Models\EventCategory;
 use App\Models\User;
 use App\Models\WorkflowInstance;
 use App\Services\AgendaWorkflowBridgeService;
@@ -232,7 +233,7 @@ class AgendaWorkflowShowcaseSeeder extends Seeder
         $agendaEvent->approvals()->delete();
 
         WorkflowInstance::query()
-            ->where('entity_type', AgendaEvent::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(AgendaEvent::class))
             ->where('entity_id', $agendaEvent->id)
             ->delete();
 

@@ -15,48 +15,19 @@
     </div>
 
     @if (session('status'))
-        <div class="alert alert-success">{{ session('status') }}</div>
+        <div class="alert alert-info">{{ session('status') }}</div>
     @endif
 
-    <div class="mb-3 text-end">
-        <a class="btn btn-sm btn-outline-secondary" href="{{ route('role.reports.kpis.index') }}">{{ __('app.roles.reports.actions.open_kpis') }}</a>
-    </div>
-
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h2 class="h6 mb-3">{{ __('app.roles.reports.filters_title') }}</h2>
-            <form method="POST" action="{{ route('role.reports.export') }}" class="row g-3">
-                @csrf
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.reports.fields.date_from') }}</label>
-                    <input class="form-control" type="date" name="date_from">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.reports.fields.date_to') }}</label>
-                    <input class="form-control" type="date" name="date_to">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.reports.fields.status') }}</label>
-                    <input class="form-control" name="status">
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ __('app.roles.reports.fields.branch') }}</label>
-                    <select class="form-select" name="branch_id">
-                        <option value="">{{ __('app.roles.reports.fields.branch_placeholder') }}</option>
-                        @foreach ($branches as $branch)
-                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-12 col-md-6">
-                    
-</div>
-                <div class="col-12 d-flex justify-content-end">
-                    <button class="btn btn-outline-primary" type="submit">
-                        {{ __('app.roles.reports.actions.export') }}
-                    </button>
-                </div>
-            </form>
-        </div>
+    <div class="row g-3">
+        @foreach ($reports as $report)
+            <div class="col-12 col-md-4">
+                <a href="{{ route($report['route']) }}" class="card shadow-sm h-100 text-decoration-none text-reset">
+                    <div class="card-body">
+                        <h2 class="h6 mb-2"><i class="{{ $report['icon'] }} me-1"></i> {{ $report['title'] }}</h2>
+                        <p class="text-muted small mb-0">{{ $report['description'] }}</p>
+                    </div>
+                </a>
+            </div>
+        @endforeach
     </div>
 @endsection

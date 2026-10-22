@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;

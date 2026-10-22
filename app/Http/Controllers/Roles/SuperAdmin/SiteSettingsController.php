@@ -8,6 +8,7 @@ use App\Services\AdminReports\AdminReportsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class SiteSettingsController extends Controller
 {
@@ -18,7 +19,6 @@ class SiteSettingsController extends Controller
         $cacheConfig = $reportsService->cacheConfig();
         $reportCacheKey = $reportsService->cacheKey($reportYear, $reportMonth);
         $settings = Setting::query()->orderBy('key')->get();
-
         return view('pages.admin.site-settings.index', compact('settings', 'cacheConfig', 'reportCacheKey', 'reportYear', 'reportMonth'));
     }
 
@@ -35,11 +35,13 @@ class SiteSettingsController extends Controller
 
         $data['admin_reports_cache_enabled'] = $request->boolean('admin_reports_cache_enabled') ? '1' : '0';
 
-        foreach ($data as $key => $value) {
-            if ($value !== null) {
-                Setting::query()->updateOrCreate(['key' => $key], ['value' => (string) $value]);
+        DB::transaction(function () use ($data): void {
+            foreach ($data as $key => $value) {
+                if ($value !== null) {
+                    Setting::query()->upsert([['key' => $key, 'value' => (string) $value]], ['key'], ['value', 'updated_at']);
+                }
             }
-        }
+        }, 5);
 
         return redirect()->route('role.super_admin.site_settings.index')->with('status', 'تم تحديث إعدادات الموقع.');
     }

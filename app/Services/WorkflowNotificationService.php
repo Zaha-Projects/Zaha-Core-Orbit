@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\AgendaEvent;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\InAppNotification;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\User;
 use App\Models\WorkflowInstance;
 use App\Models\WorkflowLog;

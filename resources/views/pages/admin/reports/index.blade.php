@@ -50,21 +50,7 @@
         @include('pages.admin.reports.partials.relations', ['relationsReport' => $reportData['relations']])
     @elseif($activeTab === 'operations')
         @include('pages.admin.reports.partials.operations')
-    @elseif($activeTab === 'enterprise')
-        @include('pages.admin.reports.partials.enterprise')
     @else
         @include('pages.admin.reports.partials.overview')
     @endif
 @endsection
-
-@push('scripts')
-    @if($activeTab === 'operations')
-        <script type="module" src="{{ \App\Support\AssetVersion::url('assets/js/pages/pages-admin-reports-index.min.js') }}"></script>
-    @endif
-@endpush
-
-@push('styles')
-    @if($activeTab === 'enterprise')
-        <link rel="stylesheet" href="{{ \App\Support\AssetVersion::url('assets/css/enterprise-dashboard.min.css') }}">
-    @endif
-@endpush

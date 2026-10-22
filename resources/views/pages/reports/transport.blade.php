@@ -18,31 +18,6 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="POST" action="{{ route('role.reports.transport.export') }}" class="row g-3">
-                @csrf
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.reports.fields.date_from') }}</label>
-                    <input class="form-control" type="date" name="date_from">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.reports.fields.date_to') }}</label>
-                    <input class="form-control" type="date" name="date_to">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label">{{ __('app.roles.reports.fields.status') }}</label>
-                    <input class="form-control" name="status">
-                </div>
-                <div class="col-12 d-flex justify-content-end">
-                    <button class="btn btn-outline-primary" type="submit">
-                        {{ __('app.roles.reports.actions.export') }}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <div class="card shadow-sm">
         <div class="card-body">
             <div class="table-responsive">

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 
 class MonthlyActivityLifecycleService
 {

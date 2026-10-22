@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Web\Access;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Kpi\KpiUserPerformanceService;
 use Illuminate\Http\Request;
-use App\Models\WorkflowLog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -28,22 +28,12 @@ class UsersController extends Controller
         return view('pages.access.users.index', compact('users', 'roles', 'permissions', 'branches'));
     }
 
-    public function show(User $user)
+    public function show(Request $request, User $user, KpiUserPerformanceService $performance)
     {
         $this->authorize('users.view');
 
         $user->load(['roles.permissions', 'permissions', 'deniedPermissions', 'branch', 'assignedBranches']);
-        $branchIds = $user->scopedBranchIds();
         $stats = [
-            'created_monthly_activities' => MonthlyActivity::query()->where('created_by', $user->id)->count(),
-            'assigned_branch_activities' => MonthlyActivity::query()
-                ->when($branchIds !== [], fn ($query) => $query->whereIn('branch_id', $branchIds), fn ($query) => $query->whereRaw('1 = 0'))
-                ->count(),
-            'completed_branch_activities' => MonthlyActivity::query()
-                ->when($branchIds !== [], fn ($query) => $query->whereIn('branch_id', $branchIds), fn ($query) => $query->whereRaw('1 = 0'))
-                ->whereIn('status', ['completed', 'closed'])
-                ->count(),
-            'workflow_actions' => WorkflowLog::query()->where('acted_by', $user->id)->count(),
             'notifications' => $user->inAppNotifications()->count(),
         ];
         $recentActivities = MonthlyActivity::query()
@@ -52,7 +42,10 @@ class UsersController extends Controller
             ->take(8)
             ->get(['id', 'title', 'status', 'updated_at']);
 
-        return view('pages.access.users.show', compact('user', 'stats', 'recentActivities'));
+        // Same «الأداء» panel as My Profile; null unless the viewer may see this user's KPIs (Phase 5).
+        $performancePanel = $performance->panel($request->user(), $user, $request);
+
+        return view('pages.access.users.show', compact('user', 'stats', 'recentActivities', 'performancePanel'));
     }
 
     public function store(Request $request)

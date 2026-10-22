@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Support\EventAggregateIdentity;
+use App\Modules\Events\Support\EventRequestModelIdentity;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
@@ -12,6 +14,7 @@ use App\Models\WorkflowLog;
 use App\Models\WorkflowStep;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use LogicException;
 
 class DynamicWorkflowService
 {
@@ -41,6 +44,54 @@ class DynamicWorkflowService
 
     public function forEntity(Workflow $workflow, string $entityType, int $entityId): WorkflowInstance
     {
+        if (EventAggregateIdentity::isCompatibleIdentity($entityType)) {
+            $instances = WorkflowInstance::query()
+                ->where('workflow_id', $workflow->id)
+                ->where('entity_id', $entityId)
+                ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes($entityType))
+                ->limit(2)
+                ->get();
+
+            if ($instances->count() > 1) {
+                throw new LogicException(sprintf(
+                    'Conflicting workflow identities exist for aggregate %s:%d in workflow %d.',
+                    EventAggregateIdentity::legacyFor($entityType),
+                    $entityId,
+                    $workflow->id
+                ));
+            }
+
+            if ($instances->isNotEmpty()) {
+                return $instances->first();
+            }
+
+            $entityType = EventAggregateIdentity::currentWriteType($entityType);
+        }
+
+        if (EventRequestModelIdentity::isCompatibleIdentity($entityType)) {
+            $instances = WorkflowInstance::query()
+                ->where('workflow_id', $workflow->id)
+                ->where('entity_id', $entityId)
+                ->whereIn('entity_type', EventRequestModelIdentity::acceptedTypes($entityType))
+                ->limit(2)
+                ->get();
+
+            if ($instances->count() > 1) {
+                throw new LogicException(sprintf(
+                    'Conflicting workflow identities exist for request %s:%d in workflow %d.',
+                    EventRequestModelIdentity::legacyFor($entityType),
+                    $entityId,
+                    $workflow->id
+                ));
+            }
+
+            if ($instances->isNotEmpty()) {
+                return $instances->first();
+            }
+
+            $entityType = EventRequestModelIdentity::currentWriteType($entityType);
+        }
+
         return WorkflowInstance::query()->firstOrCreate(
             [
                 'workflow_id' => $workflow->id,
@@ -526,7 +577,7 @@ class DynamicWorkflowService
     private function approvedWorkflowStepKeysForMonthlyActivity(int $activityId): array
     {
         $instance = WorkflowInstance::query()
-            ->where('entity_type', MonthlyActivity::class)
+            ->whereIn('entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class))
             ->where('entity_id', $activityId)
             ->latest('id')
             ->first();
@@ -622,15 +673,10 @@ class DynamicWorkflowService
 
     private function isBranchScopedStep(WorkflowInstance $instance, WorkflowStep $step): bool
     {
-        if (($instance->workflow?->module ?? null) !== 'monthly_activities') {
-            return false;
-        }
+        $module = (string) ($instance->workflow?->module ?? '');
+        $roles = config('workflows.branch_scoped_modules.'.$module, []);
 
-        return in_array((string) $step->role?->name, [
-            'relations_officer',
-            'supervisor',
-            'branch_coordinator',
-        ], true);
+        return is_array($roles) && in_array((string) $step->role?->name, $roles, true);
     }
 
     private function resolveBranchId(WorkflowInstance $instance): ?int
@@ -647,6 +693,12 @@ class DynamicWorkflowService
     private function resolveEntity(WorkflowInstance $instance): ?Model
     {
         $entityType = $instance->entity_type;
+
+        if (is_string($entityType)) {
+            $entityType = EventAggregateIdentity::installedModelFor($entityType)
+                ?? EventRequestModelIdentity::installedModelFor($entityType)
+                ?? $entityType;
+        }
 
         if (! is_string($entityType) || ! class_exists($entityType) || ! is_subclass_of($entityType, Model::class)) {
             return null;

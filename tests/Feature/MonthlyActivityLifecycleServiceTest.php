@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyActivity;
 use App\Services\MonthlyActivityLifecycleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

@@ -5,9 +5,10 @@ namespace App\Services;
 use App\Models\ActivityEvaluation;
 use App\Models\AuditLog;
 use App\Models\EvaluationForm;
-use App\Models\MonthlyActivity;
-use App\Models\PostExecutionVerification;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\PostExecutionVerification;
 use App\Models\User;
+use App\Modules\Events\Support\PostExecutionVerificationIdentity;
 use App\Support\EvaluationVisibility;
 use App\Support\PostExecutionVerificationStatus;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,7 @@ class ActivityEvaluationService
                     : ['value' => $this->normalizeValue($record->value_type, $data['corrected_value'] ?? null, "items.$id.corrected_value")];
                 $old = $record->only(['status', 'corrected_value', 'note', 'verified_by', 'verified_at']);
                 $record->update(['status' => $status, 'corrected_value' => $corrected, 'note' => $data['note'] ?? null, 'verified_by' => $user->id, 'verified_at' => now()]);
-                AuditLog::create(['user_id' => $user->id, 'action' => 'post_execution_verified', 'module' => 'evaluation', 'entity_type' => PostExecutionVerification::class, 'entity_id' => $record->id, 'old_values' => $old, 'new_values' => $record->fresh()->toArray()]);
+                AuditLog::create(['user_id' => $user->id, 'action' => 'post_execution_verified', 'module' => 'evaluation', 'entity_type' => PostExecutionVerificationIdentity::currentWriteType(), 'entity_id' => $record->id, 'old_values' => $old, 'new_values' => $record->fresh()->toArray()]);
                 if ($status === PostExecutionVerificationStatus::INCORRECT && $activity->creator) {
                     app(NotificationService::class)->notifyUsers(collect([$activity->creator]), 'post_execution_incorrect', __('evaluation.notifications.incorrect_title'), __('evaluation.notifications.incorrect_message', ['activity' => $activity->title]), route('role.relations.activities.show', $activity), ['activity_id' => $activity->id, 'verification_id' => $record->id]);
                 }

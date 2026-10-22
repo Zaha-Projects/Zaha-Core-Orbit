@@ -1,0 +1,149 @@
+<?php
+
+namespace App\Modules\Events\Http\Requests\Bazaar;
+
+use App\Models\User;
+use App\Modules\Events\Models\Bazaar;
+use App\Modules\Events\Models\CommunityOrganization;
+use App\Modules\Events\Models\EventSubjectTypes;
+use App\Modules\Events\Models\ExecutionNeedType;
+use App\Modules\Events\Models\TargetGroup;
+use App\Modules\Events\Support\BazaarExecutionNeeds;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
+
+class StoreBazaarRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        $user = $this->user();
+        $bazaar = $this->route('bazaar');
+        return $user && ($user->hasRole('super_admin') || $user->can($bazaar ? 'bazaars.edit' : 'bazaars.create'))
+            && ($this->input('submit_action') !== 'submit' || $user->hasRole('super_admin') || $user->can('bazaars.submit'))
+            && (! $bazaar || $user->hasRole('super_admin') || $user->hasAccessToScopedBranch((int) $bazaar->branch_id));
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $user = $this->user();
+        $this->merge([
+            'location_details' => in_array($this->input('location_type'), ['outside', 'outside_center'], true) ? $this->input('location_details') : null,
+            'map_url' => in_array($this->input('location_type'), ['outside', 'outside_center'], true) ? $this->input('map_url') : null,
+            'location_type' => match ($this->input('location_type')) { 'inside_center' => 'inside', 'outside_center' => 'outside', default => $this->input('location_type') },
+            'private_audience' => $this->input('invitation_type') === 'private' ? $this->input('private_audience') : null,
+            'branch_id' => $this->route('bazaar')?->branch_id ?? $user?->branch_id ?? collect($user?->scopedBranchIds() ?? [])->first(),
+            'relations_officer_id' => $user?->hasRole('relations_officer') ? $user->id : ($this->route('bazaar')?->relations_officer_id ?? $user?->id),
+            'tables' => array_values(array_map(function (array $row): array {
+                // Keep the existing storage enum; the nullable subtype distinguishes new entities.
+                $kind = $row['renter_entity_type'] ?? ($row['rental_type'] ?? null);
+                $row['renter_entity_type'] = $kind;
+                $row['rental_type'] = in_array($kind, ['institution', 'association', 'organization'], true) ? 'organization' : $kind;
+                return $row;
+            }, array_filter($this->input('tables', []), 'is_array'))),
+            'target_group_ids' => array_values(array_unique(array_filter(array_map('intval', $this->input('target_group_ids', []))))),
+            'execution_needs' => self::normalizeExecutionNeeds($this->input('execution_needs', [])),
+        ]);
+    }
+
+    /** Disabled needs keep no details; inapplicable invitation fields are dropped (see BazaarExecutionNeeds). */
+    public static function normalizeExecutionNeeds($rows): array
+    {
+        $rows = array_filter(is_array($rows) ? $rows : [], 'is_array');
+        $types = ExecutionNeedType::query()->canonical()->availableFor(EventSubjectTypes::BAZAAR)
+            ->whereIn('id', array_map(fn ($row) => (int) ($row['execution_need_type_id'] ?? 0), $rows))->get()->keyBy('id');
+
+        return array_map(fn (array $row) => BazaarExecutionNeeds::normalizeRow($types->get((int) ($row['execution_need_type_id'] ?? 0)), $row), $rows);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'submit_action' => ['nullable', Rule::in(['draft', 'submit'])],
+            'day_count' => ['required', 'integer', 'min:1', 'max:4294967295'],
+            'invitation_type' => ['required', Rule::in(['public', 'private'])],
+            'private_audience' => ['required_if:invitation_type,private', 'nullable', 'string', 'max:2000'],
+            'target_group_notes' => ['nullable', 'array'],
+            'target_group_notes.*' => ['nullable', 'string', 'max:2000'],
+            'team_groups' => ['required', 'array', 'min:1', 'max:10'],
+            'team_groups.*.team_name' => ['required', 'string', 'max:255'],
+            'team_groups.*.notes' => ['nullable', 'string', 'max:2000'],
+            'team_groups.*.members' => ['required', 'array', 'min:1', 'max:20'],
+            'team_groups.*.members.*.member_name' => ['required', 'string', 'max:255'],
+            'team_groups.*.members.*.role_desc' => ['required', 'string', 'max:255'],
+            'branch_id' => ['required', 'integer', 'exists:branches,id'], 'relations_officer_id' => ['required', 'integer', 'exists:users,id'],
+            'name' => ['required', 'string', 'max:255'], 'bazaar_date' => ['required', 'date'],
+            'starts_at' => ['required', 'date_format:H:i'], 'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
+            'location_type' => ['required', Rule::in(['inside', 'outside'])], 'location_name' => ['required', 'string', 'max:255'],
+            'location_details' => ['nullable', 'string', 'max:2000'], 'map_url' => ['nullable', 'url', 'max:2048'],
+            'planned_table_count' => ['required', 'integer', 'min:1', 'max:500'],
+            'target_group_ids' => ['required', 'array', 'min:1'], 'target_group_ids.*' => ['integer', 'distinct', 'exists:target_groups,id'],
+            'execution_needs' => ['array'], 'execution_needs.*.execution_need_type_id' => ['required', 'integer', 'distinct', 'exists:execution_need_types,id'],
+            'execution_needs.*.selected' => ['nullable', 'boolean'],
+            'execution_needs.*.availability' => ['nullable', Rule::in(BazaarExecutionNeeds::AVAILABILITY_VALUES)], 'execution_needs.*.planned_details' => ['nullable', 'string', 'max:2000'],
+            'execution_needs.*.invitation_type' => ['nullable', Rule::in(BazaarExecutionNeeds::CARD_TYPES)],
+            'execution_needs.*.distribution_channels' => ['nullable', 'array'],
+            'execution_needs.*.distribution_channels.*' => ['string', 'distinct', Rule::in(BazaarExecutionNeeds::CHANNELS)],
+            'execution_needs.*.distribution_other' => ['nullable', 'string', 'max:500'],
+            'execution_needs.*.paper_template' => ['nullable', 'string', 'max:500'],
+            'execution_needs.*.paper_copies' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'execution_needs.*.electronic_template' => ['nullable', 'string', 'max:500'],
+            'tables' => ['required', 'array', 'min:1'], 'tables.*.table_number' => ['required', 'integer', 'min:1', 'distinct'],
+            'tables.*.renter_entity_type' => ['required', Rule::in(['individual', 'institution', 'association', 'organization'])],
+            'tables.*.rental_type' => ['required', Rule::in(['individual', 'organization'])],
+            'tables.*.tenant_name' => ['nullable', 'string', 'max:255'], 'tables.*.tenant_phone' => ['nullable', 'string', 'max:25', 'regex:/^[0-9+()\-\s]{7,25}$/'],
+            'tables.*.community_organization_id' => ['nullable', 'integer', 'exists:community_organizations,id'],
+            'tables.*.table_liaison_name' => ['nullable', 'string', 'max:255'], 'tables.*.table_liaison_phone' => ['nullable', 'string', 'max:25'],
+            'tables.*.planned_material_description' => ['required', 'string', 'max:2000'],
+            'tables.*.planned_rental_amount' => ['required', 'numeric', 'min:0', 'regex:/^\d+(?:\.\d{1,2})?$/'],
+            'tables.*.liaison_user_id' => ['required', 'integer', 'exists:users,id'], 'tables.*.notes' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return __('bazaars.attributes');
+    }
+
+    public function messages(): array
+    {
+        return __('bazaars.validation');
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ((int) $this->input('planned_table_count') !== count($this->input('tables', []))) $validator->errors()->add('planned_table_count', 'يجب أن يساوي عدد الطاولات المخططة عدد بطاقات حجوزات الطاولات.');
+            $branchId = (int) $this->input('branch_id');
+            if (! $this->user()->hasRole('super_admin') && ! $this->user()->hasAccessToScopedBranch($branchId)) $validator->errors()->add('branch_id', 'الفرع غير متاح.');
+            $availableTargets = TargetGroup::query()->active()->forBazaars()->pluck('id');
+            foreach ($this->input('target_group_ids', []) as $i => $id) if (! $availableTargets->contains((int) $id)) $validator->errors()->add("target_group_ids.$i", 'الفئة المستهدفة غير متاحة للبازارات.');
+            foreach (TargetGroup::query()->whereIn('id', $this->input('target_group_ids', []))->get() as $group) {
+                if (($group->code === 'other' || $group->type === 'other' || $group->is_other) && blank($this->input('target_group_notes.'.$group->id))) {
+                    $validator->errors()->add('target_group_notes.'.$group->id, 'تفاصيل الفئة الأخرى مطلوبة.');
+                }
+            }
+            $types = ExecutionNeedType::query()->canonical()->availableFor(EventSubjectTypes::BAZAAR)->where('code', '!=', 'execution_team')->get()->keyBy('id');
+            $selected = collect($this->input('execution_needs', []))->filter(fn ($row) => (bool) ($row['selected'] ?? false));
+            foreach ($types->filter->isMandatoryForBazaar() as $type) if (! $selected->contains(fn ($row) => (int) $row['execution_need_type_id'] === (int) $type->id)) $validator->errors()->add('execution_needs', "احتياج {$type->name} إلزامي للبازار.");
+            foreach ($selected as $i => $row) {
+                $type = $types->get((int) ($row['execution_need_type_id'] ?? 0));
+                if (! $type) { $validator->errors()->add("execution_needs.$i", 'احتياج التنفيذ غير متاح للبازار.'); continue; }
+                if ($type->code === 'invitations') {
+                    if (empty($row['invitation_type'])) $validator->errors()->add("execution_needs.$i.invitation_type", 'نوع بطاقة الدعوة مطلوب.');
+                    if (($row['invitation_type'] ?? null) === 'electronic' && empty($row['distribution_channels'])) $validator->errors()->add("execution_needs.$i.distribution_channels", 'اختر قناة توزيع واحدة على الأقل للدعوة الإلكترونية.');
+                    if (($row['invitation_type'] ?? null) === 'electronic' && in_array('other', (array) ($row['distribution_channels'] ?? []), true) && blank($row['distribution_other'] ?? null)) $validator->errors()->add("execution_needs.$i.distribution_other", 'يرجى تحديد قناة التوزيع الأخرى.');
+                } elseif (blank($row['planned_details'] ?? null)) $validator->errors()->add("execution_needs.$i.planned_details", 'تفاصيل احتياج التنفيذ مطلوبة عند اختياره.');
+            }
+            foreach ($this->input('tables', []) as $i => $table) {
+                if (($table['renter_entity_type'] ?? null) === 'organization' && ! $this->route('bazaar')?->tables()->where('table_number', $table['table_number'] ?? 0)->where('rental_type', 'organization')->whereNull('renter_entity_type')->where('community_organization_id', $table['community_organization_id'] ?? null)->exists()) {
+                    $validator->errors()->add("tables.$i.renter_entity_type", 'اختر فردي أو مؤسسة أو جمعية للحجز الجديد.');
+                }
+                if (($table['rental_type'] ?? null) === 'individual' && (blank($table['tenant_name'] ?? null) || blank($table['tenant_phone'] ?? null))) $validator->errors()->add("tables.$i.tenant_name", 'اسم وهاتف المستأجر الفرد مطلوبان.');
+                if (($table['rental_type'] ?? null) === 'organization' && empty($table['community_organization_id'])) $validator->errors()->add("tables.$i.community_organization_id", 'اختر المؤسسة أو الجمعية.');
+                foreach (['community_organization_id' => CommunityOrganization::class] as $field => $model) if (! empty($table[$field]) && ! $model::query()->whereKey($table[$field])->where('branch_id', $branchId)->active()->exists()) $validator->errors()->add("tables.$i.$field", 'الجهة غير متاحة لهذا الفرع.');
+                if (! User::query()->whereKey($table['liaison_user_id'] ?? 0)->where('status', 'active')->where(fn ($q) => $q->where('branch_id', $branchId)->orWhereHas('assignedBranches', fn ($b) => $b->whereKey($branchId)))->exists()) $validator->errors()->add("tables.$i.liaison_user_id", 'ضابط الارتباط غير متاح لهذا الفرع.');
+            }
+        });
+    }
+}

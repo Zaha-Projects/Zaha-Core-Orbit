@@ -2,23 +2,23 @@
 
 namespace App\Services\AdminReports;
 
-use App\Models\AgendaApproval;
-use App\Models\AgendaEvent;
-use App\Models\AuditLog;
+use App\Modules\Events\Models\AgendaApproval;
+use App\Modules\Events\Support\EventAggregateIdentity;
+use App\Modules\Events\Support\EventRequestModelIdentity;
+use App\Modules\Events\Models\AgendaEvent;
 use App\Models\Booking;
 use App\Models\Branch;
 use App\Models\DonationCash;
 use App\Models\MaintenanceRequest;
-use App\Models\MonthlyActivity;
-use App\Models\MonthlyPlanDeleteRequest;
-use App\Models\MonthlyPlanEditRequest;
+use App\Modules\Events\Models\MonthlyActivity;
+use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
+use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\WorkflowInstance;
-use App\Models\ZahaTimeOption;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -26,19 +26,12 @@ class AdminReportsService
 {
     public function build(int $year, int $month): array
     {
-        $executionNeeds = $this->executionNeeds();
-        $activitiesWithNeedsPayload = $executionNeeds['payload_rows'];
-        unset($executionNeeds['payload_rows']);
-
         return [
             'overview' => $this->overview(),
             'operations' => $this->operations(),
             'financials' => $this->financials(),
             'statuses' => $this->statuses(),
-            'execution_needs' => $executionNeeds,
-            'zaha_time' => $this->zahaTime($activitiesWithNeedsPayload),
-            'daily_operation_logs' => $this->dailyOperationLogs(),
-            'user_delay_stats' => $this->userDelayStats(),
+            'execution_needs' => $this->executionNeeds(),
             'relations' => $this->cachedRelationsReport($year, $month),
         ];
     }
@@ -81,7 +74,7 @@ class AdminReportsService
         $branchActivityRows = MonthlyActivity::query()
             ->leftJoin('workflow_instances', function ($join): void {
                 $join->on('workflow_instances.entity_id', '=', 'monthly_activities.id')
-                    ->where('workflow_instances.entity_type', '=', MonthlyActivity::class);
+                    ->whereIn('workflow_instances.entity_type', EventAggregateIdentity::acceptedTypes(MonthlyActivity::class));
             })
             ->leftJoin('workflow_steps', 'workflow_steps.id', '=', 'workflow_instances.current_step_id')
             ->select('monthly_activities.branch_id')
@@ -138,14 +131,39 @@ class AdminReportsService
             ->orderByDesc('total')
             ->get();
 
-        $approvalSpeed = WorkflowInstance::query()
-            ->whereIn('entity_type', [MonthlyActivity::class, AgendaEvent::class, MonthlyPlanEditRequest::class, MonthlyPlanDeleteRequest::class])
+        $approvalWorkflows = WorkflowInstance::query()
+            ->whereIn('entity_type', array_merge(
+                EventAggregateIdentity::acceptedTypes(MonthlyActivity::class),
+                EventAggregateIdentity::acceptedTypes(AgendaEvent::class),
+                EventRequestModelIdentity::acceptedTypes(MonthlyPlanEditRequest::class),
+                EventRequestModelIdentity::acceptedTypes(MonthlyPlanDeleteRequest::class),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_EDIT_CANONICAL),
+                EventRequestModelIdentity::acceptedTypes(EventRequestModelIdentity::AGENDA_DELETE_CANONICAL),
+            ))
             ->whereNotNull('started_at')
             ->whereNotNull('completed_at')
             ->whereYear('started_at', $year)
             ->whereMonth('started_at', $month)
-            ->get(['entity_type', 'started_at', 'completed_at'])
-            ->groupBy('entity_type')
+            ->get(['workflow_id', 'entity_type', 'entity_id', 'started_at', 'completed_at']);
+
+        $duplicateWorkflow = $approvalWorkflows
+            ->groupBy(fn (WorkflowInstance $instance): string => implode(':', [
+                EventAggregateIdentity::legacyFor($instance->entity_type)
+                    ?? EventRequestModelIdentity::legacyFor($instance->entity_type)
+                    ?? $instance->entity_type,
+                $instance->workflow_id,
+                $instance->entity_id,
+            ]))
+            ->first(fn ($instances): bool => $instances->count() > 1);
+
+        if ($duplicateWorkflow) {
+            throw new \LogicException('Conflicting legacy and canonical workflows cannot be reported safely.');
+        }
+
+        $approvalSpeed = $approvalWorkflows
+            ->groupBy(fn (WorkflowInstance $instance): string => EventAggregateIdentity::legacyFor($instance->entity_type)
+                ?? EventRequestModelIdentity::legacyFor($instance->entity_type)
+                ?? $instance->entity_type)
             ->map(function ($rows, string $entityType): array {
                 $minutes = $rows->map(fn ($row) => $row->started_at->diffInMinutes($row->completed_at))->values();
 
@@ -174,7 +192,6 @@ class AdminReportsService
     {
         return [
             'branches' => Branch::count(),
-            'centers' => 0,
             'users' => User::count(),
             'vehicles' => Vehicle::count(),
         ];
@@ -231,7 +248,6 @@ class AdminReportsService
 
     protected function executionNeeds(): array
     {
-        $activitiesWithNeedsPayload = MonthlyActivity::query()->whereNotNull('execution_needs_payload')->get(['id', 'execution_needs_payload']);
         $activitiesWithNeedsFollowup = MonthlyActivity::query()->whereNotNull('execution_needs_followup')->get(['id', 'execution_needs_followup']);
 
         $securedCount = 0;
@@ -253,60 +269,12 @@ class AdminReportsService
         }
 
         return [
-            'with_payload' => $activitiesWithNeedsPayload->count(),
+            'with_payload' => MonthlyActivity::query()->whereNotNull('execution_needs_payload')->count(),
             'with_followup' => $activitiesWithNeedsFollowup->count(),
             'secured_count' => $securedCount,
             'not_secured_count' => $notSecuredCount,
             'avg_effectiveness' => count($scores) > 0 ? round(array_sum($scores) / count($scores), 2) : null,
-            'payload_rows' => $activitiesWithNeedsPayload,
         ];
-    }
-
-    protected function zahaTime($activitiesWithNeedsPayload): array
-    {
-        $zahaUsage = [];
-        foreach ($activitiesWithNeedsPayload as $activity) {
-            $options = data_get($activity->execution_needs_payload, 'programs.zaha_time_options', []);
-            foreach ((array) $options as $optionCode) {
-                if (filled($optionCode)) {
-                    $zahaUsage[$optionCode] = ($zahaUsage[$optionCode] ?? 0) + 1;
-                }
-            }
-        }
-
-        $zahaLookup = ZahaTimeOption::query()->orderBy('sort_order')->orderBy('name')->get();
-
-        return [
-            'total' => $zahaLookup->count(),
-            'active' => $zahaLookup->where('is_active', true)->count(),
-            'usage' => $zahaLookup->map(fn (ZahaTimeOption $option) => [
-                'code' => $option->code,
-                'name' => $option->name,
-                'used' => (int) ($zahaUsage[$option->code] ?? 0),
-            ]),
-        ];
-    }
-
-    protected function dailyOperationLogs()
-    {
-        return AuditLog::query()
-            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
-            ->whereDate('created_at', '>=', now()->subDays(30)->toDateString())
-            ->groupByRaw('DATE(created_at)')
-            ->orderBy('day')
-            ->get();
-    }
-
-    protected function userDelayStats()
-    {
-        return AuditLog::query()
-            ->selectRaw('user_id, MIN(created_at) as first_action_at, MAX(created_at) as last_action_at, COUNT(*) as total_actions')
-            ->whereNotNull('user_id')
-            ->groupBy('user_id')
-            ->with('user:id,name')
-            ->orderByDesc('total_actions')
-            ->limit(25)
-            ->get();
     }
 
     protected function cacheEnabled(): bool

@@ -336,3 +336,16 @@
         padding: .3rem .45rem;
     }
 }
+
+/* Calendar event families: scoped to the dashboard calendar. */
+.legend-dot--ramadan { background: #7c3aed; }
+.legend-dot--bazaar { background: #d97706; }
+.dashboard-calendar-type-filters { display: flex; flex-wrap: wrap; gap: .55rem; }
+.calendar-type-filter { display: inline-flex; align-items: center; gap: .4rem; padding: .42rem .72rem; border: 1px solid #d7e2f6; border-radius: 999px; background: rgba(255,255,255,.84); color: #27498f; font-size: .8rem; font-weight: 700; cursor: pointer; }
+.calendar-type-filter input { accent-color: #3454d1; }
+.stat-pill--ramadan { background: linear-gradient(130deg, #f3e8ff, #fdfaff); border-color: #dfc5ff; }
+.stat-pill--bazaar { background: linear-gradient(130deg, #fff2d7, #fffaf0); border-color: #f5d28a; }
+.dashboard-event-type--ramadan_iftar { background: rgba(235, 220, 255, .38); }
+.dashboard-event-type--bazaar { background: rgba(255, 229, 176, .42); }
+html[data-theme="dark"] .dashboard-calendar-type-filters .calendar-type-filter { background: #1e293b; color: #dbeafe; border-color: #475569; }
+@media (max-width: 575.98px) { .calendar-type-filter { flex: 1 1 calc(50% - .55rem); justify-content: center; } }

@@ -55,7 +55,7 @@
         }
 
         return $monthlyStatusLabels[$status]
-            ?? \App\Models\EventStatusLookup::labelFor('monthly_activities', $status);
+            ?? \App\Modules\Events\Models\EventStatusLookup::labelFor('monthly_activities', $status);
     };
     $executionLabel = function (?string $status) use ($executionStatusLabels): string {
         if (! $status) {
@@ -323,6 +323,8 @@
 
                     @php
                         $enabledExecutionNeeds = $monthlyActivity->enabledExecutionNeeds();
+                        $enabledCustomNeeds = $monthlyActivity->loadMissing('executionNeeds.executionNeedType')->executionNeeds
+                            ->filter(fn ($need) => $need->is_required && $need->executionNeedType && !array_key_exists($need->executionNeedType->code, \App\Modules\Events\Models\ExecutionNeedType::MONTHLY_INPUT_FIELDS));
                         $executionNeedsFollowupByKey = collect($monthlyActivity->execution_needs_followup ?? [])
                             ->filter(fn ($row) => is_array($row) && filled($row['key'] ?? null))
                             ->keyBy(fn ($row) => (string) $row['key']);
@@ -340,6 +342,9 @@
                     <div class="col-12" id="execution-needs-summary"><strong>احتياجات التنفيذ المفعلة:</strong></div>
                     <div class="col-12">
                         <ul class="mb-0 d-flex flex-column gap-2">
+                            @foreach($enabledCustomNeeds as $customNeed)
+                                <li>{{ $customNeed->executionNeedType->name }} <span class="badge bg-success">مطلوب</span></li>
+                            @endforeach
                             @forelse($enabledExecutionNeeds as $needKey => $need)
                                 @php
                                     $needDecision = $executionNeedsFollowupByKey->get($needKey, []);
@@ -366,7 +371,7 @@
                                     @endif
                                 </li>
                             @empty
-                                <li>-</li>
+                                @if($enabledCustomNeeds->isEmpty())<li>-</li>@endif
                             @endforelse
                         </ul>
                     </div>
@@ -573,4 +578,5 @@
         </div>
     </div>
     @include('pages.monthly_activities.activities.partials.delete-reason-modal')
+@include('pages.monthly_activities.activities._custom_execution_needs', ['customNeedsReadOnly' => true])
 @endsection

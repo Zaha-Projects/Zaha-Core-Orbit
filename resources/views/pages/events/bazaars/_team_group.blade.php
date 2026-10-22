@@ -1,0 +1,4 @@
+<div class="border rounded-3 p-3 mb-3" data-team-group="{{ $g }}">
+<div class="row g-3 align-items-end"><div class="col-md-4"><label class="form-label">اسم الفريق</label><input required class="form-control" name="team_groups[{{ $g }}][team_name]" value="{{ $group['team_name'] ?? '' }}" maxlength="255"></div><div class="col-md-3"><label class="form-label">عدد الأعضاء</label><input class="form-control" type="number" min="1" max="20" data-member-count value="{{ count($group['members'] ?? [[]]) }}"></div><div class="col-md-5"><label class="form-label">ملاحظات الفريق</label><textarea class="form-control" name="team_groups[{{ $g }}][notes]" maxlength="2000">{{ $group['notes'] ?? '' }}</textarea></div></div>
+<div class="mt-3" data-team-members>@foreach(($group['members'] ?? [[]]) as $m=>$member)@include('pages.events.bazaars._team_member', ['g'=>$g,'m'=>$m,'member'=>$member])@endforeach</div>
+</div>

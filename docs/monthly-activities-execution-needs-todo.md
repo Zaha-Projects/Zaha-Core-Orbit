@@ -1,5 +1,9 @@
 # TODO — احتياجات التنفيذ (Monthly Activities)
 
+**Status: HISTORICAL_RECORD**
+
+Current source of truth: `docs/events-architecture-current-state.md`.
+
 ## تم تنفيذه الآن (واجهة النموذج)
 - تغيير عنوان القسم من **خيارات التفعيل** إلى **احتياجات التنفيذ**.
 - تحويل مفاتيح التفعيل إلى Select (نعم/لا) بدل checkbox.
