@@ -8,7 +8,6 @@
                 <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.operations.monthly_activities') }}</span><strong>{{ $reportData['operations']['monthly_activities'] }}</strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.operations.bookings') }}</span><strong>{{ $reportData['operations']['bookings'] }}</strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.operations.maintenance_requests') }}</span><strong>{{ $reportData['operations']['maintenance_requests'] }}</strong></li>
-                <li class="list-group-item d-flex justify-content-between"><span>{{ __('app.reports.operations.trips') }}</span><strong>{{ $reportData['operations']['trips'] }}</strong></li>
             </ul>
         </div></div>
     </div>

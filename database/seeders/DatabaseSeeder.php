@@ -29,8 +29,6 @@ class DatabaseSeeder extends Seeder
         $this->call(WorkflowShowcaseSeeder::class);
         $this->call(PostExecutionShowcaseSeeder::class);
 
-         $this->call(MovementSeeder::class);
-
          $this->call(EvaluationWorkflowPermissionSeeder::class);
          $this->call(FollowupOfficerUsersSeeder::class);
          $this->call(EvaluationOfficerUsersSeeder::class);

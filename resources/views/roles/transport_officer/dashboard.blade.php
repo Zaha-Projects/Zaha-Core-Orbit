@@ -5,11 +5,6 @@
     $subtitle = __('app.roles.transport_officer.subtitle');
     $actions = [
         [
-            'title' => __('app.roles.transport_officer.actions.scheduling.title'),
-            'description' => __('app.roles.transport_officer.actions.scheduling.description'),
-            'link' => route('role.transport.trips.index'),
-        ],
-        [
             'title' => __('app.roles.transport_officer.actions.transport_requests.title'),
             'description' => __('app.roles.transport_officer.actions.transport_requests.description'),
             'link' => route('role.transport.requests.index'),

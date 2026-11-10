@@ -73,9 +73,8 @@
 | --- | --- | --- |
 | `vehicles` | مركبات زها | plate_no, vehicle_no, status, branch_id |
 | `drivers` | السائقون | name, phone, status |
-| `trips` | الرحلات اليومية | trip_date, day_name, driver_id, vehicle_id, status, notes, created_by |
-| `trip_segments` | مقاطع الرحلة (بديل رحلة 1/2/3) | trip_id (FK), segment_no, location, team_companion, depart_time, return_time, notes |
-| `trip_rounds` | الجولات التفصيلية (اختياري) | trip_id (FK), round_no, location, team, start_time, end_time, notes |
+
+> الجداول القديمة `trips` و`trip_segments` و`trip_rounds` أُزيلت (لم تُستخدم تشغيلياً) عبر الترحيل `2026_11_10_000100_drop_legacy_fleet_trip_tables`. التصميم الجديد في `docs/movement-module-implementation-plan.md`.
 
 ### 8) مرفقات وتدقيق مشتركة
 | الجدول | الهدف | الحقول |

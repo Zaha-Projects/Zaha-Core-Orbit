@@ -15,7 +15,6 @@ use App\Modules\Events\Models\MonthlyPlanDeleteRequest;
 use App\Modules\Events\Models\MonthlyPlanEditRequest;
 use App\Models\Payment;
 use App\Models\Setting;
-use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\WorkflowInstance;
@@ -223,7 +222,6 @@ class AdminReportsService
             'monthly_activities' => MonthlyActivity::count(),
             'bookings' => Booking::count(),
             'maintenance_requests' => MaintenanceRequest::count(),
-            'trips' => Trip::count(),
         ];
     }
 

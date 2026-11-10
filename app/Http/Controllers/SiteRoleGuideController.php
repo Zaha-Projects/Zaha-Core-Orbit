@@ -81,7 +81,7 @@ class SiteRoleGuideController extends Controller
     {
         $relations = ['routes' => ['role.relations.*', 'events.ramadan.*', 'events.bazaars.*'], 'controllers' => ['Agenda controllers', 'MonthlyActivities controllers', 'Ramadan controllers', 'BazaarController']];
         $followup = ['routes' => ['followup.*', 'evaluations.*', 'events.ramadan.iftars.monitoring.*', 'events.bazaars.*'], 'controllers' => ['FollowupWorkspaceController', 'ActivityEvaluationsController', 'RamadanIftarMonitoringController', 'BazaarController']];
-        $transport = ['routes' => ['role.transport.*'], 'controllers' => ['Transport controllers', 'TripSegmentsController', 'TripRoundsController']];
+        $transport = ['routes' => ['role.transport.*'], 'controllers' => ['Transport controllers']];
 
         return [
             'super_admin' => ['routes' => ['role.super_admin.*', 'events.ramadan.admin.*', 'evaluation.*'], 'controllers' => ['Access controllers', 'Admin Ramadan controllers', 'ReportsController']],

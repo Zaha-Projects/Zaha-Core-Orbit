@@ -234,7 +234,6 @@
             @if ($canAccessTransportSidebar)
                 <li class="side-item {{ request()->routeIs('role.transport.vehicles.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.vehicles.index') }}"><i class="fas fa-truck"></i><span>{{ __('app.roles.transport.vehicles.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.transport.drivers.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.drivers.index') }}"><i class="fas fa-id-card"></i><span>{{ __('app.roles.transport.drivers.title') }}</span></a></li>
-                <li class="side-item {{ request()->routeIs('role.transport.trips.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.trips.index') }}"><i class="fas fa-route"></i><span>{{ __('app.roles.transport.trips.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.transport.movements.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.movements.index') }}"><i class="fas fa-map-location-dot"></i><span>{{ __('app.roles.transport.movements.title') }}</span></a></li>
             @endif
 
@@ -244,7 +243,6 @@
                 <li class="side-item {{ request()->routeIs('role.reports.index') ? 'selected' : '' }}"><a href="{{ route('role.reports.index') }}"><i class="fas fa-chart-simple"></i><span>{{ __('app.roles.reports.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.reports.finance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.finance.index') }}"><i class="fas fa-money-bill-trend-up"></i><span>{{ __('app.roles.reports.finance.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.reports.maintenance.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.maintenance.index') }}"><i class="fas fa-toolbox"></i><span>{{ __('app.roles.reports.maintenance.title') }}</span></a></li>
-                <li class="side-item {{ request()->routeIs('role.reports.transport.*') ? 'selected' : '' }}"><a href="{{ route('role.reports.transport.index') }}"><i class="fas fa-truck-fast"></i><span>{{ __('app.roles.reports.transport.title') }}</span></a></li>
             @endif
 
             @include('layouts.app.partials.workflow-auto-approval-toggle', ['variant' => 'original'])

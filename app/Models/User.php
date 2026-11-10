@@ -163,11 +163,6 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class, 'received_by');
     }
 
-    public function tripsCreated()
-    {
-        return $this->hasMany(Trip::class, 'created_by');
-    }
-
     public function inAppNotifications()
     {
         return $this->hasMany(InAppNotification::class);

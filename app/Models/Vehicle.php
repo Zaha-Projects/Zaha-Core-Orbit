@@ -21,11 +21,6 @@ class Vehicle extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function trips()
-    {
-        return $this->hasMany(Trip::class);
-    }
-
     public function movementTrips()
     {
         return $this->hasMany(MovementTrip::class);
