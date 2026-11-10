@@ -185,6 +185,74 @@ class MovementPermissionSeederTest extends TestCase
         $this->assertSame($before, array_map($permissionsOf, MovementLegacyRoleHolders::LEGACY_ROLES));
     }
 
+    public function test_missing_movement_driver_role_is_skipped_with_a_warning_and_never_created(): void
+    {
+        // Production may run this seeder before RolesSeeder has created movement_driver.
+        Role::findByName('movement_driver', 'web')->delete();
+        $this->resetPermissionCache();
+        $rolesBefore = Role::query()->orderBy('id')->pluck('name')->all();
+
+        $this->withoutMockingConsoleOutput();
+        $this->assertSame(0, Artisan::call('db:seed', ['--class' => MovementPermissionSeeder::class, '--force' => true]));
+        $output = Artisan::output();
+        $this->resetPermissionCache();
+
+        $this->assertStringContainsString('role [movement_driver] not found', $output);
+        $this->assertFalse(Role::query()->where('name', 'movement_driver')->exists(), 'The seeder must not create movement_driver.');
+        $this->assertSame($rolesBefore, Role::query()->orderBy('id')->pluck('name')->all(), 'The seeder must not create or delete any role.');
+
+        // The permission still exists and every other role keeps its grants.
+        $this->assertTrue(Permission::query()->where('name', P::DRIVER_WORKSPACE)->where('guard_name', 'web')->exists());
+        foreach (array_keys(self::EXPECTED) as $roleName) {
+            if ($roleName === 'movement_driver') {
+                continue;
+            }
+            $expected = $this->expectedFor($roleName);
+            sort($expected);
+            $this->assertSame($expected, $this->movementPermissionsOf(Role::findByName($roleName, 'web')));
+        }
+    }
+
+    public function test_minimal_production_sequence_adds_only_the_driver_role_and_movement_grants(): void
+    {
+        // Production state before Phase 2: no movement_driver, no movement.* permissions, and an
+        // administrator has edited a role label and removed a default grant (RolesSeeder would undo both).
+        Role::findByName('movement_driver', 'web')->delete();
+        Permission::query()->where('name', 'like', 'movement.%')->delete();
+        $staff = Role::findByName('staff', 'web');
+        $staff->update(['name_en' => 'Staff (edited by admin)']);
+        $staff->revokePermissionTo('agenda.view');
+        $this->resetPermissionCache();
+
+        $roles = fn () => DB::table('roles')->orderBy('id')->get(['id', 'name', 'guard_name', 'name_ar', 'name_en'])->toArray();
+        $nonMovementGrants = fn () => DB::table('role_has_permissions as rhp')
+            ->join('permissions as p', 'p.id', '=', 'rhp.permission_id')
+            ->where('p.name', 'not like', 'movement.%')
+            ->orderBy('rhp.role_id')->orderBy('rhp.permission_id')
+            ->get(['rhp.role_id', 'rhp.permission_id'])->toArray();
+        $rolesBefore = $roles();
+        $grantsBefore = $nonMovementGrants();
+
+        // Plan §19 Phase 2 production sequence (Revision 3a).
+        $this->assertSame(0, Artisan::call('permission:create-role', ['name' => 'movement_driver', 'guard' => 'web']));
+        $this->assertSame(0, Artisan::call('db:seed', ['--class' => MovementPermissionSeeder::class, '--force' => true]));
+        $this->resetPermissionCache();
+
+        $rolesAfter = $roles();
+        $added = array_values(array_filter($rolesAfter, fn ($r) => $r->name === 'movement_driver'));
+        $this->assertCount(1, $added);
+        $this->assertEquals($rolesBefore, array_values(array_filter($rolesAfter, fn ($r) => $r->name !== 'movement_driver')), 'No existing role may change.');
+        $this->assertEquals($grantsBefore, $nonMovementGrants(), 'No non-movement grant may be added or removed.');
+        $this->assertSame('Staff (edited by admin)', Role::findByName('staff', 'web')->name_en);
+        $this->assertFalse(Role::findByName('staff', 'web')->hasPermissionTo('agenda.view'));
+
+        foreach (array_keys(self::EXPECTED) as $roleName) {
+            $expected = $this->expectedFor($roleName);
+            sort($expected);
+            $this->assertSame($expected, $this->movementPermissionsOf(Role::findByName($roleName, 'web')));
+        }
+    }
+
     public function test_legacy_role_holder_command_reports_holders_and_writes_nothing(): void
     {
         $officer = $this->userWithRole('transport_officer');

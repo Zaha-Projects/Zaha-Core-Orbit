@@ -33,6 +33,16 @@
 >    - `rightDatabaseSeeder` is the real, documented production-safe seeder class (`database/seeders/rightDatabaseSeeder.php`; `docs/production-seeder-safety-audit.md`), not a typo. `MovementPermissionSeeder` is appended **after** `CompleteRolePermissionSeeder`, so that `RolesSeeder` has already created `movement_driver`.
 >    - `BazaarRolePermissionSeeder` is not wired into any seeder chain (VERIFIED), so there is no Bazaar path to mirror.
 >    - The read-only legacy-role holder report is an artisan command in `app/Console/Commands/`. This follows the precedent of the Events module's commands (`RamadanQaCleanup`, `SyncRamadanPeriod`), which `app/Console/Kernel.php:28` auto-loads.
+>
+> **Revision 3a (2026-11-10), Phase 2 follow-up, recorded before the change:**
+> 1. **Production seeding audit (VERIFIED, source read).** `RolesSeeder` is **not** purely additive:
+>    - `updateOrCreate` rewrites `name_ar`/`name_en` of every role it defines, which undoes label edits made in Access → Roles (`RolesController.php:58,99`);
+>    - `givePermissionTo` re-adds every default grant in its map, which undoes grants an administrator removed (`RolesController.php:64,104` uses `syncPermissions`);
+>    - it revokes `ramadan_iftars.execute` from `followup_officer` (documented in `docs/production-seeder-safety-audit.md`).
+>
+>    `RolePermissionSeeder` and `EvaluationWorkflowAccessSeeder` likewise rewrite permission/role labels. So Phase 2 production does **not** run `rightDatabaseSeeder` or `RolesSeeder`. The Phase 2 production sequence (§19 Phase 2, "Production") uses only Spatie's `permission:create-role` (find-or-create, touches no other row) and `MovementPermissionSeeder`. The `rightDatabaseSeeder` wiring is unchanged and still serves fresh and dev installs. **Status: proposed; needs owner approval** (the owner approved "RolesSeeder only if additive", and it is not).
+> 2. **Missing-role behaviour (VERIFIED by test).** If `movement_driver` does not exist, `MovementPermissionSeeder` prints a warning, skips that role's grants and never creates the role. Added to the Phase 2 acceptance list.
+> 3. **R4 exception, approved by the project owner (2026-11-10).** The module's artisan commands live in `app/Console/Commands/Movement*.php`, not under `app/Modules/Movement`, because Laravel 8 auto-loads commands only from that directory (`app/Console/Kernel.php:28`). This is the only R4 exception; every other module artefact stays under `App\Modules\Movement` or the module paths in §5.
 
 ## Labels
 
@@ -86,7 +96,7 @@ The organisation needs one organisation-wide transport service with these capabi
 | R1 | Movement is a new operational system. No prior system was adopted | CONFIRMED |
 | R2 | Legacy A (`trips`, `trip_segments`, `trip_rounds`) is fully removed: no archive, no data migration, no backward compatibility | CONFIRMED |
 | R3 | B and C are not authoritative. Reuse only what genuinely fits | CONFIRMED |
-| R4 | Standalone module `App\Modules\Movement` owning models, controllers, requests, services, routes, permissions, views, assets, translations, reports and lifecycle | CONFIRMED |
+| R4 | Standalone module `App\Modules\Movement` owning models, controllers, requests, services, routes, permissions, views, assets, translations, reports and lifecycle. **Approved exception (Revision 3a):** artisan commands live in `app/Console/Commands/Movement*.php`, because Laravel 8 auto-loads commands only from there | CONFIRMED |
 | R5 | **No branch isolation.** Vehicles, drivers, requests and schedule are organisation-wide. Branch, event and department are metadata only | CONFIRMED |
 | R6 | The Movement Department Manager manages vehicles and drivers, reviews and approves requests, plans routes, assigns resources, publishes and merges trips | CONFIRMED |
 | R7 | New trip requests: Branch Relations Officers and Branch Managers, configurable later for more roles or specific users | CONFIRMED |
@@ -1462,10 +1472,10 @@ Every guarded `down()` documents its behaviour in a class docblock. The phase ac
 | Action | Phase |
 |---|---|
 | Remove the `MovementSeeder` call from `DatabaseSeeder.php:32` and delete `database/seeders/MovementSeeder.php` (VERIFIED: referenced only there; it seeds fake drivers, vehicles and C movement days). **No replacement demo seeder** is introduced. Tests create their own data | 1 |
-| `MovementPermissionSeeder`: additive `updateOrCreate` of permissions; `givePermissionTo` for `movement_manager` (per §14.2, *without* `requests.create`), `relations_officer`, `supervisor`, `super_admin`; never revokes. Called from `rightDatabaseSeeder` (the verified production-safe chain) **after** `CompleteRolePermissionSeeder`, so all roles exist first (Revision 3) | 2 |
+| `MovementPermissionSeeder`: additive `updateOrCreate` of permissions; `givePermissionTo` for `movement_manager` (per §14.2, *without* `requests.create`), `relations_officer`, `supervisor`, `super_admin`; never revokes. Called from `rightDatabaseSeeder` **after** `CompleteRolePermissionSeeder`, so all roles exist first on fresh/dev installs (Revision 3). A missing role is skipped with a warning, never created. In production it is run on its own (§19 Phase 2, "Production"; Revision 3a) | 2 |
 | `MovementReferenceDataSeeder`: `updateOrCreate` vehicle types by `code` (bus, minibus, van, car); never deletes; safe in production | 3 |
 | `UsersSeeder.php:70,73-75`: drop the demo `transport_officer` / `movement_editor` / `movement_viewer` users once those roles retire (D3) | 12 |
-| `RolesSeeder.php:90,94-95`: stop seeding retired roles **after** holders reach zero. Add `movement_driver` if D3 approves | 2 / 12 |
+| `RolesSeeder.php:90,94-95`: stop seeding retired roles **after** holders reach zero. `movement_driver` added in Phase 2 (D3) for fresh/dev installs; production creates it with `permission:create-role`, because `RolesSeeder` is not purely additive (Revision 3a) | 2 / 12 |
 
 ### 18.6 Deployment and rollback
 
@@ -1570,7 +1580,7 @@ flowchart LR
      - never revokes; idempotent.
      It is appended to `rightDatabaseSeeder` after `CompleteRolePermissionSeeder`.
   3. The `movement_driver` role, added to `RolesSeeder` additively with `name_ar`/`name_en` (D3).
-  4. A read-only artisan command `movement:legacy-role-holders` (`app/Console/Commands/`) that lists the holders of `transport_officer`, `movement_editor` and `movement_viewer`, with counts. It writes nothing.
+  4. A read-only artisan command `movement:legacy-role-holders` (`app/Console/Commands/MovementLegacyRoleHolders.php`, the approved R4 exception, Revision 3a) that lists the holders of `transport_officer`, `movement_editor` and `movement_viewer`, with counts. It writes nothing.
 - **Out of scope:**
   - Policies (created with their models, Phases 3–6);
   - `routes/movement.php`, the sidebar partial and the lang file (Phase 3);
@@ -1588,10 +1598,17 @@ flowchart LR
   - super_admin holds every `movement.*` explicitly, and `Gate::before` also allows it;
   - re-running the seeder is idempotent and removes nothing;
   - the legacy roles are untouched;
-  - the holder command performs no writes.
+  - the holder command performs no writes;
+  - if `movement_driver` is missing, the seeder warns, skips it and does not create it (Revision 3a);
+  - the production sequence below changes no existing role label or non-movement grant (Revision 3a).
 
   The HTTP/Policy rows of the §14.3 matrix are tested by the phase that implements each action.
 - **Tests:** a DB-free constants test, plus seeder/grant feature tests run in a disposable MySQL container. **Rollback:** permissions are additive; leaving them in place is harmless.
+- **Production (Revision 3a; proposed, needs owner approval).** Do **not** run `rightDatabaseSeeder` or `RolesSeeder` for this phase. After a DB backup, on staging first and then production:
+  1. `php artisan permission:create-role movement_driver web` (creates the role only if it is missing; changes nothing else);
+  2. `php artisan db:seed --class=MovementPermissionSeeder --force`;
+  3. set the `movement_driver` labels in Access → Roles: `سائق الحركة` / `Movement Driver`. Until then the role list shows the key;
+  4. `php artisan movement:legacy-role-holders` (read-only); keep the output for Phase 12.
 
 ### Phase 3 — Fleet, drivers, saved locations, unavailability
 - **Objective:** the manager can register and maintain resources.
