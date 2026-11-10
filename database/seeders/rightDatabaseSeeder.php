@@ -13,6 +13,8 @@ class rightDatabaseSeeder extends Seeder
             CanonicalExecutionNeedTypeSeeder::class,
             RamadanReferenceDataSeeder::class,
             CompleteRolePermissionSeeder::class,
+            // After CompleteRolePermissionSeeder so every role (incl. movement_driver) exists.
+            MovementPermissionSeeder::class,
         ]);
     }
 }

@@ -93,6 +93,7 @@ class RolesSeeder extends Seeder
             ['key' => 'movement_manager', 'name_ar' => 'مدير الحركة', 'name_en' => 'Movement Manager'],
             ['key' => 'movement_editor', 'name_ar' => 'محرر الحركة', 'name_en' => 'Movement Editor'],
             ['key' => 'movement_viewer', 'name_ar' => 'مستعرض الحركة', 'name_en' => 'Movement Viewer'],
+            ['key' => 'movement_driver', 'name_ar' => 'سائق الحركة', 'name_en' => 'Movement Driver'],
         ];
     }
     /**

@@ -21,6 +21,18 @@
 > - the Phase 1 scope is made explicit.
 >
 > The confirmed requirements R1–R15 are unchanged.
+>
+> **Revision 3 (2026-11-10), owner-approved, recorded before Phase 2 coding:**
+> 1. **Decisions approved by the project owner:** D3, D12 and D14 are now "Approved" in §22, with the exact grants in §14.2.
+> 2. **Policies:** the Phase 2 "Policies skeleton" is removed. It conflicted with "no empty placeholders", and the models don't exist yet. Each Policy is created in the phase that creates its model (Phases 3–6).
+> 3. **Routes, lang and sidebar:**
+>    - `routes/movement.php` and the sidebar partial move to Phase 3, where the first module route exists.
+>    - No Movement lang file is created in Phase 2, because permission and role labels are read from the DB columns `name_ar`/`name_en` (VERIFIED: `pages/access/roles/index.blade.php:17-18`, `Role::getDisplayNameAttribute`). The lang file arrives with the first UI that needs it (Phase 3).
+> 4. **Phase 2 acceptance:** tests assert permission **grants** per role (`hasPermissionTo`), including a per-user grant, a per-user denial (`User.php:46-55`) and super_admin's explicit grants plus `Gate::before`. Each later phase adds the HTTP/Policy tests for the §14.3 matrix rows it implements.
+> 5. **Clarifications, no scope change:**
+>    - `rightDatabaseSeeder` is the real, documented production-safe seeder class (`database/seeders/rightDatabaseSeeder.php`; `docs/production-seeder-safety-audit.md`), not a typo. `MovementPermissionSeeder` is appended **after** `CompleteRolePermissionSeeder`, so that `RolesSeeder` has already created `movement_driver`.
+>    - `BazaarRolePermissionSeeder` is not wired into any seeder chain (VERIFIED), so there is no Bazaar path to mirror.
+>    - The read-only legacy-role holder report is an artisan command in `app/Console/Commands/`. This follows the precedent of the Events module's commands (`RamadanQaCleanup`, `SyncRamadanPeriod`), which `app/Console/Kernel.php:28` auto-loads.
 
 ## Labels
 
@@ -227,10 +239,11 @@ database/seeders/MovementPermissionSeeder.php, MovementReferenceDataSeeder.php
 - the legacy-A drop migration;
 - tests.
 
-Every other file above is created by the phase that first needs it:
-- routes file, lang file, sidebar partial: Phase 2/3;
-- models: Phase 3;
-- services: Phase 4–8.
+Every other file above is created by the phase that first needs it (Revision 3):
+- `MovementPermission` constants and `MovementPermissionSeeder`: Phase 2;
+- routes file, sidebar partial and lang file: Phase 3;
+- models, each with its Policy: Phases 3–6;
+- services: Phases 4–8.
 
 No empty placeholders are committed.
 
@@ -1105,10 +1118,11 @@ These are enforced by `auth` + Policies. Policies also ensure the user record is
 |---|---|---|
 | `movement_manager` (VERIFIED) — Movement Department Manager | Manages and approves movement operations | All `movement.*` **except `movement.requests.create` and `movement.driver.workspace`**. The manager does not create requests by default: R7 names only Relations Officers and Branch Managers. If the business wants the manager to request too, grant `movement.requests.create` per user or add it to the role (D12). Manager-created *bookings* (`source='manager'`, §7.10) are an operational tool under `movement.bookings.manage`, not request creation |
 | `relations_officer` (VERIFIED) — Branch Relations Officer | Requester | `movement.requests.create` |
-| `supervisor` (VERIFIED) — Branch Manager (رئيس فرع) | Requester | `movement.requests.create`. Read access to requests originating from their branch is **not** included (DECISION REQUIRED D12; read-only metadata visibility, not isolation) |
+| `supervisor` (VERIFIED) — Branch Manager (رئيس فرع) | Requester | `movement.requests.create`. Sees **own requests only** at launch (D12 Approved) |
 | `super_admin` | Full access | all `movement.*` (explicit) + Gate::before |
-| `movement_driver` (**new**, DECISION REQUIRED D3) | Driver workspace | `movement.driver.workspace` (+ `movement.trips.execute` scoped to own trips via Policy, if D13 approves) |
-| `reports_viewer`, `executive_manager` | Possibly reports | `movement.reports.view` (DECISION REQUIRED D12) |
+| `movement_driver` (**new**, D3 Approved) | Driver workspace | `movement.driver.workspace` only. Adding `movement.trips.execute` for own trips needs D13 |
+| `executive_manager` (VERIFIED key) | Reports | `movement.reports.view` (D12 Approved) |
+| `reports_viewer` | — | No movement permission (D12 Approved: reports go to `movement_manager`, `super_admin`, `executive_manager` only) |
 | `transport_officer` | Superseded by `movement_manager` | Retire (D3): reassign holders, remove from sidebar, role guide and `config/execution_needs.php` (Events-owned config, coordinate) |
 | `movement_editor` | No defined responsibility | Retire, or redefine as **deputy dispatcher** with `trips.plan` + `bookings.manage` (D3) |
 | `movement_viewer` | Redundant (everyone can view) | Retire (D3) |
@@ -1448,7 +1462,7 @@ Every guarded `down()` documents its behaviour in a class docblock. The phase ac
 | Action | Phase |
 |---|---|
 | Remove the `MovementSeeder` call from `DatabaseSeeder.php:32` and delete `database/seeders/MovementSeeder.php` (VERIFIED: referenced only there; it seeds fake drivers, vehicles and C movement days). **No replacement demo seeder** is introduced. Tests create their own data | 1 |
-| `MovementPermissionSeeder`: additive `updateOrCreate` of permissions; `givePermissionTo` for `movement_manager` (per §14.2, *without* `requests.create`), `relations_officer`, `supervisor`, `super_admin`; never revokes. Called from `rightDatabaseSeeder` (production-safe path) | 2 |
+| `MovementPermissionSeeder`: additive `updateOrCreate` of permissions; `givePermissionTo` for `movement_manager` (per §14.2, *without* `requests.create`), `relations_officer`, `supervisor`, `super_admin`; never revokes. Called from `rightDatabaseSeeder` (the verified production-safe chain) **after** `CompleteRolePermissionSeeder`, so all roles exist first (Revision 3) | 2 |
 | `MovementReferenceDataSeeder`: `updateOrCreate` vehicle types by `code` (bus, minibus, van, car); never deletes; safe in production | 3 |
 | `UsersSeeder.php:70,73-75`: drop the demo `transport_officer` / `movement_editor` / `movement_viewer` users once those roles retire (D3) | 12 |
 | `RolesSeeder.php:90,94-95`: stop seeding retired roles **after** holders reach zero. Add `movement_driver` if D3 approves | 2 / 12 |
@@ -1547,20 +1561,37 @@ flowchart LR
 
 ### Phase 2 — Permissions and roles
 - **Objective:** a granular permission model before any feature ships.
-- **Scope:**
-  - `MovementPermissionSeeder` (wired into `rightDatabaseSeeder`);
-  - `MovementPermission` constants, Policies skeleton;
-  - `movement_driver` role (if D3);
-  - `routes/movement.php` (or a `web.php` block, per D14) and `resources/lang/{ar,en}/movement.php`, created here because the first module routes and labels appear in this phase;
-  - module sidebar partial (items hidden until their phase ships);
-  - legacy-role holder report.
-- **Files:** seeders, `AuthServiceProvider::$policies`, `layouts/app.blade.php` (include the partial), `RolesSeeder.php` (add `movement_driver` only), routes and lang files.
-- **Default grants:** exactly §14.2. `movement_manager` does **not** receive `movement.requests.create`.
-- **DB:** permission and role rows only (additive).
-- **Decisions:** D3, D12, D14.
-- **Risks:** granting too broadly. **Security:** no `role:` middleware in the module; super_admin explicitly granted.
-- **Acceptance:** the matrix in §14.3 is asserted by tests per role, including a user with a per-user grant and a per-user denial.
-- **Tests:** authorization matrix feature tests. **Rollback:** permissions are additive; leaving them in place is harmless.
+- **In scope (exhaustive, Revision 3):**
+  1. `app/Modules/Movement/Support/MovementPermission.php`: constants for the 15 permissions in §14.1, plus a helper listing all of them.
+  2. `database/seeders/MovementPermissionSeeder.php`:
+     - additive `updateOrCreate` (`module = 'movement'`, `guard_name = 'web'`, `name_ar`/`name_en`);
+     - `givePermissionTo` exactly per §14.2;
+     - explicit super_admin grant;
+     - never revokes; idempotent.
+     It is appended to `rightDatabaseSeeder` after `CompleteRolePermissionSeeder`.
+  3. The `movement_driver` role, added to `RolesSeeder` additively with `name_ar`/`name_en` (D3).
+  4. A read-only artisan command `movement:legacy-role-holders` (`app/Console/Commands/`) that lists the holders of `transport_officer`, `movement_editor` and `movement_viewer`, with counts. It writes nothing.
+- **Out of scope:**
+  - Policies (created with their models, Phases 3–6);
+  - `routes/movement.php`, the sidebar partial and the lang file (Phase 3);
+  - any route, model, table or UI;
+  - retiring or modifying the legacy roles (Phase 12);
+  - role-guide updates (Phase 12, together with the retirements).
+- **Files:** `MovementPermission.php`, `MovementPermissionSeeder.php`, `rightDatabaseSeeder.php`, `RolesSeeder.php` (add `movement_driver` only), the command, tests.
+- **Default grants:** exactly §14.2. `movement_manager` does **not** receive `movement.requests.create` or `movement.driver.workspace`.
+- **DB:** permission and role rows only (additive). No migrations.
+- **Decisions:** D3, D12, D14, all Approved.
+- **Risks:** granting too broadly. **Security:** super_admin explicitly granted; no `role:` middleware is introduced.
+- **Acceptance (Revision 3):** tests assert the permission **grants** per role (`hasPermissionTo`):
+  - each role holds exactly its §14.2 movement permissions;
+  - a per-user grant works and a per-user denial wins (`User.php:46-55`);
+  - super_admin holds every `movement.*` explicitly, and `Gate::before` also allows it;
+  - re-running the seeder is idempotent and removes nothing;
+  - the legacy roles are untouched;
+  - the holder command performs no writes.
+
+  The HTTP/Policy rows of the §14.3 matrix are tested by the phase that implements each action.
+- **Tests:** a DB-free constants test, plus seeder/grant feature tests run in a disposable MySQL container. **Rollback:** permissions are additive; leaving them in place is harmless.
 
 ### Phase 3 — Fleet, drivers, saved locations, unavailability
 - **Objective:** the manager can register and maintain resources.
@@ -1570,12 +1601,14 @@ flowchart LR
   - `MovementReferenceDataSeeder`.
   - Optional import command (§18.4).
   - Public read-only "fleet list" (types and capacities).
+  - `routes/movement.php` (D14), the module sidebar partial and `resources/lang/{ar,en}/movement.php`, created here with the first module routes and screens (Revision 3).
+  - Policies for the models created here, e.g. `DriverPolicy` and the vehicle policy (Revision 3).
 - **DB:** 5 new tables (additive).
 - **Decisions:** D1, D6, D7, D8, D19 (module FK policy; D11 is **not** a blocker).
 - **Risks:** duplicate plates on import. Use unique constraints and an import report. Imported records start as `pending_verification` (§18.4).
 - **Security:** sensitive driver fields gated by `drivers.view_details`.
 - **Acceptance:** CRUD, uniqueness, status-change audit entries, soft deletes, no branch field anywhere.
-- **Tests:** Form Request validation, Policy tests, linking a user who is already linked fails, audit log written.
+- **Tests:** Form Request validation, Policy tests, linking a user who is already linked fails, audit log written; HTTP/Policy tests for the §14.3 rows implemented here: fleet and driver management, plus individual-vehicle and driver-detail visibility (Revision 3).
 - **Migration category:** 2 (operational tables). **Rollback:** `migrate:rollback` only while the tables are empty (failed deploy). Once real fleet data exists, the guarded `down()` refuses and fixes go forward (§18.0).
 
 ### Phase 4 — Movement requests and approval (+ retire B)
@@ -1584,6 +1617,7 @@ flowchart LR
   - `movement_requests`, `movement_request_legs`;
   - screens 6 and 7;
   - `MovementRequestWorkflow` with the transition map;
+  - `MovementRequestPolicy` (Revision 3);
   - request notifications (§15.5 rows 1–3);
   - indicative availability panel (uses `MovementAvailabilityService::summary()`; trips don't exist yet, so only status and unavailability count until Phase 5).
   - Then retire B (§18.3).
@@ -1596,7 +1630,7 @@ flowchart LR
   - comments are required where specified;
   - the full timeline appears in `audit_logs`.
 - Requests include `fulfilment_status` (initially `not_applicable`/`unallocated`; allocation arrives in Phase 5) and the `client_token` idempotency (§11.7).
-- **Tests:** every allowed and forbidden transition; round-trip leg validation; timezone parsing; duplicate submit with the same token creates one request.
+- **Tests:** every allowed and forbidden transition; round-trip leg validation; timezone parsing; duplicate submit with the same token creates one request; HTTP/Policy tests for the §14.3 request rows (Revision 3).
 - **Migration category:** 2 for the new tables; 4 for the B drop. **Rollback:** new tables only while empty; the B drop restores empty structure only.
 
 ### Phase 5 — Trip planning, availability, conflict prevention, assignment (+ retire C and old masters)
@@ -1607,6 +1641,7 @@ flowchart LR
   - `MovementAvailabilityService` (full, §13.4, including paired-trip reservations §13.7).
   - **`SeatCapacityService` (§11.1–11.2)**: the essential per-section capacity check. It is used here by `allocateRequestLeg()`, assignment, and seat-capacity/vehicle changes (§13.6). No request leg can be allocated to a trip without passing it.
   - Request-leg aggregate protection across trips (§11.6) and `refreshFulfilment()` (§8.5).
+  - `TripPolicy` (Revision 3).
   - Route planner (screen 8) with stops, manual times, Maps URL with waypoints, embed preview.
   - Create `movement_bookings` here too (with `client_token` and `active_join_key`), but use it only for **request bookings** (`source='request'`, created as `confirmed` by the manager through `allocateRequestLeg()`), so a scheduled trip records which request legs it serves. Public joining, publishing and the seat matrix follow in Phase 6.
   - Driver/trip notifications.
@@ -1626,6 +1661,7 @@ flowchart LR
 - **Tests:**
   - `SeatCapacityService` unit tests (algorithm, all pickup/drop-off pairs).
   - `allocateRequestLeg()` feature tests, including the cross-trip leg aggregate.
+  - HTTP/Policy tests for the §14.3 planning, assignment, scheduling and cancellation rows (Revision 3).
   - Availability unit tests (boundary: end == start is not an overlap).
   - Concurrency test using two DB connections or `DB::transaction` simulation on MySQL in CI.
 - **Migration category:** 2 for the new tables; 4 for the C and old-master drops. **Rollback:** new tables only while empty; drops restore empty structure only.
@@ -1634,6 +1670,7 @@ flowchart LR
 - **Objective:** shared trips open to every authenticated user, built **on** the Phase 5 capacity foundation. Phase 6 does not introduce capacity safety for the first time.
 - **Scope:**
   - `BookingService` (join, manager confirm/reject, cancel), reusing Phase 5's `SeatCapacityService` and trip locking;
+  - `BookingPolicy` (Revision 3);
   - both confirmation modes with the single capacity policy (§11.1, D5);
   - duplicate/idempotency/rate-limit safeguards (§11.7);
   - publish/unpublish; join flow (screen 11); booking management (12);
@@ -1650,7 +1687,7 @@ flowchart LR
   - a double submit creates one booking;
   - a second active join by the same user on the same trip is refused;
   - pickup/drop-off order and stop flags are enforced.
-- **Tests:** unit (algorithm, all pairs), feature (join, cancel, manager cancel), concurrency.
+- **Tests:** unit (algorithm, all pairs), feature (join, cancel, manager cancel), concurrency; HTTP/Policy tests for the §14.3 schedule, join and booking rows (Revision 3).
 - **Rollback:** code revert (switch publishing/joining off via the config flag); no schema change in this phase.
 
 ### Phase 7 — Public schedule and availability dashboard
@@ -1767,13 +1804,13 @@ flowchart LR
 
 ## 22. Remaining business decisions
 
-All decisions below are **open (DECISION REQUIRED)**. Recommendations are proposals, **not** approvals. **None of them blocks Phase 1**: Phase 1 relies only on the confirmed R2 and the guarded migration.
+Decisions marked **Approved** may be implemented. All others are **open (DECISION REQUIRED)**; their recommendations are proposals, **not** approvals. None of the open ones blocks Phase 1 or Phase 2.
 
 | ID | Decision | Recommendation (not approved) | Status | Blocks |
 |---|---|---|---|---|
 | D1 | Do real vehicle/driver rows exist that must be imported? | Run the inventory; import only real rows as `pending_verification` (§18.4) | Open | Phase 3 (import only) |
 | D2 | Second approval stage (e.g. Programs Manager)? | **No.** Single approver; revisit for cost-bearing trips | Open | Phase 4 |
-| D3 | Retire `transport_officer`, `movement_editor`, `movement_viewer`? Create `movement_driver`? | Retire all three (or keep `movement_editor` as deputy dispatcher); create `movement_driver` | Open | Phase 2 (roles), Phase 12 (retirement) |
+| D3 | Retire `transport_officer`, `movement_editor`, `movement_viewer`? Create `movement_driver`? | **Decision:** create `movement_driver` (grants `movement.driver.workspace` only for now). Retire the three legacy roles in Phase 12 per the §14.2 retirement procedure; they are neither deleted nor de-seeded before that | **Approved**: project owner, 2026-11-10 | Phase 2 (roles), Phase 12 (retirement) |
 | D4 | Default buffers (pre/post trip, excess running %, dwell), merge time tolerance and distance threshold, booking close time | 15 min / 15 min / 15% / 5 min; ±60 min; 2 km; 60 min | Open | Phases 5, 6, 8 |
 | D5 | Joining a published trip: instant confirmation or manager approval? | **Instant (`auto_confirm`)**, manager can cancel. Either way pending bookings never hold seats (§11.1) | Open | Phase 6 |
 | D6 | Vehicle size classes; vehicle home location | small/medium/large; optional home location | Open | Phase 3 |
@@ -1782,9 +1819,9 @@ All decisions below are **open (DECISION REQUIRED)**. Recommendations are propos
 | D9 | Passenger names / manifest per booking? | Not initially; counts only | Open | Phase 6 |
 | D10 | Approve Google Maps Platform billing and key ownership? | Start keyless (Phase 5); decide Phase 9 after 1–2 months | Open | Phase 9 |
 | D11 | **Application-wide** soft deletes for `users` and `branches` (Audit T-01/T-02)? | Recommended as a separate, cross-cutting application change outside the Movement module | Open | **No Movement phase** (independent of D19) |
-| D12 | Can branch managers see requests originating from their branch (read-only)? Should the movement manager also be a requester? Who gets `movement.reports.view` (reports_viewer, executive_manager)? | Own requests only at launch. The manager does **not** receive `requests.create` by default (R7); grant it per user if needed. Reports to executive_manager | Open | Phase 2 |
+| D12 | Can branch managers see requests originating from their branch (read-only)? Should the movement manager also be a requester? Who gets `movement.reports.view` (reports_viewer, executive_manager)? | **Decision:** `supervisor` sees own requests only at launch. `movement_manager` does **not** get `movement.requests.create`. `movement.reports.view` goes to `movement_manager`, `super_admin` and `executive_manager` (role key VERIFIED); `reports_viewer` gets none | **Approved**: project owner, 2026-11-10 | Phase 2 |
 | D13 | May drivers record departure/arrival (and no-shows) themselves? | Yes, own trips only, manager can correct | Open | Phase 10 |
-| D14 | Module route file `routes/movement.php` vs a block in `web.php` | Separate file | Open | Phase 2 (first module routes; not Phase 1) |
+| D14 | Module route file `routes/movement.php` vs a block in `web.php` | **Decision:** a separate `routes/movement.php`, required from `routes/web.php` inside the existing auth group. Created in Phase 3 with the first module route (Revision 3) | **Approved**: project owner, 2026-11-10 | Phase 3 |
 | D15 | Email/SMS notifications? | In-app only at launch | Open | Phase 11 |
 | D16 | Interactive calendar library (drag & drop)? | No; server-rendered grids | Open | Phase 7 |
 | D17 | Should an Events transport need create a Movement request automatically? | **No**: prefilled "Request transport" link only | Open | Phase 11 |
