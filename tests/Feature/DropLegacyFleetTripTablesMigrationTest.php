@@ -19,10 +19,12 @@ class DropLegacyFleetTripTablesMigrationTest extends TestCase
 
     private ?string $originalDefault = null;
 
-    protected function setUp(): void
+    /**
+     * Switch the default connection to a private in-memory SQLite database for this test only.
+     * Called by the database tests; the flag-parsing test needs no database and always runs.
+     */
+    private function useIsolatedSqlite(): void
     {
-        parent::setUp();
-
         if (! extension_loaded('pdo_sqlite')) {
             $this->markTestSkipped('pdo_sqlite is not installed; the migration test needs an isolated in-memory SQLite connection.');
         }
@@ -57,6 +59,8 @@ class DropLegacyFleetTripTablesMigrationTest extends TestCase
 
     private function migration(): object
     {
+        $this->useIsolatedSqlite();
+
         return require database_path('migrations/2026_11_10_000100_drop_legacy_fleet_trip_tables.php');
     }
 
@@ -106,5 +110,84 @@ class DropLegacyFleetTripTablesMigrationTest extends TestCase
         config(['movement.legacy.allow_drop_with_rows' => true]);
         $migration->up();
         $this->assertLegacyTables(false);
+    }
+
+    public function test_rows_in_a_child_table_are_detected_first_and_nothing_is_dropped(): void
+    {
+        $migration = $this->migration();
+        $migration->down();
+
+        DB::table('users')->insert(['id' => 1]);
+        DB::table('drivers')->insert(['id' => 1]);
+        DB::table('vehicles')->insert(['id' => 1]);
+        $tripId = DB::table('trips')->insertGetId(['trip_date' => '2026-01-01', 'driver_id' => 1, 'vehicle_id' => 1, 'created_by' => 1]);
+        DB::table('trip_rounds')->insert(['trip_id' => $tripId, 'round_no' => 1, 'location' => 'Amman']);
+
+        try {
+            $migration->up();
+            $this->fail('The migration dropped legacy tables while they still contain rows.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('[trip_rounds]', $exception->getMessage());
+        }
+
+        // Guard runs for every table before any DROP, so nothing was dropped.
+        $this->assertLegacyTables(true);
+    }
+
+    public function test_tables_are_dropped_children_first(): void
+    {
+        $migration = $this->migration();
+        $migration->down();
+
+        $drops = [];
+        DB::listen(function ($query) use (&$drops) {
+            if (preg_match('/^drop table if exists "?(\w+)"?/i', $query->sql, $match)) {
+                $drops[] = $match[1];
+            }
+        });
+
+        $migration->up();
+
+        $this->assertSame(['trip_rounds', 'trip_segments', 'trips'], $drops);
+    }
+
+    /**
+     * @dataProvider allowDropFlagValues
+     */
+    public function test_allow_drop_flag_is_parsed_strictly(?string $value, bool $expected): void
+    {
+        $previous = $_SERVER['MOVEMENT_ALLOW_LEGACY_DROP'] ?? null;
+
+        try {
+            if ($value === null) {
+                unset($_SERVER['MOVEMENT_ALLOW_LEGACY_DROP']);
+            } else {
+                $_SERVER['MOVEMENT_ALLOW_LEGACY_DROP'] = $value;
+            }
+
+            $config = require config_path('movement.php');
+
+            $this->assertSame($expected, $config['legacy']['allow_drop_with_rows']);
+        } finally {
+            if ($previous === null) {
+                unset($_SERVER['MOVEMENT_ALLOW_LEGACY_DROP']);
+            } else {
+                $_SERVER['MOVEMENT_ALLOW_LEGACY_DROP'] = $previous;
+            }
+        }
+    }
+
+    public function allowDropFlagValues(): array
+    {
+        return [
+            'unset' => [null, false],
+            'true' => ['true', true],
+            '1' => ['1', true],
+            'false' => ['false', false],
+            '0' => ['0', false],
+            'no' => ['no', false],
+            'off' => ['off', false],
+            'empty' => ['', false],
+        ];
     }
 }

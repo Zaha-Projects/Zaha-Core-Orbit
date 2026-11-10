@@ -12,6 +12,7 @@ return [
     'legacy' => [
         // Explicit "disaster-recovery backup verified" switch for legacy-table drop
         // migrations: they refuse to drop a table that still contains rows unless true.
-        'allow_drop_with_rows' => (bool) env('MOVEMENT_ALLOW_LEGACY_DROP', false),
+        // Strict parsing: only true/1/yes/on enable it; anything else (including "no", "off") stays false.
+        'allow_drop_with_rows' => filter_var(env('MOVEMENT_ALLOW_LEGACY_DROP', false), FILTER_VALIDATE_BOOLEAN),
     ],
 ];
