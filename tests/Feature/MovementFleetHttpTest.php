@@ -217,6 +217,45 @@ class MovementFleetHttpTest extends TestCase
         $this->assertSame($manager->id, $fresh->status_changed_by);
     }
 
+    public function test_partially_classified_imported_vehicle_cannot_become_operational(): void
+    {
+        // Revision 5a: both type and capacity >= 1 are needed; one of them is not enough.
+        $manager = $this->user('movement_manager');
+        $typeOnly = Vehicle::create(['fleet_number' => 'IMP-T', 'vehicle_type_id' => $this->bus()->id, 'operational_status' => Vehicle::STATUS_PENDING_VERIFICATION]);
+        $capacityOnly = Vehicle::create(['fleet_number' => 'IMP-C', 'passenger_capacity' => 20, 'operational_status' => Vehicle::STATUS_PENDING_VERIFICATION]);
+
+        foreach ([$typeOnly, $capacityOnly] as $vehicle) {
+            $this->actingAs($manager)->post(route('movement.vehicles.status', $vehicle), ['operational_status' => 'operational', 'status_reason' => 'checked'])
+                ->assertSessionHasErrors(['operational_status' => __('movement.validation.classify_first')]);
+            $this->assertSame(Vehicle::STATUS_PENDING_VERIFICATION, $vehicle->fresh()->operational_status);
+        }
+
+        // The edit form cannot classify with a zero capacity either.
+        $this->actingAs($manager)->put(route('movement.vehicles.update', $typeOnly), ['fleet_number' => 'IMP-T', 'vehicle_type_id' => $this->bus()->id, 'passenger_capacity' => 0])
+            ->assertSessionHasErrors('passenger_capacity');
+        $this->assertNull($typeOnly->fresh()->passenger_capacity);
+    }
+
+    public function test_imported_driver_leaves_pending_verification_only_through_the_validated_form(): void
+    {
+        // Revision 5a / §7.3 / D8: name is required; licence fields stay optional; no way back to pending.
+        $manager = $this->user('movement_manager');
+        $imported = Driver::create(['name' => 'Imported Driver', 'employment_status' => Driver::STATUS_PENDING_VERIFICATION]);
+
+        $this->actingAs($manager)->put(route('movement.drivers.update', $imported), ['name' => '', 'employment_status' => 'active'])
+            ->assertSessionHasErrors('name');
+        $this->assertSame(Driver::STATUS_PENDING_VERIFICATION, $imported->fresh()->employment_status);
+
+        $this->actingAs($manager)->put(route('movement.drivers.update', $imported), ['name' => 'Imported Driver', 'employment_status' => 'active'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(Driver::STATUS_ACTIVE, $imported->fresh()->employment_status);
+        $this->assertSame(1, $this->auditCount('driver.status_changed'));
+
+        $this->actingAs($manager)->put(route('movement.drivers.update', $imported), ['name' => 'Imported Driver', 'employment_status' => 'pending_verification'])
+            ->assertSessionHasErrors('employment_status');
+        $this->assertSame(Driver::STATUS_ACTIVE, $imported->fresh()->employment_status);
+    }
+
     public function test_driver_and_type_uniqueness_include_soft_deleted_rows(): void
     {
         $manager = $this->user('movement_manager');

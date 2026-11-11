@@ -79,6 +79,27 @@
 >    - The §11.7 table's `movement-bookings` limiter on "request-submit" is replaced, for requests, by `movement-requests` (D20 request part).
 >    - Implementation files beyond the §5.2 tree: `Exceptions/IllegalMovementTransition.php` (the domain exception for illegal transitions, shown as a friendly message). `MovementAudit::record()` takes an optional actor id so workflow audit rows name the acting user.
 >    - B inventory (VERIFIED, `grep`): every reference is in the §18.3 list. There is **no** B sidebar item. `tests/Feature/MovementLegacyFleetTripRetirementTest.php` lists the B route names as "must still exist" and is updated in 4B. No other table has an FK to the B tables.
+>
+> **Revision 5a (2026-11-11), owner-requested Phase 4 follow-up, no new scope:**
+> 1. **Leaving `pending_verification` (clarifies Revision 4 item 8 and §7.3/§18.4):**
+>    - **Vehicles.** A vehicle leaves `pending_verification` only through the status change (`VehicleStatusRequest`), which refuses while `vehicle_type_id` is NULL or `passenger_capacity` < 1 (`Vehicle::isClassified()`). The edit form requires both (capacity ≥ 1). The create form never offers `pending_verification`.
+>    - **Drivers (newly stated).** A driver leaves `pending_verification` only through the driver edit form, which requires `name`. The licence fields stay optional, because D8 approves tracking only; blocking expired licences at assignment is Phase 5 (§13.2). `pending_verification` cannot be chosen on create and cannot be set again once a driver has left it.
+>    - Tested in `MovementFleetHttpTest`.
+> 2. **Phase 12 scope:**
+>    - remove the 4B redirect routes for the old B URLs and their temporary route names (`role.transport.requests.index`, `.process`, `.feedback`), plus any later legacy redirects;
+>    - new open decision **D23**: keep those redirects until old `in_app_notifications` rows that link to legacy URLs are purged, or remove them on a fixed date.
+> 3. **4A assets (VERIFIED in a disposable `node:18` container, 2026-11-11):**
+>    - The project's build command is `npm install` then `npm run production` (`package.json` → `mix --production`). `webpack.mix.js` is meant to write a `.min.js`/`.min.css` next to every file under `public/assets`.
+>    - That command currently fails, for reasons outside Movement, and produces no `.min` files:
+>      - there is no `package-lock.json`, so a fresh install gets webpack 5.112, which no longer has `webpack/lib/SizeFormatHelpers`, required by laravel-mix 6.0.49;
+>      - with an older webpack, `webpack.mix.js:40,45` calls `mix.minify({ src, output })`, but laravel-mix 6 expects `minify(src, output)` (`TypeError: source.replace is not a function`);
+>      - with that call fixed, `mix.version()` still fails on `/public/js/app.js` (ENOENT).
+>    - The 96 committed `.min` files predate this. Newer pages (`movement-fleet.js`, `kpi-*.js`, `bazaar-*.js`, `movement-requests.js`) have no `.min`, and `AssetVersion::url()` serves the plain file.
+>    - **4A therefore has no asset build step.** `movement-requests.js` ships unminified, like `movement-fleet.js` in Phase 3.
+>    - Repairing the build (lockfile or pinned webpack, `minify` call, `version` paths) is a project-wide change outside this plan, for the owner to schedule.
+> 4. **Test baseline (process, recorded in `CLAUDE.md`):**
+>    - `tests/baseline-failures.txt` lists the failing tests of the pre-Movement commit `b677f3f` (the parent of `ea11b87`, the first transport-removal commit), run in the disposable container setup;
+>    - `scripts/compare-test-baseline.php` reports new failures and newly passing tests against it.
 
 ## Labels
 
@@ -400,6 +421,8 @@ Configurable rather than hard-coded, because the fleet mix will change and Event
 | `notes` text; `softDeletes` | |
 
 `user_id` and `licence_number` stay unique including soft-deleted rows (Revision 4).
+
+A driver leaves `pending_verification` only through the edit form, which requires `name`. The licence fields stay optional (D8), and `pending_verification` is never selectable on create or after leaving it (Revision 5a).
 
 ### 7.4 `movement_unavailabilities` — maintenance, leave and blocks
 
@@ -1710,7 +1733,7 @@ flowchart LR
   - the full timeline appears in `audit_logs`.
 - **Tests:** full status × action matrix; comment/reason rules; edit guard; authorization (incl. per-user grant/denial, super_admin, other requester's request); round-trip rules, local→UTC, midnight-crossing deadline, `travel_date` near local midnight; idempotent submit; 429 after 10 writes; notification recipients (denied and inactive managers excluded); audit rows; availability summary (status, windows, `end == start` not an overlap, no per-vehicle data); 4B drop on SQLite and MySQL, redirects, C routes unchanged; full-chain `migrate:fresh`.
 - **Migration category:** 2 for the new tables; 4 for the B drop. **Rollback:** new tables only while empty; the B drop restores empty structure only.
-- **Production (Revision 5):** 4A: `migrate --force`, cache refresh, smoke tests. 4B (later window): DBA row counts of the four B tables, verified backup, `MOVEMENT_ALLOW_LEGACY_DROP=true` only if rows exist, `migrate --force`, `config:cache`/`route:cache`, then remove the flag.
+- **Production (Revision 5, 5a):** 4A: `migrate --force`; no asset build (the project's `npm run production` is currently broken; `movement-requests.js` is served unminified through the `AssetVersion` fallback, Revision 5a); cache refresh; smoke tests. 4B (later window): DBA row counts of the four B tables, verified backup, `MOVEMENT_ALLOW_LEGACY_DROP=true` only if rows exist, `migrate --force`, `config:cache`/`route:cache`, then remove the flag.
 
 ### Phase 5 — Trip planning, availability, conflict prevention, assignment (+ retire C and old masters)
 - **Objective:** the manager turns approved requests into scheduled trips with safe resource assignment.
@@ -1827,7 +1850,7 @@ flowchart LR
 - **Scope:**
   - retire `transport_officer`, `movement_editor`, `movement_viewer` once holders = 0 (D3);
   - update `config/site_role_guide.php` and `SiteRoleGuideController.php:70-75,84,97`, `directory/users.blade.php:24-25`, `UsersSeeder` demo users;
-  - remove the temporary redirects;
+  - remove the temporary redirects: the 4B redirects of the old B URLs and their temporary route names (`role.transport.requests.index`, `role.transport.requests.process`, `role.transport.requests.feedback`), plus any later legacy redirects. Timing follows D23 (Revision 5a);
   - write the module `README.md`;
   - update `docs/database-design.md` §7;
   - mark the audit and proposal docs as historical.
@@ -1912,3 +1935,4 @@ Decisions marked **Approved** may be implemented. All others are **open (DECISIO
 | D20 | Booking and request limits: max passengers per join booking, one active join booking per user per trip, rate limit | **Request part decided:** `client_token` idempotency and limiter `movement-requests` (10 writes/min per user) on request create/update/submit/resubmit/cancel. Booking part (10 passengers per join; one active join per user per trip; `movement-bookings` limiter) still a recommendation | **Partially approved — request part**: project owner, 2026-11-11. Booking part open | Phase 4 (requests), Phase 6 (bookings) |
 | D21 | No-show seats: keep counted for the whole span, or release them for later sections? | Keep counted (simple, safe); revisit with execution data | Open (new) | Phase 10 |
 | D22 | Paired trips: should the driver wait with the vehicle by default (`driver_waits_between`)? | Default equal to the vehicle flag; the manager can override per pair (§13.7) | Open (new) | Phase 5 |
+| D23 | Legacy redirects (old B URLs → `movement.requests.index`, plus any later legacy redirects): keep them until old `in_app_notifications` rows that link to legacy URLs are purged, or remove them on a fixed date? | None yet: needs a count of notifications that still link to legacy URLs (Revision 5a) | Open (new) | Phase 12 |
