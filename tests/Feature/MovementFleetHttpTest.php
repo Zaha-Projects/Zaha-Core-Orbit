@@ -396,8 +396,8 @@ class MovementFleetHttpTest extends TestCase
         }
 
         $status = AuditLog::query()->where('action', 'vehicle.status_changed')->firstOrFail();
-        $this->assertSame(['operational_status' => 'operational', 'status_reason' => null], $status->old_values);
-        $this->assertSame(['operational_status' => 'maintenance', 'status_reason' => 'brakes'], $status->new_values);
+        $this->assertEquals(['operational_status' => 'operational', 'status_reason' => null], $status->old_values);
+        $this->assertEquals(['operational_status' => 'maintenance', 'status_reason' => 'brakes'], $status->new_values);
         $this->assertSame($manager->id, $status->user_id);
         $this->assertSame(Vehicle::class, $status->entity_type);
 

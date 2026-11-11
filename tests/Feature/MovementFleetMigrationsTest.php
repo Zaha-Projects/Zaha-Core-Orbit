@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,6 +31,15 @@ class MovementFleetMigrationsTest extends TestCase
 
         // The full migration chain, including the Phase 3 tables, must apply cleanly.
         $this->assertSame(0, Artisan::call('migrate:fresh', ['--force' => true]));
+    }
+
+    protected function tearDown(): void
+    {
+        // Rows inserted here are committed (no RefreshDatabase transaction). Make the next
+        // RefreshDatabase test class rebuild the schema instead of inheriting them.
+        RefreshDatabaseState::$migrated = false;
+
+        parent::tearDown();
     }
 
     private function migration(string $table): object
@@ -71,11 +81,11 @@ class MovementFleetMigrationsTest extends TestCase
     public function test_foreign_keys_follow_the_d19_policy(): void
     {
         $rules = collect(DB::select(
-            'SELECT TABLE_NAME AS tbl, COLUMN_NAME AS col, REFERENCED_TABLE_NAME AS ref, rc.DELETE_RULE AS on_delete
+            'SELECT k.TABLE_NAME AS tbl, k.COLUMN_NAME AS col, k.REFERENCED_TABLE_NAME AS ref, rc.DELETE_RULE AS on_delete
              FROM information_schema.KEY_COLUMN_USAGE k
              JOIN information_schema.REFERENTIAL_CONSTRAINTS rc ON rc.CONSTRAINT_NAME = k.CONSTRAINT_NAME AND rc.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA
-             WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME LIKE ? AND k.REFERENCED_TABLE_NAME IS NOT NULL',
-            ['movement\\_%']
+             WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME IN ('.implode(',', array_fill(0, count(self::MIGRATIONS), '?')).') AND k.REFERENCED_TABLE_NAME IS NOT NULL',
+            array_keys(self::MIGRATIONS)
         ))->mapWithKeys(fn ($row) => [$row->tbl.'.'.$row->col => $row->ref.':'.$row->on_delete])->sortKeys()->all();
 
         $this->assertSame([
