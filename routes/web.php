@@ -55,7 +55,6 @@ use App\Http\Controllers\Web\Maintenance\MaintenanceApprovalsController as Maint
 use App\Http\Controllers\Web\Transport\VehiclesController as TransportVehiclesController;
 use App\Http\Controllers\Web\Transport\DriversController as TransportDriversController;
 use App\Http\Controllers\Web\Transport\MovementsController as TransportMovementsController;
-use App\Http\Controllers\Roles\Transport\TransportRequestsController as TransportTransportRequestsController;
 use App\Http\Controllers\Web\Reports\ReportsController as ReportsController;
 use App\Http\Controllers\Web\Reports\FinanceReportsController as FinanceReportsController;
 use App\Http\Controllers\Web\Reports\MaintenanceReportsController as MaintenanceReportsController;
@@ -394,10 +393,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/transport/drivers', [TransportDriversController::class, 'store'])->middleware('role:transport_officer')->name('role.transport.drivers.store');
     Route::get('/dashboard/transport/drivers/{driver}/edit', [TransportDriversController::class, 'edit'])->middleware('role:transport_officer')->name('role.transport.drivers.edit');
     Route::put('/dashboard/transport/drivers/{driver}', [TransportDriversController::class, 'update'])->middleware('role:transport_officer')->name('role.transport.drivers.update');
-    Route::get('/dashboard/transport/requests', [TransportTransportRequestsController::class, 'index'])->name('role.transport.requests.index');
-    Route::post('/dashboard/transport/requests', [TransportTransportRequestsController::class, 'store'])->name('role.transport.requests.store');
-    Route::patch('/dashboard/transport/requests/{transportRequest}/process', [TransportTransportRequestsController::class, 'process'])->middleware('role:transport_officer')->name('role.transport.requests.process');
-    Route::patch('/dashboard/transport/requests/{transportRequest}/feedback', [TransportTransportRequestsController::class, 'feedback'])->name('role.transport.requests.feedback');
+    // Legacy B retired (Movement Phase 4B, plan §18.3): old URLs and route names redirect to the new
+    // request workflow for one release, so stored links and notifications keep resolving.
+    Route::redirect('/dashboard/transport/requests', '/dashboard/movement/requests')->name('role.transport.requests.index');
+    Route::redirect('/dashboard/transport/requests/{transportRequest}/process', '/dashboard/movement/requests')->name('role.transport.requests.process');
+    Route::redirect('/dashboard/transport/requests/{transportRequest}/feedback', '/dashboard/movement/requests')->name('role.transport.requests.feedback');
     Route::get('/dashboard/transport/movements', [TransportMovementsController::class, 'index'])->middleware('role:transport_officer|movement_manager|movement_editor|movement_viewer|super_admin')->name('role.transport.movements.index');
     Route::get('/dashboard/transport/movements/create', [TransportMovementsController::class, 'create'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.create');
     Route::post('/dashboard/transport/movements', [TransportMovementsController::class, 'store'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.store');

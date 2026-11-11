@@ -25,9 +25,20 @@ class MovementFleetMigrationsTest extends TestCase
         'movement_unavailabilities' => '2026_11_11_000500_create_movement_unavailabilities_table.php',
     ];
 
+    /** Later Movement create migrations whose tables reference the Phase 3 tables (rolled back first). */
+    private const LATER_MIGRATIONS = [
+        'movement_requests' => '2026_11_11_000600_create_movement_requests_table.php',
+        'movement_request_legs' => '2026_11_11_000700_create_movement_request_legs_table.php',
+    ];
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        // migrate:fresh wipes the default connection: run only when the runner declares it disposable.
+        if (! filter_var(env('MOVEMENT_DISPOSABLE_DB', false), FILTER_VALIDATE_BOOLEAN)) {
+            $this->markTestSkipped('Needs a disposable database (MOVEMENT_DISPOSABLE_DB=true), e.g. the test container.');
+        }
 
         // The full migration chain, including the Phase 3 tables, must apply cleanly.
         $this->assertSame(0, Artisan::call('migrate:fresh', ['--force' => true]));
@@ -110,13 +121,19 @@ class MovementFleetMigrationsTest extends TestCase
 
     public function test_down_and_up_work_in_reverse_fk_order_while_empty(): void
     {
-        foreach (array_reverse(array_keys(self::MIGRATIONS)) as $table) {
-            $this->migration($table)->down();
+        // A real rollback runs newest first: later Movement tables that reference these ones
+        // (Phase 4A request tables) are rolled back before the Phase 3 tables.
+        $chain = self::LATER_MIGRATIONS + self::MIGRATIONS;
+        uasort($chain, fn ($a, $b) => strcmp($a, $b));
+        $run = fn (string $file) => require database_path('migrations/'.$file);
+
+        foreach (array_reverse($chain, true) as $table => $file) {
+            $run($file)->down();
             $this->assertFalse(Schema::hasTable($table), "{$table} should be dropped.");
         }
 
-        foreach (array_keys(self::MIGRATIONS) as $table) {
-            $this->migration($table)->up();
+        foreach ($chain as $table => $file) {
+            $run($file)->up();
             $this->assertTrue(Schema::hasTable($table), "{$table} should be recreated.");
         }
     }

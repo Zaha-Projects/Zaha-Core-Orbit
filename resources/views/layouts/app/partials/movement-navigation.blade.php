@@ -6,6 +6,8 @@
     $movementUser = auth()->user();
     $movementItems = array_values(array_filter([
         $movementUser?->can('viewOverview', \App\Modules\Movement\Models\Vehicle::class) ? ['route' => 'movement.fleet.overview', 'match' => 'movement.fleet.overview', 'icon' => 'fa-bus', 'label' => __('movement.nav.fleet_overview')] : null,
+        $movementUser?->can('viewAny', \App\Modules\Movement\Models\MovementRequest::class) ? ['route' => 'movement.requests.index', 'match' => ['movement.requests.index', 'movement.requests.create', 'movement.requests.edit'], 'icon' => 'fa-paper-plane', 'label' => __('movement.nav.my_requests')] : null,
+        $movementUser?->can('review', \App\Modules\Movement\Models\MovementRequest::class) ? ['route' => 'movement.requests.review.index', 'match' => 'movement.requests.review.*', 'icon' => 'fa-clipboard-check', 'label' => __('movement.nav.review_queue')] : null,
         $movementUser?->can('viewAny', \App\Modules\Movement\Models\Vehicle::class) ? ['route' => 'movement.vehicles.index', 'match' => 'movement.vehicles.*', 'icon' => 'fa-truck', 'label' => __('movement.nav.fleet')] : null,
         $movementUser?->can('viewAny', \App\Modules\Movement\Models\VehicleType::class) ? ['route' => 'movement.vehicle-types.index', 'match' => 'movement.vehicle-types.*', 'icon' => 'fa-shapes', 'label' => __('movement.nav.vehicle_types')] : null,
         $movementUser?->can('viewAny', \App\Modules\Movement\Models\Driver::class) ? ['route' => 'movement.drivers.index', 'match' => 'movement.drivers.*', 'icon' => 'fa-id-card', 'label' => __('movement.nav.drivers')] : null,

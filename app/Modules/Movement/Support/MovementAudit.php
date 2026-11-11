@@ -17,10 +17,11 @@ final class MovementAudit
     {
     }
 
-    public static function record(string $action, Model $entity, ?array $old = null, ?array $new = null): AuditLog
+    /** $userId defaults to the authenticated user; services pass their explicit actor. */
+    public static function record(string $action, Model $entity, ?array $old = null, ?array $new = null, ?int $userId = null): AuditLog
     {
         return AuditLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => $userId ?? auth()->id(),
             'module' => 'movement',
             'action' => $action,
             'entity_type' => $entity::class,

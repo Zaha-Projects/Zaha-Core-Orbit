@@ -59,5 +59,10 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
+
+        // Movement requests (plan §11.7, D20 request part): 10 writes per minute per user.
+        RateLimiter::for('movement-requests', function (Request $request) {
+            return Limit::perMinute(10)->by('movement-requests|'.(optional($request->user())->id ?: $request->ip()));
+        });
     }
 }

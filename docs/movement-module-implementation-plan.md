@@ -60,6 +60,25 @@
 > 13. **Public fleet overview** is `MovementDashboardController@fleet` (§5.2), route `movement.fleet.overview`, for every authenticated user: per-type counts (total / operational / unavailable), capacity distribution and the active driver count. Nothing per vehicle, no names (D7).
 > 14. **Active user for linking** means `users.status = 'active'` (VERIFIED: the Users screen offers `active`/`inactive`, `UsersController.php:62,120`; registration sets `active`).
 > 15. **Implementation helpers (clarification, no scope change):** `Support/MovementAudit.php` writes the §15.6 audit rows; `Policies/ChecksMovementPermission.php` is the shared policy check (active user + permission, per-user denials win). No services are created in Phase 3 (§5.2: services start in Phase 4).
+>
+> **Revision 5 (2026-11-11), owner-approved, recorded before Phase 4 coding:**
+> 1. **Decisions:** D2 Approved (no second stage; the Movement Manager is the only approver, R15; no `pending_secondary_approval`, no flag). D20 **partially approved — request part**: `client_token` idempotency (§11.7) and a named limiter `movement-requests`, 10 writes/minute per user, on create, update, submit, resubmit and cancel. The booking parts of D20 stay open for Phase 6. B retirement confirmed: no `transport_request*` data is migrated or archived (R3); only the disaster-recovery backup protects it (§18.1).
+> 2. **Two release sets.** Phase 4 ships as **4A** (new request workflow; B keeps working) and **4B** (guarded B drop, B code/routes/views/lang removal, officer-dashboard card removal, redirects of old B URLs to `movement.requests.index` for one release). 4B deploys only after 4A is verified live (§18.6).
+> 3. **Deferred to Phase 5:** the "suggested published trips" list (§8.2; fully available from Phase 6); cancelling an approved request's bookings and the "no serving trip `in_progress`" guard; the full §8.5 derivation. Phase 4 creates `fulfilment_status`, `fulfilment_dropped_at` and `refreshFulfilment()` covering only `not_applicable`, `unallocated` and `cancelled`. `MovementAvailabilityService` is created with `summary()` only (operational status + `movement_unavailabilities`, aggregated per type, plus the free active driver count); trip windows and paired reservations arrive in Phase 5.
+> 4. **Indicative window:** `config('movement.requests.indicative_window_hours')`, default 3; window `[required_arrival − hours, required_arrival)`. Replaces the undefined "default_duration_estimate" in §8.2. The only config key added in Phase 4.
+> 5. **`reference_no`** = `MV-{local year}-{id zero-padded to 6}`, set right after the insert inside the same transaction. Unique by construction; no counter table.
+> 6. **`travel_date`** is never input: it is the local (`Asia/Amman`) date of the leg's `required_arrival_at`. The column stays for filtering (§7.7).
+> 7. **Manager recipients:** `MovementNotifier` resolves candidates through the role and direct-permission queries, then keeps only users for whom `hasPermissionTo('movement.requests.review')` is true (per-user denials, `User.php:46-55`) and `status = 'active'`.
+> 8. **Verified:** `departments` exists (`2024_02_01_010200_create_departments_table.php`), so `movement_requests.department_id` is a nullable FK, `nullOnDelete`. The requester's branch is `users.branch_id` (nullable FK, `2014_10_12_000000_create_users_table.php:25`); `movement_requests.branch_id` defaults to it and is metadata only (R5), `nullOnDelete`.
+> 9. **Clarifications (no scope change):**
+>    - FKs (D19): `requester_id` restrict; `decided_by`, `cancelled_by` null on delete; leg `origin_location_id`/`destination_location_id` restrict (locations soft-delete).
+>    - Context (§8.2) in Phase 4 is department, branch and a free-text `context_label`. `context_type`/`context_id` exist but stay NULL until the Events link (Phase 11, D17).
+>    - Manager actions (start review, approve, return, reject, cancel) require `movement.requests.review`. A manager's cancel notifies the requester; a requester's cancel notifies the managers (§8.4, §15.5).
+>    - `summary()` takes an optional minimum capacity so the panel shows "vehicle types with capacity ≥ passenger count" (§8.2). Driver availability follows §13.2: active, licence not expired by the window end, no overlapping leave.
+>    - `preferred_departure_at`, when given, must be before that leg's `required_arrival_at`.
+>    - The §11.7 table's `movement-bookings` limiter on "request-submit" is replaced, for requests, by `movement-requests` (D20 request part).
+>    - Implementation files beyond the §5.2 tree: `Exceptions/IllegalMovementTransition.php` (the domain exception for illegal transitions, shown as a friendly message). `MovementAudit::record()` takes an optional actor id so workflow audit rows name the acting user.
+>    - B inventory (VERIFIED, `grep`): every reference is in the §18.3 list. There is **no** B sidebar item. `tests/Feature/MovementLegacyFleetTripRetirementTest.php` lists the B route names as "must still exist" and is updated in 4B. No other table has an FK to the B tables.
 
 ## Labels
 
@@ -413,10 +432,10 @@ Free text cannot support either reliably. Requesters may still enter a custom pl
 
 | Column | Notes |
 |---|---|
-| `reference_no` string unique | e.g. `MV-2026-000123` |
+| `reference_no` string unique | `MV-{local year}-{id zero-padded to 6}`, set after insert in the same transaction (Revision 5) |
 | `requester_id` FK users restrict | owner |
-| `branch_id` FK branches nullable | **metadata** (R5), defaults to the requester's branch |
-| `department_id` FK nullable; `context_type` string nullable; `context_id` unsigned bigint nullable; `context_label` string nullable | event or organisational context (§17.1). There is **no FK** to Events tables |
+| `branch_id` FK branches nullable, nullOnDelete | **metadata** (R5), defaults to the requester's `users.branch_id` (Revision 5) |
+| `department_id` FK `departments` nullable, nullOnDelete (Revision 5); `context_type` string nullable; `context_id` unsigned bigint nullable; `context_label` string nullable | event or organisational context (§17.1). There is **no FK** to Events tables |
 | `trip_direction` string | `one_way` / `round_trip` |
 | `purpose`, `notes` text | |
 | `status` string | decision lifecycle (§8.4) |
@@ -438,7 +457,7 @@ Free text cannot support either reliably. Requesters may still enter a custom pl
 | `origin_location_id`, `destination_location_id` FK nullable | |
 | `origin_text`, `destination_text`, `origin_maps_url`, `destination_maps_url` nullable | custom places |
 | `passenger_count` unsigned smallint > 0 | the return may differ from the outbound |
-| `travel_date` date (local) | |
+| `travel_date` date (local) | derived from the local date of `required_arrival_at`, never input (Revision 5) |
 | `required_arrival_at` datetime UTC | deadline at the destination |
 | `preferred_departure_at` datetime UTC nullable | |
 | `notes` | |
@@ -550,8 +569,8 @@ Both receive the permission **`movement.requests.create`**. Further roles or ind
   - notes.
 - **Return leg** (round trip only): the same fields. Route and passenger count may differ.
 - **While the form is filled in:**
-  - An indicative-availability panel shows vehicle types with capacity ≥ passenger count that are free in the window `[required_arrival − default_duration_estimate − buffers, required_arrival]`, plus the free-driver count. It is labelled "indicative — final assignment by the Movement Department".
-  - A *suggested published trips* list shows trips on the same date that serve both places in order, nudging the requester to **join** rather than open a new request.
+  - An indicative-availability panel shows vehicle types with capacity ≥ passenger count that are free in the window `[required_arrival − `movement.requests.indicative_window_hours` (default 3), required_arrival) (Revision 5)`, plus the free-driver count. It is labelled "indicative — final assignment by the Movement Department".
+  - (Phase 5/6, Revision 5) A *suggested published trips* list shows trips on the same date that serve both places in order, nudging the requester to **join** rather than open a new request.
 
 ### 8.3 Round trips (PROPOSED)
 
@@ -601,7 +620,7 @@ The values `scheduled` and `completed` from Revision 1 are **removed from the re
 
 - Illegal transitions are rejected by a `TRANSITIONS` constant map on `MovementRequest`, checked in `MovementRequestWorkflow`.
 - Every transition writes `audit_logs`.
-- **Optional second stage (DECISION REQUIRED D2):** the old lang text names a Programs Manager confirmation (Audit §4.2). It is not adopted. It would only make sense for cost-bearing or out-of-governorate trips. If approved, insert `pending_secondary_approval` between `under_review` and `approved`, behind a config flag.
+- **No second stage (D2 Approved, Revision 5):** the Movement Manager is the only approver. `pending_secondary_approval` is not built.
 
 ### 8.5 Fulfilment status (PROPOSED)
 
@@ -917,7 +936,7 @@ DB::transaction(function () use ($tripId, $input) {
 | Same span booked twice by accident (double click, retried POST) | Repeating a submission must not create a second booking | Each booking form carries a server-generated UUID `client_token` (hidden field, also stored in the session for that form). Insert uses the unique `client_token`. A repeat with the same token returns the **existing** booking and shows "already booked" instead of creating one. The same mechanism applies to request submission (`movement_requests.client_token`, unique nullable) |
 | Concurrent attempts by the same or different users | Never oversell; never two active join bookings for one user/trip | The trip-row lock (§11.5) serialises them; the generated-column unique index catches anything that slips through |
 | Passenger count per booking | Join bookings may not exceed `config('movement.booking.max_passengers_per_join')` (recommended default 10, **D20**). Larger groups use a movement request. Request and manager bookings are bounded only by the leg and the capacity | Form Request `max:` rule plus a `BookingService` re-check |
-| Abuse or rapid repeats | Reasonable limits on user-facing writes | Named rate limiter `movement-bookings` (recommended 10 writes/minute per user; D20) registered in `RouteServiceProvider::configureRateLimiting()` and applied with `throttle:movement-bookings` to the join, cancel and request-submit routes. Manager routes are not throttled |
+| Abuse or rapid repeats | Reasonable limits on user-facing writes | Named rate limiter `movement-bookings` (recommended 10 writes/minute per user; D20) registered in `RouteServiceProvider::configureRateLimiting()` and applied with `throttle:movement-bookings` to the join and cancel routes. Request writes use `throttle:movement-requests` (Revision 5, D20 request part). Manager booking routes are not throttled |
 
 ---
 
@@ -1283,7 +1302,7 @@ stateDiagram-v2
 
 ### 15.5 Notifications (via `NotificationService::notifyUsers`, in-app; VERIFIED API)
 
-Recipients called "managers" are resolved by `MovementNotifier` as users holding `movement.requests.review` (via Spatie `User::permission()`).
+Recipients called "managers" are resolved by `MovementNotifier` as active users holding `movement.requests.review`: candidates from the role and direct-permission queries, filtered with `hasPermissionTo()` so per-user denials win (Revision 5).
 
 | Event | Recipients | `type` |
 |---|---|---|
@@ -1668,25 +1687,30 @@ flowchart LR
 
 ### Phase 4 — Movement requests and approval (+ retire B)
 - **Objective:** demand capture and the manager decision.
-- **Scope:**
-  - `movement_requests`, `movement_request_legs`;
-  - screens 6 and 7;
-  - `MovementRequestWorkflow` with the transition map;
-  - `MovementRequestPolicy` (Revision 3);
-  - request notifications (§15.5 rows 1–3);
-  - indicative availability panel (uses `MovementAvailabilityService::summary()`; trips don't exist yet, so only status and unavailability count until Phase 5).
-  - Then retire B (§18.3).
-- **DB:** 2 new tables; drop of 4 B tables (guarded, separate migration).
-- **Decisions:** D2 (second stage), D19 (module FK behaviour), D20 (request idempotency/rate limit).
+- **Release sets (Revision 5):** **4A** ships first; **4B** only after 4A is verified live.
+- **4A in scope:**
+  - `movement_requests`, `movement_request_legs` (category 2) per §7.6–7.7 as revised;
+  - models `MovementRequest` (`STATUS_*`, `TRANSITIONS` = §8.4 exactly, `FULFILMENT_*`) and `MovementRequestLeg`; drafts only may be soft-deleted;
+  - `MovementRequestWorkflow`: every §8.4 transition and guard, comments on return/reject, reason on cancel past draft, edits only in `draft`/`returned`, audit `request.<event>` + notification in one transaction, domain exception for illegal transitions; `refreshFulfilment()` limited to `not_applicable`/`unallocated`/`cancelled`;
+  - `MovementRequestPolicy` (own requests for requesters, `view_all`/`review` for managers, active users, no branch isolation);
+  - Form Requests (local time via `MovementTime`, future deadline, pax ≥ 1, saved active location or custom text + Maps link, round-trip rules);
+  - `client_token` idempotency and the `movement-requests` limiter (D20 request part);
+  - `MovementAvailabilityService::summary()` and the indicative JSON panel; `config('movement.requests.indicative_window_hours')`;
+  - `MovementNotifier` and request notifications (§15.5 rows 1–3);
+  - screens 6 (new/edit), 7 (review queue + timeline from `audit_logs`), my requests, details, cancel; sidebar items "My requests" and "Review queue".
+- **4B in scope:** guarded category 4 drop of the four B tables (children first; `allow_drop_with_rows` flag; `down()` = empty original structure); removal of B code, routes, views, lang and the officer-dashboard card; redirects from old B URLs to `movement.requests.index` for one release (route names kept as redirects); update of the Phase 1 retirement test's B route list.
+- **Out of scope:** trips, stops, bookings, allocation and the full §8.5 derivation, suggested trips, joining, the Events link (Phase 11), email/SMS, removing C or the old masters, role retirement, demo data.
+- **DB:** 2 new tables (4A); drop of 4 B tables (4B, guarded, separate migration).
+- **Decisions:** D2 Approved, D19 Approved, D20 request part Approved.
 - **Risks:** a requester sees others' requests. Policy tests prevent it.
 - **Acceptance:**
   - only `relations_officer`, `supervisor` and per-user-granted users can create;
   - the transition table is enforced;
   - comments are required where specified;
   - the full timeline appears in `audit_logs`.
-- Requests include `fulfilment_status` (initially `not_applicable`/`unallocated`; allocation arrives in Phase 5) and the `client_token` idempotency (§11.7).
-- **Tests:** every allowed and forbidden transition; round-trip leg validation; timezone parsing; duplicate submit with the same token creates one request; HTTP/Policy tests for the §14.3 request rows (Revision 3).
+- **Tests:** full status × action matrix; comment/reason rules; edit guard; authorization (incl. per-user grant/denial, super_admin, other requester's request); round-trip rules, local→UTC, midnight-crossing deadline, `travel_date` near local midnight; idempotent submit; 429 after 10 writes; notification recipients (denied and inactive managers excluded); audit rows; availability summary (status, windows, `end == start` not an overlap, no per-vehicle data); 4B drop on SQLite and MySQL, redirects, C routes unchanged; full-chain `migrate:fresh`.
 - **Migration category:** 2 for the new tables; 4 for the B drop. **Rollback:** new tables only while empty; the B drop restores empty structure only.
+- **Production (Revision 5):** 4A: `migrate --force`, cache refresh, smoke tests. 4B (later window): DBA row counts of the four B tables, verified backup, `MOVEMENT_ALLOW_LEGACY_DROP=true` only if rows exist, `migrate --force`, `config:cache`/`route:cache`, then remove the flag.
 
 ### Phase 5 — Trip planning, availability, conflict prevention, assignment (+ retire C and old masters)
 - **Objective:** the manager turns approved requests into scheduled trips with safe resource assignment.
@@ -1704,6 +1728,7 @@ flowchart LR
 - **DB:** 3 new tables (`movement_trips`, `movement_trip_stops`, `movement_bookings`), C drop, old masters drop.
 - **Pre-flight (Revision 4):** the legacy fleet import (`movement:import-legacy-fleet --execute`) has been run, or the owner has confirmed it is not needed, before the old-master drop is deployed.
 - **Also (Revision 4):** the §13.6 capacity-floor and reassignment rules; the expired-licence assignment block (D8); completing the sidebar replacement (§16).
+- **Also (Revision 5):** the full §8.5 fulfilment derivation; cancelling an approved request's bookings and the "no serving trip `in_progress`" cancel guard; trip windows and paired reservations in `MovementAvailabilityService`; the "suggested published trips" list on the request form (complete from Phase 6, when trips are published).
 - **Decisions:** D4 (buffers), D10 (no-key approach accepted), D22 (paired-trip driver wait default).
 - **Risks:** race conditions (locks + tests); time arithmetic (unit tests); name collision (ordering of migrations, verified in CI with `migrate:fresh` on a scratch DB).
 - **Security:** only `trips.plan` / `trips.publish`.
@@ -1861,12 +1886,12 @@ flowchart LR
 
 ## 22. Remaining business decisions
 
-Decisions marked **Approved** may be implemented. All others are **open (DECISION REQUIRED)**; their recommendations are proposals, **not** approvals. None of the open ones blocks Phases 1–3.
+Decisions marked **Approved** may be implemented. All others are **open (DECISION REQUIRED)**; their recommendations are proposals, **not** approvals. None of the open ones blocks Phases 1–4.
 
 | ID | Decision | Recommendation (not approved) | Status | Blocks |
 |---|---|---|---|---|
 | D1 | Do real vehicle/driver rows exist that must be imported? | **Decision:** build and test the one-time import command (§18.4); never run it against a real database during development. Inventory result: unknown, so production runs `--dry-run` first and the owner decides (Revision 4) | **Approved**: project owner, 2026-11-10 | Phase 3 (import only) |
-| D2 | Second approval stage (e.g. Programs Manager)? | **No.** Single approver; revisit for cost-bearing trips | Open | Phase 4 |
+| D2 | Second approval stage (e.g. Programs Manager)? | **Decision: no.** The Movement Manager is the only approver (R15); no `pending_secondary_approval` and no config flag | **Approved**: project owner, 2026-11-11 | Phase 4 |
 | D3 | Retire `transport_officer`, `movement_editor`, `movement_viewer`? Create `movement_driver`? | **Decision:** create `movement_driver` (grants `movement.driver.workspace` only for now). Retire the three legacy roles in Phase 12 per the §14.2 retirement procedure; they are neither deleted nor de-seeded before that | **Approved**: project owner, 2026-11-10 | Phase 2 (roles), Phase 12 (retirement) |
 | D4 | Default buffers (pre/post trip, excess running %, dwell), merge time tolerance and distance threshold, booking close time | 15 min / 15 min / 15% / 5 min; ±60 min; 2 km; 60 min | Open | Phases 5, 6, 8 |
 | D5 | Joining a published trip: instant confirmation or manager approval? | **Instant (`auto_confirm`)**, manager can cancel. Either way pending bookings never hold seats (§11.1) | Open | Phase 6 |
@@ -1884,6 +1909,6 @@ Decisions marked **Approved** may be implemented. All others are **open (DECISIO
 | D17 | Should an Events transport need create a Movement request automatically? | **No**: prefilled "Request transport" link only | Open | Phase 11 |
 | D18 | Keep monthly-activity edit rights for movement roles? | Events owners to review; out of Movement scope | Open | — |
 | D19 | **Movement module** FK/deletion policy: `restrictOnDelete` for ownership FKs (requester, booker) vs `nullOnDelete` | **Decision:** ownership FKs `restrictOnDelete`; actor columns (`created_by`, `status_changed_by`, …) `nullOnDelete`; catalogue tables (vehicle types, vehicles, drivers, locations) soft-delete (§7.12) | **Approved**: project owner, 2026-11-10 | Phase 3 |
-| D20 | Booking and request limits: max passengers per join booking, one active join booking per user per trip, rate limit | 10 passengers; one active join per user per trip; 10 writes/min per user (§11.7) | Open (new) | Phase 4 (request rate limit), Phase 6 |
+| D20 | Booking and request limits: max passengers per join booking, one active join booking per user per trip, rate limit | **Request part decided:** `client_token` idempotency and limiter `movement-requests` (10 writes/min per user) on request create/update/submit/resubmit/cancel. Booking part (10 passengers per join; one active join per user per trip; `movement-bookings` limiter) still a recommendation | **Partially approved — request part**: project owner, 2026-11-11. Booking part open | Phase 4 (requests), Phase 6 (bookings) |
 | D21 | No-show seats: keep counted for the whole span, or release them for later sections? | Keep counted (simple, safe); revisit with execution data | Open (new) | Phase 10 |
 | D22 | Paired trips: should the driver wait with the vehicle by default (`driver_waits_between`)? | Default equal to the vehicle flag; the manager can override per pair (§13.7) | Open (new) | Phase 5 |

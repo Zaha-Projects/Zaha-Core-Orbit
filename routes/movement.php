@@ -11,12 +11,32 @@ use App\Modules\Movement\Http\Controllers\Fleet\LocationController;
 use App\Modules\Movement\Http\Controllers\Fleet\UnavailabilityController;
 use App\Modules\Movement\Http\Controllers\Fleet\VehicleController;
 use App\Modules\Movement\Http\Controllers\Fleet\VehicleTypeController;
+use App\Modules\Movement\Http\Controllers\AvailabilityController;
 use App\Modules\Movement\Http\Controllers\MovementDashboardController;
+use App\Modules\Movement\Http\Controllers\Requests\MovementRequestController;
+use App\Modules\Movement\Http\Controllers\Requests\MovementRequestReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('dashboard/movement')->name('movement.')->group(function () {
     // Public (every authenticated user): aggregates only (D7).
     Route::get('/fleet-overview', [MovementDashboardController::class, 'fleet'])->name('fleet.overview');
+    Route::get('/availability/summary', [AvailabilityController::class, 'summary'])->name('availability.summary');
+
+    // Requests (Phase 4A). Requester writes are throttled by movement-requests (D20 request part).
+    Route::prefix('requests')->name('requests.')->group(function () {
+        Route::get('/', [MovementRequestController::class, 'index'])->name('index');
+        Route::get('/review', [MovementRequestReviewController::class, 'index'])->name('review.index');
+        Route::get('/create', [MovementRequestController::class, 'create'])->name('create');
+        Route::post('/', [MovementRequestController::class, 'store'])->middleware('throttle:movement-requests')->name('store');
+        Route::get('/{movementRequest}', [MovementRequestController::class, 'show'])->whereNumber('movementRequest')->name('show');
+        Route::get('/{movementRequest}/edit', [MovementRequestController::class, 'edit'])->whereNumber('movementRequest')->name('edit');
+        Route::put('/{movementRequest}', [MovementRequestController::class, 'update'])->whereNumber('movementRequest')->middleware('throttle:movement-requests')->name('update');
+        Route::post('/{movementRequest}/submit', [MovementRequestController::class, 'submit'])->whereNumber('movementRequest')->middleware('throttle:movement-requests')->name('submit');
+        Route::post('/{movementRequest}/cancel', [MovementRequestController::class, 'cancel'])->whereNumber('movementRequest')->middleware('throttle:movement-requests')->name('cancel');
+        Route::delete('/{movementRequest}', [MovementRequestController::class, 'destroy'])->whereNumber('movementRequest')->middleware('throttle:movement-requests')->name('destroy');
+        Route::post('/{movementRequest}/review', [MovementRequestReviewController::class, 'startReview'])->whereNumber('movementRequest')->name('review.start');
+        Route::post('/{movementRequest}/decision', [MovementRequestReviewController::class, 'decide'])->whereNumber('movementRequest')->name('review.decide');
+    });
 
     Route::prefix('vehicle-types')->name('vehicle-types.')->group(function () {
         Route::get('/', [VehicleTypeController::class, 'index'])->name('index');

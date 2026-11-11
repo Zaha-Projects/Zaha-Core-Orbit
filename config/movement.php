@@ -2,12 +2,18 @@
 
 /*
  * Movement module configuration (docs/movement-module-implementation-plan.md §9.3).
- * Keys are added by the phase that first reads them; Phase 1 needs only these two.
+ * Keys are added by the phase that first reads them.
  */
 return [
     // Business timezone for entering and displaying movement times. Storage stays UTC
     // (config('app.timezone')), which is intentionally not changed globally.
     'timezone' => env('MOVEMENT_TIMEZONE', 'Asia/Amman'),
+
+    'requests' => [
+        // Indicative availability window on the request form (Revision 5):
+        // [required_arrival − hours, required_arrival). Indicative only; the manager assigns resources.
+        'indicative_window_hours' => (int) env('MOVEMENT_REQUEST_INDICATIVE_WINDOW_HOURS', 3),
+    ],
 
     'legacy' => [
         // Explicit "disaster-recovery backup verified" switch for legacy-table drop
