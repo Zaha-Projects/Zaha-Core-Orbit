@@ -40,9 +40,26 @@
 >    - `givePermissionTo` re-adds every default grant in its map, which undoes grants an administrator removed (`RolesController.php:64,104` uses `syncPermissions`);
 >    - it revokes `ramadan_iftars.execute` from `followup_officer` (documented in `docs/production-seeder-safety-audit.md`).
 >
->    `RolePermissionSeeder` and `EvaluationWorkflowAccessSeeder` likewise rewrite permission/role labels. So Phase 2 production does **not** run `rightDatabaseSeeder` or `RolesSeeder`. The Phase 2 production sequence (§19 Phase 2, "Production") uses only Spatie's `permission:create-role` (find-or-create, touches no other row) and `MovementPermissionSeeder`. The `rightDatabaseSeeder` wiring is unchanged and still serves fresh and dev installs. **Status: proposed; needs owner approval** (the owner approved "RolesSeeder only if additive", and it is not).
+>    `RolePermissionSeeder` and `EvaluationWorkflowAccessSeeder` likewise rewrite permission/role labels. So Phase 2 production does **not** run `rightDatabaseSeeder` or `RolesSeeder`. The Phase 2 production sequence (§19 Phase 2, "Production") uses only Spatie's `permission:create-role` (find-or-create, touches no other row) and `MovementPermissionSeeder`. The `rightDatabaseSeeder` wiring is unchanged and still serves fresh and dev installs. **Status: Approved by the project owner (Revision 4).**
 > 2. **Missing-role behaviour (VERIFIED by test).** If `movement_driver` does not exist, `MovementPermissionSeeder` prints a warning, skips that role's grants and never creates the role. Added to the Phase 2 acceptance list.
 > 3. **R4 exception, approved by the project owner (2026-11-10).** The module's artisan commands live in `app/Console/Commands/Movement*.php`, not under `app/Modules/Movement`, because Laravel 8 auto-loads commands only from that directory (`app/Console/Kernel.php:28`). This is the only R4 exception; every other module artefact stays under `App\Modules\Movement` or the module paths in §5.
+>
+> **Revision 4 (2026-11-11), owner-approved, recorded before Phase 3 coding:**
+> 1. **Decisions approved by the project owner:** D1, D6, D7, D8 and D19 are "Approved" in §22. D1 inventory result: **unknown** (not supplied), so the import command ships and its production step is "run with `--dry-run` first, then decide" (§18.4).
+> 2. **Revision 3a production sequence approved.** Production never runs `rightDatabaseSeeder` or `RolesSeeder` for Movement; Phase 3 appends `MovementReferenceDataSeeder` to the sequence (§19 Phase 3, "Production").
+> 3. **Saved-locations screen.** §16 gains screen **2b — Saved locations** (`movement.locations.manage`, manager CRUD). A pasted Google Maps link fills latitude/longitude through the existing `App\Support\GoogleMaps::locationQuery()` parsing.
+> 4. **Sidebar.** The module partial adds a "الحركة / Movement" group showing only the items that exist in the current phase, each gated by its permission. The legacy transport sidebar items stay until B and C are retired; the replacement completes in Phase 5 (§16).
+> 5. **Unique identifiers with soft deletes.** `fleet_number`, `plate_number`, `licence_number` and `movement_drivers.user_id` are unique **including soft-deleted rows**. A soft-deleted record is restored, never re-created with the same identifier; validation messages say so.
+> 6. **Import ordering.** Phase 5's pre-flight gains: "the legacy fleet import has been run, or the owner has confirmed it is not needed, before the old-master drop is deployed".
+> 7. **Trip-dependent rules** (§13.6 capacity floor, reassignment) are built in Phase 5. In Phase 3 capacity edits are unrestricted because no trips exist.
+> 8. **Imported vehicles without type or capacity** (owner decision): `movement_vehicles.vehicle_type_id` and `passenger_capacity` are **nullable in the database**, because legacy `vehicles` has neither (VERIFIED: `2024_02_01_012000_create_vehicles_table.php`). Manual create/edit requires both (capacity ≥ 1). A vehicle cannot leave `pending_verification` until both are set. Public counts skip vehicles without a type.
+> 9. **Legacy vehicles without `vehicle_no`** (owner decision): reported as "missing vehicle_no" and not imported.
+> 10. **Import idempotency column.** `legacy_source_id` (unsigned bigint, nullable, **unique**) on `movement_vehicles` and `movement_drivers`. Chosen over deriving idempotency from `fleet_number` because legacy drivers have no natural unique key (only `name`/`phone`), and a manager may rename a fleet number after import. Unique (rather than only indexed) makes a double import impossible at the database level; NULLs do not collide in MySQL.
+> 11. **`MovementReferenceDataSeeder` uses `firstOrCreate` by `code`** (owner decision), not `updateOrCreate`: vehicle types are manager-maintained (§7.1), so the seeder creates missing types and never overwrites edits. `default_capacity` is seeded as NULL (no invented capacities).
+> 12. **Unavailability CHECK constraint not added.** The production MySQL version cannot be verified (§3, UNVERIFIABLE), and enforced CHECKs need 8.0.16+. "Exactly one of `vehicle_id` / `driver_id`" is enforced in the Form Request and the model (`saving` guard).
+> 13. **Public fleet overview** is `MovementDashboardController@fleet` (§5.2), route `movement.fleet.overview`, for every authenticated user: per-type counts (total / operational / unavailable), capacity distribution and the active driver count. Nothing per vehicle, no names (D7).
+> 14. **Active user for linking** means `users.status = 'active'` (VERIFIED: the Users screen offers `active`/`inactive`, `UsersController.php:62,120`; registration sets `active`).
+> 15. **Implementation helpers (clarification, no scope change):** `Support/MovementAudit.php` writes the §15.6 audit rows; `Policies/ChecksMovementPermission.php` is the shared policy check (active user + permission, per-user denials win). No services are created in Phase 3 (§5.2: services start in Phase 4).
 
 ## Labels
 
@@ -339,15 +356,18 @@ Configurable rather than hard-coded, because the fleet mix will change and Event
 |---|---|
 | `fleet_number` string unique | internal identifier. **Manager views only.** It is not shown to ordinary users unless D7 approves |
 | `plate_number` string unique nullable | manager views only (D7) |
-| `vehicle_type_id` FK restrict | |
+| `vehicle_type_id` FK restrict, **nullable** | required by the forms; NULL only for imported rows still `pending_verification` (Revision 4) |
 | `manufacturer`, `model` string nullable; `model_year` smallint nullable | |
-| `passenger_capacity` unsigned smallint | seats **excluding** the driver |
+| `passenger_capacity` unsigned smallint, **nullable** | seats **excluding** the driver; ≥ 1 when set; required by the forms; NULL only for imported rows still `pending_verification` (Revision 4) |
 | `operational_status` string | see §13.1 |
 | `status_reason` string nullable; `status_changed_at` datetime; `status_changed_by` FK users null | |
+| `home_location_id` FK `movement_locations` nullable, nullOnDelete | D6 |
+| `legacy_source_id` unsigned bigint nullable unique | legacy `vehicles.id`, import idempotency (Revision 4) |
 | `notes` text nullable; `softDeletes` | |
 
 - Index: `operational_status`.
-- **No `branch_id`** (R5). An optional `home_location_id` (FK `movement_locations`) records where the vehicle is parked (D6).
+- **No `branch_id`** (R5). The optional `home_location_id` records where the vehicle is parked (D6 Approved).
+- `fleet_number` and `plate_number` stay unique including soft-deleted rows; a deleted vehicle is restored, never re-created (Revision 4).
 
 ### 7.3 `movement_drivers`
 
@@ -357,13 +377,16 @@ Configurable rather than hard-coded, because the fleet mix will change and Event
 | `name`, `phone` | the name is kept even when linked (a snapshot for history) |
 | `licence_number` nullable unique; `licence_category` nullable; `licence_expires_on` date nullable | D8 |
 | `employment_status` string | `active`, `inactive`, `pending_verification`. Only `active` drivers are assignable; imported drivers start as `pending_verification` (§18.4) |
+| `legacy_source_id` unsigned bigint nullable unique | legacy `drivers.id`, import idempotency (Revision 4) |
 | `notes` text; `softDeletes` | |
+
+`user_id` and `licence_number` stay unique including soft-deleted rows (Revision 4).
 
 ### 7.4 `movement_unavailabilities` — maintenance, leave and blocks
 
 | Column | Notes |
 |---|---|
-| `vehicle_id` FK nullable restrict; `driver_id` FK nullable restrict | exactly one is set (Form Request rule + optional MySQL CHECK) |
+| `vehicle_id` FK nullable restrict; `driver_id` FK nullable restrict | exactly one is set (Form Request rule + model guard; no CHECK constraint, Revision 4) |
 | `type` string | `maintenance`, `leave`, `inspection`, `other` |
 | `starts_at`, `ends_at` datetime UTC | `ends_at > starts_at` |
 | `reason` text; `created_by` FK users null | |
@@ -1020,7 +1043,7 @@ The **public count** is the number of drivers available in the window. No names 
 ### 13.3 Driver ↔ user linking (CONFIRMED R13; PROPOSED process)
 
 - `movement_drivers.user_id` is nullable and unique.
-- The manager links a driver to an existing active user through a searchable picker. Linking requires `movement.drivers.manage`.
+- The manager links a driver to an existing active user (`users.status = 'active'`, Revision 4) through a searchable picker. Linking requires `movement.drivers.manage`.
 - **No automatic account creation.** If no account exists, the manager asks a user administrator to create one through the existing Users screen. That screen is guarded by `users.manage`; see `UsersController`.
 - The administrator then assigns the role `movement_driver` (new; D3) or grants `movement.driver.workspace` directly.
 - Unlinking keeps all history, because trips reference `driver_id`, not `user_id`.
@@ -1291,7 +1314,8 @@ Every state change and assignment writes `AuditLog::create([... 'module' => 'mov
 
 **Sidebar (PROPOSED):**
 
-- A single "الحركة / Movement" group, rendered by a module partial included in `layouts/app.blade.php`. It replaces the four transport items at `:234-239` and `$canAccessTransportSidebar` at `:63-66`.
+- A single "الحركة / Movement" group, rendered by a module partial included in `layouts/app.blade.php`. Each phase shows only the items that exist, each gated by its permission (Revision 4).
+- It replaces the legacy transport items at `:234-239` and `$canAccessTransportSidebar` at `:63-66`. Those stay until B and C are retired; the replacement **completes in Phase 5** (Revision 4).
 - Items are shown per ability:
   - Overview
   - Schedule
@@ -1301,6 +1325,7 @@ Every state change and assignment writes `AuditLog::create([... 'module' => 'mov
   - Trips (`trips.plan`)
   - Fleet (`vehicles.manage`)
   - Drivers (`drivers.manage`)
+  - Locations (`locations.manage`, Revision 4)
   - Reports (`reports.view`)
   - My trips (driver)
 
@@ -1315,6 +1340,7 @@ General conventions for every screen:
 |---|---|---|---|---|---|---|
 | 1 | Overview | all authenticated | Pick a time window | Aggregates only: vehicles total / operational / unavailable / free-in-window **per type**, capacity distribution per type, drivers total / free / assigned counts; manager-only panels (per-vehicle detail): today's trips, pending requests, conflicts, licences expiring | window `from < to` | KPI tiles 2-per-row |
 | 2 | Fleet management | `vehicles.manage` | CRUD vehicles and types, change status (with reason), add maintenance windows | fleet no., plate, type, capacity, status, next unavailability | unique fleet/plate; capacity ≥ 1; status in set | stacked cards |
+| 2b | Saved locations (Revision 4) | `locations.manage` | CRUD; paste a Google Maps link to fill latitude/longitude (`GoogleMaps::locationQuery`) | name ar/en, address, lat/lng, Maps URL, optional branch (metadata), active | lat −90..90, lng −180..180; at least one name | stacked cards |
 | 3 | Driver management | `drivers.manage` | CRUD, leave windows, link/unlink user | name, phone, licence expiry, linked user, status | unique `user_id`; linked user must be active | stacked cards |
 | 4 | Vehicle availability | all (summary); manager (details) | Choose window, type, minimum capacity | public: counts per type and capacity class free in the window (no fleet numbers, plates or per-vehicle status, D7); manager: per-vehicle list with blocking trip or unavailability | — | list |
 | 5 | Driver availability | all (count); `drivers.view_details` (names) | Choose window | count; manager: per-driver timeline | — | list |
@@ -1466,6 +1492,7 @@ Every guarded `down()` documents its behaviour in a class docblock. The phase ac
   - Type and capacity are entered by the manager.
 - **Mandatory manager review:** imported records appear in a "Needs verification" list. They are unassignable and counted as unavailable until the manager sets a verified status.
 - It writes a mapping report. No request, day or trip data is imported (R3).
+- **Command (Revision 4):** `movement:import-legacy-fleet` (`app/Console/Commands/MovementImportLegacyFleet.php`, R4 exception). `--dry-run` is the default; writing needs `--execute`. Idempotent through `legacy_source_id` (soft-deleted rows included). Skips the demo rows, legacy vehicles without `vehicle_no`, and duplicate fleet/plate numbers (reported, not imported). Production: run without `--execute` first and decide (D1).
 
 ### 18.5 Seeders
 
@@ -1473,7 +1500,7 @@ Every guarded `down()` documents its behaviour in a class docblock. The phase ac
 |---|---|
 | Remove the `MovementSeeder` call from `DatabaseSeeder.php:32` and delete `database/seeders/MovementSeeder.php` (VERIFIED: referenced only there; it seeds fake drivers, vehicles and C movement days). **No replacement demo seeder** is introduced. Tests create their own data | 1 |
 | `MovementPermissionSeeder`: additive `updateOrCreate` of permissions; `givePermissionTo` for `movement_manager` (per §14.2, *without* `requests.create`), `relations_officer`, `supervisor`, `super_admin`; never revokes. Called from `rightDatabaseSeeder` **after** `CompleteRolePermissionSeeder`, so all roles exist first on fresh/dev installs (Revision 3). A missing role is skipped with a warning, never created. In production it is run on its own (§19 Phase 2, "Production"; Revision 3a) | 2 |
-| `MovementReferenceDataSeeder`: `updateOrCreate` vehicle types by `code` (bus, minibus, van, car); never deletes; safe in production | 3 |
+| `MovementReferenceDataSeeder`: `firstOrCreate` vehicle types by `code` (bus, minibus, van, car) with ar/en names, `size_class` and NULL `default_capacity`; never overwrites or deletes; safe in production (Revision 4). Called from `rightDatabaseSeeder` after `MovementPermissionSeeder`; in production run on its own | 3 |
 | `UsersSeeder.php:70,73-75`: drop the demo `transport_officer` / `movement_editor` / `movement_viewer` users once those roles retire (D3) | 12 |
 | `RolesSeeder.php:90,94-95`: stop seeding retired roles **after** holders reach zero. `movement_driver` added in Phase 2 (D3) for fresh/dev installs; production creates it with `permission:create-role`, because `RolesSeeder` is not purely additive (Revision 3a) | 2 / 12 |
 
@@ -1604,7 +1631,7 @@ flowchart LR
 
   The HTTP/Policy rows of the §14.3 matrix are tested by the phase that implements each action.
 - **Tests:** a DB-free constants test, plus seeder/grant feature tests run in a disposable MySQL container. **Rollback:** permissions are additive; leaving them in place is harmless.
-- **Production (Revision 3a; proposed, needs owner approval).** Do **not** run `rightDatabaseSeeder` or `RolesSeeder` for this phase. After a DB backup, on staging first and then production:
+- **Production (Revision 3a; Approved by the project owner in Revision 4).** Do **not** run `rightDatabaseSeeder` or `RolesSeeder` for this phase. After a DB backup, on staging first and then production:
   1. `php artisan permission:create-role movement_driver web` (creates the role only if it is missing; changes nothing else);
   2. `php artisan db:seed --class=MovementPermissionSeeder --force`;
   3. set the `movement_driver` labels in Access → Roles: `سائق الحركة` / `Movement Driver`. Until then the role list shows the key;
@@ -1612,21 +1639,32 @@ flowchart LR
 
 ### Phase 3 — Fleet, drivers, saved locations, unavailability
 - **Objective:** the manager can register and maintain resources.
-- **Scope:**
-  - Tables: `movement_vehicle_types`, `movement_vehicles`, `movement_drivers`, `movement_unavailabilities`, `movement_locations`.
-  - CRUD screens 2 and 3; driver↔user linking.
-  - `MovementReferenceDataSeeder`.
-  - Optional import command (§18.4).
-  - Public read-only "fleet list" (types and capacities).
-  - `routes/movement.php` (D14), the module sidebar partial and `resources/lang/{ar,en}/movement.php`, created here with the first module routes and screens (Revision 3).
-  - Policies for the models created here, e.g. `DriverPolicy` and the vehicle policy (Revision 3).
+- **In scope (Revision 4):**
+  - Tables (category 2, in FK order): `movement_vehicle_types`, `movement_locations`, `movement_vehicles` (with `home_location_id`, `legacy_source_id`), `movement_drivers` (with `legacy_source_id`), `movement_unavailabilities`.
+  - Models `VehicleType`, `Vehicle`, `Driver`, `Unavailability`, `Location` with value constants; Policies for each, registered in `AuthServiceProvider::$policies`, permission-based only.
+  - Screens 2 (fleet, incl. vehicle types and a status change with a required reason), 2b (saved locations), 3 (drivers, incl. link/unlink user), vehicle/driver unavailability windows, and the public fleet overview (aggregates only, D7).
+  - Manager views: a "Needs verification" list for `pending_verification` records and licence flags (expired / expiring within 30 days, D8).
+  - Driver↔user linking (§13.3): searchable picker of active users; no account creation.
+  - Audit (`module = 'movement'`, `action = '<entity>.<event>'`) for create, update, status change, link/unlink, delete and restore.
+  - `MovementReferenceDataSeeder` (§18.5, `firstOrCreate`).
+  - `movement:import-legacy-fleet` (§18.4, D1).
+  - `routes/movement.php` (D14, prefix `/dashboard/movement`, names `movement.`), the sidebar partial and `resources/lang/{ar,en}/movement.php` with only this phase's keys.
+  - Capacity edits are unrestricted: the §13.6 trip-dependent rules arrive with trips in Phase 5.
+- **Out of scope:** trips, stops, bookings, requests; `MovementAvailabilityService` and availability windows; assignment and the expired-licence block (Phase 5); removing B, C or the old `vehicles`/`drivers`; the driver workspace; Google Maps APIs; role retirement; demo data.
 - **DB:** 5 new tables (additive).
-- **Decisions:** D1, D6, D7, D8, D19 (module FK policy; D11 is **not** a blocker).
+- **Decisions:** D1, D6, D7, D8, D19, all Approved (D11 is **not** a blocker).
 - **Risks:** duplicate plates on import. Use unique constraints and an import report. Imported records start as `pending_verification` (§18.4).
-- **Security:** sensitive driver fields gated by `drivers.view_details`.
-- **Acceptance:** CRUD, uniqueness, status-change audit entries, soft deletes, no branch field anywhere.
-- **Tests:** Form Request validation, Policy tests, linking a user who is already linked fails, audit log written; HTTP/Policy tests for the §14.3 rows implemented here: fleet and driver management, plus individual-vehicle and driver-detail visibility (Revision 3).
+- **Security:** sensitive driver fields gated by `drivers.view_details`; no `role:` middleware.
+- **Acceptance:** CRUD, uniqueness including soft-deleted rows, status-change audit entries, soft deletes and restore, no branch field on vehicles or drivers, public overview without identifiers or names.
+- **Tests:**
+  - migrations: up/down, `down()` refuses with rows, FK order, full-chain `migrate:fresh`;
+  - Form Requests: uniqueness incl. trashed, capacity ≥ 1, status sets, `ends_at > starts_at`, exactly one of vehicle/driver;
+  - HTTP/Policy rows of §14.3 implemented here (manager and super_admin allowed; relations officer, supervisor and ordinary users denied; a per-user denial wins);
+  - privacy snapshot of the public overview;
+  - linking (inactive or already-linked user rejected; unlink keeps history);
+  - audit rows; reference seeder idempotent; import (dry run writes nothing, execute, demo skip, duplicates, re-run).
 - **Migration category:** 2 (operational tables). **Rollback:** `migrate:rollback` only while the tables are empty (failed deploy). Once real fleet data exists, the guarded `down()` refuses and fixes go forward (§18.0).
+- **Production (Revision 4):** after a backup, on staging then production: `php artisan migrate --force`; `php artisan db:seed --class=MovementReferenceDataSeeder --force`; `php artisan movement:import-legacy-fleet` (dry run) and decide; then the usual cache refresh (`optimize:clear`, or `route:cache`/`view:cache`).
 
 ### Phase 4 — Movement requests and approval (+ retire B)
 - **Objective:** demand capture and the manager decision.
@@ -1664,6 +1702,8 @@ flowchart LR
   - Driver/trip notifications.
   - Drop old `vehicles` and `drivers`.
 - **DB:** 3 new tables (`movement_trips`, `movement_trip_stops`, `movement_bookings`), C drop, old masters drop.
+- **Pre-flight (Revision 4):** the legacy fleet import (`movement:import-legacy-fleet --execute`) has been run, or the owner has confirmed it is not needed, before the old-master drop is deployed.
+- **Also (Revision 4):** the §13.6 capacity-floor and reassignment rules; the expired-licence assignment block (D8); completing the sidebar replacement (§16).
 - **Decisions:** D4 (buffers), D10 (no-key approach accepted), D22 (paired-trip driver wait default).
 - **Risks:** race conditions (locks + tests); time arithmetic (unit tests); name collision (ordering of migrations, verified in CI with `migrate:fresh` on a scratch DB).
 - **Security:** only `trips.plan` / `trips.publish`.
@@ -1821,18 +1861,18 @@ flowchart LR
 
 ## 22. Remaining business decisions
 
-Decisions marked **Approved** may be implemented. All others are **open (DECISION REQUIRED)**; their recommendations are proposals, **not** approvals. None of the open ones blocks Phase 1 or Phase 2.
+Decisions marked **Approved** may be implemented. All others are **open (DECISION REQUIRED)**; their recommendations are proposals, **not** approvals. None of the open ones blocks Phases 1–3.
 
 | ID | Decision | Recommendation (not approved) | Status | Blocks |
 |---|---|---|---|---|
-| D1 | Do real vehicle/driver rows exist that must be imported? | Run the inventory; import only real rows as `pending_verification` (§18.4) | Open | Phase 3 (import only) |
+| D1 | Do real vehicle/driver rows exist that must be imported? | **Decision:** build and test the one-time import command (§18.4); never run it against a real database during development. Inventory result: unknown, so production runs `--dry-run` first and the owner decides (Revision 4) | **Approved**: project owner, 2026-11-10 | Phase 3 (import only) |
 | D2 | Second approval stage (e.g. Programs Manager)? | **No.** Single approver; revisit for cost-bearing trips | Open | Phase 4 |
 | D3 | Retire `transport_officer`, `movement_editor`, `movement_viewer`? Create `movement_driver`? | **Decision:** create `movement_driver` (grants `movement.driver.workspace` only for now). Retire the three legacy roles in Phase 12 per the §14.2 retirement procedure; they are neither deleted nor de-seeded before that | **Approved**: project owner, 2026-11-10 | Phase 2 (roles), Phase 12 (retirement) |
 | D4 | Default buffers (pre/post trip, excess running %, dwell), merge time tolerance and distance threshold, booking close time | 15 min / 15 min / 15% / 5 min; ±60 min; 2 km; 60 min | Open | Phases 5, 6, 8 |
 | D5 | Joining a published trip: instant confirmation or manager approval? | **Instant (`auto_confirm`)**, manager can cancel. Either way pending bookings never hold seats (§11.1) | Open | Phase 6 |
-| D6 | Vehicle size classes; vehicle home location | small/medium/large; optional home location | Open | Phase 3 |
-| D7 | May ordinary users see **individual** fleet identifiers (fleet number, plate) or per-vehicle status? | **No.** Ordinary users see vehicle type, capacity and aggregate availability only; the manager sees full detail (§13.2) | Open | Phase 3/7 |
-| D8 | Track licence number, category and expiry, and block expired licences? | Yes | Open | Phase 3 |
+| D6 | Vehicle size classes; vehicle home location | **Decision:** `size_class` ∈ `small`/`medium`/`large`; optional `home_location_id` on vehicles (FK `movement_locations`, nullOnDelete) | **Approved**: project owner, 2026-11-10 | Phase 3 |
+| D7 | May ordinary users see **individual** fleet identifiers (fleet number, plate) or per-vehicle status? | **Decision: no.** Ordinary users never see `fleet_number`, `plate_number`, per-vehicle status or any driver personal data; they see types, capacities and aggregate counts only (§13.2) | **Approved**: project owner, 2026-11-10 | Phase 3/7 |
+| D8 | Track licence number, category and expiry, and block expired licences? | **Decision:** track `licence_number` (nullable unique), `licence_category`, `licence_expires_on`. Phase 3 stores, displays and flags "expired / expiring within 30 days" in manager views; blocking assignment of expired licences is enforced in Phase 5 (§13.2) | **Approved**: project owner, 2026-11-10 | Phase 3 (tracking), Phase 5 (block) |
 | D9 | Passenger names / manifest per booking? | Not initially; counts only | Open | Phase 6 |
 | D10 | Approve Google Maps Platform billing and key ownership? | Start keyless (Phase 5); decide Phase 9 after 1–2 months | Open | Phase 9 |
 | D11 | **Application-wide** soft deletes for `users` and `branches` (Audit T-01/T-02)? | Recommended as a separate, cross-cutting application change outside the Movement module | Open | **No Movement phase** (independent of D19) |
@@ -1843,7 +1883,7 @@ Decisions marked **Approved** may be implemented. All others are **open (DECISIO
 | D16 | Interactive calendar library (drag & drop)? | No; server-rendered grids | Open | Phase 7 |
 | D17 | Should an Events transport need create a Movement request automatically? | **No**: prefilled "Request transport" link only | Open | Phase 11 |
 | D18 | Keep monthly-activity edit rights for movement roles? | Events owners to review; out of Movement scope | Open | — |
-| D19 | **Movement module** FK/deletion policy: `restrictOnDelete` for ownership FKs (requester, booker) vs `nullOnDelete` | `restrict` for ownership, `null` for actor columns; soft deletes for module catalogues (§7.12) | Open (new, split from D11) | Phase 3 |
+| D19 | **Movement module** FK/deletion policy: `restrictOnDelete` for ownership FKs (requester, booker) vs `nullOnDelete` | **Decision:** ownership FKs `restrictOnDelete`; actor columns (`created_by`, `status_changed_by`, …) `nullOnDelete`; catalogue tables (vehicle types, vehicles, drivers, locations) soft-delete (§7.12) | **Approved**: project owner, 2026-11-10 | Phase 3 |
 | D20 | Booking and request limits: max passengers per join booking, one active join booking per user per trip, rate limit | 10 passengers; one active join per user per trip; 10 writes/min per user (§11.7) | Open (new) | Phase 4 (request rate limit), Phase 6 |
 | D21 | No-show seats: keep counted for the whole span, or release them for later sections? | Keep counted (simple, safe); revisit with execution data | Open (new) | Phase 10 |
 | D22 | Paired trips: should the driver wait with the vehicle by default (`driver_waits_between`)? | Default equal to the vehicle flag; the manager can override per pair (§13.7) | Open (new) | Phase 5 |

@@ -451,4 +451,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/staff/agenda', [StaffAgendaController::class, 'index'])->middleware('role:staff')->name('role.staff.agenda.index');
     Route::get('/dashboard/staff/activities', [StaffMonthlyActivitiesController::class, 'index'])->middleware('role:staff')->name('role.staff.activities.index');
     Route::redirect('/dashboard/staff', '/dashboard')->name('role.staff.dashboard'); // Phase 2: retired orphan launcher dashboard
+
+    // Movement module routes (plan D14): /dashboard/movement, names movement.*.
+    require __DIR__.'/movement.php';
 });

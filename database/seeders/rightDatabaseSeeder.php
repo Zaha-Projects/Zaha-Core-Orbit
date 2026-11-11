@@ -15,6 +15,7 @@ class rightDatabaseSeeder extends Seeder
             CompleteRolePermissionSeeder::class,
             // After CompleteRolePermissionSeeder so every role (incl. movement_driver) exists.
             MovementPermissionSeeder::class,
+            MovementReferenceDataSeeder::class,
         ]);
     }
 }

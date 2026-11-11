@@ -122,6 +122,7 @@
             @if ($canAccessKpiSection)
                 @include('layouts.app.partials.kpi-navigation', ['showOperationalReports' => $canAccessReportPages, 'kpiMenuId' => 'kpiMenuFollowup'])
             @endif
+            @include('layouts.app.partials.movement-navigation', ['movementMenuId' => 'movementMenuFollowup'])
             <li class="side-item {{ request()->routeIs('directory.users.*') ? 'selected' : '' }}"><a href="{{ route('directory.users.index') }}"><i class="fas fa-address-book"></i><span>{{ __('evaluation.followup.sidebar.user_directory') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('profile.*') ? 'selected' : '' }}"><a href="{{ route('profile.show') }}"><i class="fas fa-user"></i><span>{{ __('evaluation.followup.sidebar.profile') }}</span></a></li>
             <li class="side-item {{ request()->routeIs('site-guide.*') ? 'selected' : '' }}"><a href="{{ route('site-guide.index') }}"><i class="fas fa-book-open"></i><span>دليل الموقع</span></a></li>
@@ -230,6 +231,8 @@
                 <li class="side-item {{ request()->routeIs('role.maintenance.requests.*') ? 'selected' : '' }}"><a href="{{ route('role.maintenance.requests.index') }}"><i class="fas fa-screwdriver-wrench"></i><span>{{ __('app.roles.maintenance.requests.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.maintenance.approvals.*') ? 'selected' : '' }}"><a href="{{ route('role.maintenance.approvals.index') }}"><i class="fas fa-clipboard-check"></i><span>{{ __('app.roles.maintenance.approvals.title') }}</span></a></li>
             @endif
+
+            @include('layouts.app.partials.movement-navigation')
 
             @if ($canAccessTransportSidebar)
                 <li class="side-item {{ request()->routeIs('role.transport.vehicles.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.vehicles.index') }}"><i class="fas fa-truck"></i><span>{{ __('app.roles.transport.vehicles.title') }}</span></a></li>
