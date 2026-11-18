@@ -246,6 +246,12 @@ class MovementAvailabilityService
             array_push($conflicts, ...$this->driverConflicts($driver, $from, $until, $ignore));
         }
 
+        // Assignment before timing (Revision 6): without a valid timetable there is no window, so the assigned
+        // resources' availability has not been checked yet. Say so explicitly instead of reporting nothing.
+        if (! $timesOk && ($vehicle || $driver)) {
+            $conflicts[] = $this->conflict('availability_not_checked');
+        }
+
         if ($pair) {
             if ($trip->vehicle_waits_between && (int) $pair->vehicle_id !== (int) $trip->vehicle_id) {
                 $conflicts[] = $this->conflict('pair_vehicle_mismatch', ['trip' => $pair->reference_no]);

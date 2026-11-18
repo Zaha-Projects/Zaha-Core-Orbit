@@ -134,6 +134,18 @@
 >    - the manager can set it, or the first vehicle assignment fills it with the vehicle's capacity;
 >    - it must always be ≤ the assigned vehicle's capacity and ≥ the current max section load (§13.5);
 >    - allocation is refused while it is empty.
+> 12. **Editing a scheduled trip that has a flagged conflict** (owner decision after the 5A-1 review, 2026-11-18): every edit of a scheduled trip is checked against the result.
+>    - An edit that resolves the conflict and leaves the trip valid is allowed, and the trip stays scheduled. Examples: replacing the conflicting vehicle or driver, or moving the times out of a leave or maintenance window.
+>    - An edit that leaves any conflict in place is refused, and nothing changes.
+> 13. **Assignment before timing** (owner decision, 2026-11-18): a vehicle or driver may be assigned to a draft trip without a complete timetable. `conflictsFor()` then reports `availability_not_checked` until the trip has times, and availability is checked when it does.
+> 14. **Retired C URLs** (VERIFIED in code, 2026-11-18): no code ever wrote a link to C's `/dashboard/transport/movements*` URLs into persisted data.
+>    - C created no in-app notifications (`MovementsController` only redirected).
+>    - `audit_logs` rows written by `TrackUserOperations` store the route *name* (e.g. `role.transport.movements.update`) as text, and no screen renders it as a link.
+>    - So C's URLs return 404 after 5A, with no redirects (unlike 4B). Production data itself is not visible to the developer. An optional read-only DBA check before deploy: `SELECT COUNT(*) FROM in_app_notifications WHERE action_url LIKE '%/dashboard/transport/movements%'`; a non-zero result would reopen this item.
+> 15. **Approved as proposed** (owner, 2026-11-18):
+>    - a pair of draft trips reserves nothing; the reservation starts once a leg is scheduled (§13.7);
+>    - request cancellation skips bookings on trips that already ended (completed, cancelled, merged);
+>    - the managers' "fulfilment dropped" notification moves to 5A-2.
 
 ## Labels
 
@@ -1170,7 +1182,7 @@ The confirmed requirements only demand the outcomes "no overlapping assignment" 
 | **Legacy A** | Contributes nothing to history or reports; it is removed entirely (R2) |
 | **Vehicle status change or soft delete while on a trip** (Revision 6) | Refused while the vehicle is on a non-terminal trip (`draft`, `scheduled`; `published` from Phase 6) when the new status is `maintenance`, `out_of_service` or `inactive`, and refused for a soft delete. The error names the blocking trips |
 | **Driver deactivation or soft delete while on a trip** (Revision 6) | Refused while the driver is on a non-terminal trip. The error names the blocking trips |
-| **Unavailability window or licence expiry overlapping an assigned trip** (Revision 6) | Allowed. Reported by `conflictsFor()` and shown in the trip's conflicts panel. It blocks `draft → scheduled` until resolved; a trip that is already scheduled stays scheduled |
+| **Unavailability window or licence expiry overlapping an assigned trip** (Revision 6) | Allowed. Reported by `conflictsFor()` and shown in the trip's conflicts panel. It blocks `draft → scheduled` until resolved; a trip that is already scheduled stays scheduled. On a scheduled trip, an edit that resolves the conflict and leaves the trip valid is allowed; an edit that leaves it in place is refused (Revision 6 item 12) |
 
 ### 13.7 Paired outbound/return trips (PROPOSED; D22 for defaults)
 
@@ -1563,6 +1575,7 @@ Every guarded `down()` documents its behaviour in a class docblock. The phase ac
     - sidebar item `layouts/app.blade.php:240`;
     - officer-dashboard card `roles/transport_officer/dashboard.blade.php:17-21`;
     - lang `roles.transport.movements.*`.
+  - Old C URLs: no redirects; they return 404, because no persisted data links to them (Revision 6 item 14).
 - **Old `vehicles`, `drivers`:** dropped last in Phase 5 (**5B**, Revision 6), after A, B and C, because every inbound FK goes away with them.
   - Code (VERIFIED 2026-11-18): `Web/Transport/VehiclesController`, `DriversController`, views, routes `web.php:386-395` and `use` lines `web.php:55-56`, `Branch::vehicles()` (`Branch.php:58-61`), lang `roles.transport.vehicles/drivers.*`, `app/Models/Vehicle.php`, `app/Models/Driver.php`, `movement:import-legacy-fleet`.
 - Then remove (5B):

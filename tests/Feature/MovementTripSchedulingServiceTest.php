@@ -406,6 +406,45 @@ class MovementTripSchedulingServiceTest extends TestCase
         $this->assertSame(Trip::STATUS_SCHEDULED, $this->trips()->schedule($trip, $this->actor())->status);
     }
 
+    public function test_edits_that_resolve_a_flagged_conflict_are_allowed_and_others_refused(): void
+    {
+        $vehicle = $this->vehicle(20);
+        $driver = $this->driver();
+        $trip = $this->scheduledTrip('2030-01-15 08:00', 60, $vehicle, $driver); // blocked 07:45 – 09:24
+        Unavailability::create(['driver_id' => $driver->id, 'type' => 'leave', 'starts_at' => $this->local('2030-01-15 09:00'), 'ends_at' => $this->local('2030-01-15 18:00')]);
+        $this->assertSame(['driver_unavailable'], $this->codes($trip));
+
+        // An edit that leaves the conflict in place is refused, and nothing changes.
+        $this->refused(fn () => $this->trips()->setSeatCapacity($trip, $this->actor(), 15));
+        $this->refused(fn () => $this->trips()->setTimetable($trip, $this->actor(), [], [], ['type' => 'depart_at', 'at' => $this->local('2030-01-15 08:10')]));
+        $this->assertSame([20, '2030-01-15 08:00'], [$trip->fresh()->seat_capacity, $this->localTime($trip->fresh()->planned_departure_at)]);
+
+        // Replacing the conflicting driver resolves it: allowed, and the trip stays scheduled.
+        $trip = $this->trips()->assign($trip, $this->actor(), $vehicle->id, $this->driver()->id);
+        $this->assertSame([Trip::STATUS_SCHEDULED, []], [$trip->status, $this->codes($trip)]);
+
+        // Moving the times out of a maintenance window also resolves it.
+        Unavailability::create(['vehicle_id' => $vehicle->id, 'type' => 'maintenance', 'starts_at' => $this->local('2030-01-15 07:00'), 'ends_at' => $this->local('2030-01-15 09:00')]);
+        $this->assertSame(['vehicle_unavailable'], $this->codes($trip));
+        $trip = $this->trips()->setTimetable($trip, $this->actor(), [], [], ['type' => 'depart_at', 'at' => $this->local('2030-01-15 09:30')]);
+        $this->assertSame([Trip::STATUS_SCHEDULED, '2030-01-15 09:30', []], [$trip->status, $this->localTime($trip->planned_departure_at), $this->codes($trip)]);
+    }
+
+    public function test_conflicts_mark_availability_as_not_checked_before_timing(): void
+    {
+        $trip = $this->tripWithStops(['A', 'B'], 10);
+        $this->assertNotContains('availability_not_checked', $this->codes($trip), 'Nothing assigned: nothing to check.');
+
+        // Assignment before timing is allowed (Revision 6); a vehicle in maintenance is not detected yet …
+        $trip = $this->trips()->assign($trip, $this->actor(), $this->vehicle(10)->id, $this->driver()->id);
+        Vehicle::query()->whereKey($trip->vehicle_id)->update(['operational_status' => Vehicle::STATUS_MAINTENANCE]);
+        $this->assertEqualsCanonicalizing(['times_missing', 'availability_not_checked'], $this->codes($trip));
+
+        // … and is reported as soon as the trip has times.
+        $this->timed($trip, '2030-01-15 08:00', [60]);
+        $this->assertSame(['vehicle_not_operational'], $this->codes($trip));
+    }
+
     // ------------------------------------------------------------------ pairing (§13.7, D22)
 
     public function test_pairing_reserves_the_span_and_the_driver_flag_follows_the_vehicle_flag(): void

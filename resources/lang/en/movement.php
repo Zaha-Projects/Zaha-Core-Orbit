@@ -307,6 +307,7 @@ return [
             'capacity_exceeds_vehicle' => 'The seats offered (:seats) exceed the vehicle capacity (:capacity).',
             'load_exceeds_capacity' => 'The busiest section carries :load passengers, more than the :seats seats offered.',
             'deadline_missed' => 'A booking arrives at :arrival, after its deadline :deadline.',
+            'availability_not_checked' => 'Vehicle and driver availability has not been checked yet: the trip has no complete timetable.',
         ],
     ],
     'trip_statuses' => [

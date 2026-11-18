@@ -307,6 +307,7 @@ return [
             'capacity_exceeds_vehicle' => 'المقاعد المعروضة (:seats) تتجاوز سعة المركبة (:capacity).',
             'load_exceeds_capacity' => 'أكثر المقاطع ازدحامًا يحمل :load راكبًا، أكثر من :seats مقعدًا معروضًا.',
             'deadline_missed' => 'يصل أحد الحجوزات في :arrival، بعد موعده المطلوب :deadline.',
+            'availability_not_checked' => 'لم يُتحقق بعد من توفر المركبة والسائق: الجدول الزمني للرحلة غير مكتمل.',
         ],
     ],
     'trip_statuses' => [
