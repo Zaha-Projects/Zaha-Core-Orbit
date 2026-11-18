@@ -100,6 +100,40 @@
 > 4. **Test baseline (process, recorded in `CLAUDE.md`):**
 >    - `tests/baseline-failures.txt` lists the failing tests of the pre-Movement commit `b677f3f` (the parent of `ea11b87`, the first transport-removal commit), run in the disposable container setup;
 >    - `scripts/compare-test-baseline.php` reports new failures and newly passing tests against it.
+>
+> **Revision 6 (2026-11-18), owner-approved, recorded before Phase 5 coding:**
+> 1. **Decisions:**
+>    - **D4 Approved** for Phase 5: pre-trip 15 min, post-trip 15 min, excess running 15 %, dwell 5 min, in `config('movement.buffers')`. The merge tolerance and distance (Phase 8) and the booking close time (Phase 6) stay open.
+>    - **D22 Approved:** by default the driver waits with the vehicle between paired trips (`driver_waits_between` defaults to the pair's `vehicle_waits_between`); the manager can change it per pair.
+>    - **D10 clarified:** Phase 5 uses no Google key (Maps directions link and the keyless embed only). D10 is a Phase 9-only decision and is removed from Phase 5's decision list.
+>    - **D1:** the owner has **not** yet confirmed that the legacy import ran or is not needed. 5B does not start until the owner confirms it explicitly.
+> 2. **Release sets.**
+>    - **5A** (first release): C retirement (code and guarded drop, which must precede the new `movement_trips`, §18.3); `movement_trips`, `movement_trip_stops`, `movement_bookings`; models `Trip`, `TripStop`, `Booking`; `SeatCapacityService`; the full `MovementAvailabilityService`; `TripSchedulingService`; the `MovementRequestWorkflow` changes; `TripPolicy`; the route planner; trip notifications; the sidebar item "Trips".
+>    - 5A has a **review stop**. 5A-1 covers the migrations, models, services, policy and their tests, with no UI and no notifications. 5A-2 adds the planner UI, the trip routes and the notifications, and starts only after the owner reviews 5A-1.
+>    - **5B** (later release, after 5A is live **and** D1 is confirmed): the guarded drop of the old `vehicles`/`drivers` and their code, routes, views and lang; `Branch::vehicles()`; the admin-overview change (item 7); deletion of `movement:import-legacy-fleet`; the transport-officer dashboard and its route; the `/dashboard/transport*` redirects; removal of `$canAccessTransportSidebar`, which completes the §16 sidebar replacement.
+> 3. **Trip transitions and permissions in Phase 5:**
+>    - only `draft → scheduled`, `scheduled → draft` and `draft`/`scheduled → cancelled`; publish and unpublish stay in Phase 6;
+>    - planning, stops, times, assignment, pairing and allocation use `movement.trips.plan`; schedule and unschedule use `movement.trips.publish`; cancel uses `movement.trips.cancel`.
+> 4. **Deallocate and re-allocate** (§11.6) are `TripSchedulingService` operations under `movement.trips.plan`, with the same lock order, revalidation and tests as `allocateRequestLeg()`. Deallocation cancels or reduces the request booking.
+> 5. **Resource changes after assignment** (new §13.6 rows):
+>    - **Blocked:** while a vehicle or driver is on a non-terminal trip (`draft`, `scheduled`, and `published` from Phase 6), the vehicle cannot be set to `maintenance`, `out_of_service` or `inactive` or be soft-deleted, and the driver cannot be set to `inactive` or be soft-deleted. The error names the blocking trips.
+>    - **Allowed but flagged:** unavailability windows (maintenance, leave, other) and licences that expire before the trip ends are allowed. They appear in `conflictsFor()` (the trip's conflicts panel) and block `draft → scheduled` until resolved. A trip that is already scheduled stays scheduled.
+> 6. **Licence rule (§13.2, D8):**
+>    - A licence is valid for a window `[s, e)` when its local expiry date is on or after the local date of the last instant before `e` (`e − 1 s`). A window ending exactly at local midnight therefore needs the licence only through the previous day.
+>    - A NULL `licence_expires_on` means "not tracked", and the driver is assignable.
+>    - An active driver with an expired licence stays active, appears in the manager's licence flags (Phase 3), and is not assignable.
+>    - `summary()` (Phase 4) uses the same rule, so the counts and the assignment check agree.
+> 7. **Admin overview:** in 5B, `AdminReportsService::overview()` counts `App\Modules\Movement\Models\Vehicle` instead of the legacy model, keeping the `vehicles` key, with a test that the admin overview loads. This moves that one item from §17.1/Phase 11 into Phase 5.
+> 8. **Moved or deferred:**
+>    - the "suggested published trips" list (§8.2) moves entirely to Phase 6;
+>    - the manager's reduction of a leg's `passenger_count` with a reason (§11.6) is **deferred, not dropped**; a later revision assigns its phase. Requester edits in `draft`/`returned` are unchanged.
+> 9. **§18.3** line references were refreshed against the code (VERIFIED 2026-11-18).
+> 10. **Trip `reference_no`** (owner decision, 2026-11-18) = `MT-{local year}-{id zero-padded to 6}`, set right after the insert inside the same transaction (the Revision 5 rule, with a trip prefix).
+> 11. **`seat_capacity` before a vehicle is assigned** (owner decision, 2026-11-18):
+>    - the column is nullable, and empty on a new draft;
+>    - the manager can set it, or the first vehicle assignment fills it with the vehicle's capacity;
+>    - it must always be ≤ the assigned vehicle's capacity and ≥ the current max section load (§13.5);
+>    - allocation is refused while it is empty.
 
 ## Labels
 
@@ -489,10 +523,10 @@ Free text cannot support either reliably. Requesters may still enter a custom pl
 
 | Column | Notes |
 |---|---|
-| `reference_no` unique | |
+| `reference_no` unique | `MT-{local year}-{id zero-padded to 6}` (Revision 6) |
 | `status` string | §15.3 |
 | `vehicle_id` FK nullable restrict; `driver_id` FK nullable restrict | assignment |
-| `seat_capacity` unsigned smallint | snapshot ≤ vehicle capacity; the manager may hold back seats |
+| `seat_capacity` unsigned smallint **nullable** | snapshot ≤ vehicle capacity; the manager may hold back seats. Empty on a new draft until the manager sets it or the first vehicle assignment fills it; allocation needs it (Revision 6) |
 | `planned_departure_at`, `planned_arrival_at` datetime | denormalised from the first and last stop |
 | `pre_trip_buffer_minutes`, `post_trip_buffer_minutes` smallint | defaults from `config/movement.php` |
 | `blocked_from`, `blocked_until` datetime | `planned_departure_at − pre`, `planned_arrival_at + post`; the vehicle and driver are busy in this window |
@@ -593,7 +627,7 @@ Both receive the permission **`movement.requests.create`**. Further roles or ind
 - **Return leg** (round trip only): the same fields. Route and passenger count may differ.
 - **While the form is filled in:**
   - An indicative-availability panel shows vehicle types with capacity ≥ passenger count that are free in the window `[required_arrival − `movement.requests.indicative_window_hours` (default 3), required_arrival) (Revision 5)`, plus the free-driver count. It is labelled "indicative — final assignment by the Movement Department".
-  - (Phase 5/6, Revision 5) A *suggested published trips* list shows trips on the same date that serve both places in order, nudging the requester to **join** rather than open a new request.
+  - (Phase 6, Revisions 5 and 6) A *suggested published trips* list shows trips on the same date that serve both places in order, nudging the requester to **join** rather than open a new request.
 
 ### 8.3 Round trips (PROPOSED)
 
@@ -740,7 +774,7 @@ Bookings on `cancelled` or `merged` trips are never counted. Merged bookings are
 ```
 
 - Keys go in `config/services.php` → `google_maps.browser_key` / `server_key`, read from `.env`. They are never committed and never rendered for the server key.
-- Buffer values are placeholders (D4).
+- Buffer values are approved (D4, Revision 6): 15 / 15 / 15 % / 5.
 
 ### 9.4 Departure calculation from the arrival deadline (PROPOSED)
 
@@ -949,7 +983,9 @@ DB::transaction(function () use ($tripId, $input) {
 
 **Re-allocation** (moving passengers of a leg from trip X to trip Y) is one transaction: lock the leg, then trips X and Y in ascending id; cancel or reduce the old booking and insert the new one; recheck both aggregates.
 
-**Reductions** to `leg.passenger_count`, allowed only while the request is `returned`/`draft`, or by the manager with a reason, are rejected if the new count would fall below the current allocation.
+**Deallocation** (Revision 6) cancels or reduces a request booking. It takes the same locks (the leg, then the trip) and refreshes fulfilment in the same transaction.
+
+**Reductions** to `leg.passenger_count`, allowed only while the request is `returned`/`draft`, or by the manager with a reason, are rejected if the new count would fall below the current allocation. The manager's reduction with a reason is **deferred** (Revision 6), and no phase is assigned yet.
 
 ### 11.7 Duplicate bookings, idempotency and rate limiting (PROPOSED; D20 for limits)
 
@@ -1067,7 +1103,7 @@ Planned future maintenance is an unavailability window. The manual status descri
 A driver is available in [s, e) when all of these hold:
 
 - `employment_status = active`;
-- the licence has not expired by `e` (if tracked; D8);
+- the licence has not expired by `e` (if tracked; D8). Precisely: the local expiry date is on or after the local date of `e − 1 s`, and a NULL expiry date counts as not tracked (Revision 6);
 - no overlapping unavailability (leave);
 - no overlapping trip window;
 - no overlapping paired-trip driver reservation (§13.7).
@@ -1132,6 +1168,9 @@ The confirmed requirements only demand the outcomes "no overlapping assignment" 
 | **No-show passengers** | `no_show` can be recorded only after the pickup stop's actual or planned departure, by the manager or the trip's driver (D13). The seats **stay counted** for that trip (§11.1), because the seats were held and the sections at or after pickup are already in motion. Releasing no-show seats for later stops is **not** supported initially (D21). Reports show booked vs boarded vs no-show separately |
 | **Bookings or assignments changed after the fact** | Reports read the **current** state of bookings and trips, plus snapshots: `seat_capacity`, stop names and coordinates, `planned_*` times, and `actual_*` times. Every change of vehicle, driver, time, stop, capacity or booking status is in `audit_logs` (`module='movement'`), so "what was planned at publication" can be reconstructed. Cancelled and merged records are kept, never deleted (§7.12). Reports state whether they count by current state or by state at completion (completion state = the state when the trip moved to `completed`, recorded in the audit log) |
 | **Legacy A** | Contributes nothing to history or reports; it is removed entirely (R2) |
+| **Vehicle status change or soft delete while on a trip** (Revision 6) | Refused while the vehicle is on a non-terminal trip (`draft`, `scheduled`; `published` from Phase 6) when the new status is `maintenance`, `out_of_service` or `inactive`, and refused for a soft delete. The error names the blocking trips |
+| **Driver deactivation or soft delete while on a trip** (Revision 6) | Refused while the driver is on a non-terminal trip. The error names the blocking trips |
+| **Unavailability window or licence expiry overlapping an assigned trip** (Revision 6) | Allowed. Reported by `conflictsFor()` and shown in the trip's conflicts panel. It blocks `draft → scheduled` until resolved; a trip that is already scheduled stays scheduled |
 
 ### 13.7 Paired outbound/return trips (PROPOSED; D22 for defaults)
 
@@ -1140,7 +1179,7 @@ Two trips linked by `paired_trip_id` (set symmetrically on both) are an *outboun
 | Aspect | Rule |
 |---|---|
 | Vehicle between the legs | `vehicle_waits_between = true` (set on the pair) means the vehicle is **reserved** for `[outbound.blocked_from, return.blocked_until)`. Availability (§13.1) treats that whole span as busy for the vehicle. `false` means only each trip's own block counts, so the vehicle may serve other trips in between |
-| Driver between the legs | Separate flag **`driver_waits_between`** (default = same as the vehicle flag, D22). `true` reserves the driver for the whole span; `false` means only each trip's own block counts. Drivers are never implicitly reserved |
+| Driver between the legs | Separate flag **`driver_waits_between`** (default = same as the vehicle flag, D22 Approved, Revision 6). `true` reserves the driver for the whole span; `false` means only each trip's own block counts. Drivers are never implicitly reserved |
 | How the reservation is evaluated | No extra table. `MovementAvailabilityService` computes, for every paired trip pair with a non-terminal outbound or return, the reservation window `[min(blocked_from), max(blocked_until))` for the resource whose wait-flag is true. Overlap queries include those windows, excluding the pair being edited |
 | Same vehicle and driver on both legs | Required when `*_waits_between = true`; validated on pairing, scheduling and every reassignment |
 | One leg **cancelled** | The pairing is cleared on both trips (`paired_trip_id = null`), so the reservation window disappears. The other leg keeps its own block. The manager and the affected bookers are notified |
@@ -1357,7 +1396,7 @@ Every state change and assignment writes `AuditLog::create([... 'module' => 'mov
 **Sidebar (PROPOSED):**
 
 - A single "الحركة / Movement" group, rendered by a module partial included in `layouts/app.blade.php`. Each phase shows only the items that exist, each gated by its permission (Revision 4).
-- It replaces the legacy transport items at `:234-239` and `$canAccessTransportSidebar` at `:63-66`. Those stay until B and C are retired; the replacement **completes in Phase 5** (Revision 4).
+- It replaces the legacy transport items at `:238-240` and `$canAccessTransportSidebar` at `:63-66` (VERIFIED 2026-11-18). Those stay until B and C are retired; the replacement **completes in Phase 5** (Revision 4): the C item goes in 5A, and the vehicles/drivers items and `$canAccessTransportSidebar` go in 5B (Revision 6).
 - Items are shown per ability:
   - Overview
   - Schedule
@@ -1416,7 +1455,7 @@ General conventions for every screen:
 | Monthly-activity edit rights for `transport_officer` / `movement_manager` (`routes/web.php:329-332,343`; `InteractsWithMonthlyActivities.php:30-31`) | Out of Movement scope. Recommend the Events owners review it; **no change in Movement phases** | DECISION REQUIRED D18 |
 | Annual Agenda | None. Agenda events may appear as `context_type='agenda_event'` metadata only | PROPOSED |
 | Main dashboard | Optional "upcoming trips I booked" card | Optional |
-| Super-admin reports (`AdminReportsService:196,226`; `pages/admin/reports/partials/operations.blade.php:11`) | Point `vehicles` → `Movement\Vehicle::count()` and `trips` → `Movement\Trip::count()` (keys unchanged) when the legacy models are removed; refresh the report cache after deploy | PROPOSED |
+| Super-admin reports (`AdminReportsService:196,226`; `pages/admin/reports/partials/operations.blade.php:11`) | Point `vehicles` → `Movement\Vehicle::count()` (key unchanged) **in 5B**, with the old-master drop (Revision 6). A `trips` count (`Movement\Trip::count()`) stays in Phase 11. Refresh the report cache after deploy | PROPOSED; `vehicles` part Approved (Revision 6) |
 | Reports hub (`ReportsController.php:17`) and sidebar (`layouts/app.blade.php:247`) | Repoint the card and link to `movement.reports.index`; redirect `/dashboard/reports/transport` | PROPOSED |
 | KPI system | Not now. Add a `movement` KPI module after 3 months of real data | Optional |
 | Audit log, notifications | §15 | PROPOSED |
@@ -1510,17 +1549,25 @@ Every guarded `down()` documents its behaviour in a class docblock. The phase ac
 
 - **B** (`transport_request_feedback`, `transport_request_actions`, `transport_request_trips`, `transport_requests`):
   - Removed when the new request workflow goes live (end of Phase 4).
-  - Code: `TransportRequestsController`, models, `roles/transport/requests/index.blade.php`, routes `web.php:401-404`, officer dashboard card `:12-16`, lang `roles.transport.requests.*`.
-- **C** (`movement_trips`, then `movement_days`):
+  - Code: `TransportRequestsController`, models, `roles/transport/requests/index.blade.php`, routes, officer dashboard card, lang `roles.transport.requests.*`. **Done in 4B** (Revision 5). The old URLs are now redirects at `web.php:398-400`, removed in Phase 12 (D23).
+- **C** (`movement_trips`, then `movement_days`) — **5A** (Revision 6):
   - Must be dropped **before** creating the new `movement_trips` table, because of the name collision.
   - Hence the drop migration is dated before `create_movement_trips_table` in Phase 5.
-  - Code: `MovementsController`, models, views `pages/transport/movements/*`, JS `pages-transport-movements-form(.min).js`, routes `web.php:412-418`, lang `roles.transport.movements.*`.
-- **Old `vehicles`, `drivers`:** dropped last in Phase 5, after A, B and C, because every inbound FK goes away with them.
-  - Code: `Web/Transport/VehiclesController`, `DriversController`, views, routes `web.php:391-400`, `Branch::vehicles()` (`Branch.php:58-61`), lang `roles.transport.vehicles/drivers.*`.
-- Then remove:
-  - `Roles/TransportOfficer/DashboardController`, its view and route `web.php:424`;
-  - `use` lines `web.php:26,55-61,65`;
-  - `$canAccessTransportSidebar`.
+  - FKs (VERIFIED): `movement_trips.movement_day_id` → `movement_days` (cascade), `movement_trips.vehicle_id` → `vehicles`, `movement_days.driver_id` → `drivers`, `movement_days.created_by` → `users`. No other table references C.
+  - Code (VERIFIED 2026-11-18):
+    - `Web/Transport/MovementsController`;
+    - models `app/Models/MovementDay.php`, `app/Models/MovementTrip.php`;
+    - views `pages/transport/movements/*`;
+    - JS `pages-transport-movements-form(.min).js`;
+    - routes `web.php:401-407` and the `use` line `web.php:57`;
+    - sidebar item `layouts/app.blade.php:240`;
+    - officer-dashboard card `roles/transport_officer/dashboard.blade.php:17-21`;
+    - lang `roles.transport.movements.*`.
+- **Old `vehicles`, `drivers`:** dropped last in Phase 5 (**5B**, Revision 6), after A, B and C, because every inbound FK goes away with them.
+  - Code (VERIFIED 2026-11-18): `Web/Transport/VehiclesController`, `DriversController`, views, routes `web.php:386-395` and `use` lines `web.php:55-56`, `Branch::vehicles()` (`Branch.php:58-61`), lang `roles.transport.vehicles/drivers.*`, `app/Models/Vehicle.php`, `app/Models/Driver.php`, `movement:import-legacy-fleet`.
+- Then remove (5B):
+  - `Roles/TransportOfficer/DashboardController`, its view and route `web.php:408` (`use` line `web.php:26`);
+  - the sidebar items `layouts/app.blade.php:238-239` and `$canAccessTransportSidebar` (`:63-66`).
 - **Old URL redirects (PROPOSED, cheap):** `/dashboard/transport*` → `/dashboard/movement`, kept for one release.
 - All of these are category 4 migrations with the §18.1 pre-flight.
 
@@ -1737,6 +1784,9 @@ flowchart LR
 
 ### Phase 5 — Trip planning, availability, conflict prevention, assignment (+ retire C and old masters)
 - **Objective:** the manager turns approved requests into scheduled trips with safe resource assignment.
+- **Release sets (Revision 6):**
+  - **5A** = everything below except the old-master items. Review stop: 5A-1 (migrations, models, services, policy, tests; no UI, no notifications), then 5A-2 (planner UI, trip routes, notifications, sidebar "Trips").
+  - **5B** = the old-master drop and its code, the admin-overview change, deletion of the import command, the transport-officer dashboard, the `/dashboard/transport*` redirects and `$canAccessTransportSidebar`. 5B starts only after D1 is confirmed by the owner.
 - **Scope:**
   - Drop C, then create `movement_trips` and `movement_trip_stops`.
   - `TripSchedulingService` (timing §9.4, assign §13.5, schedule, `allocateRequestLeg()` §11.6).
@@ -1746,15 +1796,21 @@ flowchart LR
   - `TripPolicy` (Revision 3).
   - Route planner (screen 8) with stops, manual times, Maps URL with waypoints, embed preview.
   - Create `movement_bookings` here too (with `client_token` and `active_join_key`), but use it only for **request bookings** (`source='request'`, created as `confirmed` by the manager through `allocateRequestLeg()`), so a scheduled trip records which request legs it serves. Public joining, publishing and the seat matrix follow in Phase 6.
-  - Driver/trip notifications.
-  - Drop old `vehicles` and `drivers`.
-- **DB:** 3 new tables (`movement_trips`, `movement_trip_stops`, `movement_bookings`), C drop, old masters drop.
-- **Pre-flight (Revision 4):** the legacy fleet import (`movement:import-legacy-fleet --execute`) has been run, or the owner has confirmed it is not needed, before the old-master drop is deployed.
+  - Driver/trip notifications (5A-2).
+  - Drop old `vehicles` and `drivers` (5B).
+- **DB:** 3 new tables (`movement_trips`, `movement_trip_stops`, `movement_bookings`), C drop (5A), old masters drop (5B).
+- **Pre-flight (Revision 4):** the legacy fleet import (`movement:import-legacy-fleet --execute`) has been run, or the owner has confirmed it is not needed, before the old-master drop is deployed. **Not yet confirmed** (Revision 6).
 - **Also (Revision 4):** the §13.6 capacity-floor and reassignment rules; the expired-licence assignment block (D8); completing the sidebar replacement (§16).
-- **Also (Revision 5):** the full §8.5 fulfilment derivation; cancelling an approved request's bookings and the "no serving trip `in_progress`" cancel guard; trip windows and paired reservations in `MovementAvailabilityService`; the "suggested published trips" list on the request form (complete from Phase 6, when trips are published).
-- **Decisions:** D4 (buffers), D10 (no-key approach accepted), D22 (paired-trip driver wait default).
+- **Also (Revision 5):** the full §8.5 fulfilment derivation; cancelling an approved request's bookings and the "no serving trip `in_progress`" cancel guard; trip windows and paired reservations in `MovementAvailabilityService`. (The "suggested published trips" list moved to Phase 6, Revision 6.)
+- **Also (Revision 6):**
+  - Trip transitions in Phase 5 are only `draft → scheduled`, `scheduled → draft` and `draft`/`scheduled → cancelled`.
+  - Deallocate and re-allocate.
+  - The §13.6 rules for resource changes after assignment (blocked or flagged).
+  - The licence boundary rule (§13.2), applied to `summary()` as well.
+  - The admin-overview `vehicles` count (5B).
+- **Decisions:** D4 Approved, D22 Approved (Revision 6), D8 Approved, D19 Approved. D10 is not needed (keyless Phase 5). D1 must be confirmed before 5B.
 - **Risks:** race conditions (locks + tests); time arithmetic (unit tests); name collision (ordering of migrations, verified in CI with `migrate:fresh` on a scratch DB).
-- **Security:** only `trips.plan` / `trips.publish`.
+- **Security:** `trips.plan` (planning, stops, times, assignment, pairing, allocation), `trips.publish` (schedule, unschedule), `trips.cancel` (cancel) (Revision 6).
 - **Acceptance:**
   - Overlapping vehicle or driver assignment is impossible (sequential **and** concurrent test).
   - Unavailable resources are never offered.
@@ -1769,6 +1825,13 @@ flowchart LR
   - HTTP/Policy tests for the §14.3 planning, assignment, scheduling and cancellation rows (Revision 3).
   - Availability unit tests (boundary: end == start is not an overlap).
   - Concurrency test using two DB connections or `DB::transaction` simulation on MySQL in CI.
+  - Revision 6:
+    - deallocate and re-allocate, including the concurrent case;
+    - each blocked resource change (the error names the trips) and each flagged one (conflict shown, scheduling blocked);
+    - licence edge cases: expiring today, expiring the day before a window that ends exactly at local midnight, no expiry date, an active driver with an expired licence;
+    - the C drop (guard, flag, `down()` structure);
+    - the updated Phase 1 retirement test;
+    - in 5B, the admin overview loading.
 - **Migration category:** 2 for the new tables; 4 for the C and old-master drops. **Rollback:** new tables only while empty; drops restore empty structure only.
 
 ### Phase 6 — Publishing, public joining and seat matrix
@@ -1779,6 +1842,7 @@ flowchart LR
   - both confirmation modes with the single capacity policy (§11.1, D5);
   - duplicate/idempotency/rate-limit safeguards (§11.7);
   - publish/unpublish; join flow (screen 11); booking management (12);
+  - the "suggested published trips" list on the request form (§8.2, moved from Phase 5 by Revision 6);
   - trip details with the user-facing seat-availability matrix (10);
   - booking notifications;
   - `completed` fulfilment derivation once execution exists (Phase 10).
@@ -1909,20 +1973,20 @@ flowchart LR
 
 ## 22. Remaining business decisions
 
-Decisions marked **Approved** may be implemented. All others are **open (DECISION REQUIRED)**; their recommendations are proposals, **not** approvals. None of the open ones blocks Phases 1–4.
+Decisions marked **Approved** may be implemented. All others are **open (DECISION REQUIRED)**; their recommendations are proposals, **not** approvals. None of the open ones blocks Phases 1–5 (Revision 6); 5B additionally waits for the owner's D1 confirmation.
 
 | ID | Decision | Recommendation (not approved) | Status | Blocks |
 |---|---|---|---|---|
 | D1 | Do real vehicle/driver rows exist that must be imported? | **Decision:** build and test the one-time import command (§18.4); never run it against a real database during development. Inventory result: unknown, so production runs `--dry-run` first and the owner decides (Revision 4) | **Approved**: project owner, 2026-11-10 | Phase 3 (import only) |
 | D2 | Second approval stage (e.g. Programs Manager)? | **Decision: no.** The Movement Manager is the only approver (R15); no `pending_secondary_approval` and no config flag | **Approved**: project owner, 2026-11-11 | Phase 4 |
 | D3 | Retire `transport_officer`, `movement_editor`, `movement_viewer`? Create `movement_driver`? | **Decision:** create `movement_driver` (grants `movement.driver.workspace` only for now). Retire the three legacy roles in Phase 12 per the §14.2 retirement procedure; they are neither deleted nor de-seeded before that | **Approved**: project owner, 2026-11-10 | Phase 2 (roles), Phase 12 (retirement) |
-| D4 | Default buffers (pre/post trip, excess running %, dwell), merge time tolerance and distance threshold, booking close time | 15 min / 15 min / 15% / 5 min; ±60 min; 2 km; 60 min | Open | Phases 5, 6, 8 |
+| D4 | Default buffers (pre/post trip, excess running %, dwell), merge time tolerance and distance threshold, booking close time | **Buffers decided:** pre-trip 15 min, post-trip 15 min, excess running 15 %, dwell 5 min (`config('movement.buffers')`). Still recommendations: merge ±60 min and 2 km (Phase 8); booking close 60 min (Phase 6) | **Partially approved — buffers**: project owner, 2026-11-18. Merge and booking-close parts open | Phase 5 (buffers), Phases 6, 8 |
 | D5 | Joining a published trip: instant confirmation or manager approval? | **Instant (`auto_confirm`)**, manager can cancel. Either way pending bookings never hold seats (§11.1) | Open | Phase 6 |
 | D6 | Vehicle size classes; vehicle home location | **Decision:** `size_class` ∈ `small`/`medium`/`large`; optional `home_location_id` on vehicles (FK `movement_locations`, nullOnDelete) | **Approved**: project owner, 2026-11-10 | Phase 3 |
 | D7 | May ordinary users see **individual** fleet identifiers (fleet number, plate) or per-vehicle status? | **Decision: no.** Ordinary users never see `fleet_number`, `plate_number`, per-vehicle status or any driver personal data; they see types, capacities and aggregate counts only (§13.2) | **Approved**: project owner, 2026-11-10 | Phase 3/7 |
 | D8 | Track licence number, category and expiry, and block expired licences? | **Decision:** track `licence_number` (nullable unique), `licence_category`, `licence_expires_on`. Phase 3 stores, displays and flags "expired / expiring within 30 days" in manager views; blocking assignment of expired licences is enforced in Phase 5 (§13.2) | **Approved**: project owner, 2026-11-10 | Phase 3 (tracking), Phase 5 (block) |
 | D9 | Passenger names / manifest per booking? | Not initially; counts only | Open | Phase 6 |
-| D10 | Approve Google Maps Platform billing and key ownership? | Start keyless (Phase 5); decide Phase 9 after 1–2 months | Open | Phase 9 |
+| D10 | Approve Google Maps Platform billing and key ownership? | Start keyless (Phase 5); decide Phase 9 after 1–2 months. Clarified (Revision 6): Phase 5 uses no key, so D10 concerns Phase 9 only | Open | Phase 9 only |
 | D11 | **Application-wide** soft deletes for `users` and `branches` (Audit T-01/T-02)? | Recommended as a separate, cross-cutting application change outside the Movement module | Open | **No Movement phase** (independent of D19) |
 | D12 | Can branch managers see requests originating from their branch (read-only)? Should the movement manager also be a requester? Who gets `movement.reports.view` (reports_viewer, executive_manager)? | **Decision:** `supervisor` sees own requests only at launch. `movement_manager` does **not** get `movement.requests.create`. `movement.reports.view` goes to `movement_manager`, `super_admin` and `executive_manager` (role key VERIFIED); `reports_viewer` gets none | **Approved**: project owner, 2026-11-10 | Phase 2 |
 | D13 | May drivers record departure/arrival (and no-shows) themselves? | Yes, own trips only, manager can correct | Open | Phase 10 |
@@ -1934,5 +1998,5 @@ Decisions marked **Approved** may be implemented. All others are **open (DECISIO
 | D19 | **Movement module** FK/deletion policy: `restrictOnDelete` for ownership FKs (requester, booker) vs `nullOnDelete` | **Decision:** ownership FKs `restrictOnDelete`; actor columns (`created_by`, `status_changed_by`, …) `nullOnDelete`; catalogue tables (vehicle types, vehicles, drivers, locations) soft-delete (§7.12) | **Approved**: project owner, 2026-11-10 | Phase 3 |
 | D20 | Booking and request limits: max passengers per join booking, one active join booking per user per trip, rate limit | **Request part decided:** `client_token` idempotency and limiter `movement-requests` (10 writes/min per user) on request create/update/submit/resubmit/cancel. Booking part (10 passengers per join; one active join per user per trip; `movement-bookings` limiter) still a recommendation | **Partially approved — request part**: project owner, 2026-11-11. Booking part open | Phase 4 (requests), Phase 6 (bookings) |
 | D21 | No-show seats: keep counted for the whole span, or release them for later sections? | Keep counted (simple, safe); revisit with execution data | Open (new) | Phase 10 |
-| D22 | Paired trips: should the driver wait with the vehicle by default (`driver_waits_between`)? | Default equal to the vehicle flag; the manager can override per pair (§13.7) | Open (new) | Phase 5 |
+| D22 | Paired trips: should the driver wait with the vehicle by default (`driver_waits_between`)? | **Decision:** yes. `driver_waits_between` defaults to the pair's `vehicle_waits_between`; the manager can change it per pair (§13.7) | **Approved**: project owner, 2026-11-18 | Phase 5 |
 | D23 | Legacy redirects (old B URLs → `movement.requests.index`, plus any later legacy redirects): keep them until old `in_app_notifications` rows that link to legacy URLs are purged, or remove them on a fixed date? | None yet: needs a count of notifications that still link to legacy URLs (Revision 5a) | Open (new) | Phase 12 |

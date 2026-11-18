@@ -54,7 +54,7 @@ class MovementLegacyFleetTripRetirementTest extends TestCase
      */
     public function test_legacy_b_and_c_routes_remain_until_their_own_phases(string $name): void
     {
-        // B route names now resolve as redirects (Phase 4B); see MovementLegacyTransportRequestRetirementTest.
+        // B route names now resolve as redirects (Phase 4B); C is retired in Phase 5A; the old masters remain until 5B.
         $this->assertLegacyRouteExists($name);
     }
 
@@ -66,10 +66,9 @@ class MovementLegacyFleetTripRetirementTest extends TestCase
     public function untouchedRouteNames(): array
     {
         return array_map(fn (string $name) => [$name], [
+            // C (role.transport.movements.*) is retired in Phase 5A; see MovementLegacyMovementDayRetirementTest.
             'role.transport.vehicles.index',
             'role.transport.drivers.index',
-            'role.transport.movements.index',
-            'role.transport.movements.store',
             'role.transport_officer.dashboard',
         ]);
     }

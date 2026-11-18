@@ -54,7 +54,6 @@ use App\Http\Controllers\Roles\Maintenance\MaintenanceAttachmentsController as M
 use App\Http\Controllers\Web\Maintenance\MaintenanceApprovalsController as MaintenanceApprovalsController;
 use App\Http\Controllers\Web\Transport\VehiclesController as TransportVehiclesController;
 use App\Http\Controllers\Web\Transport\DriversController as TransportDriversController;
-use App\Http\Controllers\Web\Transport\MovementsController as TransportMovementsController;
 use App\Http\Controllers\Web\Reports\ReportsController as ReportsController;
 use App\Http\Controllers\Web\Reports\FinanceReportsController as FinanceReportsController;
 use App\Http\Controllers\Web\Reports\MaintenanceReportsController as MaintenanceReportsController;
@@ -398,13 +397,6 @@ Route::middleware('auth')->group(function () {
     Route::redirect('/dashboard/transport/requests', '/dashboard/movement/requests')->name('role.transport.requests.index');
     Route::redirect('/dashboard/transport/requests/{transportRequest}/process', '/dashboard/movement/requests')->name('role.transport.requests.process');
     Route::redirect('/dashboard/transport/requests/{transportRequest}/feedback', '/dashboard/movement/requests')->name('role.transport.requests.feedback');
-    Route::get('/dashboard/transport/movements', [TransportMovementsController::class, 'index'])->middleware('role:transport_officer|movement_manager|movement_editor|movement_viewer|super_admin')->name('role.transport.movements.index');
-    Route::get('/dashboard/transport/movements/create', [TransportMovementsController::class, 'create'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.create');
-    Route::post('/dashboard/transport/movements', [TransportMovementsController::class, 'store'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.store');
-    Route::get('/dashboard/transport/movements/{movementDay}', [TransportMovementsController::class, 'show'])->middleware('role:transport_officer|movement_manager|movement_editor|movement_viewer|super_admin')->name('role.transport.movements.show');
-    Route::get('/dashboard/transport/movements/{movementDay}/edit', [TransportMovementsController::class, 'edit'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.edit');
-    Route::put('/dashboard/transport/movements/{movementDay}', [TransportMovementsController::class, 'update'])->middleware('role:transport_officer|movement_manager|movement_editor|super_admin')->name('role.transport.movements.update');
-    Route::delete('/dashboard/transport/movements/{movementDay}', [TransportMovementsController::class, 'destroy'])->middleware('role:transport_officer|movement_manager|super_admin')->name('role.transport.movements.destroy');
     Route::get('/dashboard/transport', [TransportOfficerDashboardController::class, 'index'])->middleware('role:transport_officer')->name('role.transport_officer.dashboard');
     // KPI Guide (Phase 6): definitions only, no data → authenticated users.
     Route::get('/dashboard/kpi/guide', [KpiGuideController::class, 'index'])->name('kpi.guide');

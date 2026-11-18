@@ -237,7 +237,6 @@
             @if ($canAccessTransportSidebar)
                 <li class="side-item {{ request()->routeIs('role.transport.vehicles.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.vehicles.index') }}"><i class="fas fa-truck"></i><span>{{ __('app.roles.transport.vehicles.title') }}</span></a></li>
                 <li class="side-item {{ request()->routeIs('role.transport.drivers.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.drivers.index') }}"><i class="fas fa-id-card"></i><span>{{ __('app.roles.transport.drivers.title') }}</span></a></li>
-                <li class="side-item {{ request()->routeIs('role.transport.movements.*') ? 'selected' : '' }}"><a href="{{ route('role.transport.movements.index') }}"><i class="fas fa-map-location-dot"></i><span>{{ __('app.roles.transport.movements.title') }}</span></a></li>
             @endif
 
             @if ($canAccessKpiSection)

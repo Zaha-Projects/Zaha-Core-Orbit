@@ -29,6 +29,9 @@ class MovementFleetMigrationsTest extends TestCase
     private const LATER_MIGRATIONS = [
         'movement_requests' => '2026_11_11_000600_create_movement_requests_table.php',
         'movement_request_legs' => '2026_11_11_000700_create_movement_request_legs_table.php',
+        'movement_trips' => '2026_11_18_000200_create_movement_trips_table.php',
+        'movement_trip_stops' => '2026_11_18_000300_create_movement_trip_stops_table.php',
+        'movement_bookings' => '2026_11_18_000400_create_movement_bookings_table.php',
     ];
 
     protected function setUp(): void

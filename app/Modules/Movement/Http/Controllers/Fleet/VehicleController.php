@@ -3,13 +3,16 @@
 namespace App\Modules\Movement\Http\Controllers\Fleet;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Movement\Exceptions\IllegalMovementTransition;
 use App\Modules\Movement\Http\Requests\Fleet\VehicleRequest;
 use App\Modules\Movement\Http\Requests\Fleet\VehicleStatusRequest;
 use App\Modules\Movement\Models\Location;
 use App\Modules\Movement\Models\Unavailability;
 use App\Modules\Movement\Models\Vehicle;
 use App\Modules\Movement\Models\VehicleType;
+use App\Modules\Movement\Services\TripSchedulingService;
 use App\Modules\Movement\Support\MovementAudit;
+use App\Modules\Movement\Support\MovementTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -17,6 +20,9 @@ use Illuminate\Validation\Rule;
 /** Fleet management (plan §7.2, §13.1, screen 2). Manager-only (movement.vehicles.manage, D7). */
 class VehicleController extends Controller
 {
+    /** Statuses that take a vehicle out of service; refused while it is on a non-terminal trip (Revision 6). */
+    private const WITHDRAWN_STATUSES = [Vehicle::STATUS_MAINTENANCE, Vehicle::STATUS_OUT_OF_SERVICE, Vehicle::STATUS_INACTIVE];
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Vehicle::class);
@@ -86,26 +92,44 @@ class VehicleController extends Controller
 
     public function update(VehicleRequest $request, Vehicle $vehicle)
     {
-        DB::transaction(function () use ($request, $vehicle) {
-            $before = $vehicle->getAttributes();
-            // Phase 3: capacity edits are unrestricted; the §13.6 trip rules arrive in Phase 5 (Revision 4).
-            $vehicle->update($request->validated());
-            [$old, $new] = MovementAudit::diff($before, $vehicle);
-            if ($new) {
-                MovementAudit::record('vehicle.updated', $vehicle, $old, $new);
-            }
-        });
+        try {
+            MovementTransaction::run(function () use ($request, $vehicle) {
+                $vehicle = MovementTransaction::lockVehicles([$vehicle->id])->first();
+                $before = $vehicle->getAttributes();
+                // §13.6 (Revision 4, 6): capacity cannot drop below the seats offered on a non-terminal trip.
+                $capacity = (int) $request->validated()['passenger_capacity'];
+                if ($vehicle->passenger_capacity === null || $capacity < $vehicle->passenger_capacity) {
+                    app(TripSchedulingService::class)->guardVehicleCapacity($vehicle, $capacity);
+                }
+                $vehicle->update($request->validated());
+                [$old, $new] = MovementAudit::diff($before, $vehicle);
+                if ($new) {
+                    MovementAudit::record('vehicle.updated', $vehicle, $old, $new);
+                }
+            });
+        } catch (IllegalMovementTransition $e) {
+            return back()->withErrors(['passenger_capacity' => $e->getMessage()])->withInput();
+        }
 
         return redirect()->route('movement.vehicles.show', $vehicle)->with('success', __('movement.flash.saved'));
     }
 
     public function changeStatus(VehicleStatusRequest $request, Vehicle $vehicle)
     {
-        DB::transaction(function () use ($request, $vehicle) {
-            $old = $vehicle->only(['operational_status', 'status_reason']);
-            $vehicle->update($request->validated() + ['status_changed_at' => now(), 'status_changed_by' => $request->user()->id]);
-            MovementAudit::record('vehicle.status_changed', $vehicle, $old, $vehicle->only(['operational_status', 'status_reason']));
-        });
+        try {
+            MovementTransaction::run(function () use ($request, $vehicle) {
+                $vehicle = MovementTransaction::lockVehicles([$vehicle->id])->first();
+                // §13.6 (Revision 6): not withdrawn from service while on a draft or scheduled trip.
+                if (in_array($request->validated()['operational_status'], self::WITHDRAWN_STATUSES, true)) {
+                    app(TripSchedulingService::class)->guardResourceWithdrawal('vehicle', $vehicle->id);
+                }
+                $old = $vehicle->only(['operational_status', 'status_reason']);
+                $vehicle->update($request->validated() + ['status_changed_at' => now(), 'status_changed_by' => $request->user()->id]);
+                MovementAudit::record('vehicle.status_changed', $vehicle, $old, $vehicle->only(['operational_status', 'status_reason']));
+            });
+        } catch (IllegalMovementTransition $e) {
+            return back()->withErrors(['operational_status' => $e->getMessage()])->withInput();
+        }
 
         return redirect()->route('movement.vehicles.show', $vehicle)->with('success', __('movement.flash.status_changed'));
     }
@@ -114,10 +138,16 @@ class VehicleController extends Controller
     {
         $this->authorize('delete', $vehicle);
 
-        DB::transaction(function () use ($vehicle) {
-            $vehicle->delete();
-            MovementAudit::record('vehicle.deleted', $vehicle, null, ['deleted_at' => (string) $vehicle->deleted_at]);
-        });
+        try {
+            MovementTransaction::run(function () use ($vehicle) {
+                $vehicle = MovementTransaction::lockVehicles([$vehicle->id])->first();
+                app(TripSchedulingService::class)->guardResourceWithdrawal('vehicle', $vehicle->id); // §13.6, Revision 6
+                $vehicle->delete();
+                MovementAudit::record('vehicle.deleted', $vehicle, null, ['deleted_at' => (string) $vehicle->deleted_at]);
+            });
+        } catch (IllegalMovementTransition $e) {
+            return back()->withErrors(['vehicle' => $e->getMessage()]);
+        }
 
         return redirect()->route('movement.vehicles.index')->with('success', __('movement.flash.deleted'));
     }

@@ -20,9 +20,4 @@ class Vehicle extends Model
     {
         return $this->belongsTo(Branch::class);
     }
-
-    public function movementTrips()
-    {
-        return $this->hasMany(MovementTrip::class);
-    }
 }

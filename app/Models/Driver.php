@@ -14,9 +14,4 @@ class Driver extends Model
         'phone',
         'status',
     ];
-
-    public function movementDays()
-    {
-        return $this->hasMany(MovementDay::class);
-    }
 }

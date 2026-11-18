@@ -29,15 +29,15 @@ class MovementLegacyTransportRequestRetirementTest extends TestCase
             $lang = require resource_path("lang/{$locale}/app.php");
             $this->assertArrayNotHasKey('requests', $lang['roles']['transport'], "{$locale}: roles.transport.requests must be removed.");
             $this->assertArrayNotHasKey('transport_requests', $lang['roles']['transport_officer']['actions']);
-            // C and the old masters keep their lang until Phase 5.
-            $this->assertArrayHasKey('movements', $lang['roles']['transport']);
+            // The old masters keep their lang until 5B (C's lang went in 5A).
+            $this->assertArrayHasKey('vehicles', $lang['roles']['transport']);
             $this->assertArrayHasKey('fleet', $lang['roles']['transport_officer']['actions']);
         }
 
         $dashboard = file_get_contents(resource_path('views/roles/transport_officer/dashboard.blade.php'));
         $this->assertStringNotContainsString('transport_requests', $dashboard);
         $this->assertStringNotContainsString('role.transport.requests', $dashboard);
-        $this->assertStringContainsString('role.transport.movements.index', $dashboard, 'The officer dashboard stays, minus the B card.');
+        $this->assertStringContainsString('role.transport.vehicles.index', $dashboard, 'The officer dashboard stays until 5B, minus the B and C cards.');
     }
 
     public function test_no_code_references_b_any_more(): void
@@ -56,14 +56,10 @@ class MovementLegacyTransportRequestRetirementTest extends TestCase
         $this->assertSame([], $hits);
     }
 
-    public function test_c_and_old_master_routes_are_unchanged(): void
+    public function test_old_master_routes_are_unchanged(): void
     {
+        // C's routes are retired in Phase 5A (MovementLegacyMovementDayRetirementTest); the old masters stay until 5B.
         $expected = [
-            'role.transport.movements.index' => 'MovementsController@index',
-            'role.transport.movements.store' => 'MovementsController@store',
-            'role.transport.movements.show' => 'MovementsController@show',
-            'role.transport.movements.update' => 'MovementsController@update',
-            'role.transport.movements.destroy' => 'MovementsController@destroy',
             'role.transport.vehicles.index' => 'VehiclesController@index',
             'role.transport.drivers.index' => 'DriversController@index',
             'role.transport_officer.dashboard' => 'DashboardController@index',
@@ -71,7 +67,7 @@ class MovementLegacyTransportRequestRetirementTest extends TestCase
 
         foreach ($expected as $name => $action) {
             $route = app('router')->getRoutes()->getByName($name);
-            $this->assertNotNull($route, "Route [{$name}] must remain until Phase 5.");
+            $this->assertNotNull($route, "Route [{$name}] must remain until Phase 5B.");
             $this->assertStringEndsWith($action, $route->getActionName());
         }
     }

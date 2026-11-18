@@ -39,10 +39,21 @@ class MovementRequest extends Model
     /** Requester edits are allowed only here (§8.4). */
     public const EDITABLE_STATUSES = [self::STATUS_DRAFT, self::STATUS_RETURNED];
 
-    // Phase 4 subset of §8.5 (Revision 5); the full derivation arrives in Phase 5.
+    // §8.5 fulfilment values (full derivation from Phase 5, Revision 6).
     public const FULFILMENT_NOT_APPLICABLE = 'not_applicable';
     public const FULFILMENT_UNALLOCATED = 'unallocated';
+    public const FULFILMENT_PARTIALLY_ALLOCATED = 'partially_allocated';
+    public const FULFILMENT_ALLOCATED = 'allocated';
+    public const FULFILMENT_PARTIALLY_SCHEDULED = 'partially_scheduled';
+    public const FULFILMENT_SCHEDULED = 'scheduled';
+    public const FULFILMENT_COMPLETED = 'completed';
     public const FULFILMENT_CANCELLED = 'cancelled';
+
+    /** Progress order of the approved fulfilment values; a lower rank after a change is a drop (§8.5). */
+    public const FULFILMENT_PROGRESS = [
+        self::FULFILMENT_UNALLOCATED, self::FULFILMENT_PARTIALLY_ALLOCATED, self::FULFILMENT_ALLOCATED,
+        self::FULFILMENT_PARTIALLY_SCHEDULED, self::FULFILMENT_SCHEDULED, self::FULFILMENT_COMPLETED,
+    ];
 
     public const DIRECTION_ONE_WAY = 'one_way';
     public const DIRECTION_ROUND_TRIP = 'round_trip';

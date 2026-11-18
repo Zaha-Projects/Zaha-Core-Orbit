@@ -4,11 +4,14 @@ namespace App\Modules\Movement\Http\Controllers\Fleet;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\Movement\Exceptions\IllegalMovementTransition;
 use App\Modules\Movement\Http\Requests\Fleet\DriverRequest;
 use App\Modules\Movement\Http\Requests\Fleet\LinkDriverUserRequest;
 use App\Modules\Movement\Models\Driver;
 use App\Modules\Movement\Models\Unavailability;
+use App\Modules\Movement\Services\TripSchedulingService;
 use App\Modules\Movement\Support\MovementAudit;
+use App\Modules\Movement\Support\MovementTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -96,17 +99,26 @@ class DriverController extends Controller
 
     public function update(DriverRequest $request, Driver $driver)
     {
-        DB::transaction(function () use ($request, $driver) {
-            $before = $driver->getAttributes();
-            $driver->update($request->validated());
-            [$old, $new] = MovementAudit::diff($before, $driver);
-            if (array_key_exists('employment_status', $new)) {
-                MovementAudit::record('driver.status_changed', $driver, ['employment_status' => $old['employment_status'] ?? null], ['employment_status' => $new['employment_status']]);
-            }
-            if ($rest = array_diff_key($new, ['employment_status' => true])) {
-                MovementAudit::record('driver.updated', $driver, array_intersect_key($old, $rest), $rest);
-            }
-        });
+        try {
+            MovementTransaction::run(function () use ($request, $driver) {
+                $driver = MovementTransaction::lockDrivers([$driver->id])->first();
+                // §13.6 (Revision 6): not deactivated while on a draft or scheduled trip.
+                if ($request->validated()['employment_status'] === Driver::STATUS_INACTIVE && $driver->employment_status !== Driver::STATUS_INACTIVE) {
+                    app(TripSchedulingService::class)->guardResourceWithdrawal('driver', $driver->id);
+                }
+                $before = $driver->getAttributes();
+                $driver->update($request->validated());
+                [$old, $new] = MovementAudit::diff($before, $driver);
+                if (array_key_exists('employment_status', $new)) {
+                    MovementAudit::record('driver.status_changed', $driver, ['employment_status' => $old['employment_status'] ?? null], ['employment_status' => $new['employment_status']]);
+                }
+                if ($rest = array_diff_key($new, ['employment_status' => true])) {
+                    MovementAudit::record('driver.updated', $driver, array_intersect_key($old, $rest), $rest);
+                }
+            });
+        } catch (IllegalMovementTransition $e) {
+            return back()->withErrors(['employment_status' => $e->getMessage()])->withInput();
+        }
 
         return redirect()->route('movement.drivers.show', $driver)->with('success', __('movement.flash.saved'));
     }
@@ -141,10 +153,16 @@ class DriverController extends Controller
     {
         $this->authorize('delete', $driver);
 
-        DB::transaction(function () use ($driver) {
-            $driver->delete();
-            MovementAudit::record('driver.deleted', $driver, null, ['deleted_at' => (string) $driver->deleted_at]);
-        });
+        try {
+            MovementTransaction::run(function () use ($driver) {
+                $driver = MovementTransaction::lockDrivers([$driver->id])->first();
+                app(TripSchedulingService::class)->guardResourceWithdrawal('driver', $driver->id); // §13.6, Revision 6
+                $driver->delete();
+                MovementAudit::record('driver.deleted', $driver, null, ['deleted_at' => (string) $driver->deleted_at]);
+            });
+        } catch (IllegalMovementTransition $e) {
+            return back()->withErrors(['driver' => $e->getMessage()]);
+        }
 
         return redirect()->route('movement.drivers.index')->with('success', __('movement.flash.deleted'));
     }

@@ -26,6 +26,7 @@ class MovementRequestLeg extends Model
     ];
 
     public function request() { return $this->belongsTo(MovementRequest::class, 'movement_request_id'); }
+    public function bookings() { return $this->hasMany(Booking::class, 'request_leg_id'); }
     public function originLocation() { return $this->belongsTo(Location::class, 'origin_location_id')->withTrashed(); }
     public function destinationLocation() { return $this->belongsTo(Location::class, 'destination_location_id')->withTrashed(); }
 

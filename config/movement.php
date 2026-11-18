@@ -15,6 +15,15 @@ return [
         'indicative_window_hours' => (int) env('MOVEMENT_REQUEST_INDICATIVE_WINDOW_HOURS', 3),
     ],
 
+    'buffers' => [
+        // Trip timing defaults (§9.4; D4 Approved, Revision 6). Trips snapshot the pre/post values
+        // into pre_trip_buffer_minutes / post_trip_buffer_minutes when they are created.
+        'pre_trip_minutes' => 15,
+        'post_trip_minutes' => 15,
+        'excess_running_percent' => 15,
+        'default_dwell_minutes' => 5,
+    ],
+
     'legacy' => [
         // Explicit "disaster-recovery backup verified" switch for legacy-table drop
         // migrations: they refuse to drop a table that still contains rows unless true.

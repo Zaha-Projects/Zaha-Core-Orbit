@@ -4,10 +4,13 @@ namespace App\Modules\Movement\Services;
 
 use App\Models\User;
 use App\Modules\Movement\Exceptions\IllegalMovementTransition;
+use App\Modules\Movement\Models\Booking;
 use App\Modules\Movement\Models\MovementRequest;
 use App\Modules\Movement\Models\MovementRequestLeg;
+use App\Modules\Movement\Models\Trip;
 use App\Modules\Movement\Support\MovementAudit;
 use App\Modules\Movement\Support\MovementTime;
+use App\Modules\Movement\Support\MovementTransaction;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -139,18 +142,36 @@ class MovementRequestWorkflow
     }
 
     /**
-     * Cancel (§8.4). A reason is required once past draft. Phase 4 handles the request side only;
-     * cancelling bookings and the in_progress guard arrive in Phase 5 (Revision 5).
+     * Cancel (§8.4). A reason is required once past draft. Not allowed once a serving trip is in_progress.
+     * In one transaction it cancels the request's pending/confirmed bookings (releasing their seats) and sets
+     * fulfilment_status = cancelled (Phase 5, Revision 5). Lock order (§5.2): the request's legs, the request
+     * row, then the serving trips.
      */
     public function cancel(MovementRequest $request, User $actor, ?string $reason): MovementRequest
     {
         $reason = $this->clean($reason);
+        $legIds = MovementRequestLeg::query()->where('movement_request_id', $request->getKey())->pluck('id');
 
-        return DB::transaction(function () use ($request, $actor, $reason) {
+        return MovementTransaction::run(function () use ($request, $actor, $reason, $legIds) {
+            MovementTransaction::lockLegs($legIds);
             $request = $this->lock($request);
             $this->guard($request, MovementRequest::STATUS_CANCELLED);
             if ($request->status !== MovementRequest::STATUS_DRAFT && $reason === null) {
                 throw new IllegalMovementTransition(__('movement.requests.errors.reason_required'));
+            }
+
+            $bookings = Booking::query()->whereIn('request_leg_id', $legIds)->whereIn('status', Booking::ACTIVE_STATUSES)->get();
+            $trips = MovementTransaction::lockTrips($bookings->pluck('movement_trip_id'));
+            if ($trips->contains(fn (Trip $trip) => $trip->status === Trip::STATUS_IN_PROGRESS)) {
+                throw new IllegalMovementTransition(__('movement.requests.errors.serving_trip_in_progress'));
+            }
+            foreach ($bookings as $booking) {
+                // Bookings of trips that already ended keep their history (§7.12).
+                if (in_array($trips->get($booking->movement_trip_id)?->status, Trip::NON_TERMINAL_STATUSES, true)) {
+                    $old = $booking->status;
+                    $booking->update(['status' => Booking::STATUS_CANCELLED, 'cancelled_by' => $actor->id, 'cancelled_at' => now(), 'cancellation_reason' => $reason]);
+                    MovementAudit::record('booking.cancelled', $booking, ['status' => $old], ['status' => Booking::STATUS_CANCELLED, 'comment' => $reason], $actor->id);
+                }
             }
 
             $this->move($request, MovementRequest::STATUS_CANCELLED, 'request.cancelled', $actor, $reason, [
@@ -179,20 +200,81 @@ class MovementRequestWorkflow
     }
 
     /**
-     * Phase 4 subset of §8.5 (Revision 5): not_applicable / unallocated / cancelled.
-     * Called inside the transaction of every status change.
+     * §8.5 fulfilment, derived and stored for filtering. Called inside the transaction of every change that can
+     * affect it (request status, request bookings, serving-trip status). The caller holds the request's leg locks,
+     * so the sums read here are current.
+     *
+     * A drop to a lower progress value records fulfilment_dropped_at; reaching scheduled (or completed) clears it.
+     * (Notifying the managers of a drop arrives with the 5A-2 notifications.)
      */
     public function refreshFulfilment(MovementRequest $request): void
     {
         $value = match ($request->status) {
             MovementRequest::STATUS_CANCELLED => MovementRequest::FULFILMENT_CANCELLED,
-            MovementRequest::STATUS_APPROVED => MovementRequest::FULFILMENT_UNALLOCATED,
+            MovementRequest::STATUS_APPROVED => $this->deriveFulfilment($request),
             default => MovementRequest::FULFILMENT_NOT_APPLICABLE,
         };
 
-        if ($request->fulfilment_status !== $value) {
-            $request->forceFill(['fulfilment_status' => $value])->save();
+        $old = $request->fulfilment_status;
+        if ($old === $value) {
+            return;
         }
+
+        $changes = ['fulfilment_status' => $value];
+        $progress = MovementRequest::FULFILMENT_PROGRESS;
+        if (in_array($old, $progress, true) && in_array($value, $progress, true) && array_search($value, $progress, true) < array_search($old, $progress, true)) {
+            $changes['fulfilment_dropped_at'] = now();
+        }
+        if (in_array($value, [MovementRequest::FULFILMENT_SCHEDULED, MovementRequest::FULFILMENT_COMPLETED], true)) {
+            $changes['fulfilment_dropped_at'] = null;
+        }
+
+        $request->forceFill($changes)->save();
+    }
+
+    /** Refresh every request that owns one of these legs (trip-side changes, §8.5). */
+    public function refreshFulfilmentForLegs(iterable $legIds): void
+    {
+        $ids = collect($legIds)->filter()->unique()->values();
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $requestIds = MovementRequestLeg::query()->whereIn('id', $ids)->pluck('movement_request_id')->unique();
+        foreach (MovementRequest::query()->whereIn('id', $requestIds)->orderBy('id')->get() as $request) {
+            $this->refreshFulfilment($request);
+        }
+    }
+
+    /**
+     * Per leg: A = confirmed request bookings on trips that count as allocated, S = the same on trips that count as
+     * scheduled. Request level: A_tot, S_tot, R_tot (§8.5 table, evaluated in order).
+     */
+    private function deriveFulfilment(MovementRequest $request): string
+    {
+        $legs = MovementRequestLeg::query()->where('movement_request_id', $request->id)->get(['id', 'passenger_count']);
+        $required = (int) $legs->sum('passenger_count');
+
+        $rows = Booking::query()
+            ->join('movement_trips', 'movement_trips.id', '=', 'movement_bookings.movement_trip_id')
+            ->whereIn('movement_bookings.request_leg_id', $legs->pluck('id'))
+            ->where('movement_bookings.status', Booking::STATUS_CONFIRMED)
+            ->whereIn('movement_trips.status', Trip::ALLOCATED_STATUSES)
+            ->get(['movement_bookings.passenger_count', 'movement_trips.status as trip_status']);
+
+        $allocated = (int) $rows->sum('passenger_count');
+        $scheduled = (int) $rows->whereIn('trip_status', Trip::SCHEDULED_STATUSES)->sum('passenger_count');
+
+        if ($required > 0 && $scheduled >= $required) {
+            return $rows->every(fn ($row) => $row->trip_status === Trip::STATUS_COMPLETED)
+                ? MovementRequest::FULFILMENT_COMPLETED
+                : MovementRequest::FULFILMENT_SCHEDULED;
+        }
+        if ($required > 0 && $allocated >= $required) {
+            return $scheduled > 0 ? MovementRequest::FULFILMENT_PARTIALLY_SCHEDULED : MovementRequest::FULFILMENT_ALLOCATED;
+        }
+
+        return $allocated > 0 ? MovementRequest::FULFILMENT_PARTIALLY_ALLOCATED : MovementRequest::FULFILMENT_UNALLOCATED;
     }
 
     private function move(MovementRequest $request, string $to, string $action, User $actor, ?string $comment = null, array $extra = []): void

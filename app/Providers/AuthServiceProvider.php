@@ -7,12 +7,14 @@ use App\Modules\Events\Models\MonthlyActivity;
 use App\Modules\Movement\Models\Driver as MovementDriver;
 use App\Modules\Movement\Models\Location as MovementLocation;
 use App\Modules\Movement\Models\MovementRequest;
+use App\Modules\Movement\Models\Trip as MovementTrip;
 use App\Modules\Movement\Models\Unavailability as MovementUnavailability;
 use App\Modules\Movement\Models\Vehicle as MovementVehicle;
 use App\Modules\Movement\Models\VehicleType as MovementVehicleType;
 use App\Modules\Movement\Policies\DriverPolicy as MovementDriverPolicy;
 use App\Modules\Movement\Policies\LocationPolicy as MovementLocationPolicy;
 use App\Modules\Movement\Policies\MovementRequestPolicy;
+use App\Modules\Movement\Policies\TripPolicy as MovementTripPolicy;
 use App\Modules\Movement\Policies\UnavailabilityPolicy as MovementUnavailabilityPolicy;
 use App\Modules\Movement\Policies\VehiclePolicy as MovementVehiclePolicy;
 use App\Modules\Movement\Policies\VehicleTypePolicy as MovementVehicleTypePolicy;
@@ -32,6 +34,7 @@ class AuthServiceProvider extends ServiceProvider
         MovementUnavailability::class => MovementUnavailabilityPolicy::class,
         MovementLocation::class => MovementLocationPolicy::class,
         MovementRequest::class => MovementRequestPolicy::class,
+        MovementTrip::class => MovementTripPolicy::class,
     ];
 
     public function boot()
